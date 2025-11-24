@@ -1,3 +1,199 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Elegant Typography */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+
+/* Root Variables */
+:root {
+  --color-primary: #e8a857;
+  --color-primary-dark: #d4874a;
+  --color-dark: #1c1917;
+  --color-light: #fafaf9;
+  --color-text: #2c2c2c;
+  --color-border: #e7e5e4;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Styles */
+* {
+  @apply transition-colors duration-300;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-gray-900 font-sans;
+  color: var(--color-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display font-bold;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  @apply text-5xl md:text-6xl;
+}
+
+h2 {
+  @apply text-4xl md:text-5xl;
+}
+
+h3 {
+  @apply text-2xl md:text-3xl;
+}
+
+h4 {
+  @apply text-xl md:text-2xl;
+}
+
+h5 {
+  @apply text-lg md:text-xl;
+}
+
+h6 {
+  @apply text-base md:text-lg;
+}
+
+p {
+  @apply leading-relaxed text-gray-700;
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-6 py-3 bg-gold-500 hover:bg-gold-600 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-luxury disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3 bg-diamond-800 hover:bg-diamond-900 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-outline {
+  @apply inline-flex items-center justify-center px-6 py-3 border-2 border-gold-500 text-gold-500 hover:bg-gold-50 font-semibold rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center px-6 py-3 text-diamond-800 hover:bg-diamond-50 font-semibold rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Input Styles */
+.input-field {
+  @apply w-full px-4 py-2.5 border border-diamond-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all duration-300;
+}
+
+.input-field::placeholder {
+  @apply text-gray-500;
+}
+
+/* Card Styles */
+.card {
+  @apply bg-white border border-diamond-200 rounded-lg shadow-base hover:shadow-md transition-all duration-300;
+}
+
+.card-hover {
+  @apply cursor-pointer hover:shadow-luxury hover:-translate-y-1 transition-all duration-300;
+}
+
+/* Luxury Divider */
+.divider-gold {
+  @apply h-px bg-gradient-to-r from-transparent via-gold-500 to-transparent;
+}
+
+.divider {
+  @apply h-px bg-diamond-200;
+}
+
+/* Badge Styles */
+.badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.badge-gold {
+  @apply badge bg-gold-100 text-gold-800;
+}
+
+.badge-emerald {
+  @apply badge bg-emerald-100 text-emerald-800;
+}
+
+.badge-sapphire {
+  @apply badge bg-sapphire-100 text-sapphire-800;
+}
+
+.badge-rose {
+  @apply badge bg-rose-100 text-rose-800;
+}
+
+/* Loading States */
+.skeleton {
+  @apply animate-pulse bg-gradient-to-r from-diamond-200 via-white to-diamond-200 bg-[length:1000px_100%] rounded;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-diamond-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-diamond-400 rounded-full hover:bg-diamond-500;
+}
+
+/* Focus Visible for Accessibility */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-gold-500;
+}
+
+/* Utility Classes */
+.text-gradient {
+  @apply bg-gradient-to-r from-gold-500 to-gold-600 bg-clip-text text-transparent;
+}
+
+.container-luxury {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.section-padding {
+  @apply py-12 sm:py-16 md:py-20 lg:py-24;
+}
+
+/* Animation Support */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Responsive Grid */
+.grid-auto-fit {
+  @apply grid gap-6 sm:gap-8;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.grid-auto-fit-sm {
+  @apply grid gap-4 sm:gap-6;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Luxury Glass Effect */
+.glass {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 rounded-xl;
+}
+
+.glass-dark {
+  @apply bg-diamond-900/80 backdrop-blur-md border border-diamond-800/20 rounded-xl;
+}
