@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -178,7 +178,7 @@ interface Product {
                     <span class="text-xs text-gray-600">({{ product.reviews }})</span>
                   </div>
                   <div class="mb-4">
-                    <span class="text-2xl font-bold text-diamond-900">${{ (product.price / 1000).toFixed(0) }}k</span>
+                    <span class="text-2xl font-bold text-diamond-900">{{ formatPrice(product.price) }}</span>
                   </div>
                   <button class="w-full btn-primary">Add to Cart</button>
                 </div>
@@ -210,4 +210,12 @@ export class ProductsComponent {
     { id: '5', name: 'Ruby & Diamond Bracelet', price: 42000, category: 'Gemstone', rating: 4.8, reviews: 78 },
     { id: '6', name: 'Pearl & Diamond Pendant', price: 32000, category: 'Pearl', rating: 4.6, reviews: 45 },
   ];
+
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
+  }
 }
