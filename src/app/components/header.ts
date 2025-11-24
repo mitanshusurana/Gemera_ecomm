@@ -58,12 +58,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
               </svg>
               <span class="absolute top-0 right-0 w-5 h-5 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center">0</span>
             </button>
-            <button class="flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300 relative">
+            <a routerLink="/cart" class="flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300 relative">
               <svg class="w-5 h-5 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
               </svg>
               <span class="absolute top-0 right-0 w-5 h-5 bg-gold-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{{ cartCount() }}</span>
-            </button>
+            </a>
             <a routerLink="/account" class="hidden sm:flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300">
               <svg class="w-5 h-5 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
