@@ -114,7 +114,7 @@ import { ApiService, User } from '../services/api.service';
                         <p class="text-gray-600 text-sm">Placed on January {{ order }}, 2024</p>
                       </div>
                       <div class="text-right">
-                        <p class="text-2xl font-bold text-diamond-900">${{ 45000 + order * 1000 }}</p>
+                        <p class="text-2xl font-bold text-diamond-900">{{ formatPrice(45000 + order * 1000) }}</p>
                         <span class="inline-block mt-2 badge badge-emerald">Delivered</span>
                       </div>
                     </div>
@@ -274,11 +274,18 @@ export class AccountComponent implements OnInit {
     this.apiService.logout().subscribe({
       next: () => {
         console.log('Logged out successfully');
-        // Navigate to home or login page
       },
       error: (error) => {
         console.error('Error logging out:', error);
       },
     });
+  }
+
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
   }
 }
