@@ -64,11 +64,11 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
               </svg>
               <span class="absolute top-0 right-0 w-5 h-5 bg-gold-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{{ cartCount() }}</span>
             </button>
-            <button class="hidden sm:flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300">
+            <a routerLink="/account" class="hidden sm:flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300">
               <svg class="w-5 h-5 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
               </svg>
-            </button>
+            </a>
             <button (click)="toggleMobileMenu()" class="md:hidden flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300">
               <svg class="w-5 h-5 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
