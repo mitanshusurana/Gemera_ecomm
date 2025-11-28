@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 
 interface Product {
   id: string;
@@ -9,6 +10,11 @@ interface Product {
   category: string;
   rating: number;
   reviews: number;
+}
+
+interface CategoryFilter {
+  id: string;
+  name: string;
 }
 
 @Component({
@@ -40,28 +46,16 @@ interface Product {
                 <h3 class="font-semibold text-gray-900 mb-4">Categories</h3>
                 <div class="space-y-3">
                   <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" checked>
+                    <input type="checkbox" class="w-4 h-4"
+                      [checked]="selectedCategories().length === 0"
+                      (change)="toggleCategory('all')">
                     <span class="text-sm text-gray-700">All Products</span>
                   </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4">
-                    <span class="text-sm text-gray-700">Diamond Rings</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4">
-                    <span class="text-sm text-gray-700">Gemstone Jewels</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4">
-                    <span class="text-sm text-gray-700">Necklaces</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4">
-                    <span class="text-sm text-gray-700">Bracelets</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4">
-                    <span class="text-sm text-gray-700">Earrings</span>
+                  <label *ngFor="let category of categories" class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4"
+                      [checked]="selectedCategories().includes(category.id)"
+                      (change)="toggleCategory(category.id)">
+                    <span class="text-sm text-gray-700">{{ category.name }}</span>
                   </label>
                 </div>
               </div>
@@ -200,7 +194,42 @@ interface Product {
     </div>
   `,
 })
-export class ProductsComponent {
+export class ProductsComponent implements OnInit {
+  categories: CategoryFilter[] = [
+    { id: 'engagement-rings', name: 'Engagement Rings' },
+    { id: 'loose-gemstones', name: 'Loose Gemstones' },
+    { id: 'spiritual-idols', name: 'Spiritual Idols' },
+    { id: 'gemstone-jewelry', name: 'Gemstone Jewelry' },
+    { id: 'precious-metals', name: 'Precious Metals' },
+    { id: 'bespoke-custom', name: 'Bespoke Custom' },
+  ];
+
+  selectedCategories = signal<string[]>([]);
+
+  constructor(private activatedRoute: ActivatedRoute) {}
+
+  ngOnInit(): void {
+    this.activatedRoute.queryParams.subscribe(params => {
+      if (params['category']) {
+        const categoryId = params['category'].toLowerCase().replace(/\s+/g, '-');
+        this.selectedCategories.set([categoryId]);
+      }
+    });
+  }
+
+  toggleCategory(categoryId: string): void {
+    if (categoryId === 'all') {
+      this.selectedCategories.set([]);
+    } else {
+      const current = this.selectedCategories();
+      if (current.includes(categoryId)) {
+        this.selectedCategories.set(current.filter(id => id !== categoryId));
+      } else {
+        this.selectedCategories.set([...current, categoryId]);
+      }
+    }
+  }
+
   sampleProducts: Product[] = [
     { id: '1', name: 'Diamond Solitaire Ring', price: 45000, category: 'Diamond', rating: 4.8, reviews: 125 },
     { id: '2', name: 'Emerald Statement Necklace', price: 35000, category: 'Gemstone', rating: 4.9, reviews: 89 },
