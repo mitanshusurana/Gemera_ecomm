@@ -130,9 +130,10 @@ interface Collection {
 
         <!-- 6-Item Grid Layout -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div *ngFor="let collection of collections" 
-               class="group relative overflow-hidden rounded-2xl h-96 cursor-pointer card-hover">
-            
+          <a *ngFor="let collection of collections"
+             routerLink="/products"
+             class="group relative overflow-hidden rounded-2xl h-96 cursor-pointer card-hover block">
+
             <!-- Background Gradient -->
             <div class="absolute inset-0" [ngClass]="'bg-gradient-to-br ' + collection.color"></div>
 
@@ -159,7 +160,7 @@ interface Collection {
 
             <!-- Overlay -->
             <div class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all duration-300"></div>
-          </div>
+          </a>
         </div>
       </div>
     </section>
