@@ -402,7 +402,7 @@ export class HomeComponent {
       name: 'Bespoke Custom',
       title: 'Made to Order',
       description: 'Personalized designs with master craftspeople',
-      productCount: 'Custom',
+      productCount: 0,
       icon: '✨',
       color: 'from-pink-100 to-pink-200',
       accentColor: 'text-pink-700',
