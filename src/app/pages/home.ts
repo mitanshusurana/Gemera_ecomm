@@ -132,6 +132,7 @@ interface Collection {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <a *ngFor="let collection of collections"
              routerLink="/products"
+             [queryParams]="{ category: collection.name }"
              class="group relative overflow-hidden rounded-2xl h-96 cursor-pointer card-hover block">
 
             <!-- Background Gradient -->
