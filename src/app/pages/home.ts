@@ -15,7 +15,7 @@ interface Product {
   badge?: string;
   description: string;
   image: string;
-  stock?: number;
+  stock: number;
   specifications?: {
     carat?: number;
     clarity?: string;
