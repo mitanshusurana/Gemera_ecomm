@@ -15,6 +15,15 @@ interface Product {
   badge?: string;
   description: string;
   image: string;
+  stock?: number;
+  specifications?: {
+    carat?: number;
+    clarity?: string;
+    color?: string;
+    cut?: string;
+    metal?: string;
+    weight?: number;
+  };
 }
 
 interface Collection {
