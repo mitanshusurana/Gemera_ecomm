@@ -158,7 +158,7 @@ interface Collection {
             </p>
           </div>
           <div class="text-center">
-            <div class="text-4xl mb-3">👨‍🎨</div>
+            <div class="text-4xl mb-3">👨���🎨</div>
             <h3 class="font-bold text-gray-900 mb-2">Master Artisans</h3>
             <p class="text-gray-600 text-sm">
               Multi-generational craftspeople creating museum-quality pieces
@@ -275,9 +275,10 @@ interface Collection {
 
         <!-- Featured Items Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div
+          <a
             *ngFor="let product of featuredProducts"
-            class="card group overflow-hidden hover:shadow-luxury-lg transition-all duration-300"
+            [routerLink]="['/products', product.id]"
+            class="card group overflow-hidden hover:shadow-luxury-lg transition-all duration-300 block cursor-pointer"
           >
             <!-- Image Container -->
             <div
