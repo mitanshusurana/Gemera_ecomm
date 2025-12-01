@@ -672,7 +672,7 @@ export class HomeComponent {
       description: "Museum-grade, 5.2 carats, vivid green",
       image: "emerald",
       stock: 2,
-      specifications: { carat: 5.2, clarity: "VS2", color: "Vivid Green", origin: "Colombia", weight: 2.1 },
+      specifications: { carat: 5.2, clarity: "VS2", color: "Vivid Green", weight: 2.1 },
     },
     {
       id: "3",
@@ -698,7 +698,7 @@ export class HomeComponent {
       description: "3.8 carats, deep blue, IGI certified",
       image: "sapphire",
       stock: 4,
-      specifications: { carat: 3.8, clarity: "VS1", color: "Deep Blue", origin: "Kashmir", weight: 1.9 },
+      specifications: { carat: 3.8, clarity: "VS1", color: "Deep Blue", weight: 1.9 },
     },
     {
       id: "5",
@@ -735,7 +735,7 @@ export class HomeComponent {
       description: "Pigeon blood red, 2.1 carats, unheated",
       image: "ruby",
       stock: 1,
-      specifications: { carat: 2.1, clarity: "VS2", color: "Pigeon Blood Red", origin: "Burma", weight: 1.05 },
+      specifications: { carat: 2.1, clarity: "VS2", color: "Pigeon Blood Red", weight: 1.05 },
     },
     {
       id: "8",
