@@ -543,7 +543,7 @@ Response (200 OK):
 
 ## User/Profile APIs
 
-### 20. Get Current User
+### 22. Get Current User
 ```
 GET /users/me
 Authorization: Bearer {token}
