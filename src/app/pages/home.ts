@@ -301,6 +301,7 @@ interface Collection {
 
               <!-- Wishlist -->
               <button
+                (click)="$event.preventDefault(); $event.stopPropagation()"
                 class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all shadow-md"
               >
                 <svg
