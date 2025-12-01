@@ -630,7 +630,7 @@ export class HomeComponent {
       title: "Gold & Platinum",
       description: "24K gold, platinum & silver collections",
       productCount: 94,
-      icon: "🏆",
+      icon: "����",
       color: "from-yellow-100 to-yellow-200",
       accentColor: "text-yellow-700",
     },
@@ -658,6 +658,8 @@ export class HomeComponent {
       badge: "BESTSELLER",
       description: "VS1 clarity, G color, excellent cut - GIA certified",
       image: "diamond-ring",
+      stock: 3,
+      specifications: { carat: 1.5, clarity: "VS1", color: "G", cut: "Excellent", metal: "18K White Gold", weight: 5.5 },
     },
     {
       id: "2",
@@ -669,6 +671,8 @@ export class HomeComponent {
       badge: "RARE",
       description: "Museum-grade, 5.2 carats, vivid green",
       image: "emerald",
+      stock: 2,
+      specifications: { carat: 5.2, clarity: "VS2", color: "Vivid Green", origin: "Colombia", weight: 2.1 },
     },
     {
       id: "3",
@@ -680,6 +684,8 @@ export class HomeComponent {
       badge: "NEW",
       description: "Crystal quartz, artisan-carved, 6 inches",
       image: "ganesha",
+      stock: 8,
+      specifications: { weight: 1.2 },
     },
     {
       id: "4",
@@ -691,6 +697,8 @@ export class HomeComponent {
       reviews: 203,
       description: "3.8 carats, deep blue, IGI certified",
       image: "sapphire",
+      stock: 4,
+      specifications: { carat: 3.8, clarity: "VS1", color: "Deep Blue", origin: "Kashmir", weight: 1.9 },
     },
     {
       id: "5",
@@ -701,6 +709,8 @@ export class HomeComponent {
       reviews: 78,
       description: "Pink-orange Ceylon sapphire, 18K gold",
       image: "padparadsha",
+      stock: 6,
+      specifications: { carat: 2.5, color: "Padparadsha", metal: "18K Gold", weight: 4.8 },
     },
     {
       id: "6",
@@ -711,6 +721,8 @@ export class HomeComponent {
       reviews: 124,
       description: "Clear quartz, hand-polished, meditation quality",
       image: "shiva",
+      stock: 12,
+      specifications: { weight: 0.8 },
     },
     {
       id: "7",
@@ -722,6 +734,8 @@ export class HomeComponent {
       badge: "EXCLUSIVE",
       description: "Pigeon blood red, 2.1 carats, unheated",
       image: "ruby",
+      stock: 1,
+      specifications: { carat: 2.1, clarity: "VS2", color: "Pigeon Blood Red", origin: "Burma", weight: 1.05 },
     },
     {
       id: "8",
@@ -732,6 +746,8 @@ export class HomeComponent {
       reviews: 167,
       description: "10 grams, hallmarked, traditional design",
       image: "bangle",
+      stock: 5,
+      specifications: { metal: "24K Pure Gold", weight: 10 },
     },
   ];
 
