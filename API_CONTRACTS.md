@@ -443,9 +443,9 @@ Response (200 OK):
 
 ## Payment APIs
 
-### 18. Initialize Payment
+### 18. Initialize Payment (Stripe)
 ```
-POST /payments/initialize
+POST /payments/stripe/initialize
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -454,27 +454,28 @@ Request Body:
   "orderId": "uuid",
   "amount": 50000,
   "currency": "USD",
-  "paymentMethod": "CREDIT_CARD"
+  "paymentMethod": "STRIPE"
 }
 
 Response (200 OK):
 {
   "paymentId": "uuid",
-  "clientSecret": "client_secret_here",
-  "status": "PENDING"
+  "clientSecret": "pi_1234567890_secret_XXXXX",
+  "status": "PENDING",
+  "paymentGateway": "STRIPE"
 }
 ```
 
-### 19. Verify Payment
+### 19. Verify Payment (Stripe)
 ```
-POST /payments/verify
+POST /payments/stripe/verify
 Authorization: Bearer {token}
 Content-Type: application/json
 
 Request Body:
 {
   "paymentId": "uuid",
-  "paymentToken": "token_from_payment_gateway"
+  "paymentIntentId": "pi_1234567890"
 }
 
 Response (200 OK):
@@ -483,7 +484,60 @@ Response (200 OK):
   "orderId": "uuid",
   "status": "COMPLETED",
   "amount": 50000,
-  "transactionId": "TXN123456"
+  "transactionId": "pi_1234567890",
+  "paymentMethod": "STRIPE"
+}
+```
+
+### 20. Initialize Payment (Razorpay)
+```
+POST /payments/razorpay/initialize
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request Body:
+{
+  "orderId": "uuid",
+  "amount": 5000000,
+  "currency": "INR",
+  "paymentMethod": "RAZORPAY",
+  "customerEmail": "user@example.com",
+  "customerPhone": "+1234567890"
+}
+
+Response (200 OK):
+{
+  "paymentId": "uuid",
+  "orderId": "order_XXXXX",
+  "amount": 5000000,
+  "currency": "INR",
+  "status": "PENDING",
+  "paymentGateway": "RAZORPAY"
+}
+```
+
+### 21. Verify Payment (Razorpay)
+```
+POST /payments/razorpay/verify
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request Body:
+{
+  "paymentId": "uuid",
+  "razorpayPaymentId": "pay_XXXXX",
+  "razorpayOrderId": "order_XXXXX",
+  "razorpaySignature": "signature_XXXXX"
+}
+
+Response (200 OK):
+{
+  "id": "uuid",
+  "orderId": "uuid",
+  "status": "COMPLETED",
+  "amount": 5000000,
+  "transactionId": "pay_XXXXX",
+  "paymentMethod": "RAZORPAY"
 }
 ```
 
