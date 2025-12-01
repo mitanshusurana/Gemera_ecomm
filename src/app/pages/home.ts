@@ -363,8 +363,31 @@ interface Collection {
                 >
               </div>
 
-              <!-- Add to Cart -->
-              <button (click)="$event.preventDefault(); $event.stopPropagation()" class="w-full btn-primary">Add to Cart</button>
+              <!-- Stock Urgency -->
+              <div
+                *ngIf="product.stock && product.stock <= 5"
+                class="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg"
+              >
+                <p class="text-xs font-semibold text-red-700">
+                  ⚠️ Only {{ product.stock }} left in stock
+                </p>
+              </div>
+
+              <!-- Add to Cart & Quick View -->
+              <div class="flex gap-2">
+                <button
+                  (click)="$event.preventDefault(); $event.stopPropagation()"
+                  class="flex-1 btn-primary"
+                >
+                  Add to Cart
+                </button>
+                <button
+                  (click)="$event.preventDefault(); $event.stopPropagation(); openQuickView(product)"
+                  class="flex-1 px-4 py-3 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-semibold rounded-lg transition-all"
+                >
+                  Quick View
+                </button>
+              </div>
             </div>
           </a>
         </div>
