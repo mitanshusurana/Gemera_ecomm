@@ -361,7 +361,7 @@ interface Collection {
               </div>
 
               <!-- Add to Cart -->
-              <button class="w-full btn-primary">Add to Cart</button>
+              <button (click)="$event.preventDefault(); $event.stopPropagation()" class="w-full btn-primary">Add to Cart</button>
             </div>
           </a>
         </div>
