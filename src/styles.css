@@ -134,7 +134,68 @@ p {
 
 /* Loading States */
 .skeleton {
-  @apply animate-pulse bg-gradient-to-r from-diamond-200 via-white to-diamond-200 bg-[length:1000px_100%] rounded;
+  @apply bg-gradient-to-r from-diamond-200 via-white to-diamond-200 bg-[length:1000px_100%] rounded;
+  background-size: 1000px 100%;
+  animation: loading 2s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 1000px 0;
+  }
+  100% {
+    background-position: -1000px 0;
+  }
+}
+
+.skeleton-text {
+  @apply skeleton h-4 rounded mb-2;
+}
+
+.skeleton-text-lg {
+  @apply skeleton h-6 rounded mb-3;
+}
+
+.skeleton-circle {
+  @apply skeleton rounded-full;
+}
+
+.skeleton-product {
+  @apply skeleton h-72 w-full rounded-lg mb-4;
+}
+
+.skeleton-card {
+  @apply card p-6;
+}
+
+.skeleton-card .skeleton {
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-card .skeleton:last-child {
+  margin-bottom: 0;
+}
+
+/* Shimmer Effect */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.3) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Scrollbar Styling */
