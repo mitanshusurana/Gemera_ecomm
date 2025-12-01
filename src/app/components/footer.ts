@@ -261,6 +261,9 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
         </div>
       </div>
     </footer>
+
+    <!-- WhatsApp Button -->
+    <app-whatsapp-button></app-whatsapp-button>
   `,
 })
 export class FooterComponent {}
