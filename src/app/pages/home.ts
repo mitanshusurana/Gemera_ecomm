@@ -630,7 +630,7 @@ export class HomeComponent {
       title: "Gold & Platinum",
       description: "24K gold, platinum & silver collections",
       productCount: 94,
-      icon: "����",
+      icon: "🏆",
       color: "from-yellow-100 to-yellow-200",
       accentColor: "text-yellow-700",
     },
@@ -768,5 +768,27 @@ export class HomeComponent {
       currency: "USD",
       minimumFractionDigits: 0,
     }).format(price);
+  }
+
+  openQuickView(product: Product): void {
+    this.selectedProduct.set(product);
+    this.quickViewOpen.set(true);
+  }
+
+  closeQuickView(): void {
+    this.quickViewOpen.set(false);
+    this.selectedProduct.set(null);
+  }
+
+  handleAddToCart(event: { productId: string; quantity: number }): void {
+    console.log('Add to cart from quick view:', event);
+    // In real app, call CartService to add item
+    alert(`Added ${event.quantity} item(s) to cart`);
+    this.closeQuickView();
+  }
+
+  handleViewDetails(productId: string): void {
+    console.log('View details for product:', productId);
+    // In real app, navigate to product detail page
   }
 }
