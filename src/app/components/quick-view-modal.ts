@@ -1,6 +1,5 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { trigger, transition, style, animate } from '@angular/animations';
 
 interface QuickViewProduct {
   id: string;
@@ -28,38 +27,16 @@ interface QuickViewProduct {
   selector: 'app-quick-view-modal',
   standalone: true,
   imports: [CommonModule],
-  animations: [
-    trigger('modalAnimation', [
-      transition(':enter', [
-        style({ opacity: 0, transform: 'scale(0.95)' }),
-        animate('200ms ease-out', style({ opacity: 1, transform: 'scale(1)' })),
-      ]),
-      transition(':leave', [
-        animate('200ms ease-in', style({ opacity: 0, transform: 'scale(0.95)' })),
-      ]),
-    ]),
-    trigger('backdropAnimation', [
-      transition(':enter', [
-        style({ opacity: 0 }),
-        animate('200ms ease-out', style({ opacity: 1 })),
-      ]),
-      transition(':leave', [
-        animate('200ms ease-in', style({ opacity: 0 })),
-      ]),
-    ]),
-  ],
   template: `
     <div
       *ngIf="isOpen"
-      @backdropAnimation
-      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
       (click)="onBackdropClick()"
     ></div>
 
     <div
       *ngIf="isOpen"
-      @modalAnimation
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200"
     >
       <div
         class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
@@ -69,7 +46,7 @@ interface QuickViewProduct {
         <div class="flex justify-between items-center p-6 border-b border-diamond-200">
           <h2 class="text-2xl font-display font-bold text-diamond-900">Quick View</h2>
           <button
-            (click)="close()"
+            (click)="close.emit()"
             class="text-gray-500 hover:text-gray-700 transition-colors"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,7 +68,7 @@ interface QuickViewProduct {
               <div
                 class="bg-gradient-to-br from-gold-100 to-diamond-100 rounded-xl overflow-hidden h-80 flex items-center justify-center"
               >
-                <span class="text-6xl">{{ getProductEmoji(product?.category) }}</span>
+                <span class="text-6xl">{{ product ? getProductEmoji(product.category) : '✦' }}</span>
               </div>
 
               <!-- Stock Status -->
@@ -105,10 +82,10 @@ interface QuickViewProduct {
               <!-- Category & Badge -->
               <div class="flex items-start justify-between mb-3">
                 <span class="text-xs text-gold-600 font-bold uppercase tracking-widest">
-                  {{ product?.category }}
+                  {{ product?.category || 'Product' }}
                 </span>
                 <span
-                  *ngIf="product?.badge"
+                  *ngIf="product && product.badge"
                   class="px-3 py-1 bg-gold-500 text-white text-xs font-bold rounded-full"
                 >
                   {{ product.badge }}
@@ -116,33 +93,33 @@ interface QuickViewProduct {
               </div>
 
               <!-- Name -->
-              <h3 class="text-2xl font-semibold text-gray-900 mb-3">{{ product?.name }}</h3>
+              <h3 class="text-2xl font-semibold text-gray-900 mb-3">{{ product?.name || 'Product' }}</h3>
 
               <!-- Rating -->
               <div class="flex items-center gap-2 mb-4">
                 <div class="flex gap-0.5">
                   <span *ngFor="let i of [1, 2, 3, 4, 5]" class="text-gold-500">★</span>
                 </div>
-                <span class="text-sm text-gray-600">({{ product?.reviews }} reviews)</span>
+                <span class="text-sm text-gray-600">({{ product?.reviews || 0 }} reviews)</span>
               </div>
 
               <!-- Price -->
               <div class="mb-6 pb-6 border-b border-diamond-200">
                 <div class="flex items-baseline gap-3">
                   <span class="text-3xl font-bold text-diamond-900">
-                    {{ formatPrice(product?.price) }}
+                    {{ formatPrice(product?.price || 0) }}
                   </span>
-                  <span *ngIf="product?.originalPrice" class="text-lg text-gray-500 line-through">
+                  <span *ngIf="product && product.originalPrice" class="text-lg text-gray-500 line-through">
                     {{ formatPrice(product.originalPrice) }}
                   </span>
                 </div>
               </div>
 
               <!-- Description -->
-              <p class="text-gray-700 text-sm mb-6">{{ product?.description }}</p>
+              <p class="text-gray-700 text-sm mb-6">{{ product?.description || 'No description available' }}</p>
 
               <!-- Specifications -->
-              <div *ngIf="product?.specifications" class="mb-6">
+              <div *ngIf="product && product.specifications" class="mb-6">
                 <h4 class="font-semibold text-gray-900 mb-3">Key Specs</h4>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                   <div *ngIf="product.specifications.carat">
@@ -219,6 +196,7 @@ export class QuickViewModalComponent {
         productId: this.product.id,
         quantity: 1,
       });
+      this.close.emit();
     }
   }
 
@@ -254,7 +232,7 @@ export class QuickViewModalComponent {
     return '✗ Out of Stock';
   }
 
-  formatPrice(price?: number): string {
+  formatPrice(price: number): string {
     if (!price) return '$0';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
