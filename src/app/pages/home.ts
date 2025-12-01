@@ -1,6 +1,8 @@
-import { Component } from "@angular/core";
+import { Component, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
+import { QuickViewModalComponent } from "../components/quick-view-modal";
+import { WhatsappButtonComponent } from "../components/whatsapp-button";
 
 interface Product {
   id: string;
