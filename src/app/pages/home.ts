@@ -31,7 +31,7 @@ interface Collection {
 @Component({
   selector: "app-home",
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, QuickViewModalComponent, WhatsappButtonComponent],
   template: `
     <!-- Premium Hero Section -->
     <section class="relative w-full overflow-hidden">
