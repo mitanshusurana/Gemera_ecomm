@@ -557,9 +557,23 @@ interface Collection {
         </a>
       </div>
     </section>
+
+    <!-- Quick View Modal -->
+    <app-quick-view-modal
+      [isOpen]="quickViewOpen()"
+      [product]="selectedProduct()"
+      (close)="closeQuickView()"
+      (addToCart)="handleAddToCart($event)"
+      (viewDetails)="handleViewDetails($event)"
+    ></app-quick-view-modal>
+
+    <!-- WhatsApp Button -->
+    <app-whatsapp-button></app-whatsapp-button>
   `,
 })
 export class HomeComponent {
+  quickViewOpen = signal(false);
+  selectedProduct = signal<Product | null>(null);
   collections: Collection[] = [
     {
       id: "1",
