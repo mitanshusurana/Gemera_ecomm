@@ -5,7 +5,7 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
 @Component({
   selector: "app-footer",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, WhatsappButtonComponent],
   template: `
     <footer class="bg-gradient-luxury text-white">
       <!-- Main Footer -->
