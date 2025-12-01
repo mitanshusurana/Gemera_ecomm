@@ -574,7 +574,7 @@ Response (200 OK):
 }
 ```
 
-### 21. Update User Profile
+### 23. Update User Profile
 ```
 PUT /users/me
 Authorization: Bearer {token}
@@ -597,7 +597,7 @@ Response (200 OK):
 }
 ```
 
-### 22. Get Wishlist
+### 24. Get Wishlist
 ```
 GET /users/wishlist
 Authorization: Bearer {token}
@@ -620,7 +620,7 @@ Response (200 OK):
 }
 ```
 
-### 23. Add to Wishlist
+### 25. Add to Wishlist
 ```
 POST /users/wishlist
 Authorization: Bearer {token}
@@ -638,7 +638,7 @@ Response (200 OK):
 }
 ```
 
-### 24. Remove from Wishlist
+### 26. Remove from Wishlist
 ```
 DELETE /users/wishlist/{productId}
 Authorization: Bearer {token}
@@ -651,7 +651,7 @@ Response (200 OK):
 
 ## Review & Rating APIs
 
-### 25. Get Product Reviews
+### 27. Get Product Reviews
 ```
 GET /products/{productId}/reviews?page=0&size=10
 
@@ -679,7 +679,7 @@ Response (200 OK):
 }
 ```
 
-### 26. Create Review
+### 28. Create Review
 ```
 POST /products/{productId}/reviews
 Authorization: Bearer {token}
@@ -707,7 +707,7 @@ Response (201 Created):
 
 ## Admin/Analytics APIs (Optional)
 
-### 27. Get Dashboard Analytics
+### 29. Get Dashboard Analytics
 ```
 GET /admin/analytics
 Authorization: Bearer {adminToken}
