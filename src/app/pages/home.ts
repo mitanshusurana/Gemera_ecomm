@@ -158,7 +158,7 @@ interface Collection {
             </p>
           </div>
           <div class="text-center">
-            <div class="text-4xl mb-3">👨���🎨</div>
+            <div class="text-4xl mb-3">👨‍🎨</div>
             <h3 class="font-bold text-gray-900 mb-2">Master Artisans</h3>
             <p class="text-gray-600 text-sm">
               Multi-generational craftspeople creating museum-quality pieces
@@ -363,7 +363,7 @@ interface Collection {
               <!-- Add to Cart -->
               <button class="w-full btn-primary">Add to Cart</button>
             </div>
-          </div>
+          </a>
         </div>
 
         <!-- View All CTA -->
