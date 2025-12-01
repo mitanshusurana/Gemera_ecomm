@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter } from "@angular/core";
+import { CommonModule } from "@angular/common";
 
 interface QuickViewProduct {
   id: string;
@@ -24,7 +24,7 @@ interface QuickViewProduct {
 }
 
 @Component({
-  selector: 'app-quick-view-modal',
+  selector: "app-quick-view-modal",
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -43,13 +43,22 @@ interface QuickViewProduct {
         (click)="$event.stopPropagation()"
       >
         <!-- Close Button -->
-        <div class="flex justify-between items-center p-6 border-b border-diamond-200">
-          <h2 class="text-2xl font-display font-bold text-diamond-900">Quick View</h2>
+        <div
+          class="flex justify-between items-center p-6 border-b border-diamond-200"
+        >
+          <h2 class="text-2xl font-display font-bold text-diamond-900">
+            Quick View
+          </h2>
           <button
             (click)="close.emit()"
             class="text-gray-500 hover:text-gray-700 transition-colors"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -68,7 +77,9 @@ interface QuickViewProduct {
               <div
                 class="bg-gradient-to-br from-gold-100 to-diamond-100 rounded-xl overflow-hidden h-80 flex items-center justify-center"
               >
-                <span class="text-6xl">{{ product ? getProductEmoji(product.category) : '✦' }}</span>
+                <span class="text-6xl">{{
+                  product ? getProductEmoji(product.category) : "✦"
+                }}</span>
               </div>
 
               <!-- Stock Status -->
@@ -81,8 +92,10 @@ interface QuickViewProduct {
             <div>
               <!-- Category & Badge -->
               <div class="flex items-start justify-between mb-3">
-                <span class="text-xs text-gold-600 font-bold uppercase tracking-widest">
-                  {{ product?.category || 'Product' }}
+                <span
+                  class="text-xs text-gold-600 font-bold uppercase tracking-widest"
+                >
+                  {{ product?.category || "Product" }}
                 </span>
                 <span
                   *ngIf="product && product.badge"
@@ -93,14 +106,20 @@ interface QuickViewProduct {
               </div>
 
               <!-- Name -->
-              <h3 class="text-2xl font-semibold text-gray-900 mb-3">{{ product?.name || 'Product' }}</h3>
+              <h3 class="text-2xl font-semibold text-gray-900 mb-3">
+                {{ product?.name || "Product" }}
+              </h3>
 
               <!-- Rating -->
               <div class="flex items-center gap-2 mb-4">
                 <div class="flex gap-0.5">
-                  <span *ngFor="let i of [1, 2, 3, 4, 5]" class="text-gold-500">★</span>
+                  <span *ngFor="let i of [1, 2, 3, 4, 5]" class="text-gold-500"
+                    >★</span
+                  >
                 </div>
-                <span class="text-sm text-gray-600">({{ product?.reviews || 0 }} reviews)</span>
+                <span class="text-sm text-gray-600"
+                  >({{ product?.reviews || 0 }} reviews)</span
+                >
               </div>
 
               <!-- Price -->
@@ -109,52 +128,89 @@ interface QuickViewProduct {
                   <span class="text-3xl font-bold text-diamond-900">
                     {{ formatPrice(product?.price || 0) }}
                   </span>
-                  <span *ngIf="product && product.originalPrice" class="text-lg text-gray-500 line-through">
+                  <span
+                    *ngIf="product && product.originalPrice"
+                    class="text-lg text-gray-500 line-through"
+                  >
                     {{ formatPrice(product.originalPrice) }}
                   </span>
                 </div>
               </div>
 
               <!-- Description -->
-              <p class="text-gray-700 text-sm mb-6">{{ product?.description || 'No description available' }}</p>
+              <p class="text-gray-700 text-sm mb-6">
+                {{ product?.description || "No description available" }}
+              </p>
 
               <!-- Specifications -->
               <div *ngIf="product && product.specifications" class="mb-6">
                 <h4 class="font-semibold text-gray-900 mb-3">Key Specs</h4>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                   <div *ngIf="product.specifications.carat">
-                    <p class="text-gray-600">Carat: <span class="font-semibold">{{ product.specifications.carat }}</span></p>
+                    <p class="text-gray-600">
+                      Carat:
+                      <span class="font-semibold">{{
+                        product.specifications.carat
+                      }}</span>
+                    </p>
                   </div>
                   <div *ngIf="product.specifications.clarity">
-                    <p class="text-gray-600">Clarity: <span class="font-semibold">{{ product.specifications.clarity }}</span></p>
+                    <p class="text-gray-600">
+                      Clarity:
+                      <span class="font-semibold">{{
+                        product.specifications.clarity
+                      }}</span>
+                    </p>
                   </div>
                   <div *ngIf="product.specifications.color">
-                    <p class="text-gray-600">Color: <span class="font-semibold">{{ product.specifications.color }}</span></p>
+                    <p class="text-gray-600">
+                      Color:
+                      <span class="font-semibold">{{
+                        product.specifications.color
+                      }}</span>
+                    </p>
                   </div>
                   <div *ngIf="product.specifications.cut">
-                    <p class="text-gray-600">Cut: <span class="font-semibold">{{ product.specifications.cut }}</span></p>
+                    <p class="text-gray-600">
+                      Cut:
+                      <span class="font-semibold">{{
+                        product.specifications.cut
+                      }}</span>
+                    </p>
                   </div>
                   <div *ngIf="product.specifications.metal">
-                    <p class="text-gray-600">Metal: <span class="font-semibold">{{ product.specifications.metal }}</span></p>
+                    <p class="text-gray-600">
+                      Metal:
+                      <span class="font-semibold">{{
+                        product.specifications.metal
+                      }}</span>
+                    </p>
                   </div>
                   <div *ngIf="product.specifications.weight">
-                    <p class="text-gray-600">Weight: <span class="font-semibold">{{ product.specifications.weight }}g</span></p>
+                    <p class="text-gray-600">
+                      Weight:
+                      <span class="font-semibold"
+                        >{{ product.specifications.weight }}g</span
+                      >
+                    </p>
                   </div>
                 </div>
               </div>
 
               <!-- Actions -->
               <div class="flex gap-3">
-                <button
-                  (click)="onAddToCart()"
-                  class="flex-1 btn-primary py-3"
-                >
+                <button (click)="onAddToCart()" class="flex-1 btn-primary py-3">
                   Add to Cart
                 </button>
                 <button
                   class="px-4 py-3 border-2 border-diamond-300 rounded-lg hover:border-gold-500 hover:bg-gold-50 transition-all"
                 >
-                  <svg class="w-6 h-6 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    class="w-6 h-6 text-diamond-700"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
@@ -183,7 +239,10 @@ export class QuickViewModalComponent {
   @Input() isOpen = false;
   @Input() product: QuickViewProduct | null = null;
   @Output() close = new EventEmitter<void>();
-  @Output() addToCart = new EventEmitter<{ productId: string; quantity: number }>();
+  @Output() addToCart = new EventEmitter<{
+    productId: string;
+    quantity: number;
+  }>();
   @Output() viewDetails = new EventEmitter<string>();
 
   onBackdropClick(): void {
@@ -209,34 +268,36 @@ export class QuickViewModalComponent {
 
   getProductEmoji(category?: string): string {
     const emojiMap: { [key: string]: string } = {
-      'Engagement Ring': '💍',
-      'Loose Gemstone': '💎',
-      'Spiritual Idol': '🕉️',
-      'Gemstone Ring': '👑',
-      'Precious Metal': '🏆',
+      "Engagement Ring": "💍",
+      "Loose Gemstone": "💎",
+      "Spiritual Idol": "🕉️",
+      "Gemstone Ring": "👑",
+      "Precious Metal": "🏆",
     };
-    return emojiMap[category || ''] || '✦';
+    return emojiMap[category || ""] || "✦";
   }
 
   getStockClass(): string {
-    if (!this.product) return 'bg-gray-100';
-    if (this.product.stock > 10) return 'bg-green-100 text-green-800';
-    if (this.product.stock > 0) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    if (!this.product) return "bg-gray-100";
+    if (this.product.stock > 10) return "bg-green-100 text-green-800";
+    if (this.product.stock > 0) return "bg-yellow-100 text-yellow-800";
+    return "bg-red-100 text-red-800";
   }
 
   getStockMessage(): string {
-    if (!this.product) return 'Loading...';
-    if (this.product.stock > 10) return `✓ In Stock (${this.product.stock} available)`;
-    if (this.product.stock > 0) return `⚠ Only ${this.product.stock} left in stock`;
-    return '✗ Out of Stock';
+    if (!this.product) return "Loading...";
+    if (this.product.stock > 10)
+      return `✓ In Stock (${this.product.stock} available)`;
+    if (this.product.stock > 0)
+      return `⚠ Only ${this.product.stock} left in stock`;
+    return "✗ Out of Stock";
   }
 
   formatPrice(price: number): string {
-    if (!price) return '$0';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    if (!price) return "$0";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
     }).format(price);
   }

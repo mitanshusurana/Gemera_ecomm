@@ -40,7 +40,12 @@ interface Collection {
 @Component({
   selector: "app-home",
   standalone: true,
-  imports: [CommonModule, RouterLink, QuickViewModalComponent, WhatsappButtonComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    QuickViewModalComponent,
+    WhatsappButtonComponent,
+  ],
   template: `
     <!-- Premium Hero Section -->
     <section class="relative w-full overflow-hidden">
@@ -391,7 +396,11 @@ interface Collection {
                   Add to Cart
                 </button>
                 <button
-                  (click)="$event.preventDefault(); $event.stopPropagation(); openQuickView(product)"
+                  (click)="
+                    $event.preventDefault();
+                    $event.stopPropagation();
+                    openQuickView(product)
+                  "
                   class="flex-1 px-4 py-3 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-semibold rounded-lg transition-all"
                 >
                   Quick View
@@ -659,7 +668,14 @@ export class HomeComponent {
       description: "VS1 clarity, G color, excellent cut - GIA certified",
       image: "diamond-ring",
       stock: 3,
-      specifications: { carat: 1.5, clarity: "VS1", color: "G", cut: "Excellent", metal: "18K White Gold", weight: 5.5 },
+      specifications: {
+        carat: 1.5,
+        clarity: "VS1",
+        color: "G",
+        cut: "Excellent",
+        metal: "18K White Gold",
+        weight: 5.5,
+      },
     },
     {
       id: "2",
@@ -672,7 +688,12 @@ export class HomeComponent {
       description: "Museum-grade, 5.2 carats, vivid green",
       image: "emerald",
       stock: 2,
-      specifications: { carat: 5.2, clarity: "VS2", color: "Vivid Green", weight: 2.1 },
+      specifications: {
+        carat: 5.2,
+        clarity: "VS2",
+        color: "Vivid Green",
+        weight: 2.1,
+      },
     },
     {
       id: "3",
@@ -698,7 +719,12 @@ export class HomeComponent {
       description: "3.8 carats, deep blue, IGI certified",
       image: "sapphire",
       stock: 4,
-      specifications: { carat: 3.8, clarity: "VS1", color: "Deep Blue", weight: 1.9 },
+      specifications: {
+        carat: 3.8,
+        clarity: "VS1",
+        color: "Deep Blue",
+        weight: 1.9,
+      },
     },
     {
       id: "5",
@@ -710,7 +736,12 @@ export class HomeComponent {
       description: "Pink-orange Ceylon sapphire, 18K gold",
       image: "padparadsha",
       stock: 6,
-      specifications: { carat: 2.5, color: "Padparadsha", metal: "18K Gold", weight: 4.8 },
+      specifications: {
+        carat: 2.5,
+        color: "Padparadsha",
+        metal: "18K Gold",
+        weight: 4.8,
+      },
     },
     {
       id: "6",
@@ -735,7 +766,12 @@ export class HomeComponent {
       description: "Pigeon blood red, 2.1 carats, unheated",
       image: "ruby",
       stock: 1,
-      specifications: { carat: 2.1, clarity: "VS2", color: "Pigeon Blood Red", weight: 1.05 },
+      specifications: {
+        carat: 2.1,
+        clarity: "VS2",
+        color: "Pigeon Blood Red",
+        weight: 1.05,
+      },
     },
     {
       id: "8",
@@ -781,14 +817,14 @@ export class HomeComponent {
   }
 
   handleAddToCart(event: { productId: string; quantity: number }): void {
-    console.log('Add to cart from quick view:', event);
+    console.log("Add to cart from quick view:", event);
     // In real app, call CartService to add item
     alert(`Added ${event.quantity} item(s) to cart`);
     this.closeQuickView();
   }
 
   handleViewDetails(productId: string): void {
-    console.log('View details for product:', productId);
+    console.log("View details for product:", productId);
     // In real app, navigate to product detail page
   }
 }

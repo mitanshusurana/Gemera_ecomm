@@ -1,7 +1,7 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit, signal } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { ActivatedRoute, RouterLink } from "@angular/router";
+import { FormsModule } from "@angular/forms";
 
 interface PaymentDetails {
   amount: number;
@@ -11,7 +11,7 @@ interface PaymentDetails {
 }
 
 @Component({
-  selector: 'app-stripe-payment',
+  selector: "app-stripe-payment",
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
@@ -19,7 +19,10 @@ interface PaymentDetails {
       <!-- Header -->
       <div class="bg-white border-b border-diamond-200">
         <div class="container-luxury py-6">
-          <a routerLink="/" class="text-gold-600 hover:text-gold-700 font-semibold">
+          <a
+            routerLink="/"
+            class="text-gold-600 hover:text-gold-700 font-semibold"
+          >
             ← Back to Home
           </a>
         </div>
@@ -34,20 +37,33 @@ interface PaymentDetails {
               <h1 class="text-3xl font-display font-bold text-diamond-900 mb-2">
                 Stripe Payment
               </h1>
-              <p class="text-gray-600 mb-8">Complete your secure payment using Stripe</p>
+              <p class="text-gray-600 mb-8">
+                Complete your secure payment using Stripe
+              </p>
 
               <!-- Order Summary -->
-              <div class="bg-diamond-50 rounded-lg p-6 mb-8 border border-diamond-200">
+              <div
+                class="bg-diamond-50 rounded-lg p-6 mb-8 border border-diamond-200"
+              >
                 <h3 class="font-semibold text-gray-900 mb-4">Order Summary</h3>
                 <div class="space-y-3">
                   <div class="flex justify-between">
                     <span class="text-gray-700">Order ID:</span>
-                    <span class="font-mono text-gold-600">{{ orderSummary().orderId }}</span>
+                    <span class="font-mono text-gold-600">{{
+                      orderSummary().orderId
+                    }}</span>
                   </div>
-                  <div class="flex justify-between border-t border-diamond-200 pt-3">
+                  <div
+                    class="flex justify-between border-t border-diamond-200 pt-3"
+                  >
                     <span class="text-gray-700">Amount:</span>
                     <span class="text-xl font-bold text-diamond-900">
-                      {{ formatCurrency(orderSummary().amount, orderSummary().currency) }}
+                      {{
+                        formatCurrency(
+                          orderSummary().amount,
+                          orderSummary().currency
+                        )
+                      }}
                     </span>
                   </div>
                 </div>
@@ -117,7 +133,9 @@ interface PaymentDetails {
               </div>
 
               <!-- Security Notice -->
-              <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+              <div
+                class="bg-green-50 border border-green-200 rounded-lg p-4 mb-8"
+              >
                 <p class="text-sm text-green-800 flex items-center gap-2">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path
@@ -137,10 +155,23 @@ interface PaymentDetails {
                 class="w-full btn-primary text-lg py-4"
               >
                 <span *ngIf="!isProcessing()">
-                  Pay {{ formatCurrency(orderSummary().amount, orderSummary().currency) }}
+                  Pay
+                  {{
+                    formatCurrency(
+                      orderSummary().amount,
+                      orderSummary().currency
+                    )
+                  }}
                 </span>
-                <span *ngIf="isProcessing()" class="flex items-center justify-center gap-2">
-                  <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <span
+                  *ngIf="isProcessing()"
+                  class="flex items-center justify-center gap-2"
+                >
+                  <svg
+                    class="animate-spin h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
                     <circle
                       class="opacity-25"
                       cx="12"
@@ -161,7 +192,8 @@ interface PaymentDetails {
 
               <!-- Test Mode Notice -->
               <p class="text-center text-sm text-gray-500 mt-6">
-                🔧 This is a mock payment page. In production, Stripe Elements will be integrated.
+                🔧 This is a mock payment page. In production, Stripe Elements
+                will be integrated.
               </p>
             </div>
           </div>
@@ -196,9 +228,16 @@ interface PaymentDetails {
                   <span>Tax:</span>
                   <span>$4,500</span>
                 </div>
-                <div class="flex justify-between font-bold text-lg text-diamond-900 pt-3 border-t border-diamond-200">
+                <div
+                  class="flex justify-between font-bold text-lg text-diamond-900 pt-3 border-t border-diamond-200"
+                >
                   <span>Total:</span>
-                  <span>{{ formatCurrency(orderSummary().amount, orderSummary().currency) }}</span>
+                  <span>{{
+                    formatCurrency(
+                      orderSummary().amount,
+                      orderSummary().currency
+                    )
+                  }}</span>
                 </div>
               </div>
 
@@ -222,7 +261,12 @@ interface PaymentDetails {
       >
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md text-center">
           <div class="mb-4">
-            <svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              class="w-16 h-16 text-green-500 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -231,14 +275,14 @@ interface PaymentDetails {
               ></path>
             </svg>
           </div>
-          <h3 class="text-2xl font-bold text-diamond-900 mb-2">Payment Successful! 🎉</h3>
+          <h3 class="text-2xl font-bold text-diamond-900 mb-2">
+            Payment Successful! 🎉
+          </h3>
           <p class="text-gray-600 mb-6">
-            Your order has been confirmed. You will receive a confirmation email shortly.
+            Your order has been confirmed. You will receive a confirmation email
+            shortly.
           </p>
-          <a
-            routerLink="/account"
-            class="btn-primary inline-block"
-          >
+          <a routerLink="/account" class="btn-primary inline-block">
             View Order Details
           </a>
         </div>
@@ -249,30 +293,31 @@ interface PaymentDetails {
 export class StripePaymentComponent implements OnInit {
   orderSummary = signal({
     amount: 49500,
-    currency: 'USD',
-    orderId: 'ORD-2024-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-    paymentIntent: 'pi_' + Math.random().toString(36).substr(2, 20),
+    currency: "USD",
+    orderId:
+      "ORD-2024-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+    paymentIntent: "pi_" + Math.random().toString(36).substr(2, 20),
   });
 
   isProcessing = signal(false);
-  paymentStatus = signal<'idle' | 'success' | 'error'>('idle');
+  paymentStatus = signal<"idle" | "success" | "error">("idle");
 
   cardDetails = {
-    cardNumber: '',
-    expiry: '',
-    cvc: '',
-    name: '',
+    cardNumber: "",
+    expiry: "",
+    cvc: "",
+    name: "",
   };
 
   constructor(private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
-      if (params['amount']) {
+      if (params["amount"]) {
         const current = this.orderSummary();
         this.orderSummary.set({
           ...current,
-          amount: parseInt(params['amount'], 10),
+          amount: parseInt(params["amount"], 10),
         });
       }
     });
@@ -280,7 +325,7 @@ export class StripePaymentComponent implements OnInit {
 
   processPayment(): void {
     if (!this.validateCard()) {
-      alert('Please fill in all card details correctly');
+      alert("Please fill in all card details correctly");
       return;
     }
 
@@ -289,10 +334,10 @@ export class StripePaymentComponent implements OnInit {
     // Simulate API call
     setTimeout(() => {
       this.isProcessing.set(false);
-      this.paymentStatus.set('success');
+      this.paymentStatus.set("success");
 
       // Mock API call to backend
-      console.log('Payment processed:', {
+      console.log("Payment processed:", {
         orderId: this.orderSummary().orderId,
         amount: this.orderSummary().amount,
         paymentIntent: this.orderSummary().paymentIntent,
@@ -308,7 +353,7 @@ export class StripePaymentComponent implements OnInit {
 
   validateCard(): boolean {
     return (
-      this.cardDetails.cardNumber.replace(/\s/g, '').length === 16 &&
+      this.cardDetails.cardNumber.replace(/\s/g, "").length === 16 &&
       this.cardDetails.expiry.length === 5 &&
       this.cardDetails.cvc.length >= 3 &&
       this.cardDetails.name.trim().length > 0
@@ -316,8 +361,8 @@ export class StripePaymentComponent implements OnInit {
   }
 
   formatCurrency(amount: number, currency: string): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency,
     }).format(amount);
   }

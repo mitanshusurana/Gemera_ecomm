@@ -1,10 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit, signal } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { ActivatedRoute, RouterLink } from "@angular/router";
+import { FormsModule } from "@angular/forms";
 
 @Component({
-  selector: 'app-razorpay-payment',
+  selector: "app-razorpay-payment",
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
@@ -316,35 +316,36 @@ import { FormsModule } from '@angular/forms';
 export class RazorpayPaymentComponent implements OnInit {
   orderSummary = signal({
     amount: 4950000, // Amount in paise (INR 49,500)
-    currency: 'INR',
-    orderId: 'ORD-2024-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-    razorpayOrderId: 'order_' + Math.random().toString(36).substr(2, 20),
+    currency: "INR",
+    orderId:
+      "ORD-2024-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+    razorpayOrderId: "order_" + Math.random().toString(36).substr(2, 20),
   });
 
   isProcessing = signal(false);
-  paymentStatus = signal<'idle' | 'success' | 'error'>('idle');
-  paymentMethod = 'card';
+  paymentStatus = signal<"idle" | "success" | "error">("idle");
+  paymentMethod = "card";
 
   cardDetails = {
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
-    name: '',
+    cardNumber: "",
+    expiry: "",
+    cvv: "",
+    name: "",
   };
 
   upiDetails = {
-    upiId: '',
+    upiId: "",
   };
 
   constructor(private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
-      if (params['amount']) {
+      if (params["amount"]) {
         const current = this.orderSummary();
         this.orderSummary.set({
           ...current,
-          amount: parseInt(params['amount'], 10) * 100, // Convert to paise
+          amount: parseInt(params["amount"], 10) * 100, // Convert to paise
         });
       }
     });
@@ -352,7 +353,7 @@ export class RazorpayPaymentComponent implements OnInit {
 
   processPayment(): void {
     if (!this.validatePayment()) {
-      alert('Please fill in all required fields correctly');
+      alert("Please fill in all required fields correctly");
       return;
     }
 
@@ -361,10 +362,10 @@ export class RazorpayPaymentComponent implements OnInit {
     // Simulate API call
     setTimeout(() => {
       this.isProcessing.set(false);
-      this.paymentStatus.set('success');
+      this.paymentStatus.set("success");
 
       // Mock API call to backend
-      console.log('Payment processed via Razorpay:', {
+      console.log("Payment processed via Razorpay:", {
         orderId: this.orderSummary().orderId,
         razorpayOrderId: this.orderSummary().razorpayOrderId,
         amount: this.orderSummary().amount,
@@ -379,28 +380,28 @@ export class RazorpayPaymentComponent implements OnInit {
   }
 
   validatePayment(): boolean {
-    if (this.paymentMethod === 'card') {
+    if (this.paymentMethod === "card") {
       return (
-        this.cardDetails.cardNumber.replace(/\s/g, '').length === 16 &&
+        this.cardDetails.cardNumber.replace(/\s/g, "").length === 16 &&
         this.cardDetails.expiry.length === 5 &&
         this.cardDetails.cvv.length >= 3 &&
         this.cardDetails.name.trim().length > 0
       );
-    } else if (this.paymentMethod === 'upi') {
-      return this.upiDetails.upiId.includes('@');
+    } else if (this.paymentMethod === "upi") {
+      return this.upiDetails.upiId.includes("@");
     }
     return true;
   }
 
   formatCurrency(amount: number, currency: string): string {
-    if (currency === 'INR') {
-      return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
+    if (currency === "INR") {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
       }).format(amount / 100); // Convert from paise to rupees
     }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency,
     }).format(amount);
   }

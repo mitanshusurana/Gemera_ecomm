@@ -1,6 +1,7 @@
 # Gems & Jewellery Ecommerce - Backend API Contracts
 
 ## Base URL
+
 ```
 https://your-springboot-api.com/api/v1
 ```
@@ -8,6 +9,7 @@ https://your-springboot-api.com/api/v1
 ## Authentication APIs
 
 ### 1. User Registration
+
 ```
 POST /auth/register
 Content-Type: application/json
@@ -33,6 +35,7 @@ Response (201 Created):
 ```
 
 ### 2. User Login
+
 ```
 POST /auth/login
 Content-Type: application/json
@@ -58,6 +61,7 @@ Response (200 OK):
 ```
 
 ### 3. Refresh Token
+
 ```
 POST /auth/refresh
 Content-Type: application/json
@@ -76,6 +80,7 @@ Response (200 OK):
 ```
 
 ### 4. Logout
+
 ```
 POST /auth/logout
 Authorization: Bearer {token}
@@ -89,6 +94,7 @@ Response (200 OK):
 ## Product APIs
 
 ### 5. Get All Products (with Pagination & Filtering)
+
 ```
 GET /products?page=0&size=20&sortBy=createdAt&order=DESC&category=DIAMOND&priceMin=0&priceMax=100000&search=ring
 
@@ -127,6 +133,7 @@ Response (200 OK):
 ```
 
 ### 6. Get Product by ID
+
 ```
 GET /products/{productId}
 
@@ -171,6 +178,7 @@ Response (200 OK):
 ```
 
 ### 7. Get Categories
+
 ```
 GET /products/categories
 
@@ -210,6 +218,7 @@ Response (200 OK):
 ```
 
 ### 8. Search Products
+
 ```
 GET /products/search?query=diamond+ring&limit=10
 
@@ -229,6 +238,7 @@ Response (200 OK):
 ## Cart APIs
 
 ### 9. Get Cart
+
 ```
 GET /cart
 Authorization: Bearer {token}
@@ -258,6 +268,7 @@ Response (200 OK):
 ```
 
 ### 10. Add Item to Cart
+
 ```
 POST /cart/items
 Authorization: Bearer {token}
@@ -278,6 +289,7 @@ Response (200 OK):
 ```
 
 ### 11. Update Cart Item
+
 ```
 PUT /cart/items/{itemId}
 Authorization: Bearer {token}
@@ -297,6 +309,7 @@ Response (200 OK):
 ```
 
 ### 12. Remove Cart Item
+
 ```
 DELETE /cart/items/{itemId}
 Authorization: Bearer {token}
@@ -308,6 +321,7 @@ Response (200 OK):
 ```
 
 ### 13. Apply Coupon/Discount Code
+
 ```
 POST /cart/apply-coupon
 Authorization: Bearer {token}
@@ -333,6 +347,7 @@ Response (200 OK):
 ## Order APIs
 
 ### 14. Create Order (Checkout)
+
 ```
 POST /orders
 Authorization: Bearer {token}
@@ -379,6 +394,7 @@ Response (200 OK):
 ```
 
 ### 15. Get Order by ID
+
 ```
 GET /orders/{orderId}
 Authorization: Bearer {token}
@@ -397,6 +413,7 @@ Response (200 OK):
 ```
 
 ### 16. Get User Orders
+
 ```
 GET /orders?page=0&size=10
 Authorization: Bearer {token}
@@ -422,6 +439,7 @@ Response (200 OK):
 ```
 
 ### 17. Update Order Status (Admin)
+
 ```
 PUT /orders/{orderId}/status
 Authorization: Bearer {adminToken}
@@ -444,6 +462,7 @@ Response (200 OK):
 ## Payment APIs
 
 ### 18. Initialize Payment (Stripe)
+
 ```
 POST /payments/stripe/initialize
 Authorization: Bearer {token}
@@ -467,6 +486,7 @@ Response (200 OK):
 ```
 
 ### 19. Verify Payment (Stripe)
+
 ```
 POST /payments/stripe/verify
 Authorization: Bearer {token}
@@ -490,6 +510,7 @@ Response (200 OK):
 ```
 
 ### 20. Initialize Payment (Razorpay)
+
 ```
 POST /payments/razorpay/initialize
 Authorization: Bearer {token}
@@ -517,6 +538,7 @@ Response (200 OK):
 ```
 
 ### 21. Verify Payment (Razorpay)
+
 ```
 POST /payments/razorpay/verify
 Authorization: Bearer {token}
@@ -544,6 +566,7 @@ Response (200 OK):
 ## User/Profile APIs
 
 ### 22. Get Current User
+
 ```
 GET /users/me
 Authorization: Bearer {token}
@@ -575,6 +598,7 @@ Response (200 OK):
 ```
 
 ### 23. Update User Profile
+
 ```
 PUT /users/me
 Authorization: Bearer {token}
@@ -598,6 +622,7 @@ Response (200 OK):
 ```
 
 ### 24. Get Wishlist
+
 ```
 GET /users/wishlist
 Authorization: Bearer {token}
@@ -621,6 +646,7 @@ Response (200 OK):
 ```
 
 ### 25. Add to Wishlist
+
 ```
 POST /users/wishlist
 Authorization: Bearer {token}
@@ -639,6 +665,7 @@ Response (200 OK):
 ```
 
 ### 26. Remove from Wishlist
+
 ```
 DELETE /users/wishlist/{productId}
 Authorization: Bearer {token}
@@ -652,6 +679,7 @@ Response (200 OK):
 ## Review & Rating APIs
 
 ### 27. Get Product Reviews
+
 ```
 GET /products/{productId}/reviews?page=0&size=10
 
@@ -680,6 +708,7 @@ Response (200 OK):
 ```
 
 ### 28. Create Review
+
 ```
 POST /products/{productId}/reviews
 Authorization: Bearer {token}
@@ -708,6 +737,7 @@ Response (201 Created):
 ## Admin/Analytics APIs (Optional)
 
 ### 29. Get Dashboard Analytics
+
 ```
 GET /admin/analytics
 Authorization: Bearer {adminToken}
