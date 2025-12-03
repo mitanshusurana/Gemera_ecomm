@@ -23,7 +23,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
           <!-- Navigation -->
           <nav class="hidden md:flex items-center gap-8">
-            <a routerLink="/" routerLinkActive="text-gold-600" [routerLinkActiveOptions]="{ exact: true }" 
+            <a routerLink="/" routerLinkActive="text-gold-600" [routerLinkActiveOptions]="{ exact: true }"
                class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
               Home
             </a>
@@ -31,15 +31,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
                class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
               Collections
             </a>
-            <a href="#categories" 
+            <a routerLink="/products" routerLinkActive="text-gold-600"
                class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
               Categories
             </a>
-            <a href="#about" 
+            <a routerLink="/about" routerLinkActive="text-gold-600"
                class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
               About
             </a>
-            <a href="#contact" 
+            <a routerLink="/contact" routerLinkActive="text-gold-600"
                class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
               Contact
             </a>
