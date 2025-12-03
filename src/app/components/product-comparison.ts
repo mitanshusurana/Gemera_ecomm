@@ -133,7 +133,7 @@ interface ComparisonProduct {
 
                     <!-- Remove Button -->
                     <button
-                      (click)="removeProduct(product.id)"
+                      (click)="onRemoveProduct(product.id)"
                       class="w-full px-4 py-2 border-2 border-red-300 text-red-600 hover:bg-red-50 font-semibold rounded-lg transition-all"
                     >
                       Remove
@@ -160,10 +160,10 @@ interface ComparisonProduct {
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications?.carat" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.carat" class="text-gray-900 font-semibold">
                     {{ product.specifications.carat }} ct
                   </p>
-                  <p *ngIf="!product.specifications?.carat" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.carat" class="text-gray-400">N/A</p>
                 </td>
               </tr>
 
@@ -174,10 +174,10 @@ interface ComparisonProduct {
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications?.clarity" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.clarity" class="text-gray-900 font-semibold">
                     {{ product.specifications.clarity }}
                   </p>
-                  <p *ngIf="!product.specifications?.clarity" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.clarity" class="text-gray-400">N/A</p>
                 </td>
               </tr>
 
@@ -188,10 +188,10 @@ interface ComparisonProduct {
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications?.color" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.color" class="text-gray-900 font-semibold">
                     {{ product.specifications.color }}
                   </p>
-                  <p *ngIf="!product.specifications?.color" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.color" class="text-gray-400">N/A</p>
                 </td>
               </tr>
 
@@ -202,10 +202,10 @@ interface ComparisonProduct {
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications?.cut" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.cut" class="text-gray-900 font-semibold">
                     {{ product.specifications.cut }}
                   </p>
-                  <p *ngIf="!product.specifications?.cut" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.cut" class="text-gray-400">N/A</p>
                 </td>
               </tr>
 
@@ -216,10 +216,10 @@ interface ComparisonProduct {
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications?.metal" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.metal" class="text-gray-900 font-semibold">
                     {{ product.specifications.metal }}
                   </p>
-                  <p *ngIf="!product.specifications?.metal" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.metal" class="text-gray-400">N/A</p>
                 </td>
               </tr>
 
@@ -230,10 +230,10 @@ interface ComparisonProduct {
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications?.weight" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.weight" class="text-gray-900 font-semibold">
                     {{ product.specifications.weight }}g
                   </p>
-                  <p *ngIf="!product.specifications?.weight" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.weight" class="text-gray-400">N/A</p>
                 </td>
               </tr>
 
@@ -286,9 +286,8 @@ interface ComparisonProduct {
 export class ProductComparisonComponent {
   @Input() selectedProducts = signal<ComparisonProduct[]>([]);
   @Output() closeComparison = new EventEmitter<void>();
-  @Output() removeProduct = new EventEmitter<string>();
 
-  removeProduct(productId: string): void {
+  onRemoveProduct(productId: string): void {
     const current = this.selectedProducts();
     this.selectedProducts.set(current.filter(p => p.id !== productId));
   }
