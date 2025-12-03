@@ -1,11 +1,12 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { RouterLink } from "@angular/router";
 import { WhatsappButtonComponent } from "./whatsapp-button";
 
 @Component({
   selector: "app-footer",
   standalone: true,
-  imports: [CommonModule, WhatsappButtonComponent],
+  imports: [CommonModule, WhatsappButtonComponent, RouterLink],
   template: `
     <footer class="bg-gradient-luxury text-white">
       <!-- Main Footer -->
@@ -120,7 +121,7 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
             <ul class="space-y-3">
               <li>
                 <a
-                  href="#"
+                  routerLink="/contact"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Contact Us</a
                 >
@@ -162,7 +163,7 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
             <ul class="space-y-3">
               <li>
                 <a
-                  href="#"
+                  routerLink="/about"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >About Us</a
                 >
