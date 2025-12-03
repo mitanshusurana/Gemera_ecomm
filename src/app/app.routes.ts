@@ -7,6 +7,8 @@ import { CheckoutComponent } from "./pages/checkout";
 import { AccountComponent } from "./pages/account";
 import { StripePaymentComponent } from "./pages/stripe-payment";
 import { RazorpayPaymentComponent } from "./pages/razorpay-payment";
+import { AboutComponent } from "./pages/about";
+import { ContactComponent } from "./pages/contact";
 import { authGuard } from "./guards/auth.guard";
 
 export const routes: Routes = [
@@ -26,5 +28,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   { path: "account", component: AccountComponent, canActivate: [authGuard] },
+  { path: "about", component: AboutComponent },
+  { path: "contact", component: ContactComponent },
   { path: "**", redirectTo: "" },
 ];
