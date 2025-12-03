@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ActivatedRoute, RouterLink } from "@angular/router";
+import { ActivatedRoute } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 
 interface Product {
@@ -29,7 +29,7 @@ interface PaginationState {
 @Component({
   selector: "app-products",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Header -->
