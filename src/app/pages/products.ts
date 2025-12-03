@@ -384,8 +384,7 @@ export class ProductsComponent implements OnInit {
     const filtered = this.filteredProducts();
     const start = (pag.currentPage - 1) * pag.pageSize;
     const end = start + pag.pageSize;
-    
-    this.updatePaginationInfo(filtered.length);
+
     return filtered.slice(start, end);
   });
 
@@ -498,13 +497,6 @@ export class ProductsComponent implements OnInit {
     setTimeout(() => {
       this.isLoading.set(false);
     }, 500);
-  }
-
-  updatePaginationInfo(total: number): void {
-    const current = this.pagination();
-    if (current.totalItems !== total) {
-      this.pagination.set({ ...current, totalItems: total });
-    }
   }
 
   formatPrice(price: number): string {
