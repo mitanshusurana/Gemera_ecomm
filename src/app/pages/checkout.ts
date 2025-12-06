@@ -296,8 +296,11 @@ import { EmailNotificationService } from '../services/email-notification.service
     </div>
   `,
 })
-export class CheckoutComponent {
+export class CheckoutComponent implements OnInit {
   currentStep = signal(1);
+  cartItems = signal<any[]>([]);
+  cartTotal = signal(45000);
+  isProcessing = signal(false);
 
   shippingData = {
     firstName: '',
@@ -320,7 +323,27 @@ export class CheckoutComponent {
 
   billingSameAsShipping = true;
 
-  constructor(private apiService: ApiService) {}
+  constructor(
+    private apiService: ApiService,
+    private emailService: EmailNotificationService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadCartData();
+  }
+
+  private loadCartData(): void {
+    this.apiService.getCart().subscribe({
+      next: (cart) => {
+        this.cartItems.set(cart.items);
+        this.cartTotal.set(cart.total);
+      },
+      error: (error) => {
+        console.error('Error loading cart:', error);
+      },
+    });
+  }
 
   nextStep(): void {
     if (this.currentStep() < 3) {
