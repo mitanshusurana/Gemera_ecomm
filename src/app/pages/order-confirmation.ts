@@ -1,35 +1,12 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../services/api.service';
-
-interface OrderItem {
-  id: string;
-  productId: string;
-  quantity: number;
-  price: number;
-  product: {
-    id: string;
-    name: string;
-    imageUrl: string;
-    sku: string;
-  };
-}
-
-interface ShippingAddress {
-  firstName: string;
-  lastName: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-}
 
 @Component({
   selector: 'app-order-confirmation',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, DecimalPipe],
   template: `
     <div class="min-h-screen bg-gradient-to-b from-gold-50 to-white">
       <!-- Breadcrumb -->
@@ -113,26 +90,25 @@ interface ShippingAddress {
                 <div class="border-t border-diamond-200 pt-6">
                   <h3 class="font-semibold text-gray-900 mb-4">Items</h3>
                   <div class="space-y-4">
-                    <div
-                      *ngFor="let item of orderItems()"
-                      class="flex gap-4 pb-4 border-b border-diamond-200 last:border-b-0"
-                    >
-                      <img
-                        [src]="item.product.imageUrl"
-                        [alt]="item.product.name"
-                        class="w-20 h-20 rounded-lg object-cover"
-                      />
-                      <div class="flex-1">
-                        <p class="font-semibold text-gray-900">{{ item.product.name }}</p>
-                        <p class="text-sm text-gray-600">SKU: {{ item.product.sku }}</p>
-                        <p class="text-sm text-gray-600">Qty: {{ item.quantity }}</p>
+                    <ng-container *ngFor="let item of orderItems()">
+                      <div class="flex gap-4 pb-4 border-b border-diamond-200 last:border-b-0">
+                        <img
+                          [src]="item.product.imageUrl"
+                          [alt]="item.product.name"
+                          class="w-20 h-20 rounded-lg object-cover"
+                        />
+                        <div class="flex-1">
+                          <p class="font-semibold text-gray-900">{{ item.product.name }}</p>
+                          <p class="text-sm text-gray-600">SKU: {{ item.product.sku }}</p>
+                          <p class="text-sm text-gray-600">Qty: {{ item.quantity }}</p>
+                        </div>
+                        <div class="text-right">
+                          <p class="font-semibold text-gray-900">
+                            {{ formatPrice(item.price * item.quantity) }}
+                          </p>
+                        </div>
                       </div>
-                      <div class="text-right">
-                        <p class="font-semibold text-gray-900">
-                          ${{ getItemTotal(item.price, item.quantity) }}
-                        </p>
-                      </div>
-                    </div>
+                    </ng-container>
                   </div>
                 </div>
               </div>
@@ -187,7 +163,7 @@ interface ShippingAddress {
               <div class="space-y-4 mb-4 pb-4 border-b border-diamond-200">
                 <div class="flex justify-between">
                   <span class="text-gray-600">Subtotal</span>
-                  <span class="font-semibold">${{ orderSummary().subtotal.toFixed(2) }}</span>
+                  <span class="font-semibold">{{ formatPrice(orderSummary().subtotal) }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Shipping</span>
@@ -195,13 +171,13 @@ interface ShippingAddress {
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
-                  <span class="font-semibold">${{ orderSummary().tax.toFixed(2) }}</span>
+                  <span class="font-semibold">{{ formatPrice(orderSummary().tax) }}</span>
                 </div>
               </div>
 
               <div class="flex justify-between mb-6 text-xl">
                 <span class="font-bold text-gray-900">Total</span>
-                <span class="font-bold text-2xl text-gold-600">${{ orderSummary().total.toFixed(2) }}</span>
+                <span class="font-bold text-2xl text-gold-600">{{ formatPrice(orderSummary().total) }}</span>
               </div>
 
               <div class="space-y-3 mb-6">
@@ -264,8 +240,8 @@ interface ShippingAddress {
 export class OrderConfirmationComponent implements OnInit {
   orderNumber = signal('');
   estimatedDelivery = signal('');
-  orderItems = signal<OrderItem[]>([]);
-  shippingAddress = signal<ShippingAddress>({
+  orderItems = signal<any[]>([]);
+  shippingAddress = signal<any>({
     firstName: '',
     lastName: '',
     address: '',
@@ -296,8 +272,8 @@ export class OrderConfirmationComponent implements OnInit {
     }
   }
 
-  getItemTotal(price: number, quantity: number): string {
-    return (price * quantity).toFixed(2);
+  formatPrice(amount: number): string {
+    return '$' + amount.toFixed(2);
   }
 
   private loadOrder(orderId: string): void {
