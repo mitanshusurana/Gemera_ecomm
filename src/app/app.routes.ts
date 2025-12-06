@@ -8,6 +8,7 @@ import { AccountComponent } from "./pages/account";
 import { StripePaymentComponent } from "./pages/stripe-payment";
 import { RazorpayPaymentComponent } from "./pages/razorpay-payment";
 import { OrderConfirmationComponent } from "./pages/order-confirmation";
+import { RFQRequestComponent } from "./pages/rfq-request";
 import { AboutComponent } from "./pages/about";
 import { ContactComponent } from "./pages/contact";
 import { authGuard } from "./guards/auth.guard";
