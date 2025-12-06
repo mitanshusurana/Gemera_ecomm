@@ -35,6 +35,7 @@ export const routes: Routes = [
     component: OrderConfirmationComponent,
     canActivate: [authGuard],
   },
+  { path: "rfq", component: RFQRequestComponent },
   { path: "about", component: AboutComponent },
   { path: "contact", component: ContactComponent },
   { path: "**", redirectTo: "" },
