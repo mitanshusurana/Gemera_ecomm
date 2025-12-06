@@ -108,8 +108,12 @@ import { FormsModule } from '@angular/forms';
             <!-- Size Selection (Mock) -->
             <div class="mb-8 pb-8 border-b border-diamond-200" *ngIf="product?.category?.includes('Ring')">
               <h3 class="font-bold text-gray-900 mb-4">Ring Size</h3>
-              <div class="grid grid-cols-5 gap-2">
+              <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-5 gap-2">
                 <button *ngFor="let size of [5, 6, 7, 8, 9, 10, 11, 12, 13]" 
+                        (click)="selectedSize.set(size)"
+                        [class.border-gold-500]="selectedSize() === size"
+                        [class.bg-gold-50]="selectedSize() === size"
+                        [class.text-gold-700]="selectedSize() === size"
                         class="h-12 border-2 border-diamond-300 rounded-lg font-semibold hover:border-gold-500 hover:bg-gold-50 transition-all duration-300">
                   {{ size }}
                 </button>
@@ -128,19 +132,23 @@ import { FormsModule } from '@angular/forms';
             </div>
 
             <!-- Add to Cart -->
-            <div class="flex gap-4 mb-8">
-              <input type="number" min="1" max="10" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" class="input-field w-20">
-              <button (click)="handleAddToCart()" class="flex-1 btn-primary text-lg py-4">
-                Add to Cart
-              </button>
-              <button class="w-14 h-14 border-2 border-diamond-300 rounded-lg hover:border-gold-500 hover:bg-gold-50 transition-all duration-300 flex items-center justify-center">
-                <svg class="w-6 h-6 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                </svg>
-              </button>
-              <button (click)="handleAddToCompare()" class="w-14 h-14 border-2 border-diamond-300 rounded-lg hover:border-gold-500 hover:bg-gold-50 transition-all duration-300 flex items-center justify-center ml-2" title="Compare">
-                <span class="text-xl">⚖️</span>
-              </button>
+            <div class="flex flex-col sm:flex-row gap-4 mb-8">
+              <div class="flex gap-4 w-full sm:w-auto">
+                <input type="number" min="1" max="10" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" class="input-field w-20">
+                <button (click)="handleAddToCart()" class="flex-1 sm:flex-none btn-primary text-lg py-4 px-8">
+                  Add to Cart
+                </button>
+              </div>
+              <div class="flex gap-2 w-full sm:w-auto">
+                <button class="flex-1 sm:flex-none w-14 h-14 border-2 border-diamond-300 rounded-lg hover:border-gold-500 hover:bg-gold-50 transition-all duration-300 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                  </svg>
+                </button>
+                <button (click)="handleAddToCompare()" class="flex-1 sm:flex-none w-14 h-14 border-2 border-diamond-300 rounded-lg hover:border-gold-500 hover:bg-gold-50 transition-all duration-300 flex items-center justify-center" title="Compare">
+                  <span class="text-xl">⚖️</span>
+                </button>
+              </div>
             </div>
 
             <!-- Description -->
