@@ -1,7 +1,30 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../services/api.service';
+
+interface OrderItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  price: number;
+  product: {
+    id: string;
+    name: string;
+    imageUrl: string;
+    sku: string;
+  };
+}
+
+interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
 
 @Component({
   selector: 'app-order-confirmation',
@@ -106,7 +129,7 @@ import { ApiService } from '../services/api.service';
                       </div>
                       <div class="text-right">
                         <p class="font-semibold text-gray-900">
-                          ${{ (item.price * item.quantity).toFixed(2) }}
+                          ${{ getItemTotal(item.price, item.quantity) }}
                         </p>
                       </div>
                     </div>
@@ -241,8 +264,16 @@ import { ApiService } from '../services/api.service';
 export class OrderConfirmationComponent implements OnInit {
   orderNumber = signal('');
   estimatedDelivery = signal('');
-  orderItems = signal<any[]>([]);
-  shippingAddress = signal<any>({});
+  orderItems = signal<OrderItem[]>([]);
+  shippingAddress = signal<ShippingAddress>({
+    firstName: '',
+    lastName: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+  });
   orderSummary = signal({ subtotal: 0, tax: 0, total: 0 });
 
   constructor(
@@ -258,13 +289,15 @@ export class OrderConfirmationComponent implements OnInit {
       }
     });
 
-    this.route.fragment.subscribe((fragment) => {
-      const orderId = sessionStorage.getItem('lastOrderId');
-      if (orderId) {
-        this.loadOrder(orderId);
-        sessionStorage.removeItem('lastOrderId');
-      }
-    });
+    const sessionOrderId = sessionStorage.getItem('lastOrderId');
+    if (sessionOrderId) {
+      this.loadOrder(sessionOrderId);
+      sessionStorage.removeItem('lastOrderId');
+    }
+  }
+
+  getItemTotal(price: number, quantity: number): string {
+    return (price * quantity).toFixed(2);
   }
 
   private loadOrder(orderId: string): void {
@@ -284,11 +317,13 @@ export class OrderConfirmationComponent implements OnInit {
 
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + 3);
-        this.estimatedDelivery.set(deliveryDate.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }));
+        this.estimatedDelivery.set(
+          deliveryDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
+        );
       },
       error: (error) => {
         console.error('Error loading order:', error);
