@@ -5,6 +5,7 @@ import { ProductDetailComponent } from "./pages/product-detail";
 import { CartComponent } from "./pages/cart";
 import { CheckoutComponent } from "./pages/checkout";
 import { AccountComponent } from "./pages/account";
+import { LoginComponent } from "./pages/login";
 import { StripePaymentComponent } from "./pages/stripe-payment";
 import { RazorpayPaymentComponent } from "./pages/razorpay-payment";
 import { OrderConfirmationComponent } from "./pages/order-confirmation";
