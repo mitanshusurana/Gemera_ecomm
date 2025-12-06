@@ -1,27 +1,6 @@
 import { Component, Input, Output, EventEmitter } from "@angular/core";
 import { CommonModule } from "@angular/common";
-
-interface QuickViewProduct {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  reviews: number;
-  category: string;
-  description: string;
-  image: string;
-  badge?: string;
-  stock: number;
-  specifications?: {
-    carat?: number;
-    clarity?: string;
-    color?: string;
-    cut?: string;
-    metal?: string;
-    weight?: number;
-  };
-}
+import { ProductDetail } from "../services/api.service";
 
 @Component({
   selector: "app-quick-view-modal",
@@ -77,7 +56,9 @@ interface QuickViewProduct {
               <div
                 class="bg-gradient-to-br from-gold-100 to-diamond-100 rounded-xl overflow-hidden h-80 flex items-center justify-center"
               >
-                <span class="text-6xl">{{
+                <!-- Use imageUrl if available, else emoji -->
+                <img *ngIf="product?.imageUrl" [src]="product?.imageUrl" class="w-full h-full object-cover" [alt]="product?.name" onerror="this.style.display='none'">
+                <span *ngIf="!product?.imageUrl" class="text-6xl">{{
                   product ? getProductEmoji(product.category) : "✦"
                 }}</span>
               </div>
@@ -97,12 +78,13 @@ interface QuickViewProduct {
                 >
                   {{ product?.category || "Product" }}
                 </span>
-                <span
+                <!-- Badge logic or field -->
+                <!-- <span
                   *ngIf="product && product.badge"
                   class="px-3 py-1 bg-gold-500 text-white text-xs font-bold rounded-full"
                 >
                   {{ product.badge }}
-                </span>
+                </span> -->
               </div>
 
               <!-- Name -->
@@ -118,7 +100,7 @@ interface QuickViewProduct {
                   >
                 </div>
                 <span class="text-sm text-gray-600"
-                  >({{ product?.reviews || 0 }} reviews)</span
+                  >({{ product?.reviewCount || 0 }} reviews)</span
                 >
               </div>
 
@@ -178,20 +160,28 @@ interface QuickViewProduct {
                       }}</span>
                     </p>
                   </div>
-                  <div *ngIf="product.specifications.metal">
+                  <div *ngIf="product.specifications.origin">
                     <p class="text-gray-600">
-                      Metal:
+                      Origin:
                       <span class="font-semibold">{{
-                        product.specifications.metal
+                        product.specifications.origin
                       }}</span>
                     </p>
                   </div>
-                  <div *ngIf="product.specifications.weight">
+                  <div *ngIf="product.metal">
+                    <p class="text-gray-600">
+                      Metal:
+                      <span class="font-semibold">{{
+                        product.metal
+                      }}</span>
+                    </p>
+                  </div>
+                  <div *ngIf="product.weight">
                     <p class="text-gray-600">
                       Weight:
-                      <span class="font-semibold"
-                        >{{ product.specifications.weight }}g</span
-                      >
+                      <span class="font-semibold">{{
+                         product.weight
+                      }}g</span>
                     </p>
                   </div>
                 </div>
@@ -237,7 +227,7 @@ interface QuickViewProduct {
 })
 export class QuickViewModalComponent {
   @Input() isOpen = false;
-  @Input() product: QuickViewProduct | null = null;
+  @Input() product: ProductDetail | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() addToCart = new EventEmitter<{
     productId: string;

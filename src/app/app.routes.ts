@@ -12,6 +12,7 @@ import { OrderConfirmationComponent } from "./pages/order-confirmation";
 import { RFQRequestComponent } from "./pages/rfq-request";
 import { AboutComponent } from "./pages/about";
 import { ContactComponent } from "./pages/contact";
+import { CompareComponent } from "./pages/compare";
 import { authGuard } from "./guards/auth.guard";
 
 export const routes: Routes = [
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: "login", component: LoginComponent },
   { path: "products", component: ProductsComponent },
   { path: "products/:id", component: ProductDetailComponent },
+  { path: "compare", component: CompareComponent },
   { path: "cart", component: CartComponent },
   { path: "checkout", component: CheckoutComponent, canActivate: [authGuard] },
   {

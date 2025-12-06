@@ -1,35 +1,14 @@
-import { Component, OnInit, signal, computed } from "@angular/core";
+import { Component, OnInit, signal, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ActivatedRoute } from "@angular/router";
+import { ActivatedRoute, RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  category: string;
-  rating: number;
-  reviews: number;
-  image?: string;
-  stock: number;
-}
-
-interface CategoryFilter {
-  id: string;
-  name: string;
-}
-
-interface PaginationState {
-  currentPage: number;
-  pageSize: number;
-  totalItems: number;
-}
+import { ApiService, Product, Category } from "../services/api.service";
+import { CompareService } from '../services/compare.service';
 
 @Component({
   selector: "app-products",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Header -->
@@ -64,16 +43,16 @@ interface PaginationState {
                     <span class="text-sm text-gray-700">All Products</span>
                   </label>
                   <label
-                    *ngFor="let category of categories"
+                    *ngFor="let category of categories()"
                     class="flex items-center gap-3 cursor-pointer"
                   >
                     <input
                       type="checkbox"
                       class="w-4 h-4"
-                      [checked]="selectedCategories().includes(category.id)"
-                      (change)="toggleCategory(category.id)"
+                      [checked]="selectedCategories().includes(category.name)"
+                      (change)="toggleCategory(category.name)"
                     />
-                    <span class="text-sm text-gray-700">{{ category.name }}</span>
+                    <span class="text-sm text-gray-700">{{ category.displayName }}</span>
                   </label>
                 </div>
               </div>
@@ -157,10 +136,10 @@ interface PaginationState {
               <div>
                 <p class="text-gray-600">
                   Showing <span class="font-semibold">{{ paginationInfo().start }}-{{ paginationInfo().end }}</span> of
-                  <span class="font-semibold">{{ paginationInfo().total }}</span> products
+                  <span class="font-semibold">{{ pagination().totalItems }}</span> products
                 </p>
               </div>
-              <select [(ngModel)]="sortBy" (change)="applySorting()" class="input-field max-w-xs">
+              <select [(ngModel)]="sortBy" (change)="loadProducts()" class="input-field max-w-xs">
                 <option value="newest">Sort by: Newest</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
@@ -184,16 +163,20 @@ interface PaginationState {
 
             <!-- Products Grid -->
             <div *ngIf="!isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              <div *ngFor="let product of paginatedProducts()" class="card card-hover group overflow-hidden">
+              <a *ngFor="let product of products()" [routerLink]="['/products', product.id]" class="card card-hover group overflow-hidden block cursor-pointer">
                 <!-- Image Container with Lazy Loading -->
                 <div class="relative overflow-hidden h-64 bg-diamond-100">
-                  <div class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
+                  <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover" [alt]="product.name" onerror="this.style.display='none'">
+                  <div *ngIf="!product.imageUrl" class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
                     <span class="text-4xl">{{ getProductEmoji(product.category) }}</span>
                   </div>
-                  <button class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300">
+                  <button (click)="$event.preventDefault(); $event.stopPropagation()" class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
+                  </button>
+                  <button (click)="handleAddToCompare($event, product)" class="absolute top-16 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300" title="Compare">
+                    <span class="text-lg">⚖️</span>
                   </button>
                 </div>
 
@@ -211,7 +194,7 @@ interface PaginationState {
                     <div class="flex gap-1">
                       <span *ngFor="let _ of [1,2,3,4,5]" class="text-gold-500 text-xs">★</span>
                     </div>
-                    <span class="text-xs text-gray-600">({{ product.reviews }})</span>
+                    <span class="text-xs text-gray-600">({{ product.reviewCount }})</span>
                   </div>
 
                   <!-- Price -->
@@ -227,13 +210,13 @@ interface PaginationState {
                   </div>
 
                   <!-- Add to Cart -->
-                  <button class="w-full btn-primary">Add to Cart</button>
+                  <button (click)="handleAddToCart($event, product.id)" class="w-full btn-primary">Add to Cart</button>
                 </div>
-              </div>
+              </a>
             </div>
 
             <!-- Empty State -->
-            <div *ngIf="!isLoading() && paginatedProducts().length === 0" class="text-center py-16">
+            <div *ngIf="!isLoading() && products().length === 0" class="text-center py-16">
               <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
               </svg>
@@ -243,7 +226,7 @@ interface PaginationState {
             </div>
 
             <!-- Pagination Controls -->
-            <div *ngIf="!isLoading() && paginatedProducts().length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div *ngIf="!isLoading() && products().length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4">
               <!-- Page Size Selector -->
               <div class="flex items-center gap-2">
                 <label class="text-sm text-gray-700">Items per page:</label>
@@ -290,9 +273,9 @@ interface PaginationState {
                 <!-- Next Button -->
                 <button
                   (click)="nextPage()"
-                  [disabled]="pagination().currentPage >= totalPages()"
-                  [class.opacity-50]="pagination().currentPage >= totalPages()"
-                  [class.cursor-not-allowed]="pagination().currentPage >= totalPages()"
+                  [disabled]="pagination().currentPage >= pagination().totalPages"
+                  [class.opacity-50]="pagination().currentPage >= pagination().totalPages"
+                  [class.cursor-not-allowed]="pagination().currentPage >= pagination().totalPages"
                   class="w-10 h-10 border border-diamond-300 rounded-lg hover:bg-gold-50 transition-colors duration-300 disabled:hover:bg-white"
                 >
                   ›
@@ -301,7 +284,7 @@ interface PaginationState {
 
               <!-- Page Info -->
               <div class="text-sm text-gray-600">
-                Page {{ pagination().currentPage }} of {{ totalPages() }}
+                Page {{ pagination().currentPage }} of {{ pagination().totalPages }}
               </div>
             </div>
           </div>
@@ -311,106 +294,76 @@ interface PaginationState {
   `,
 })
 export class ProductsComponent implements OnInit {
-  // Category data
-  categories: CategoryFilter[] = [
-    { id: "engagement-rings", name: "Engagement Rings" },
-    { id: "loose-gemstones", name: "Loose Gemstones" },
-    { id: "spiritual-idols", name: "Spiritual Idols" },
-    { id: "gemstone-jewelry", name: "Gemstone Jewelry" },
-    { id: "precious-metals", name: "Precious Metals" },
-    { id: "bespoke-custom", name: "Bespoke Custom" },
-  ];
+  private apiService = inject(ApiService);
+  private activatedRoute = inject(ActivatedRoute);
+  private compareService = inject(CompareService);
 
   // State management
+  categories = signal<Category[]>([]);
   selectedCategories = signal<string[]>([]);
+  products = signal<Product[]>([]);
   sortBy = "newest";
   isLoading = signal(false);
   
-  pagination = signal<PaginationState>({
+  pagination = signal({
     currentPage: 1,
     pageSize: 12,
     totalItems: 0,
-  });
-
-  // All products (would come from API)
-  allProducts: Product[] = [
-    { id: "1", name: "Diamond Solitaire Ring", price: 45000, category: "Diamond", rating: 4.8, reviews: 125, stock: 3 },
-    { id: "2", name: "Emerald Statement Necklace", price: 35000, category: "Gemstone", rating: 4.9, reviews: 89, stock: 5 },
-    { id: "3", name: "Sapphire Drop Earrings", price: 28000, category: "Gemstone", rating: 4.7, reviews: 156, stock: 8 },
-    { id: "4", name: "Gold Engagement Ring", price: 55000, category: "Gold", rating: 4.9, reviews: 203, stock: 2 },
-    { id: "5", name: "Ruby & Diamond Bracelet", price: 42000, category: "Gemstone", rating: 4.8, reviews: 78, stock: 6 },
-    { id: "6", name: "Pearl & Diamond Pendant", price: 38000, category: "Pearl", rating: 4.6, reviews: 145, stock: 10 },
-    { id: "7", name: "Platinum Wedding Band", price: 65000, category: "Platinum", rating: 5.0, reviews: 234, stock: 4 },
-    { id: "8", name: "Tanzanite Cocktail Ring", price: 32000, category: "Gemstone", rating: 4.9, reviews: 92, stock: 1 },
-    { id: "9", name: "White Gold Diamond Studs", price: 22000, category: "Diamond", rating: 4.7, reviews: 167, stock: 15 },
-    { id: "10", name: "Aquamarine & Gold Brooch", price: 28000, category: "Gemstone", rating: 4.8, reviews: 54, stock: 7 },
-    { id: "11", name: "Opal Pendant Necklace", price: 19000, category: "Gemstone", rating: 4.6, reviews: 98, stock: 9 },
-    { id: "12", name: "Diamond Tennis Bracelet", price: 72000, category: "Diamond", rating: 4.9, reviews: 187, stock: 3 },
-    { id: "13", name: "Rose Gold Engagement Ring", price: 52000, category: "Gold", rating: 4.8, reviews: 221, stock: 5 },
-    { id: "14", name: "Morganite & Diamond Ring", price: 41000, category: "Gemstone", rating: 4.7, reviews: 76, stock: 8 },
-    { id: "15", name: "Peridot Drop Earrings", price: 18000, category: "Gemstone", rating: 4.5, reviews: 43, stock: 12 },
-    { id: "16", name: "Black Opal Ring", price: 38000, category: "Gemstone", rating: 4.9, reviews: 68, stock: 2 },
-    { id: "17", name: "Diamond Halo Ring", price: 58000, category: "Diamond", rating: 4.8, reviews: 312, stock: 4 },
-    { id: "18", name: "Garnet Chandelier Earrings", price: 25000, category: "Gemstone", rating: 4.6, reviews: 39, stock: 11 },
-    { id: "19", name: "Alexandrite Color Change Ring", price: 44000, category: "Gemstone", rating: 4.9, reviews: 51, stock: 3 },
-    { id: "20", name: "Tourmaline Watermelon Ring", price: 36000, category: "Gemstone", rating: 4.7, reviews: 81, stock: 6 },
-    { id: "21", name: "Spinel Oval Ring", price: 29000, category: "Gemstone", rating: 4.8, reviews: 47, stock: 9 },
-    { id: "22", name: "Chrysoberyl & Gold Pendant", price: 33000, category: "Gemstone", rating: 4.6, reviews: 62, stock: 8 },
-    { id: "23", name: "Zircon Stud Earrings", price: 15000, category: "Gemstone", rating: 4.5, reviews: 34, stock: 16 },
-    { id: "24", name: "Iolite Cocktail Ring", price: 27000, category: "Gemstone", rating: 4.7, reviews: 71, stock: 7 },
-  ];
-
-  // Computed values
-  filteredProducts = computed(() => {
-    let products = this.allProducts;
-    const selected = this.selectedCategories();
-    
-    if (selected.length > 0) {
-      products = products.filter(p => 
-        selected.some(cat => cat.toLowerCase().includes(p.category.toLowerCase()))
-      );
-    }
-
-    return products;
-  });
-
-  totalPages = computed(() => {
-    const pag = this.pagination();
-    return Math.ceil(this.filteredProducts().length / pag.pageSize);
-  });
-
-  paginatedProducts = computed(() => {
-    const pag = this.pagination();
-    const filtered = this.filteredProducts();
-    const start = (pag.currentPage - 1) * pag.pageSize;
-    const end = start + pag.pageSize;
-
-    return filtered.slice(start, end);
+    totalPages: 0,
   });
 
   paginationInfo = computed(() => {
     const pag = this.pagination();
-    const filtered = this.filteredProducts();
+    const total = pag.totalItems;
     const start = (pag.currentPage - 1) * pag.pageSize + 1;
-    const end = Math.min(pag.currentPage * pag.pageSize, filtered.length);
+    const end = Math.min(pag.currentPage * pag.pageSize, total);
     
     return {
-      start: filtered.length === 0 ? 0 : start,
+      start: total === 0 ? 0 : start,
       end: end,
-      total: filtered.length,
     };
   });
 
-  constructor(private activatedRoute: ActivatedRoute) {}
-
   ngOnInit(): void {
+    // Fetch categories
+    this.apiService.getCategories().subscribe(res => {
+        this.categories.set(res.categories);
+    });
+
     this.activatedRoute.queryParams.subscribe((params) => {
       if (params["category"]) {
-        const categoryId = params["category"].toLowerCase().replace(/\s+/g, "-");
+        const categoryId = params["category"];
         this.selectedCategories.set([categoryId]);
       }
+      this.loadProducts();
     });
-    this.simulatePageLoad();
+  }
+
+  loadProducts(): void {
+    this.isLoading.set(true);
+    const filters = {
+        category: this.selectedCategories().length > 0 ? this.selectedCategories()[0] : undefined,
+        sortBy: this.sortBy === "newest" ? "newest" : "price",
+        order: this.sortBy === "price-high" ? "desc" : "asc"
+    };
+
+    // API uses 0-indexed pages
+    this.apiService.getProducts(this.pagination().currentPage - 1, this.pagination().pageSize, filters)
+        .subscribe({
+            next: (res) => {
+                this.products.set(res.content);
+                this.pagination.update(p => ({
+                    ...p,
+                    totalItems: res.pageable.totalElements,
+                    totalPages: res.pageable.totalPages
+                }));
+                this.isLoading.set(false);
+            },
+            error: (err) => {
+                console.error(err);
+                this.isLoading.set(false);
+            }
+        });
   }
 
   toggleCategory(categoryId: string): void {
@@ -421,32 +374,48 @@ export class ProductsComponent implements OnInit {
       if (current.includes(categoryId)) {
         this.selectedCategories.set(current.filter((id) => id !== categoryId));
       } else {
+        // For now support multiple selection in UI but API filter logic might need adjustment
+        // My mock service does: products.filter(p => p.category.includes(cat))
+        // If I pass multiple, I need to decide how to handle.
+        // Let's stick to single selection logic for simplicity in integration for now, or just append.
         this.selectedCategories.set([...current, categoryId]);
       }
     }
-    this.pagination.set({ ...this.pagination(), currentPage: 1 });
+    this.pagination.update(p => ({ ...p, currentPage: 1 }));
+    this.loadProducts();
   }
 
   clearFilters(): void {
     this.selectedCategories.set([]);
     this.sortBy = "newest";
-    this.pagination.set({ ...this.pagination(), currentPage: 1 });
+    this.pagination.update(p => ({ ...p, currentPage: 1 }));
+    this.loadProducts();
   }
 
-  applySorting(): void {
-    // Sorting logic would go here
-    console.log("Sorting by:", this.sortBy);
+  handleAddToCart(event: Event, productId: string): void {
+      event.preventDefault();
+      event.stopPropagation();
+      this.apiService.addToCart(productId, 1).subscribe(() => {
+          alert("Added to cart");
+      });
+  }
+
+  handleAddToCompare(event: Event, product: Product): void {
+      event.preventDefault();
+      event.stopPropagation();
+      this.compareService.addToCompare(product);
   }
 
   goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages()) {
-      this.pagination.set({ ...this.pagination(), currentPage: page });
+    if (page >= 1 && page <= this.pagination().totalPages) {
+      this.pagination.update(p => ({ ...p, currentPage: page }));
       this.scrollToTop();
+      this.loadProducts();
     }
   }
 
   nextPage(): void {
-    if (this.pagination().currentPage < this.totalPages()) {
+    if (this.pagination().currentPage < this.pagination().totalPages) {
       this.goToPage(this.pagination().currentPage + 1);
     }
   }
@@ -458,13 +427,14 @@ export class ProductsComponent implements OnInit {
   }
 
   onPageSizeChange(): void {
-    this.pagination.set({ ...this.pagination(), currentPage: 1, pageSize: parseInt(this.pagination().pageSize.toString()) });
+    this.pagination.update(p => ({ ...p, currentPage: 1, pageSize: parseInt(p.pageSize.toString()) }));
+    this.loadProducts();
   }
 
   visiblePages(): number[] {
     const pages: number[] = [];
     const currentPage = this.pagination().currentPage;
-    const total = this.totalPages();
+    const total = this.pagination().totalPages;
     const maxVisible = 5;
 
     if (total <= maxVisible) {
@@ -489,14 +459,7 @@ export class ProductsComponent implements OnInit {
 
   shouldShowEllipsis(): boolean {
     const pages = this.visiblePages();
-    return pages[pages.length - 1] < this.totalPages();
-  }
-
-  simulatePageLoad(): void {
-    this.isLoading.set(true);
-    setTimeout(() => {
-      this.isLoading.set(false);
-    }, 500);
+    return pages.length > 0 && pages[pages.length - 1] < this.pagination().totalPages;
   }
 
   formatPrice(price: number): string {
@@ -509,6 +472,11 @@ export class ProductsComponent implements OnInit {
 
   getProductEmoji(category: string): string {
     const emojiMap: { [key: string]: string } = {
+      "Engagement Ring": "💍",
+      "Loose Gemstone": "💎",
+      "Spiritual Idol": "🕉️",
+      "Gemstone Ring": "👑",
+      "Precious Metal": "🏆",
       "Diamond": "💎",
       "Gemstone": "💎",
       "Gold": "🏆",
@@ -516,7 +484,7 @@ export class ProductsComponent implements OnInit {
       "Pearl": "⭐",
       "Custom": "🎨",
     };
-    return emojiMap[category] || "✦";
+    return emojiMap[category] || emojiMap[category.split(' ')[0]] || "✦";
   }
 
   private scrollToTop(): void {
