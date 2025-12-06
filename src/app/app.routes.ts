@@ -29,6 +29,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   { path: "account", component: AccountComponent, canActivate: [authGuard] },
+  {
+    path: "order-confirmation",
+    component: OrderConfirmationComponent,
+    canActivate: [authGuard],
+  },
   { path: "about", component: AboutComponent },
   { path: "contact", component: ContactComponent },
   { path: "**", redirectTo: "" },
