@@ -12,6 +12,8 @@ import { OrderConfirmationComponent } from "./pages/order-confirmation";
 import { RFQRequestComponent } from "./pages/rfq-request";
 import { AboutComponent } from "./pages/about";
 import { ContactComponent } from "./pages/contact";
+import { PrivacyPolicyComponent } from "./pages/privacy";
+import { TermsComponent } from "./pages/terms";
 import { CompareComponent } from "./pages/compare";
 import { authGuard } from "./guards/auth.guard";
 
@@ -42,5 +44,7 @@ export const routes: Routes = [
   { path: "rfq", component: RFQRequestComponent },
   { path: "about", component: AboutComponent },
   { path: "contact", component: ContactComponent },
+  { path: "privacy", component: PrivacyPolicyComponent },
+  { path: "terms", component: TermsComponent },
   { path: "**", redirectTo: "" },
 ];

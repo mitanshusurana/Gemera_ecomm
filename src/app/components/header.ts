@@ -33,10 +33,6 @@ import { ApiService } from '../services/api.service';
                class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
               Collections
             </a>
-            <a routerLink="/products" routerLinkActive="text-gold-600"
-               class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
-              Categories
-            </a>
             <a routerLink="/about" routerLinkActive="text-gold-600"
                class="text-sm font-medium text-diamond-700 hover:text-gold-600 transition-colors duration-300">
               About
@@ -82,9 +78,8 @@ import { ApiService } from '../services/api.service';
           <nav class="flex flex-col gap-4">
             <a routerLink="/" (click)="mobileMenuOpen.set(false)" class="text-sm font-medium text-diamond-700 hover:text-gold-600">Home</a>
             <a routerLink="/products" (click)="mobileMenuOpen.set(false)" class="text-sm font-medium text-diamond-700 hover:text-gold-600">Collections</a>
-            <a href="#categories" (click)="mobileMenuOpen.set(false)" class="text-sm font-medium text-diamond-700 hover:text-gold-600">Categories</a>
-            <a href="#about" (click)="mobileMenuOpen.set(false)" class="text-sm font-medium text-diamond-700 hover:text-gold-600">About</a>
-            <a href="#contact" (click)="mobileMenuOpen.set(false)" class="text-sm font-medium text-diamond-700 hover:text-gold-600">Contact</a>
+            <a routerLink="/about" (click)="mobileMenuOpen.set(false)" class="text-sm font-medium text-diamond-700 hover:text-gold-600">About</a>
+            <a routerLink="/contact" (click)="mobileMenuOpen.set(false)" class="text-sm font-medium text-diamond-700 hover:text-gold-600">Contact</a>
           </nav>
         </div>
       </div>

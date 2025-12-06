@@ -137,10 +137,46 @@ export class ApiService {
     lastName: string;
     phone: string;
   }): Observable<User> {
+    if (this.useMock) {
+      const user: User = {
+        id: 'mock-user-' + Math.random().toString(36).substring(7),
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        createdAt: new Date().toISOString()
+      };
+      // Simulate successful registration
+      return of(user).pipe(delay(500));
+    }
     return this.http.post<User>(`${this.baseUrl}/auth/register`, data);
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
+    if (this.useMock) {
+      // Mock login logic
+      const mockUser: User = {
+        id: 'mock-user-123',
+        email: email,
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '1234567890',
+        createdAt: new Date().toISOString()
+      };
+      const response: AuthResponse = {
+        token: 'mock-jwt-token-' + Math.random().toString(36).substring(7),
+        refreshToken: 'mock-refresh-token',
+        user: mockUser
+      };
+
+      return of(response).pipe(
+        delay(500),
+        tap((res) => {
+          this.setAuthToken(res.token);
+          this.user$.next(res.user);
+        })
+      );
+    }
     return this.http
       .post<AuthResponse>(`${this.baseUrl}/auth/login`, { email, password })
       .pipe(
@@ -152,6 +188,16 @@ export class ApiService {
   }
 
   logout(): Observable<any> {
+    if (this.useMock) {
+      return of({}).pipe(
+        delay(300),
+        tap(() => {
+          this.clearAuthToken();
+          this.user$.next(null);
+          this.cart$.next(null);
+        })
+      );
+    }
     return this.http.post(`${this.baseUrl}/auth/logout`, {}).pipe(
       tap(() => {
         this.clearAuthToken();

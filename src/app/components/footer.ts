@@ -79,35 +79,40 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
             <ul class="space-y-3">
               <li>
                 <a
-                  href="#"
+                  routerLink="/products"
+                  [queryParams]="{category: 'ring'}"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Diamond Rings</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/products"
+                  [queryParams]="{category: 'gemstone'}"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Gemstone Jewels</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/products"
+                  [queryParams]="{category: 'necklace'}"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Necklaces</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/products"
+                  [queryParams]="{category: 'bracelet'}"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Bracelets</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/products"
+                  [queryParams]="{category: 'earring'}"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Earrings</a
                 >
@@ -135,28 +140,28 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/about"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Shipping & Returns</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/account"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Track Order</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/about"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Size Guide</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/about"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Certifications</a
                 >
@@ -177,28 +182,28 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/about"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Our Story</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/about"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Sustainability</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/privacy"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Privacy Policy</a
                 >
               </li>
               <li>
                 <a
-                  href="#"
+                  routerLink="/terms"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Terms & Conditions</a
                 >
@@ -234,17 +239,17 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
           <div>&copy; 2024 Gemara Fine Jewels. All rights reserved.</div>
           <div class="flex gap-6">
             <a
-              href="#"
+              routerLink="/privacy"
               class="hover:text-gold-400 transition-colors duration-300"
               >Privacy Policy</a
             >
             <a
-              href="#"
+              routerLink="/terms"
               class="hover:text-gold-400 transition-colors duration-300"
               >Terms of Service</a
             >
             <a
-              href="#"
+              routerLink="/about"
               class="hover:text-gold-400 transition-colors duration-300"
               >Accessibility</a
             >
