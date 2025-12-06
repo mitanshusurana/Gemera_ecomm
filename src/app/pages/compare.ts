@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CompareService } from '../services/compare.service';
+import { ApiService, Product } from '../services/api.service';
 
 @Component({
   selector: 'app-compare',
@@ -80,8 +81,7 @@ import { CompareService } from '../services/compare.service';
                <tr>
                    <td class="p-4 border-b border-diamond-100"></td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <!-- Add to Cart (Mock) -->
-                       <button class="btn-primary w-full">Add to Cart</button>
+                       <button (click)="handleAddToCart(product)" class="btn-primary w-full">Add to Cart</button>
                    </td>
                </tr>
             </tbody>
@@ -93,6 +93,13 @@ import { CompareService } from '../services/compare.service';
 })
 export class CompareComponent {
   compareService = inject(CompareService);
+  apiService = inject(ApiService);
+
+  handleAddToCart(product: Product): void {
+      this.apiService.addToCart(product.id, 1).subscribe(() => {
+          alert('Added to cart');
+      });
+  }
 
   formatPrice(price: number): string {
     return new Intl.NumberFormat("en-US", {
