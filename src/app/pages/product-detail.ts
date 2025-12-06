@@ -129,7 +129,7 @@ import { FormsModule } from '@angular/forms';
 
             <!-- Add to Cart -->
             <div class="flex gap-4 mb-8">
-              <input type="number" min="1" max="10" [(ngModel)]="quantity" class="input-field w-20">
+              <input type="number" min="1" max="10" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" class="input-field w-20">
               <button (click)="handleAddToCart()" class="flex-1 btn-primary text-lg py-4">
                 Add to Cart
               </button>

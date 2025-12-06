@@ -102,8 +102,31 @@ export class ApiService {
   private cart$ = new BehaviorSubject<Cart | null>(null);
   private useMock = true;
 
+  private mockCart: Cart = {
+    id: 'mock-cart',
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    shipping: 0,
+    total: 0,
+    appliedDiscount: 0
+  };
+
   constructor(private http: HttpClient) {
     this.loadAuthToken();
+  }
+
+  // Helper for mock cart totals
+  private calculateCartTotals() {
+      const subtotal = this.mockCart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const tax = Math.round(subtotal * 0.1);
+      const shipping = subtotal > 0 ? (subtotal > 50000 ? 0 : 500) : 0; // Example shipping logic
+      const total = subtotal + tax + shipping - this.mockCart.appliedDiscount;
+
+      this.mockCart.subtotal = subtotal;
+      this.mockCart.tax = tax;
+      this.mockCart.shipping = shipping;
+      this.mockCart.total = total;
   }
 
   // Auth Methods
@@ -242,9 +265,6 @@ export class ApiService {
       if (product) {
         return of(product).pipe(delay(500));
       }
-      // For demo purposes, return first product if not found, or error
-      // return throwError(() => new Error('Product not found'));
-      // But let's return the first one to avoid breaking the UI during dev if ID mismatch
       return of(MOCK_PRODUCTS[0]).pipe(delay(500));
     }
     return this.http.get<ProductDetail>(`${this.baseUrl}/products/${productId}`);
@@ -283,6 +303,12 @@ export class ApiService {
 
   // Cart Methods
   getCart(): Observable<Cart> {
+    if (this.useMock) {
+        this.calculateCartTotals();
+        const cart = { ...this.mockCart };
+        this.cart$.next(cart);
+        return of(cart).pipe(delay(300));
+    }
     return this.http
       .get<Cart>(`${this.baseUrl}/cart`, {
         headers: { Authorization: `Bearer ${this.getAuthToken()}` },
@@ -291,6 +317,27 @@ export class ApiService {
   }
 
   addToCart(productId: string, quantity: number = 1): Observable<Cart> {
+    if (this.useMock) {
+        const product = MOCK_PRODUCTS.find(p => p.id === productId);
+        if (product) {
+            const existing = this.mockCart.items.find(i => i.productId === productId);
+            if (existing) {
+                existing.quantity += quantity;
+            } else {
+                this.mockCart.items.push({
+                    id: 'item-' + Math.random().toString(36).substring(7),
+                    productId,
+                    quantity,
+                    price: product.price,
+                    product: product
+                });
+            }
+            this.calculateCartTotals();
+        }
+        const cart = { ...this.mockCart };
+        this.cart$.next(cart);
+        return of(cart).pipe(delay(300));
+    }
     return this.http
       .post<Cart>(
         `${this.baseUrl}/cart/items`,
@@ -303,6 +350,19 @@ export class ApiService {
   }
 
   updateCartItem(itemId: string, quantity: number): Observable<Cart> {
+    if (this.useMock) {
+          const item = this.mockCart.items.find(i => i.id === itemId);
+          if (item) {
+              item.quantity = quantity;
+              if (item.quantity <= 0) {
+                  this.mockCart.items = this.mockCart.items.filter(i => i.id !== itemId);
+              }
+              this.calculateCartTotals();
+          }
+          const cart = { ...this.mockCart };
+          this.cart$.next(cart);
+          return of(cart).pipe(delay(300));
+    }
     return this.http
       .put<Cart>(
         `${this.baseUrl}/cart/items/${itemId}`,
@@ -315,12 +375,30 @@ export class ApiService {
   }
 
   removeFromCart(itemId: string): Observable<any> {
+    if (this.useMock) {
+          this.mockCart.items = this.mockCart.items.filter(i => i.id !== itemId);
+          this.calculateCartTotals();
+          const cart = { ...this.mockCart };
+          this.cart$.next(cart);
+          return of(cart).pipe(delay(300));
+    }
     return this.http.delete(`${this.baseUrl}/cart/items/${itemId}`, {
       headers: { Authorization: `Bearer ${this.getAuthToken()}` },
     });
   }
 
   applyCoupon(couponCode: string): Observable<Cart> {
+    if (this.useMock) {
+          if (couponCode === 'DISCOUNT10') {
+              this.mockCart.appliedDiscount = 1000;
+          } else {
+              this.mockCart.appliedDiscount = 0;
+          }
+          this.calculateCartTotals();
+          const cart = { ...this.mockCart };
+          this.cart$.next(cart);
+          return of(cart).pipe(delay(500));
+    }
     return this.http
       .post<Cart>(
         `${this.baseUrl}/cart/apply-coupon`,

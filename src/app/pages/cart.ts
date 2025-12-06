@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService, Cart } from '../services/api.service';
@@ -31,15 +31,16 @@ import { ApiService, Cart } from '../services/api.service';
             <div *ngIf="!isEmpty()" class="space-y-6">
               <div *ngFor="let item of cartItems()" class="card p-6 flex gap-6">
                 <!-- Image -->
-                <div class="w-32 h-32 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-4xl">💎</span>
+                <div class="w-32 h-32 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                   <img *ngIf="item.product.imageUrl" [src]="item.product.imageUrl" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                   <span *ngIf="!item.product.imageUrl" class="text-4xl absolute">💎</span>
                 </div>
 
                 <!-- Details -->
                 <div class="flex-1">
                   <div class="flex justify-between items-start mb-4">
                     <div>
-                      <p class="text-xs text-gold-600 font-semibold uppercase mb-1">Diamond</p>
+                      <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ item.product.category }}</p>
                       <h3 class="font-semibold text-gray-900 text-lg">{{ item.product.name }}</h3>
                     </div>
                     <button (click)="removeItem(item.id)" class="text-red-500 hover:text-red-700 transition-colors">
@@ -68,8 +69,8 @@ import { ApiService, Cart } from '../services/api.service';
               <div class="card p-6">
                 <h3 class="font-semibold text-gray-900 mb-4">Have a Coupon Code?</h3>
                 <div class="flex gap-2">
-                  <input type="text" placeholder="Enter coupon code" class="input-field flex-1">
-                  <button class="btn-outline">Apply</button>
+                  <input type="text" #couponInput placeholder="Enter coupon code" class="input-field flex-1">
+                  <button (click)="applyCoupon(couponInput.value)" class="btn-outline">Apply</button>
                 </div>
               </div>
             </div>
@@ -144,108 +145,51 @@ import { ApiService, Cart } from '../services/api.service';
   `,
 })
 export class CartComponent implements OnInit {
-  cartItems = signal<any[]>([
-    {
-      id: '1',
-      quantity: 1,
-      price: 45000,
-      product: { id: '1', name: 'Diamond Solitaire Ring' },
-    },
-  ]);
+  apiService = inject(ApiService);
 
-  isEmpty = signal(false);
+  cart = signal<Cart | null>(null);
+  cartItems = signal<any[]>([]);
+  isEmpty = signal(true);
 
-  constructor(private apiService: ApiService) {}
+  subtotal = computed(() => this.cart()?.subtotal || 0);
+  shipping = computed(() => this.cart()?.shipping || 0);
+  tax = computed(() => this.cart()?.tax || 0);
+  discount = computed(() => this.cart()?.appliedDiscount || 0);
+  total = computed(() => this.cart()?.total || 0);
 
   ngOnInit(): void {
-    this.loadCart();
-  }
-
-  private loadCart(): void {
-    // Try to load cart from API, fall back to mock data if offline/API not ready
-    if (this.apiService.isAuthenticated()) {
-      this.apiService.getCart().subscribe({
-        next: (cart) => {
-          this.cartItems.set(cart.items);
-          this.isEmpty.set(cart.items.length === 0);
-        },
-        error: (error) => {
-          console.warn('API not ready, using mock cart data');
-          this.loadMockCart();
-        },
-      });
-    } else {
-      // Load from localStorage or mock data
-      this.loadMockCart();
-    }
-  }
-
-  private loadMockCart(): void {
-    // Mock cart data for demo/beta phase
-    const mockItems = [
-      {
-        id: '1',
-        quantity: 1,
-        price: 45000,
-        product: {
-          id: '1',
-          name: '1.5 Carat Diamond Solitaire - GIA Certified',
-          category: 'Engagement Ring'
-        },
-      },
-    ];
-    this.cartItems.set(mockItems);
-    this.isEmpty.set(mockItems.length === 0);
+    this.apiService.cart().subscribe((cart) => {
+        if (cart) {
+            this.cart.set(cart);
+            this.cartItems.set(cart.items);
+            this.isEmpty.set(cart.items.length === 0);
+        } else {
+            this.isEmpty.set(true);
+        }
+    });
+    this.apiService.getCart().subscribe();
   }
 
   removeItem(itemId: string): void {
-    this.apiService.removeFromCart(itemId).subscribe({
-      next: () => {
-        this.loadCart();
-      },
-    });
+    this.apiService.removeFromCart(itemId).subscribe();
   }
 
   increaseQuantity(itemId: string): void {
     const item = this.cartItems().find((i) => i.id === itemId);
     if (item) {
-      this.apiService.updateCartItem(itemId, item.quantity + 1).subscribe({
-        next: () => {
-          this.loadCart();
-        },
-      });
+      this.apiService.updateCartItem(itemId, item.quantity + 1).subscribe();
     }
   }
 
   decreaseQuantity(itemId: string): void {
     const item = this.cartItems().find((i) => i.id === itemId);
     if (item && item.quantity > 1) {
-      this.apiService.updateCartItem(itemId, item.quantity - 1).subscribe({
-        next: () => {
-          this.loadCart();
-        },
-      });
+      this.apiService.updateCartItem(itemId, item.quantity - 1).subscribe();
     }
   }
 
-  subtotal(): number {
-    return this.cartItems().reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }
-
-  shipping(): number {
-    return this.isEmpty() ? 0 : 500;
-  }
-
-  tax(): number {
-    return Math.round(this.subtotal() * 0.1);
-  }
-
-  discount(): number {
-    return 0;
-  }
-
-  total(): number {
-    return this.subtotal() + this.shipping() + this.tax() - this.discount();
+  applyCoupon(code: string): void {
+      this.apiService.applyCoupon(code).subscribe();
   }
 
   formatPrice(price: number): string {
