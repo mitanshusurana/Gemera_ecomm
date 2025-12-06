@@ -1,32 +1,11 @@
-import { Component, signal } from "@angular/core";
+import { Component, signal, OnInit, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
 import { WhatsappButtonComponent } from "../components/whatsapp-button";
+import { ApiService, Product, ProductDetail } from "../services/api.service";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  category: string;
-  rating: number;
-  reviews: number;
-  badge?: string;
-  description: string;
-  image: string;
-  stock: number;
-  specifications?: {
-    carat?: number;
-    clarity?: string;
-    color?: string;
-    cut?: string;
-    metal?: string;
-    weight?: number;
-  };
-}
-
-interface Collection {
+interface CollectionUI {
   id: string;
   name: string;
   title: string;
@@ -216,7 +195,7 @@ interface Collection {
         <!-- 6-Item Grid Layout -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <a
-            *ngFor="let collection of collections"
+            *ngFor="let collection of collections()"
             routerLink="/products"
             [queryParams]="{ category: collection.name }"
             class="group relative overflow-hidden rounded-2xl h-96 cursor-pointer card-hover block"
@@ -240,7 +219,7 @@ interface Collection {
 
               <!-- Text -->
               <h3 class="font-display text-3xl font-bold mb-2">
-                {{ collection.name }}
+                {{ collection.title }}
               </h3>
               <p class="text-gray-100 text-sm mb-4">
                 {{ collection.description }}
@@ -292,7 +271,7 @@ interface Collection {
         <!-- Featured Items Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <a
-            *ngFor="let product of featuredProducts"
+            *ngFor="let product of featuredProducts()"
             [routerLink]="['/products', product.id]"
             class="card group overflow-hidden hover:shadow-luxury-lg transition-all duration-300 block cursor-pointer"
           >
@@ -300,24 +279,26 @@ interface Collection {
             <div
               class="relative overflow-hidden h-72 bg-gradient-to-br from-gold-100 to-diamond-100"
             >
+              <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover" [alt]="product.name" onerror="this.style.display='none'">
               <div
+                *ngIf="!product.imageUrl"
                 class="w-full h-full flex items-center justify-center text-5xl"
               >
                 {{ getProductEmoji(product.category) }}
               </div>
 
               <!-- Badge -->
-              <div *ngIf="product.badge" class="absolute top-4 right-4">
+              <div *ngIf="getBadge(product)" class="absolute top-4 right-4">
                 <span
                   class="inline-block px-3 py-1 bg-gold-500 text-white text-xs font-bold rounded-full"
                 >
-                  {{ product.badge }}
+                  {{ getBadge(product) }}
                 </span>
               </div>
 
               <!-- Wishlist -->
               <button
-                (click)="$event.preventDefault(); $event.stopPropagation()"
+                (click)="handleWishlist($event, product.id)"
                 class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all shadow-md"
               >
                 <svg
@@ -347,7 +328,7 @@ interface Collection {
               <h3 class="font-semibold text-gray-900 text-lg mb-3 line-clamp-2">
                 {{ product.name }}
               </h3>
-              <p class="text-sm text-gray-600 mb-3">
+              <p class="text-sm text-gray-600 mb-3 line-clamp-2">
                 {{ product.description }}
               </p>
 
@@ -361,7 +342,7 @@ interface Collection {
                   >
                 </div>
                 <span class="text-xs text-gray-500"
-                  >({{ product.reviews }})</span
+                  >({{ product.reviewCount }})</span
                 >
               </div>
 
@@ -390,7 +371,7 @@ interface Collection {
               <!-- Add to Cart & Quick View -->
               <div class="flex gap-2">
                 <button
-                  (click)="$event.preventDefault(); $event.stopPropagation()"
+                  (click)="handleAddToCart($event, product.id)"
                   class="flex-1 btn-primary"
                 >
                   Add to Cart
@@ -581,7 +562,7 @@ interface Collection {
       [isOpen]="quickViewOpen()"
       [product]="selectedProduct()"
       (close)="closeQuickView()"
-      (addToCart)="handleAddToCart($event)"
+      (addToCart)="handleAddToCartFromModal($event)"
       (viewDetails)="handleViewDetails($event)"
     ></app-quick-view-modal>
 
@@ -589,203 +570,44 @@ interface Collection {
     <app-whatsapp-button></app-whatsapp-button>
   `,
 })
-export class HomeComponent {
-  quickViewOpen = signal(false);
-  selectedProduct = signal<Product | null>(null);
-  collections: Collection[] = [
-    {
-      id: "1",
-      name: "Engagement Rings",
-      title: "Diamond Rings",
-      description: "Certified solitaires and bespoke designs",
-      productCount: 248,
-      icon: "💍",
-      color: "from-rose-100 to-rose-200",
-      accentColor: "text-rose-700",
-    },
-    {
-      id: "2",
-      name: "Loose Gemstones",
-      title: "Loose Stones",
-      description: "Museum-quality unset precious & semi-precious gems",
-      productCount: 312,
-      icon: "💎",
-      color: "from-sapphire-100 to-sapphire-200",
-      accentColor: "text-sapphire-700",
-    },
-    {
-      id: "3",
-      name: "Spiritual Idols",
-      title: "Carved Figures",
-      description: "Hand-carved spiritual and devotional sculptures",
-      productCount: 156,
-      icon: "🕉️",
-      color: "from-emerald-100 to-emerald-200",
-      accentColor: "text-emerald-700",
-    },
-    {
-      id: "4",
-      name: "Gemstone Jewelry",
-      title: "Colored Gemstones",
-      description: "Emerald, sapphire, ruby & precious stone pieces",
-      productCount: 189,
-      icon: "👑",
-      color: "from-purple-100 to-purple-200",
-      accentColor: "text-purple-700",
-    },
-    {
-      id: "5",
-      name: "Precious Metals",
-      title: "Gold & Platinum",
-      description: "24K gold, platinum & silver collections",
-      productCount: 94,
-      icon: "🏆",
-      color: "from-yellow-100 to-yellow-200",
-      accentColor: "text-yellow-700",
-    },
-    {
-      id: "6",
-      name: "Bespoke Custom",
-      title: "Made to Order",
-      description: "Personalized designs with master craftspeople",
-      productCount: 0,
-      icon: "✨",
-      color: "from-pink-100 to-pink-200",
-      accentColor: "text-pink-700",
-    },
-  ];
+export class HomeComponent implements OnInit {
+  private apiService = inject(ApiService);
 
-  featuredProducts: Product[] = [
-    {
-      id: "1",
-      name: "1.5 Carat Diamond Solitaire",
-      price: 45000,
-      originalPrice: 50000,
-      category: "Engagement Ring",
-      rating: 4.9,
-      reviews: 245,
-      badge: "BESTSELLER",
-      description: "VS1 clarity, G color, excellent cut - GIA certified",
-      image: "diamond-ring",
-      stock: 3,
-      specifications: {
-        carat: 1.5,
-        clarity: "VS1",
-        color: "G",
-        cut: "Excellent",
-        metal: "18K White Gold",
-        weight: 5.5,
-      },
-    },
-    {
-      id: "2",
-      name: "Colombian Emerald Loose Stone",
-      price: 32000,
-      category: "Loose Gemstone",
-      rating: 4.8,
-      reviews: 156,
-      badge: "RARE",
-      description: "Museum-grade, 5.2 carats, vivid green",
-      image: "emerald",
-      stock: 2,
-      specifications: {
-        carat: 5.2,
-        clarity: "VS2",
-        color: "Vivid Green",
-        weight: 2.1,
-      },
-    },
-    {
-      id: "3",
-      name: "Hand-Carved Ganesha Idol",
-      price: 18000,
-      category: "Spiritual Idol",
-      rating: 5.0,
-      reviews: 89,
-      badge: "NEW",
-      description: "Crystal quartz, artisan-carved, 6 inches",
-      image: "ganesha",
-      stock: 8,
-      specifications: { weight: 1.2 },
-    },
-    {
-      id: "4",
-      name: "Kashmir Sapphire - Loose",
-      price: 28000,
-      originalPrice: 35000,
-      category: "Loose Gemstone",
-      rating: 4.9,
-      reviews: 203,
-      description: "3.8 carats, deep blue, IGI certified",
-      image: "sapphire",
-      stock: 4,
-      specifications: {
-        carat: 3.8,
-        clarity: "VS1",
-        color: "Deep Blue",
-        weight: 1.9,
-      },
-    },
-    {
-      id: "5",
-      name: "Padparadsha Sapphire Ring",
-      price: 42000,
-      category: "Gemstone Ring",
-      rating: 4.7,
-      reviews: 78,
-      description: "Pink-orange Ceylon sapphire, 18K gold",
-      image: "padparadsha",
-      stock: 6,
-      specifications: {
-        carat: 2.5,
-        color: "Padparadsha",
-        metal: "18K Gold",
-        weight: 4.8,
-      },
-    },
-    {
-      id: "6",
-      name: "Lord Shiva Crystal Idol",
-      price: 12000,
-      category: "Spiritual Idol",
-      rating: 4.8,
-      reviews: 124,
-      description: "Clear quartz, hand-polished, meditation quality",
-      image: "shiva",
-      stock: 12,
-      specifications: { weight: 0.8 },
-    },
-    {
-      id: "7",
-      name: "Ruby Burma Loose Stone",
-      price: 55000,
-      category: "Loose Gemstone",
-      rating: 5.0,
-      reviews: 92,
-      badge: "EXCLUSIVE",
-      description: "Pigeon blood red, 2.1 carats, unheated",
-      image: "ruby",
-      stock: 1,
-      specifications: {
-        carat: 2.1,
-        clarity: "VS2",
-        color: "Pigeon Blood Red",
-        weight: 1.05,
-      },
-    },
-    {
-      id: "8",
-      name: "Pure 24K Gold Bangle",
-      price: 38000,
-      category: "Precious Metal",
-      rating: 4.6,
-      reviews: 167,
-      description: "10 grams, hallmarked, traditional design",
-      image: "bangle",
-      stock: 5,
-      specifications: { metal: "24K Pure Gold", weight: 10 },
-    },
-  ];
+  quickViewOpen = signal(false);
+  selectedProduct = signal<ProductDetail | null>(null);
+
+  collections = signal<CollectionUI[]>([]);
+  featuredProducts = signal<Product[]>([]);
+
+  // UI Metadata map
+  private categoryMeta: {[key: string]: Partial<CollectionUI>} = {
+    'engagement-rings': { title: 'Diamond Rings', icon: '💍', color: 'from-rose-100 to-rose-200', accentColor: 'text-rose-700', description: 'Certified solitaires and bespoke designs', productCount: 248 },
+    'loose-gemstones': { title: 'Loose Stones', icon: '💎', color: 'from-sapphire-100 to-sapphire-200', accentColor: 'text-sapphire-700', description: 'Museum-quality unset precious & semi-precious gems', productCount: 312 },
+    'spiritual-idols': { title: 'Carved Figures', icon: '🕉️', color: 'from-emerald-100 to-emerald-200', accentColor: 'text-emerald-700', description: 'Hand-carved spiritual and devotional sculptures', productCount: 156 },
+    'gemstone-jewelry': { title: 'Colored Gemstones', icon: '👑', color: 'from-purple-100 to-purple-200', accentColor: 'text-purple-700', description: 'Emerald, sapphire, ruby & precious stone pieces', productCount: 189 },
+    'precious-metals': { title: 'Gold & Platinum', icon: '🏆', color: 'from-yellow-100 to-yellow-200', accentColor: 'text-yellow-700', description: '24K gold, platinum & silver collections', productCount: 94 },
+    'bespoke-custom': { title: 'Made to Order', icon: '✨', color: 'from-pink-100 to-pink-200', accentColor: 'text-pink-700', description: 'Personalized designs with master craftspeople', productCount: 0 },
+  };
+
+  ngOnInit() {
+    this.apiService.getCategories().subscribe(res => {
+        const mapped = res.categories.map(c => ({
+            id: c.id,
+            name: c.name,
+            title: this.categoryMeta[c.name]?.title || c.displayName,
+            description: this.categoryMeta[c.name]?.description || '',
+            productCount: this.categoryMeta[c.name]?.productCount || 0,
+            icon: this.categoryMeta[c.name]?.icon || '💎',
+            color: this.categoryMeta[c.name]?.color || 'from-gray-100 to-gray-200',
+            accentColor: this.categoryMeta[c.name]?.accentColor || 'text-gray-700'
+        }));
+        this.collections.set(mapped);
+    });
+
+    this.apiService.getProducts(0, 8).subscribe(res => {
+        this.featuredProducts.set(res.content);
+    });
+  }
 
   getProductEmoji(category: string): string {
     const emojiMap: { [key: string]: string } = {
@@ -806,9 +628,18 @@ export class HomeComponent {
     }).format(price);
   }
 
+  getBadge(product: Product): string | undefined {
+    if (product.stock <= 3) return 'LOW STOCK';
+    if (product.price > 40000) return 'EXCLUSIVE';
+    return undefined;
+  }
+
   openQuickView(product: Product): void {
-    this.selectedProduct.set(product);
-    this.quickViewOpen.set(true);
+    // Fetch full details
+    this.apiService.getProductById(product.id).subscribe(details => {
+        this.selectedProduct.set(details);
+        this.quickViewOpen.set(true);
+    });
   }
 
   closeQuickView(): void {
@@ -816,15 +647,33 @@ export class HomeComponent {
     this.selectedProduct.set(null);
   }
 
-  handleAddToCart(event: { productId: string; quantity: number }): void {
+  handleAddToCart(event: Event, productId: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log("Add to cart:", productId);
+    this.apiService.addToCart(productId, 1).subscribe(() => {
+        alert('Added to cart!');
+    });
+  }
+
+  handleWishlist(event: Event, productId: string): void {
+      event.preventDefault();
+      event.stopPropagation();
+      console.log("Add to wishlist:", productId);
+      // Api call would go here
+  }
+
+  handleAddToCartFromModal(event: { productId: string; quantity: number }): void {
     console.log("Add to cart from quick view:", event);
-    // In real app, call CartService to add item
-    alert(`Added ${event.quantity} item(s) to cart`);
-    this.closeQuickView();
+    this.apiService.addToCart(event.productId, event.quantity).subscribe(() => {
+        alert(`Added ${event.quantity} item(s) to cart`);
+        this.closeQuickView();
+    });
   }
 
   handleViewDetails(productId: string): void {
     console.log("View details for product:", productId);
     // In real app, navigate to product detail page
+    // RouterLink in template handles navigation if set, but here it's an event
   }
 }

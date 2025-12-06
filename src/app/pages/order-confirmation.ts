@@ -1,12 +1,12 @@
 import { Component, OnInit, signal } from "@angular/core";
-import { CommonModule, DecimalPipe } from "@angular/common";
+import { CommonModule } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { ApiService } from "../services/api.service";
 
 @Component({
   selector: "app-order-confirmation",
   standalone: true,
-  imports: [CommonModule, RouterLink, DecimalPipe],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gradient-to-b from-gold-50 to-white">
       <!-- Breadcrumb -->

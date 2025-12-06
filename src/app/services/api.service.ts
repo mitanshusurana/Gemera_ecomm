@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { map, tap, delay } from 'rxjs/operators';
+import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '../data/mock-data';
 
 export interface Product {
   id: string;
@@ -99,6 +100,7 @@ export class ApiService {
   private authToken$ = new BehaviorSubject<string | null>(null);
   private user$ = new BehaviorSubject<User | null>(null);
   private cart$ = new BehaviorSubject<Cart | null>(null);
+  private useMock = true;
 
   constructor(private http: HttpClient) {
     this.loadAuthToken();
@@ -159,6 +161,60 @@ export class ApiService {
       search?: string;
     }
   ): Observable<{ content: Product[]; pageable: any }> {
+    if (this.useMock) {
+      let products = [...MOCK_PRODUCTS];
+
+      if (filters) {
+        if (filters.category) {
+          const cat = filters.category.toLowerCase();
+          products = products.filter(
+            (p) =>
+              p.category.toLowerCase().includes(cat) ||
+              p.subcategory?.toLowerCase().includes(cat)
+          );
+        }
+        if (filters.search) {
+          const search = filters.search.toLowerCase();
+          products = products.filter(
+            (p) =>
+              p.name.toLowerCase().includes(search) ||
+              p.description.toLowerCase().includes(search)
+          );
+        }
+        if (filters.priceMin !== undefined) {
+          products = products.filter((p) => p.price >= filters.priceMin!);
+        }
+        if (filters.priceMax !== undefined) {
+          products = products.filter((p) => p.price <= filters.priceMax!);
+        }
+        // Sort
+        if (filters.sortBy) {
+          if (filters.sortBy === 'price') {
+            products.sort((a, b) =>
+              filters.order === 'desc' ? b.price - a.price : a.price - b.price
+            );
+          } else if (filters.sortBy === 'newest') {
+             // Mock sort by date (assuming id represents insertion order or using mock date)
+             products.reverse();
+          }
+        }
+      }
+
+      const start = page * size;
+      const end = start + size;
+      const content = products.slice(start, end);
+
+      return of({
+        content,
+        pageable: {
+          pageNumber: page,
+          pageSize: size,
+          totalElements: products.length,
+          totalPages: Math.ceil(products.length / size),
+        },
+      }).pipe(delay(500));
+    }
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
@@ -181,10 +237,23 @@ export class ApiService {
   }
 
   getProductById(productId: string): Observable<ProductDetail> {
+    if (this.useMock) {
+      const product = MOCK_PRODUCTS.find((p) => p.id === productId);
+      if (product) {
+        return of(product).pipe(delay(500));
+      }
+      // For demo purposes, return first product if not found, or error
+      // return throwError(() => new Error('Product not found'));
+      // But let's return the first one to avoid breaking the UI during dev if ID mismatch
+      return of(MOCK_PRODUCTS[0]).pipe(delay(500));
+    }
     return this.http.get<ProductDetail>(`${this.baseUrl}/products/${productId}`);
   }
 
   getCategories(): Observable<{ categories: Category[] }> {
+    if (this.useMock) {
+      return of({ categories: MOCK_CATEGORIES }).pipe(delay(500));
+    }
     return this.http.get<{ categories: Category[] }>(
       `${this.baseUrl}/products/categories`
     );
@@ -194,6 +263,15 @@ export class ApiService {
     query: string,
     limit: number = 10
   ): Observable<{ results: Product[] }> {
+    if (this.useMock) {
+      const q = query.toLowerCase();
+      const results = MOCK_PRODUCTS.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q)
+      ).slice(0, limit);
+      return of({ results }).pipe(delay(300));
+    }
     const params = new HttpParams()
       .set('query', query)
       .set('limit', limit.toString());

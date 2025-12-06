@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { CompareService } from '../services/compare.service';
 
 @Component({
   selector: 'app-header',
@@ -52,6 +53,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </button>
+            <a routerLink="/compare" class="hidden sm:flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300 relative" title="Compare">
+              <span class="text-xl">⚖️</span>
+              <span class="absolute top-0 right-0 w-5 h-5 bg-gold-500 text-white text-xs font-bold rounded-full flex items-center justify-center" *ngIf="compareService.compareList().length > 0">{{ compareService.compareList().length }}</span>
+            </a>
             <button class="hidden sm:flex items-center justify-center w-10 h-10 hover:bg-gold-50 rounded-lg transition-colors duration-300 relative">
               <svg class="w-5 h-5 text-diamond-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
@@ -92,6 +97,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   `,
 })
 export class HeaderComponent {
+  compareService = inject(CompareService);
   cartCount = signal(0);
   mobileMenuOpen = signal(false);
 
