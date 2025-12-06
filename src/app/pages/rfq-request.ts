@@ -1,11 +1,11 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
+import { Component, OnInit, signal } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { RouterLink } from "@angular/router";
+import { RFQService, RFQRequest, RFQItem } from "../services/rfq.service";
 
 @Component({
-  selector: 'app-rfq-request',
+  selector: "app-rfq-request",
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
@@ -22,25 +22,36 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
       </div>
 
       <div class="container-luxury section-padding">
-        <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4">
+        <h1
+          class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4"
+        >
           Request for Quote
         </h1>
         <p class="text-xl text-gray-600 mb-12">
-          For bulk orders and B2B inquiries, get personalized quotes from our team
+          For bulk orders and B2B inquiries, get personalized quotes from our
+          team
         </p>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Form -->
           <div class="lg:col-span-2">
             <div class="card p-8" *ngIf="!submissionSuccess()">
-              <form (ngSubmit)="submitRequest()" #rfqForm="ngForm" class="space-y-6">
+              <form
+                (ngSubmit)="submitRequest()"
+                #rfqForm="ngForm"
+                class="space-y-6"
+              >
                 <!-- Contact Information -->
                 <div class="border-b border-diamond-200 pb-6">
-                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">Contact Information</h2>
+                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                    Contact Information
+                  </h2>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label class="block text-sm font-semibold text-gray-900 mb-2">
+                      <label
+                        class="block text-sm font-semibold text-gray-900 mb-2"
+                      >
                         First Name
                       </label>
                       <input
@@ -53,7 +64,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-semibold text-gray-900 mb-2">
+                      <label
+                        class="block text-sm font-semibold text-gray-900 mb-2"
+                      >
                         Last Name
                       </label>
                       <input
@@ -68,7 +81,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                   </div>
 
                   <div class="mt-6">
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <label
+                      class="block text-sm font-semibold text-gray-900 mb-2"
+                    >
                       Email Address
                     </label>
                     <input
@@ -82,7 +97,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                   </div>
 
                   <div class="mt-6">
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <label
+                      class="block text-sm font-semibold text-gray-900 mb-2"
+                    >
                       Company Name
                     </label>
                     <input
@@ -96,7 +113,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                   </div>
 
                   <div class="mt-6">
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <label
+                      class="block text-sm font-semibold text-gray-900 mb-2"
+                    >
                       Phone Number
                     </label>
                     <input
@@ -112,13 +131,21 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
 
                 <!-- Product Information -->
                 <div class="border-b border-diamond-200 pb-6">
-                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">Product Information</h2>
+                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                    Product Information
+                  </h2>
 
                   <div class="space-y-4 mb-6">
-                    <ng-container *ngFor="let item of rfqItems(); let i = index">
-                      <div class="border border-diamond-200 rounded-lg p-4 space-y-4">
+                    <ng-container
+                      *ngFor="let item of rfqItems(); let i = index"
+                    >
+                      <div
+                        class="border border-diamond-200 rounded-lg p-4 space-y-4"
+                      >
                         <div class="flex justify-between items-center">
-                          <span class="font-semibold text-gray-900">Item {{ i + 1 }}</span>
+                          <span class="font-semibold text-gray-900"
+                            >Item {{ i + 1 }}</span
+                          >
                           <button
                             type="button"
                             (click)="removeItem(i)"
@@ -130,7 +157,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            <label
+                              class="block text-sm font-semibold text-gray-900 mb-2"
+                            >
                               Product Category
                             </label>
                             <select
@@ -139,17 +168,31 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                               required
                               class="input-field"
                             >
-                              <option value="">Select a product category</option>
-                              <option value="engagement-rings">Engagement Rings</option>
-                              <option value="loose-gemstones">Loose Gemstones</option>
-                              <option value="spiritual-idols">Spiritual Idols</option>
-                              <option value="gemstone-jewelry">Gemstone Jewelry</option>
-                              <option value="precious-metals">Precious Metals</option>
+                              <option value="">
+                                Select a product category
+                              </option>
+                              <option value="engagement-rings">
+                                Engagement Rings
+                              </option>
+                              <option value="loose-gemstones">
+                                Loose Gemstones
+                              </option>
+                              <option value="spiritual-idols">
+                                Spiritual Idols
+                              </option>
+                              <option value="gemstone-jewelry">
+                                Gemstone Jewelry
+                              </option>
+                              <option value="precious-metals">
+                                Precious Metals
+                              </option>
                               <option value="custom">Custom Designs</option>
                             </select>
                           </div>
                           <div>
-                            <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            <label
+                              class="block text-sm font-semibold text-gray-900 mb-2"
+                            >
                               Quantity
                             </label>
                             <input
@@ -165,7 +208,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                         </div>
 
                         <div>
-                          <label class="block text-sm font-semibold text-gray-900 mb-2">
+                          <label
+                            class="block text-sm font-semibold text-gray-900 mb-2"
+                          >
                             Specifications (Optional)
                           </label>
                           <textarea
@@ -191,10 +236,14 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
 
                 <!-- Additional Information -->
                 <div class="border-b border-diamond-200 pb-6">
-                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">Additional Information</h2>
+                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                    Additional Information
+                  </h2>
 
                   <div class="mb-6">
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <label
+                      class="block text-sm font-semibold text-gray-900 mb-2"
+                    >
                       Estimated Budget (Optional)
                     </label>
                     <div class="flex gap-2">
@@ -210,7 +259,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                   </div>
 
                   <div class="mb-6">
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <label
+                      class="block text-sm font-semibold text-gray-900 mb-2"
+                    >
                       Delivery Timeline
                     </label>
                     <select
@@ -229,7 +280,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                   </div>
 
                   <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <label
+                      class="block text-sm font-semibold text-gray-900 mb-2"
+                    >
                       Additional Notes
                     </label>
                     <textarea
@@ -243,10 +296,17 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                 </div>
 
                 <div class="flex gap-4">
-                  <a routerLink="/" class="flex-1 btn-ghost border border-diamond-300">
+                  <a
+                    routerLink="/"
+                    class="flex-1 btn-ghost border border-diamond-300"
+                  >
                     Cancel
                   </a>
-                  <button type="submit" [disabled]="!rfqForm.valid" class="flex-1 btn-primary">
+                  <button
+                    type="submit"
+                    [disabled]="!rfqForm.valid"
+                    class="flex-1 btn-primary"
+                  >
                     Submit RFQ
                   </button>
                 </div>
@@ -256,7 +316,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
             <!-- Success Message -->
             <div *ngIf="submissionSuccess()" class="card p-12 text-center">
               <div class="mb-6 inline-block">
-                <div class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center animate-scaleIn">
+                <div
+                  class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center animate-scaleIn"
+                >
                   <span class="text-5xl">✓</span>
                 </div>
               </div>
@@ -265,14 +327,18 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                 RFQ Submitted Successfully
               </h2>
               <p class="text-gray-600 mb-4">
-                Thank you for your request. Our sales team will review your requirements and send you a personalized quote within 24 business hours.
+                Thank you for your request. Our sales team will review your
+                requirements and send you a personalized quote within 24
+                business hours.
               </p>
               <p class="text-sm text-gray-500 mb-8">
-                RFQ Number: <span class="font-bold text-gold-600">{{ rfqNumber() }}</span>
+                RFQ Number:
+                <span class="font-bold text-gold-600">{{ rfqNumber() }}</span>
               </p>
 
               <p class="text-gray-600 mb-8">
-                A confirmation email has been sent to <span class="font-semibold">{{ rfqData.email }}</span>
+                A confirmation email has been sent to
+                <span class="font-semibold">{{ rfqData.email }}</span>
               </p>
 
               <button (click)="reset()" routerLink="/" class="btn-primary">
@@ -285,7 +351,9 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
           <div class="lg:col-span-1">
             <!-- Benefits -->
             <div class="card p-8 mb-8">
-              <h3 class="text-xl font-bold text-diamond-900 mb-6">Why Choose RFQ?</h3>
+              <h3 class="text-xl font-bold text-diamond-900 mb-6">
+                Why Choose RFQ?
+              </h3>
               <div class="space-y-4">
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
@@ -295,21 +363,15 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">
-                    Best price negotiation
-                  </p>
+                  <p class="text-sm text-gray-700">Best price negotiation</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">
-                    Flexible payment terms
-                  </p>
+                  <p class="text-sm text-gray-700">Flexible payment terms</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">
-                    Priority customer support
-                  </p>
+                  <p class="text-sm text-gray-700">Priority customer support</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
@@ -322,23 +384,36 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
 
             <!-- Contact Info -->
             <div class="card p-8">
-              <h3 class="text-xl font-bold text-diamond-900 mb-6">Need Help?</h3>
+              <h3 class="text-xl font-bold text-diamond-900 mb-6">
+                Need Help?
+              </h3>
               <div class="space-y-4">
                 <div>
                   <p class="text-sm text-gray-600 mb-2">Phone</p>
-                  <a href="tel:+917976091951" class="text-gold-600 hover:text-gold-700 font-semibold">
+                  <a
+                    href="tel:+917976091951"
+                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                  >
                     +91 7976091951
                   </a>
                 </div>
                 <div>
                   <p class="text-sm text-gray-600 mb-2">Email</p>
-                  <a href="mailto:sales@gemsandjewelry.com" class="text-gold-600 hover:text-gold-700 font-semibold">
+                  <a
+                    href="mailto:sales@gemsandjewelry.com"
+                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                  >
                     sales@gemsandjewelry.com
                   </a>
                 </div>
                 <div>
                   <p class="text-sm text-gray-600 mb-2">WhatsApp</p>
-                  <a href="https://wa.me/917976091951" target="_blank" rel="noopener" class="text-gold-600 hover:text-gold-700 font-semibold">
+                  <a
+                    href="https://wa.me/917976091951"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                  >
                     Chat with us
                   </a>
                 </div>
@@ -370,27 +445,24 @@ import { RFQService, RFQRequest, RFQItem } from '../services/rfq.service';
 })
 export class RFQRequestComponent {
   rfqData = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    companyName: '',
-    phone: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    companyName: "",
+    phone: "",
     estimatedBudget: 0,
-    deliveryTimeline: '',
-    notes: '',
+    deliveryTimeline: "",
+    notes: "",
   };
 
-  rfqItems = signal<RFQItem[]>([{ productId: '', quantity: 1 }]);
+  rfqItems = signal<RFQItem[]>([{ productId: "", quantity: 1 }]);
   submissionSuccess = signal(false);
-  rfqNumber = signal('');
+  rfqNumber = signal("");
 
   constructor(private rfqService: RFQService) {}
 
   addItem(): void {
-    this.rfqItems.update((items) => [
-      ...items,
-      { productId: '', quantity: 1 },
-    ]);
+    this.rfqItems.update((items) => [...items, { productId: "", quantity: 1 }]);
   }
 
   removeItem(index: number): void {
@@ -399,7 +471,7 @@ export class RFQRequestComponent {
 
   submitRequest(): void {
     const request: RFQRequest = {
-      userId: 'current-user',
+      userId: "current-user",
       email: this.rfqData.email,
       companyName: this.rfqData.companyName,
       items: this.rfqItems(),
@@ -410,29 +482,29 @@ export class RFQRequestComponent {
 
     this.rfqService.createRequest(request).subscribe({
       next: (response) => {
-        this.rfqNumber.set(response.rfqNumber || 'RFQ-' + new Date().getTime());
+        this.rfqNumber.set(response.rfqNumber || "RFQ-" + new Date().getTime());
         this.submissionSuccess.set(true);
       },
       error: (error) => {
-        console.error('Error submitting RFQ:', error);
-        alert('Error submitting RFQ. Please try again.');
+        console.error("Error submitting RFQ:", error);
+        alert("Error submitting RFQ. Please try again.");
       },
     });
   }
 
   reset(): void {
     this.rfqData = {
-      firstName: '',
-      lastName: '',
-      email: '',
-      companyName: '',
-      phone: '',
+      firstName: "",
+      lastName: "",
+      email: "",
+      companyName: "",
+      phone: "",
       estimatedBudget: 0,
-      deliveryTimeline: '',
-      notes: '',
+      deliveryTimeline: "",
+      notes: "",
     };
-    this.rfqItems.set([{ productId: '', quantity: 1 }]);
+    this.rfqItems.set([{ productId: "", quantity: 1 }]);
     this.submissionSuccess.set(false);
-    this.rfqNumber.set('');
+    this.rfqNumber.set("");
   }
 }

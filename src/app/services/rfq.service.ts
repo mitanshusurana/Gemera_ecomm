@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable } from "@angular/core";
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Observable } from "rxjs";
 
 export interface RFQItem {
   productId: string;
@@ -19,7 +19,13 @@ export interface RFQRequest {
   estimatedBudget?: number;
   deliveryTimeline?: string;
   additionalNotes?: string;
-  status?: 'PENDING' | 'QUOTED' | 'NEGOTIATING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  status?:
+    | "PENDING"
+    | "QUOTED"
+    | "NEGOTIATING"
+    | "ACCEPTED"
+    | "REJECTED"
+    | "EXPIRED";
   createdAt?: string;
   expiresAt?: string;
   quotedPrice?: number;
@@ -50,12 +56,12 @@ export interface RFQQuote {
   notes?: string;
   quotedBy?: string;
   quotedAt: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
 }
 
 export interface RFQResponse {
   rfqId: string;
-  status: 'ACCEPTED' | 'REJECTED' | 'NEGOTIATION_REQUEST';
+  status: "ACCEPTED" | "REJECTED" | "NEGOTIATION_REQUEST";
   message?: string;
   counterOffer?: {
     items: Array<{ productId: string; quantity: number }>;
@@ -64,10 +70,10 @@ export interface RFQResponse {
 }
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root",
 })
 export class RFQService {
-  private baseUrl = '/api/v1/rfq';
+  private baseUrl = "/api/v1/rfq";
 
   constructor(private http: HttpClient) {}
 
@@ -90,7 +96,7 @@ export class RFQService {
    */
   getRequestByNumber(rfqNumber: string): Observable<RFQRequest> {
     return this.http.get<RFQRequest>(
-      `${this.baseUrl}/requests/number/${rfqNumber}`
+      `${this.baseUrl}/requests/number/${rfqNumber}`,
     );
   }
 
@@ -101,14 +107,14 @@ export class RFQService {
     userId: string,
     page: number = 0,
     size: number = 20,
-    status?: string
+    status?: string,
   ): Observable<{ content: RFQRequest[]; totalElements: number }> {
     let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+      .set("page", page.toString())
+      .set("size", size.toString());
 
     if (status) {
-      params = params.set('status', status);
+      params = params.set("status", status);
     }
 
     return this.http.get<{
@@ -120,10 +126,13 @@ export class RFQService {
   /**
    * Update RFQ request
    */
-  updateRequest(rfqId: string, updates: Partial<RFQRequest>): Observable<RFQRequest> {
+  updateRequest(
+    rfqId: string,
+    updates: Partial<RFQRequest>,
+  ): Observable<RFQRequest> {
     return this.http.put<RFQRequest>(
       `${this.baseUrl}/requests/${rfqId}`,
-      updates
+      updates,
     );
   }
 
@@ -147,11 +156,11 @@ export class RFQService {
   getAllQuotes(
     rfqId: string,
     page: number = 0,
-    size: number = 10
+    size: number = 10,
   ): Observable<{ content: RFQQuote[]; totalElements: number }> {
     const params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+      .set("page", page.toString())
+      .set("size", size.toString());
 
     return this.http.get<{
       content: RFQQuote[];
@@ -164,7 +173,7 @@ export class RFQService {
    */
   downloadQuote(rfqId: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/requests/${rfqId}/quote/pdf`, {
-      responseType: 'blob',
+      responseType: "blob",
     });
   }
 
@@ -193,11 +202,11 @@ export class RFQService {
       items?: Array<{ productId: string; quantity: number }>;
       requestedPrice?: number;
       notes: string;
-    }
+    },
   ): Observable<any> {
     return this.http.post(
       `${this.baseUrl}/requests/${rfqId}/negotiate`,
-      negotiationData
+      negotiationData,
     );
   }
 
@@ -207,14 +216,14 @@ export class RFQService {
   getAllRequests(
     page: number = 0,
     size: number = 20,
-    status?: string
+    status?: string,
   ): Observable<{ content: RFQRequest[]; totalElements: number }> {
     let params = new HttpParams()
-      .set('page', page.toString())
-      .set('size', size.toString());
+      .set("page", page.toString())
+      .set("size", size.toString());
 
     if (status) {
-      params = params.set('status', status);
+      params = params.set("status", status);
     }
 
     return this.http.get<{
@@ -229,17 +238,21 @@ export class RFQService {
   createQuote(rfqId: string, quote: RFQQuote): Observable<RFQQuote> {
     return this.http.post<RFQQuote>(
       `${this.baseUrl}/requests/${rfqId}/quote`,
-      quote
+      quote,
     );
   }
 
   /**
    * Update quote (admin only)
    */
-  updateQuote(rfqId: string, quoteId: string, updates: Partial<RFQQuote>): Observable<RFQQuote> {
+  updateQuote(
+    rfqId: string,
+    quoteId: string,
+    updates: Partial<RFQQuote>,
+  ): Observable<RFQQuote> {
     return this.http.put<RFQQuote>(
       `${this.baseUrl}/requests/${rfqId}/quote/${quoteId}`,
-      updates
+      updates,
     );
   }
 
@@ -247,10 +260,7 @@ export class RFQService {
    * Send quote to user (admin only)
    */
   sendQuote(rfqId: string): Observable<any> {
-    return this.http.post(
-      `${this.baseUrl}/requests/${rfqId}/send-quote`,
-      {}
-    );
+    return this.http.post(`${this.baseUrl}/requests/${rfqId}/send-quote`, {});
   }
 
   /**

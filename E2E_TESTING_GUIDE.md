@@ -20,6 +20,7 @@ This guide explains how to test the complete checkout flow from cart to order co
    - Direct "Add to Cart" button
 
 **Expected Behavior:**
+
 - Cart count updates in header
 - Toast notification confirms item added
 - Product shows in cart page with correct price and quantity
@@ -35,6 +36,7 @@ This guide explains how to test the complete checkout flow from cart to order co
    - Subtotal for each item
 
 **Expected Behavior:**
+
 - Cart totals calculate correctly
 - Can update quantities
 - Can remove items
@@ -47,6 +49,7 @@ This guide explains how to test the complete checkout flow from cart to order co
 3. Enter credentials or register new account
 
 **Expected Behavior:**
+
 - Auth guard redirects to login if not authenticated
 - Can create new account or login with existing
 - JWT token is stored in local storage
@@ -70,6 +73,7 @@ This guide explains how to test the complete checkout flow from cart to order co
 4. Click "Continue to Payment"
 
 **Expected Behavior:**
+
 - Form validates required fields
 - Step indicator shows Step 1 highlighted
 - Data persists if you go back and forth
@@ -91,6 +95,7 @@ This guide explains how to test the complete checkout flow from cart to order co
 4. Click "Review Order"
 
 **Expected Behavior:**
+
 - Step indicator shows Step 2 highlighted
 - Payment form validates required fields
 - Security badge displays
@@ -114,6 +119,7 @@ This guide explains how to test the complete checkout flow from cart to order co
 3. Click "Place Order"
 
 **Expected Behavior:**
+
 - All order data displays correctly
 - "Back" button takes you to payment form
 - "Place Order" button becomes disabled while processing
@@ -149,6 +155,7 @@ After successful order placement, you should see:
    - "WhatsApp Support" - Opens WhatsApp chat
 
 **Expected Behavior:**
+
 - All order data loads from API
 - Email notification is sent
 - Order persists in user's order history
@@ -159,11 +166,13 @@ After successful order placement, you should see:
 ### Scenario 1: Multiple Items Order
 
 **Steps:**
+
 1. Add 3-4 different products to cart
 2. Modify quantities for different items
 3. Complete checkout
 
 **Verify:**
+
 - All items appear in order
 - Quantities are correct
 - Pricing is accurate
@@ -172,6 +181,7 @@ After successful order placement, you should see:
 ### Scenario 2: Edit Address During Checkout
 
 **Steps:**
+
 1. Fill shipping address
 2. Click back to edit any field
 3. Update information
@@ -179,6 +189,7 @@ After successful order placement, you should see:
 5. Complete order
 
 **Verify:**
+
 - Address changes persist
 - Can edit at any step
 - Final order has correct address
@@ -186,6 +197,7 @@ After successful order placement, you should see:
 ### Scenario 3: Use Different Payment Methods
 
 **Steps:**
+
 1. For Stripe payment: Use test cards
    - `4242 4242 4242 4242` (Visa)
    - `5555 5555 5555 4444` (Mastercard)
@@ -196,6 +208,7 @@ After successful order placement, you should see:
    - Various payment methods available
 
 **Verify:**
+
 - Payment form accepts card
 - Processing works correctly
 - Order is created regardless of payment method
@@ -203,6 +216,7 @@ After successful order placement, you should see:
 ### Scenario 4: Check Email Notifications
 
 **Steps:**
+
 1. Complete order with test email
 2. Check email inbox
 3. Verify email contains:
@@ -213,6 +227,7 @@ After successful order placement, you should see:
    - Estimated delivery
 
 **Email Triggers:**
+
 - Order confirmation email when order is placed
 - Shipping notification when order ships
 - Delivery confirmation when item is delivered
@@ -273,12 +288,14 @@ curl -X GET http://localhost:4200/api/v1/orders/{orderId} \
 ### Issue: Order Creation Fails
 
 **Possible Causes:**
+
 1. Backend API not running
 2. Invalid JWT token
 3. Incomplete order data
 4. Cart is empty
 
 **Solutions:**
+
 1. Check backend API is running on correct port
 2. Re-login to get fresh token
 3. Verify all required fields are filled
@@ -287,11 +304,13 @@ curl -X GET http://localhost:4200/api/v1/orders/{orderId} \
 ### Issue: Email Not Sent
 
 **Possible Causes:**
+
 1. Email service not configured
 2. Invalid email address
 3. SMTP credentials not set up
 
 **Solutions:**
+
 1. Check backend email configuration
 2. Use valid email address format
 3. Set up SMTP credentials in backend
@@ -299,11 +318,13 @@ curl -X GET http://localhost:4200/api/v1/orders/{orderId} \
 ### Issue: Order Confirmation Page Not Loading
 
 **Possible Causes:**
+
 1. Order ID not stored in session
 2. Order API endpoint not working
 3. Route not configured
 
 **Solutions:**
+
 1. Check sessionStorage for `lastOrderId`
 2. Test order retrieval API
 3. Verify `/order-confirmation` route is configured
@@ -311,11 +332,13 @@ curl -X GET http://localhost:4200/api/v1/orders/{orderId} \
 ### Issue: Cart Data Not Loading
 
 **Possible Causes:**
+
 1. Cart API not configured
 2. Hardcoded values in checkout component
 3. Invalid cart response format
 
 **Solutions:**
+
 1. Implement cart API endpoint
 2. Use dynamic cart data in checkout
 3. Verify API response matches expected format
@@ -325,11 +348,13 @@ curl -X GET http://localhost:4200/api/v1/orders/{orderId} \
 ### Load Test Checkout Page
 
 Test with different network conditions:
+
 - Fast 3G
 - Slow 3G
 - Offline
 
 **Expected Performance:**
+
 - Page loads in < 2 seconds on 3G
 - All assets cached for faster repeat visits
 - Graceful degradation offline
@@ -341,6 +366,7 @@ Test with different network conditions:
 - Large cart (10+ items)
 
 **Expected Behavior:**
+
 - All sizes render correctly
 - Performance remains acceptable
 - Order summary scrolls if needed

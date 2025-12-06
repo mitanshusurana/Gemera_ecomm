@@ -1,11 +1,11 @@
-import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterLink, Router, ActivatedRoute } from '@angular/router';
-import { ApiService } from '../services/api.service';
+import { Component, signal } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { RouterLink, Router, ActivatedRoute } from "@angular/router";
+import { ApiService } from "../services/api.service";
 
 @Component({
-  selector: 'app-login',
+  selector: "app-login",
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
@@ -16,7 +16,9 @@ import { ApiService } from '../services/api.service';
           <div class="flex items-center gap-2 text-sm">
             <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
             <span class="text-gray-500">/</span>
-            <span class="text-gray-700">{{ isLogin() ? 'Login' : 'Register' }}</span>
+            <span class="text-gray-700">{{
+              isLogin() ? "Login" : "Register"
+            }}</span>
           </div>
         </div>
       </div>
@@ -25,8 +27,12 @@ import { ApiService } from '../services/api.service';
         <div class="max-w-md mx-auto">
           <!-- Login Form -->
           <div *ngIf="isLogin()" class="card p-8">
-            <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">Welcome Back</h1>
-            <p class="text-gray-600 mb-8">Sign in to your account to continue shopping</p>
+            <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">
+              Welcome Back
+            </h1>
+            <p class="text-gray-600 mb-8">
+              Sign in to your account to continue shopping
+            </p>
 
             <form (ngSubmit)="login()" #loginForm="ngForm" class="space-y-6">
               <div>
@@ -59,10 +65,16 @@ import { ApiService } from '../services/api.service';
 
               <div class="flex items-center justify-between text-sm">
                 <label class="flex items-center gap-2">
-                  <input type="checkbox" class="w-4 h-4 rounded border-diamond-300">
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-diamond-300"
+                  />
                   <span class="text-gray-700">Remember me</span>
                 </label>
-                <a href="#" class="text-gold-600 hover:text-gold-700 font-semibold">
+                <a
+                  href="#"
+                  class="text-gold-600 hover:text-gold-700 font-semibold"
+                >
                   Forgot password?
                 </a>
               </div>
@@ -72,7 +84,7 @@ import { ApiService } from '../services/api.service';
                 [disabled]="isLoading() || !loginForm.valid"
                 class="w-full btn-primary"
               >
-                {{ isLoading() ? 'Signing in...' : 'Sign In' }}
+                {{ isLoading() ? "Signing in..." : "Sign In" }}
               </button>
 
               <div class="text-center text-sm text-gray-600">
@@ -90,10 +102,18 @@ import { ApiService } from '../services/api.service';
 
           <!-- Register Form -->
           <div *ngIf="!isLogin()" class="card p-8">
-            <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">Create Account</h1>
-            <p class="text-gray-600 mb-8">Join us to start shopping our fine collection</p>
+            <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">
+              Create Account
+            </h1>
+            <p class="text-gray-600 mb-8">
+              Join us to start shopping our fine collection
+            </p>
 
-            <form (ngSubmit)="register()" #registerForm="ngForm" class="space-y-6">
+            <form
+              (ngSubmit)="register()"
+              #registerForm="ngForm"
+              class="space-y-6"
+            >
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-semibold text-gray-900 mb-2">
@@ -180,14 +200,24 @@ import { ApiService } from '../services/api.service';
               </div>
 
               <label class="flex items-start gap-2">
-                <input type="checkbox" required class="w-4 h-4 mt-1 rounded border-diamond-300">
+                <input
+                  type="checkbox"
+                  required
+                  class="w-4 h-4 mt-1 rounded border-diamond-300"
+                />
                 <span class="text-sm text-gray-700">
                   I agree to the
-                  <a href="#" class="text-gold-600 hover:text-gold-700 font-semibold">
+                  <a
+                    href="#"
+                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                  >
                     Terms of Service
                   </a>
                   and
-                  <a href="#" class="text-gold-600 hover:text-gold-700 font-semibold">
+                  <a
+                    href="#"
+                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                  >
                     Privacy Policy
                   </a>
                 </span>
@@ -195,10 +225,14 @@ import { ApiService } from '../services/api.service';
 
               <button
                 type="submit"
-                [disabled]="isLoading() || !registerForm.valid || password !== confirmPassword"
+                [disabled]="
+                  isLoading() ||
+                  !registerForm.valid ||
+                  password !== confirmPassword
+                "
                 class="w-full btn-primary"
               >
-                {{ isLoading() ? 'Creating account...' : 'Create Account' }}
+                {{ isLoading() ? "Creating account..." : "Create Account" }}
               </button>
 
               <div class="text-center text-sm text-gray-600">
@@ -223,9 +257,14 @@ import { ApiService } from '../services/api.service';
           </div>
 
           <!-- Info Box -->
-          <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 text-sm text-blue-900">
+          <div
+            class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 text-sm text-blue-900"
+          >
             <p class="font-semibold mb-2">Demo Mode</p>
-            <p>For testing purposes, use any email and password combination. Authentication is mocked for development.</p>
+            <p>
+              For testing purposes, use any email and password combination.
+              Authentication is mocked for development.
+            </p>
           </div>
         </div>
       </div>
@@ -235,52 +274,52 @@ import { ApiService } from '../services/api.service';
 export class LoginComponent {
   isLogin = signal(true);
   isLoading = signal(false);
-  errorMessage = signal('');
+  errorMessage = signal("");
 
-  email = '';
-  password = '';
-  firstName = '';
-  lastName = '';
-  phone = '';
-  confirmPassword = '';
+  email = "";
+  password = "";
+  firstName = "";
+  lastName = "";
+  phone = "";
+  confirmPassword = "";
 
   constructor(
     private apiService: ApiService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
   ) {}
 
   toggleMode(): void {
     this.isLogin.update((val) => !val);
-    this.errorMessage.set('');
+    this.errorMessage.set("");
   }
 
   login(): void {
     this.isLoading.set(true);
-    this.errorMessage.set('');
+    this.errorMessage.set("");
 
     this.apiService.login(this.email, this.password).subscribe({
       next: () => {
         this.isLoading.set(false);
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+        const returnUrl = this.route.snapshot.queryParams["returnUrl"] || "/";
         this.router.navigateByUrl(returnUrl);
       },
       error: (error) => {
         this.isLoading.set(false);
-        this.errorMessage.set('Invalid email or password. Please try again.');
-        console.error('Login error:', error);
+        this.errorMessage.set("Invalid email or password. Please try again.");
+        console.error("Login error:", error);
       },
     });
   }
 
   register(): void {
     if (this.password !== this.confirmPassword) {
-      this.errorMessage.set('Passwords do not match');
+      this.errorMessage.set("Passwords do not match");
       return;
     }
 
     this.isLoading.set(true);
-    this.errorMessage.set('');
+    this.errorMessage.set("");
 
     this.apiService
       .register({
@@ -293,16 +332,16 @@ export class LoginComponent {
       .subscribe({
         next: () => {
           this.isLoading.set(false);
-          this.errorMessage.set('');
+          this.errorMessage.set("");
           this.isLogin.set(true);
           alert(
-            'Account created successfully! You can now log in with your credentials.'
+            "Account created successfully! You can now log in with your credentials.",
           );
         },
         error: (error) => {
           this.isLoading.set(false);
-          this.errorMessage.set('Failed to create account. Please try again.');
-          console.error('Register error:', error);
+          this.errorMessage.set("Failed to create account. Please try again.");
+          console.error("Register error:", error);
         },
       });
   }

@@ -1,16 +1,16 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable } from "rxjs";
 
 export interface EmailNotification {
   id?: string;
-  type: 'ORDER_CONFIRMATION' | 'SHIPPING' | 'DELIVERY' | 'PROMOTIONAL';
+  type: "ORDER_CONFIRMATION" | "SHIPPING" | "DELIVERY" | "PROMOTIONAL";
   email: string;
   subject: string;
   templateName: string;
   data: Record<string, any>;
   sentAt?: string;
-  status?: 'PENDING' | 'SENT' | 'FAILED';
+  status?: "PENDING" | "SENT" | "FAILED";
 }
 
 export interface EmailTemplate {
@@ -22,10 +22,10 @@ export interface EmailTemplate {
 }
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root",
 })
 export class EmailNotificationService {
-  private baseUrl = '/api/v1/email';
+  private baseUrl = "/api/v1/email";
 
   constructor(private http: HttpClient) {}
 
@@ -49,15 +49,15 @@ export class EmailNotificationService {
     estimatedDelivery: string;
   }): Observable<EmailNotification> {
     const notification: EmailNotification = {
-      type: 'ORDER_CONFIRMATION',
+      type: "ORDER_CONFIRMATION",
       email: orderData.email,
       subject: `Order Confirmation #${orderData.orderNumber}`,
-      templateName: 'order_confirmation',
+      templateName: "order_confirmation",
       data: orderData,
     };
     return this.http.post<EmailNotification>(
       `${this.baseUrl}/send`,
-      notification
+      notification,
     );
   }
 
@@ -73,15 +73,15 @@ export class EmailNotificationService {
     items: Array<{ name: string; quantity: number }>;
   }): Observable<EmailNotification> {
     const notification: EmailNotification = {
-      type: 'SHIPPING',
+      type: "SHIPPING",
       email: shipmentData.email,
       subject: `Your Order ${shipmentData.orderNumber} has shipped`,
-      templateName: 'shipping_notification',
+      templateName: "shipping_notification",
       data: shipmentData,
     };
     return this.http.post<EmailNotification>(
       `${this.baseUrl}/send`,
-      notification
+      notification,
     );
   }
 
@@ -95,15 +95,15 @@ export class EmailNotificationService {
     items: Array<{ name: string; quantity: number }>;
   }): Observable<EmailNotification> {
     const notification: EmailNotification = {
-      type: 'DELIVERY',
+      type: "DELIVERY",
       email: deliveryData.email,
       subject: `Delivered: Order #${deliveryData.orderNumber}`,
-      templateName: 'delivery_confirmation',
+      templateName: "delivery_confirmation",
       data: deliveryData,
     };
     return this.http.post<EmailNotification>(
       `${this.baseUrl}/send`,
-      notification
+      notification,
     );
   }
 
@@ -118,15 +118,15 @@ export class EmailNotificationService {
     validUntil?: string;
   }): Observable<EmailNotification> {
     const notification: EmailNotification = {
-      type: 'PROMOTIONAL',
+      type: "PROMOTIONAL",
       email: promotionData.email,
       subject: promotionData.subject,
-      templateName: 'promotional',
+      templateName: "promotional",
       data: promotionData,
     };
     return this.http.post<EmailNotification>(
       `${this.baseUrl}/send`,
-      notification
+      notification,
     );
   }
 
@@ -135,7 +135,7 @@ export class EmailNotificationService {
    */
   getNotification(notificationId: string): Observable<EmailNotification> {
     return this.http.get<EmailNotification>(
-      `${this.baseUrl}/notifications/${notificationId}`
+      `${this.baseUrl}/notifications/${notificationId}`,
     );
   }
 
@@ -145,7 +145,7 @@ export class EmailNotificationService {
   getUserNotifications(
     email: string,
     page: number = 0,
-    size: number = 20
+    size: number = 20,
   ): Observable<{ content: EmailNotification[]; totalElements: number }> {
     return this.http.get<{
       content: EmailNotification[];
@@ -174,7 +174,7 @@ export class EmailNotificationService {
    */
   getTemplate(templateName: string): Observable<EmailTemplate> {
     return this.http.get<EmailTemplate>(
-      `${this.baseUrl}/templates/${templateName}`
+      `${this.baseUrl}/templates/${templateName}`,
     );
   }
 

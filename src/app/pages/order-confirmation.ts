@@ -1,10 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule, DecimalPipe } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
-import { ApiService } from '../services/api.service';
+import { Component, OnInit, signal } from "@angular/core";
+import { CommonModule, DecimalPipe } from "@angular/common";
+import { RouterLink, ActivatedRoute } from "@angular/router";
+import { ApiService } from "../services/api.service";
 
 @Component({
-  selector: 'app-order-confirmation',
+  selector: "app-order-confirmation",
   standalone: true,
   imports: [CommonModule, RouterLink, DecimalPipe],
   template: `
@@ -24,12 +24,16 @@ import { ApiService } from '../services/api.service';
         <!-- Success Animation -->
         <div class="text-center mb-12">
           <div class="mb-6 inline-block">
-            <div class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center animate-scaleIn">
+            <div
+              class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center animate-scaleIn"
+            >
               <span class="text-5xl">✓</span>
             </div>
           </div>
 
-          <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4">
+          <h1
+            class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4"
+          >
             Thank You!
           </h1>
           <p class="text-xl text-gray-600 mb-8">
@@ -37,7 +41,9 @@ import { ApiService } from '../services/api.service';
           </p>
 
           <!-- Order Number -->
-          <div class="inline-block bg-white border-2 border-gold-500 rounded-lg px-8 py-4 mb-12">
+          <div
+            class="inline-block bg-white border-2 border-gold-500 rounded-lg px-8 py-4 mb-12"
+          >
             <p class="text-sm text-gray-600 mb-2">Order Number</p>
             <p class="text-3xl font-bold text-gold-600">{{ orderNumber() }}</p>
           </div>
@@ -48,38 +54,57 @@ import { ApiService } from '../services/api.service';
           <div class="lg:col-span-2 space-y-8">
             <!-- Order Details -->
             <div class="card p-8">
-              <h2 class="text-2xl font-bold text-diamond-900 mb-6">Order Details</h2>
+              <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                Order Details
+              </h2>
 
               <div class="space-y-6">
                 <!-- Order Status -->
                 <div>
                   <h3 class="font-semibold text-gray-900 mb-4">Status</h3>
-                  <div class="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div
+                    class="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg"
+                  >
                     <span class="w-3 h-3 rounded-full bg-blue-500"></span>
                     <span class="font-semibold text-blue-900">Processing</span>
                   </div>
                   <p class="text-sm text-gray-600 mt-2">
-                    Your order is being prepared for shipment. We'll notify you when it ships.
+                    Your order is being prepared for shipment. We'll notify you
+                    when it ships.
                   </p>
                 </div>
 
                 <!-- Estimated Delivery -->
                 <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Estimated Delivery</h3>
+                  <h3 class="font-semibold text-gray-900 mb-4">
+                    Estimated Delivery
+                  </h3>
                   <div class="bg-diamond-50 rounded-lg p-4">
-                    <p class="text-lg font-bold text-gray-900">{{ estimatedDelivery() }}</p>
-                    <p class="text-sm text-gray-600 mt-2">Free insured shipping worldwide</p>
+                    <p class="text-lg font-bold text-gray-900">
+                      {{ estimatedDelivery() }}
+                    </p>
+                    <p class="text-sm text-gray-600 mt-2">
+                      Free insured shipping worldwide
+                    </p>
                   </div>
                 </div>
 
                 <!-- Shipping Address -->
                 <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Shipping Address</h3>
-                  <div class="bg-diamond-50 rounded-lg p-4 text-sm text-gray-700 space-y-1">
-                    <p>{{ shippingAddress().firstName }} {{ shippingAddress().lastName }}</p>
+                  <h3 class="font-semibold text-gray-900 mb-4">
+                    Shipping Address
+                  </h3>
+                  <div
+                    class="bg-diamond-50 rounded-lg p-4 text-sm text-gray-700 space-y-1"
+                  >
+                    <p>
+                      {{ shippingAddress().firstName }}
+                      {{ shippingAddress().lastName }}
+                    </p>
                     <p>{{ shippingAddress().address }}</p>
                     <p>
-                      {{ shippingAddress().city }}, {{ shippingAddress().state }}
+                      {{ shippingAddress().city }},
+                      {{ shippingAddress().state }}
                       {{ shippingAddress().zipCode }}
                     </p>
                     <p>{{ shippingAddress().country }}</p>
@@ -91,16 +116,24 @@ import { ApiService } from '../services/api.service';
                   <h3 class="font-semibold text-gray-900 mb-4">Items</h3>
                   <div class="space-y-4">
                     <ng-container *ngFor="let item of orderItems()">
-                      <div class="flex gap-4 pb-4 border-b border-diamond-200 last:border-b-0">
+                      <div
+                        class="flex gap-4 pb-4 border-b border-diamond-200 last:border-b-0"
+                      >
                         <img
                           [src]="item.product.imageUrl"
                           [alt]="item.product.name"
                           class="w-20 h-20 rounded-lg object-cover"
                         />
                         <div class="flex-1">
-                          <p class="font-semibold text-gray-900">{{ item.product.name }}</p>
-                          <p class="text-sm text-gray-600">SKU: {{ item.product.sku }}</p>
-                          <p class="text-sm text-gray-600">Qty: {{ item.quantity }}</p>
+                          <p class="font-semibold text-gray-900">
+                            {{ item.product.name }}
+                          </p>
+                          <p class="text-sm text-gray-600">
+                            SKU: {{ item.product.sku }}
+                          </p>
+                          <p class="text-sm text-gray-600">
+                            Qty: {{ item.quantity }}
+                          </p>
                         </div>
                         <div class="text-right">
                           <p class="font-semibold text-gray-900">
@@ -115,39 +148,56 @@ import { ApiService } from '../services/api.service';
             </div>
 
             <!-- Next Steps -->
-            <div class="bg-sapphire-50 border border-sapphire-200 rounded-lg p-8">
-              <h3 class="text-xl font-bold text-diamond-900 mb-6">What's Next?</h3>
+            <div
+              class="bg-sapphire-50 border border-sapphire-200 rounded-lg p-8"
+            >
+              <h3 class="text-xl font-bold text-diamond-900 mb-6">
+                What's Next?
+              </h3>
               <div class="space-y-4">
                 <div class="flex gap-4">
-                  <span class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold">
+                  <span
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold"
+                  >
                     1
                   </span>
                   <div>
-                    <p class="font-semibold text-gray-900">Confirmation Email</p>
+                    <p class="font-semibold text-gray-900">
+                      Confirmation Email
+                    </p>
                     <p class="text-sm text-gray-600">
-                      Check your email for order confirmation and tracking details.
+                      Check your email for order confirmation and tracking
+                      details.
                     </p>
                   </div>
                 </div>
                 <div class="flex gap-4">
-                  <span class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold">
+                  <span
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold"
+                  >
                     2
                   </span>
                   <div>
-                    <p class="font-semibold text-gray-900">Quality Inspection</p>
+                    <p class="font-semibold text-gray-900">
+                      Quality Inspection
+                    </p>
                     <p class="text-sm text-gray-600">
-                      Our team will inspect your items for quality and authenticity.
+                      Our team will inspect your items for quality and
+                      authenticity.
                     </p>
                   </div>
                 </div>
                 <div class="flex gap-4">
-                  <span class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold">
+                  <span
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold"
+                  >
                     3
                   </span>
                   <div>
                     <p class="font-semibold text-gray-900">Shipment</p>
                     <p class="text-sm text-gray-600">
-                      Your items will be shipped with tracking number within 2-3 business days.
+                      Your items will be shipped with tracking number within 2-3
+                      business days.
                     </p>
                   </div>
                 </div>
@@ -158,12 +208,16 @@ import { ApiService } from '../services/api.service';
           <!-- Order Summary Sidebar -->
           <div class="lg:col-span-1">
             <div class="card p-8 sticky top-24">
-              <h3 class="font-display text-2xl font-bold text-diamond-900 mb-6">Order Summary</h3>
+              <h3 class="font-display text-2xl font-bold text-diamond-900 mb-6">
+                Order Summary
+              </h3>
 
               <div class="space-y-4 mb-4 pb-4 border-b border-diamond-200">
                 <div class="flex justify-between">
                   <span class="text-gray-600">Subtotal</span>
-                  <span class="font-semibold">{{ formatPrice(orderSummary().subtotal) }}</span>
+                  <span class="font-semibold">{{
+                    formatPrice(orderSummary().subtotal)
+                  }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Shipping</span>
@@ -171,13 +225,17 @@ import { ApiService } from '../services/api.service';
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
-                  <span class="font-semibold">{{ formatPrice(orderSummary().tax) }}</span>
+                  <span class="font-semibold">{{
+                    formatPrice(orderSummary().tax)
+                  }}</span>
                 </div>
               </div>
 
               <div class="flex justify-between mb-6 text-xl">
                 <span class="font-bold text-gray-900">Total</span>
-                <span class="font-bold text-2xl text-gold-600">{{ formatPrice(orderSummary().total) }}</span>
+                <span class="font-bold text-2xl text-gold-600">{{
+                  formatPrice(orderSummary().total)
+                }}</span>
               </div>
 
               <div class="space-y-3 mb-6">
@@ -187,11 +245,15 @@ import { ApiService } from '../services/api.service';
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">30-day money-back guarantee</p>
+                  <p class="text-sm text-gray-600">
+                    30-day money-back guarantee
+                  </p>
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">Lifetime warranty included</p>
+                  <p class="text-sm text-gray-600">
+                    Lifetime warranty included
+                  </p>
                 </div>
               </div>
 
@@ -206,11 +268,17 @@ import { ApiService } from '../services/api.service';
         <div class="mt-16 bg-diamond-50 rounded-lg p-8 text-center">
           <h3 class="text-xl font-bold text-diamond-900 mb-4">Need Help?</h3>
           <p class="text-gray-600 mb-6">
-            Have questions about your order? Our customer support team is here to help.
+            Have questions about your order? Our customer support team is here
+            to help.
           </p>
           <div class="flex gap-4 justify-center flex-wrap">
             <a routerLink="/contact" class="btn-primary">Contact Us</a>
-            <a href="https://wa.me/917976091951" target="_blank" rel="noopener" class="btn-ghost border border-diamond-300">
+            <a
+              href="https://wa.me/917976091951"
+              target="_blank"
+              rel="noopener"
+              class="btn-ghost border border-diamond-300"
+            >
               WhatsApp Support
             </a>
           </div>
@@ -238,42 +306,42 @@ import { ApiService } from '../services/api.service';
   ],
 })
 export class OrderConfirmationComponent implements OnInit {
-  orderNumber = signal('');
-  estimatedDelivery = signal('');
+  orderNumber = signal("");
+  estimatedDelivery = signal("");
   orderItems = signal<any[]>([]);
   shippingAddress = signal<any>({
-    firstName: '',
-    lastName: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
   });
   orderSummary = signal({ subtotal: 0, tax: 0, total: 0 });
 
   constructor(
     private route: ActivatedRoute,
-    private apiService: ApiService
+    private apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
-      const orderId = params['orderId'];
+      const orderId = params["orderId"];
       if (orderId) {
         this.loadOrder(orderId);
       }
     });
 
-    const sessionOrderId = sessionStorage.getItem('lastOrderId');
+    const sessionOrderId = sessionStorage.getItem("lastOrderId");
     if (sessionOrderId) {
       this.loadOrder(sessionOrderId);
-      sessionStorage.removeItem('lastOrderId');
+      sessionStorage.removeItem("lastOrderId");
     }
   }
 
   formatPrice(amount: number): string {
-    return '$' + amount.toFixed(2);
+    return "$" + amount.toFixed(2);
   }
 
   private loadOrder(orderId: string): void {
@@ -284,7 +352,7 @@ export class OrderConfirmationComponent implements OnInit {
 
         const subtotal = order.items.reduce(
           (sum, item) => sum + item.price * item.quantity,
-          0
+          0,
         );
         const tax = subtotal * 0.1;
         const total = subtotal + tax;
@@ -294,15 +362,15 @@ export class OrderConfirmationComponent implements OnInit {
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + 3);
         this.estimatedDelivery.set(
-          deliveryDate.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })
+          deliveryDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
         );
       },
       error: (error) => {
-        console.error('Error loading order:', error);
+        console.error("Error loading order:", error);
       },
     });
   }
