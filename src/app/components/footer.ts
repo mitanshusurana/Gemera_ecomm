@@ -128,6 +128,13 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
               </li>
               <li>
                 <a
+                  routerLink="/rfq"
+                  class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
+                  >Request for Quote</a
+                >
+              </li>
+              <li>
+                <a
                   href="#"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Shipping & Returns</a
