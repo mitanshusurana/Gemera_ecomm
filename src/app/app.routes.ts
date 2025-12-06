@@ -16,6 +16,7 @@ import { authGuard } from "./guards/auth.guard";
 
 export const routes: Routes = [
   { path: "", component: HomeComponent },
+  { path: "login", component: LoginComponent },
   { path: "products", component: ProductsComponent },
   { path: "products/:id", component: ProductDetailComponent },
   { path: "cart", component: CartComponent },
