@@ -734,9 +734,286 @@ Response (201 Created):
 }
 ```
 
+## Email Notification APIs
+
+### 29. Send Order Confirmation Email
+
+```
+POST /email/send
+Content-Type: application/json
+
+Request Body:
+{
+  "type": "ORDER_CONFIRMATION",
+  "email": "user@example.com",
+  "subject": "Order Confirmation #ORD-2024-001",
+  "templateName": "order_confirmation",
+  "data": {
+    "email": "user@example.com",
+    "orderNumber": "ORD-2024-001",
+    "orderTotal": 50000,
+    "items": [
+      {
+        "name": "Diamond Ring",
+        "quantity": 1,
+        "price": 45000
+      }
+    ],
+    "shippingAddress": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "address": "123 Main St",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    },
+    "estimatedDelivery": "Jan 10, 2024"
+  }
+}
+
+Response (200 OK):
+{
+  "id": "uuid",
+  "type": "ORDER_CONFIRMATION",
+  "email": "user@example.com",
+  "subject": "Order Confirmation #ORD-2024-001",
+  "templateName": "order_confirmation",
+  "status": "SENT",
+  "sentAt": "2024-01-01T00:00:00Z"
+}
+```
+
+### 30. Send Shipping Notification Email
+
+```
+POST /email/send
+Content-Type: application/json
+
+Request Body:
+{
+  "type": "SHIPPING",
+  "email": "user@example.com",
+  "subject": "Your Order ORD-2024-001 has shipped",
+  "templateName": "shipping_notification",
+  "data": {
+    "email": "user@example.com",
+    "orderNumber": "ORD-2024-001",
+    "trackingNumber": "TRACK123456789",
+    "carrier": "FedEx",
+    "estimatedDelivery": "Jan 10, 2024",
+    "items": [
+      {
+        "name": "Diamond Ring",
+        "quantity": 1
+      }
+    ]
+  }
+}
+
+Response (200 OK):
+{
+  "id": "uuid",
+  "type": "SHIPPING",
+  "email": "user@example.com",
+  "status": "SENT",
+  "sentAt": "2024-01-02T00:00:00Z"
+}
+```
+
+### 31. Get Email Notifications
+
+```
+GET /email/notifications?email=user@example.com&page=0&size=20
+Authorization: Bearer {token}
+
+Response (200 OK):
+{
+  "content": [
+    {
+      "id": "uuid",
+      "type": "ORDER_CONFIRMATION",
+      "email": "user@example.com",
+      "subject": "Order Confirmation #ORD-2024-001",
+      "status": "SENT",
+      "sentAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "totalElements": 5
+}
+```
+
+## RFQ (Request for Quote) APIs
+
+### 32. Create RFQ Request
+
+```
+POST /rfq/requests
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request Body:
+{
+  "userId": "uuid",
+  "email": "business@company.com",
+  "companyName": "ABC Enterprises",
+  "items": [
+    {
+      "productId": "loose-gemstones",
+      "quantity": 100,
+      "specifications": "Carat: 1-2, Color: VS1, Clarity: D",
+      "customization": "Bulk order for wholesale"
+    }
+  ],
+  "estimatedBudget": 500000,
+  "deliveryTimeline": "1_MONTH",
+  "additionalNotes": "Prefer high-quality stones"
+}
+
+Response (201 Created):
+{
+  "id": "uuid",
+  "rfqNumber": "RFQ-2024-001",
+  "userId": "uuid",
+  "email": "business@company.com",
+  "companyName": "ABC Enterprises",
+  "items": [...],
+  "status": "PENDING",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "expiresAt": "2024-01-31T00:00:00Z"
+}
+```
+
+### 33. Get RFQ Request
+
+```
+GET /rfq/requests/{rfqId}
+Authorization: Bearer {token}
+
+Response (200 OK):
+{
+  "id": "uuid",
+  "rfqNumber": "RFQ-2024-001",
+  "userId": "uuid",
+  "email": "business@company.com",
+  "items": [...],
+  "status": "QUOTED",
+  "quotedPrice": 450000,
+  "quotedAt": "2024-01-03T00:00:00Z",
+  "validUntil": "2024-01-10T00:00:00Z"
+}
+```
+
+### 34. Create Quote for RFQ (Admin)
+
+```
+POST /rfq/requests/{rfqId}/quote
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+Request Body:
+{
+  "items": [
+    {
+      "productId": "loose-gemstones",
+      "quantity": 100,
+      "unitPrice": 4500,
+      "totalPrice": 450000,
+      "discount": 10,
+      "description": "Premium Grade Loose Gemstones"
+    }
+  ],
+  "subtotal": 450000,
+  "tax": 45000,
+  "shippingCost": 5000,
+  "total": 500000,
+  "paymentTerms": "Net 30",
+  "deliveryTimeline": "15-20 days",
+  "validity": "10 days",
+  "notes": "Bulk discount applied"
+}
+
+Response (201 Created):
+{
+  "id": "uuid",
+  "rfqId": "uuid",
+  "rfqNumber": "RFQ-2024-001",
+  "items": [...],
+  "total": 500000,
+  "status": "PENDING",
+  "quotedAt": "2024-01-03T00:00:00Z",
+  "validUntil": "2024-01-10T00:00:00Z"
+}
+```
+
+### 35. Accept RFQ Quote
+
+```
+POST /rfq/requests/{rfqId}/accept
+Authorization: Bearer {token}
+
+Response (200 OK):
+{
+  "id": "uuid",
+  "rfqNumber": "RFQ-2024-001",
+  "status": "ACCEPTED",
+  "acceptedAt": "2024-01-05T00:00:00Z",
+  "nextSteps": "Your order has been confirmed. An order number will be generated shortly."
+}
+```
+
+### 36. Request Quote Negotiation
+
+```
+POST /rfq/requests/{rfqId}/negotiate
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request Body:
+{
+  "items": [
+    {
+      "productId": "loose-gemstones",
+      "quantity": 150
+    }
+  ],
+  "requestedPrice": 600000,
+  "notes": "Can we adjust quantity and price?"
+}
+
+Response (200 OK):
+{
+  "rfqId": "uuid",
+  "status": "NEGOTIATING",
+  "message": "Negotiation request submitted. Await admin response."
+}
+```
+
+### 37. Get User RFQ Requests
+
+```
+GET /rfq/requests/user/{userId}?page=0&size=20&status=PENDING
+Authorization: Bearer {token}
+
+Response (200 OK):
+{
+  "content": [
+    {
+      "id": "uuid",
+      "rfqNumber": "RFQ-2024-001",
+      "email": "business@company.com",
+      "status": "QUOTED",
+      "quotedPrice": 500000,
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "totalElements": 3
+}
+```
+
 ## Admin/Analytics APIs (Optional)
 
-### 29. Get Dashboard Analytics
+### 38. Get Dashboard Analytics
 
 ```
 GET /admin/analytics
