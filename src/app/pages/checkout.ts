@@ -255,10 +255,19 @@ import { EmailNotificationService } from '../services/email-notification.service
             <div class="card p-8 sticky top-24">
               <h3 class="font-display text-2xl font-bold text-diamond-900 mb-6">Order Summary</h3>
 
+              <div class="space-y-3 mb-4 pb-4 border-b border-diamond-200 max-h-64 overflow-y-auto">
+                <ng-container *ngFor="let item of cartItems()">
+                  <div class="flex justify-between text-sm border-b border-diamond-100 pb-2">
+                    <span class="text-gray-600">{{ item.product.name }}</span>
+                    <span class="font-semibold">{{ formatPrice(item.price * item.quantity) }}</span>
+                  </div>
+                </ng-container>
+              </div>
+
               <div class="space-y-4 mb-4 pb-4 border-b border-diamond-200">
                 <div class="flex justify-between">
                   <span class="text-gray-600">Subtotal</span>
-                  <span class="font-semibold">$45,000</span>
+                  <span class="font-semibold">{{ formatPrice(cartTotal() * 0.9) }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Shipping</span>
@@ -266,13 +275,13 @@ import { EmailNotificationService } from '../services/email-notification.service
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
-                  <span class="font-semibold">$4,500</span>
+                  <span class="font-semibold">{{ formatPrice(cartTotal() * 0.1) }}</span>
                 </div>
               </div>
 
               <div class="flex justify-between mb-6 text-xl">
                 <span class="font-bold text-gray-900">Total</span>
-                <span class="font-bold text-2xl text-gold-600">$49,500</span>
+                <span class="font-bold text-2xl text-gold-600">{{ formatPrice(cartTotal()) }}</span>
               </div>
 
               <div class="space-y-3">
@@ -355,6 +364,10 @@ export class CheckoutComponent implements OnInit {
     if (this.currentStep() > 1) {
       this.currentStep.set(this.currentStep() - 1);
     }
+  }
+
+  formatPrice(amount: number): string {
+    return '$' + amount.toFixed(2);
   }
 
   placeOrder(): void {
