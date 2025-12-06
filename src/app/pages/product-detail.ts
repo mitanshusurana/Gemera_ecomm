@@ -233,6 +233,7 @@ export class ProductDetailComponent implements OnInit {
 
   quantity = signal(1);
   selectedImage = signal<string | null>(null);
+  selectedSize = signal<number | null>(null);
 
   ngOnInit(): void {
     this.route.params.subscribe((params) => {
