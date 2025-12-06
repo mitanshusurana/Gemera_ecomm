@@ -16,6 +16,10 @@ import { PrivacyPolicyComponent } from "./pages/privacy";
 import { TermsComponent } from "./pages/terms";
 import { CompareComponent } from "./pages/compare";
 import { authGuard } from "./guards/auth.guard";
+import { AdminLayoutComponent } from "./pages/admin/admin-layout";
+import { AdminDashboardComponent } from "./pages/admin/dashboard";
+import { AdminProductListComponent } from "./pages/admin/products";
+import { adminGuard } from "./guards/admin.guard";
 
 export const routes: Routes = [
   { path: "", component: HomeComponent },
@@ -46,5 +50,15 @@ export const routes: Routes = [
   { path: "contact", component: ContactComponent },
   { path: "privacy", component: PrivacyPolicyComponent },
   { path: "terms", component: TermsComponent },
+  {
+    path: "admin",
+    component: AdminLayoutComponent,
+    canActivate: [adminGuard],
+    children: [
+      { path: "", redirectTo: "dashboard", pathMatch: "full" },
+      { path: "dashboard", component: AdminDashboardComponent },
+      { path: "products", component: AdminProductListComponent },
+    ]
+  },
   { path: "**", redirectTo: "" },
 ];

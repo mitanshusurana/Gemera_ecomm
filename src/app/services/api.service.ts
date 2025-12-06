@@ -83,6 +83,7 @@ export interface User {
   lastName: string;
   phone: string;
   avatar?: string;
+  role?: 'ADMIN' | 'USER';
   createdAt: string;
 }
 
@@ -161,6 +162,7 @@ export class ApiService {
         firstName: 'Test',
         lastName: 'User',
         phone: '1234567890',
+        role: email.includes('admin') ? 'ADMIN' : 'USER',
         createdAt: new Date().toISOString()
       };
       const response: AuthResponse = {
