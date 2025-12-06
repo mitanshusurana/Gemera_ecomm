@@ -27,7 +27,7 @@ interface CollectionUI {
   ],
   template: `
     <!-- Premium Hero Section -->
-    <section class="relative w-full overflow-hidden min-h-screen">
+    <section class="relative w-full overflow-hidden min-h-screen flex items-center">
       <!-- Background Image with Overlay -->
       <div
         class="absolute inset-0 bg-gradient-to-r from-diamond-900 via-diamond-800 to-gold-900/30"
@@ -59,11 +59,11 @@ interface CollectionUI {
       </div>
 
       <div
-        class="relative z-10 min-h-screen flex flex-col items-center justify-center text-center px-4 py-20"
+        class="relative z-10 w-full flex flex-col items-center justify-center text-center px-4 pt-20 pb-12"
       >
         <!-- Trust Badge -->
         <div
-          class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-gold-400/30"
+          class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-gold-400/30 animate-fade-in-up"
         >
           <span class="text-sm text-gold-300 font-semibold"
             >🏆 Trusted by Collectors & Connoisseurs</span
@@ -72,7 +72,7 @@ interface CollectionUI {
 
         <!-- Main Headline -->
         <h1
-          class="text-6xl md:text-8xl font-display font-bold text-white mb-6 leading-tight"
+          class="text-5xl md:text-8xl font-display font-bold text-white mb-6 leading-tight animate-fade-in-up delay-100"
         >
           <span
             class="text-transparent bg-clip-text bg-gradient-to-r from-gold-300 to-gold-500"
@@ -83,18 +83,17 @@ interface CollectionUI {
 
         <!-- Subheading -->
         <p
-          class="text-xl md:text-2xl text-gold-100 max-w-3xl mx-auto mb-8 leading-relaxed"
+          class="text-lg md:text-2xl text-gold-100 max-w-3xl mx-auto mb-8 leading-relaxed animate-fade-in-up delay-200"
         >
           Museum-quality loose stones, hand-carved idols, and heirloom jewelry
-          collections. Every piece certified and authenticated by international
-          standards.
+          collections. Every piece certified and authenticated.
         </p>
 
         <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-fade-in-up delay-300 w-full sm:w-auto">
           <a
             routerLink="/products"
-            class="group relative px-8 py-4 bg-gold-500 hover:bg-gold-600 text-white font-bold rounded-lg transition-all duration-300 shadow-luxury hover:shadow-luxury-lg hover:-translate-y-1"
+            class="group relative px-8 py-4 bg-gold-500 hover:bg-gold-600 text-white font-bold rounded-lg transition-all duration-300 shadow-luxury hover:shadow-luxury-lg hover:-translate-y-1 w-full sm:w-auto"
           >
             <span class="flex items-center justify-center">
               Explore Collections
@@ -114,7 +113,7 @@ interface CollectionUI {
             </span>
           </a>
           <button
-            class="px-8 py-4 border-2 border-gold-400 text-gold-300 hover:bg-gold-400/10 font-bold rounded-lg transition-all duration-300"
+            class="px-8 py-4 border-2 border-gold-400 text-gold-300 hover:bg-gold-400/10 font-bold rounded-lg transition-all duration-300 w-full sm:w-auto"
           >
             View Certifications
           </button>
@@ -122,7 +121,7 @@ interface CollectionUI {
 
         <!-- Scroll Indicator -->
         <div
-          class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce"
+          class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce hidden md:block"
         >
           <svg
             class="w-6 h-6 text-gold-400"
@@ -144,33 +143,33 @@ interface CollectionUI {
     <!-- Trust & Heritage Section -->
     <section class="section-padding bg-white border-b border-diamond-200">
       <div class="container-luxury">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
           <div class="text-center">
             <div class="text-4xl mb-3">🔐</div>
-            <h3 class="font-bold text-gray-900 mb-2">Certified Authentic</h3>
+            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Certified Authentic</h3>
             <p class="text-gray-600 text-sm">
-              GIA, IGI & AGS certified gemstones with complete documentation
+              GIA, IGI & AGS certified
             </p>
           </div>
           <div class="text-center">
             <div class="text-4xl mb-3">👨‍🎨</div>
-            <h3 class="font-bold text-gray-900 mb-2">Master Artisans</h3>
+            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Master Artisans</h3>
             <p class="text-gray-600 text-sm">
-              Multi-generational craftspeople creating museum-quality pieces
+              Multi-generational craft
             </p>
           </div>
           <div class="text-center">
             <div class="text-4xl mb-3">🌍</div>
-            <h3 class="font-bold text-gray-900 mb-2">Ethical Sourcing</h3>
+            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Ethical Sourcing</h3>
             <p class="text-gray-600 text-sm">
-              Conflict-free stones with transparent supply chain tracking
+              Conflict-free stones
             </p>
           </div>
           <div class="text-center">
             <div class="text-4xl mb-3">♻️</div>
-            <h3 class="font-bold text-gray-900 mb-2">Lifetime Warranty</h3>
+            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Lifetime Warranty</h3>
             <p class="text-gray-600 text-sm">
-              Comprehensive care, cleaning & restoration services included
+              Care & restoration included
             </p>
           </div>
         </div>
@@ -180,15 +179,14 @@ interface CollectionUI {
     <!-- Collection Categories - Premium Grid -->
     <section class="section-padding bg-diamond-50">
       <div class="container-luxury">
-        <div class="text-center mb-16">
+        <div class="text-center mb-12">
           <h2
-            class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4"
+            class="text-4xl md:text-6xl font-display font-bold text-diamond-900 mb-4"
           >
             Curated Collections
           </h2>
-          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            From precious diamonds to hand-carved spiritual idols, each
-            collection tells a story of heritage and craftsmanship
+          <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            From precious diamonds to hand-carved spiritual idols
           </p>
         </div>
 
@@ -198,7 +196,7 @@ interface CollectionUI {
             *ngFor="let collection of collections()"
             routerLink="/products"
             [queryParams]="{ category: collection.name }"
-            class="group relative overflow-hidden rounded-2xl h-96 cursor-pointer card-hover block"
+            class="group relative overflow-hidden rounded-2xl h-80 md:h-96 cursor-pointer card-hover block"
           >
             <!-- Background Gradient -->
             <div
@@ -208,20 +206,20 @@ interface CollectionUI {
 
             <!-- Icon & Content -->
             <div
-              class="absolute inset-0 flex flex-col justify-end p-8 text-white"
+              class="absolute inset-0 flex flex-col justify-end p-6 md:p-8 text-white"
             >
               <!-- Icon -->
               <div
-                class="text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-300"
+                class="text-5xl md:text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-300"
               >
                 {{ collection.icon }}
               </div>
 
               <!-- Text -->
-              <h3 class="font-display text-3xl font-bold mb-2">
+              <h3 class="font-display text-2xl md:text-3xl font-bold mb-2">
                 {{ collection.title }}
               </h3>
-              <p class="text-gray-100 text-sm mb-4">
+              <p class="text-gray-100 text-sm mb-4 line-clamp-2 md:line-clamp-none">
                 {{ collection.description }}
               </p>
               <p class="text-gold-200 text-xs font-semibold mb-4">
@@ -261,10 +259,10 @@ interface CollectionUI {
     <!-- Featured Collections Carousel -->
     <section class="section-padding bg-white">
       <div class="container-luxury">
-        <h2 class="text-5xl font-display font-bold text-diamond-900 mb-4">
+        <h2 class="text-4xl md:text-5xl font-display font-bold text-diamond-900 mb-4">
           Gallery Highlights
         </h2>
-        <p class="text-xl text-gray-600 mb-12 max-w-2xl">
+        <p class="text-lg md:text-xl text-gray-600 mb-12 max-w-2xl">
           Discover exceptional pieces handpicked by our expert curators
         </p>
 
@@ -328,9 +326,6 @@ interface CollectionUI {
               <h3 class="font-semibold text-gray-900 text-lg mb-3 line-clamp-2">
                 {{ product.name }}
               </h3>
-              <p class="text-sm text-gray-600 mb-3 line-clamp-2">
-                {{ product.description }}
-              </p>
 
               <!-- Rating -->
               <div class="flex items-center gap-2 mb-4">
@@ -358,21 +353,11 @@ interface CollectionUI {
                 >
               </div>
 
-              <!-- Stock Urgency -->
-              <div
-                *ngIf="product.stock && product.stock <= 5"
-                class="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg"
-              >
-                <p class="text-xs font-semibold text-red-700">
-                  ⚠️ Only {{ product.stock }} left in stock
-                </p>
-              </div>
-
               <!-- Add to Cart & Quick View -->
               <div class="flex gap-2">
                 <button
                   (click)="handleAddToCart($event, product.id)"
-                  class="flex-1 btn-primary"
+                  class="flex-1 btn-primary text-sm px-4"
                 >
                   Add to Cart
                 </button>
@@ -382,7 +367,7 @@ interface CollectionUI {
                     $event.stopPropagation();
                     openQuickView(product)
                   "
-                  class="flex-1 px-4 py-3 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-semibold rounded-lg transition-all"
+                  class="flex-1 px-4 py-3 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-semibold rounded-lg transition-all text-sm"
                 >
                   Quick View
                 </button>
@@ -395,7 +380,7 @@ interface CollectionUI {
         <div class="text-center">
           <a
             routerLink="/products"
-            class="inline-block px-8 py-4 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-bold rounded-lg transition-all"
+            class="inline-block px-8 py-4 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-bold rounded-lg transition-all w-full sm:w-auto"
           >
             View Complete Collections
           </a>
@@ -411,7 +396,7 @@ interface CollectionUI {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <!-- Left: Image/Visual -->
           <div
-            class="relative h-96 rounded-2xl overflow-hidden shadow-luxury-lg"
+            class="relative h-64 md:h-96 rounded-2xl overflow-hidden shadow-luxury-lg"
           >
             <div
               class="w-full h-full bg-gradient-to-br from-gold-300 to-gold-600 flex items-center justify-center"
@@ -430,130 +415,23 @@ interface CollectionUI {
               >
             </div>
 
-            <h2 class="text-4xl md:text-5xl font-display font-bold mb-6">
+            <h2 class="text-3xl md:text-5xl font-display font-bold mb-6">
               Heritage Meets Modern Excellence
             </h2>
 
-            <p class="text-lg text-gray-200 mb-4 leading-relaxed">
+            <p class="text-base md:text-lg text-gray-200 mb-4 leading-relaxed">
               With over 25 years of expertise, Gemara stands as a trusted
-              custodian of precious gemstones and spiritual artifacts. Our
-              journey began in the heartland of gem cutting, where we learned
-              from master craftspeople.
+              custodian of precious gemstones and spiritual artifacts.
             </p>
-
-            <p class="text-lg text-gray-200 mb-8 leading-relaxed">
-              Today, we blend traditional artisanal techniques with
-              international authentication standards. Every piece in our
-              collection is personally curated and certified, ensuring
-              museum-quality standards.
-            </p>
-
-            <ul class="space-y-3 mb-8">
-              <li class="flex items-start gap-3">
-                <span class="text-gold-400 font-bold">✓</span>
-                <span
-                  >Partnerships with international gemological institutes</span
-                >
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="text-gold-400 font-bold">✓</span>
-                <span
-                  >Direct relationships with ethical mines and artisans</span
-                >
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="text-gold-400 font-bold">✓</span>
-                <span>Transparent pricing with no hidden markups</span>
-              </li>
-              <li class="flex items-start gap-3">
-                <span class="text-gold-400 font-bold">✓</span>
-                <span>Lifetime care and restoration services</span>
-              </li>
-            </ul>
 
             <a
               href="#contact"
-              class="inline-block px-8 py-4 bg-gold-500 hover:bg-gold-600 text-white font-bold rounded-lg transition-all hover:shadow-luxury"
+              class="inline-block px-8 py-4 bg-gold-500 hover:bg-gold-600 text-white font-bold rounded-lg transition-all hover:shadow-luxury w-full sm:w-auto text-center"
             >
               Learn More About Us
             </a>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Certifications Showcase -->
-    <section class="section-padding bg-white border-y border-diamond-200">
-      <div class="container-luxury">
-        <h2
-          class="text-4xl md:text-5xl font-display font-bold text-center text-diamond-900 mb-16"
-        >
-          Verified & Authenticated
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <!-- GIA -->
-          <div class="card p-8 text-center hover:shadow-luxury transition-all">
-            <div class="text-6xl mb-4">🏆</div>
-            <h3 class="font-bold text-gray-900 text-xl mb-3">GIA Certified</h3>
-            <p class="text-gray-600">
-              Gemological Institute of America certification - the industry's
-              gold standard for diamond and gemstone grading
-            </p>
-            <p class="text-xs text-gray-500 mt-4">
-              Est. 1931 • Over 100,000 gems certified annually
-            </p>
-          </div>
-
-          <!-- IGI -->
-          <div class="card p-8 text-center hover:shadow-luxury transition-all">
-            <div class="text-6xl mb-4">✓</div>
-            <h3 class="font-bold text-gray-900 text-xl mb-3">IGI Certified</h3>
-            <p class="text-gray-600">
-              International Gemological Institute verification for complete
-              documentation and authenticity assurance
-            </p>
-            <p class="text-xs text-gray-500 mt-4">
-              Est. 1975 • Trusted globally for lab reports
-            </p>
-          </div>
-
-          <!-- Authentication -->
-          <div class="card p-8 text-center hover:shadow-luxury transition-all">
-            <div class="text-6xl mb-4">🔍</div>
-            <h3 class="font-bold text-gray-900 text-xl mb-3">
-              Expert Authentication
-            </h3>
-            <p class="text-gray-600">
-              Our in-house gemologists perform comprehensive testing using
-              advanced spectroscopy and UV analysis
-            </p>
-            <p class="text-xs text-gray-500 mt-4">
-              100% satisfaction guarantee • 30-day returns
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section
-      class="section-padding bg-gradient-to-r from-gold-500 to-gold-600 text-white"
-    >
-      <div class="container-luxury text-center">
-        <h2 class="text-4xl md:text-5xl font-display font-bold mb-6">
-          Discover Your Perfect Piece
-        </h2>
-        <p class="text-xl text-gold-100 max-w-2xl mx-auto mb-8">
-          Browse our handpicked collection of loose stones, carved idols, and
-          heritage jewelry
-        </p>
-        <a
-          routerLink="/products"
-          class="inline-block px-10 py-4 bg-white text-gold-600 hover:bg-gold-50 font-bold rounded-lg transition-all shadow-luxury hover:shadow-luxury-lg"
-        >
-          Start Exploring
-        </a>
       </div>
     </section>
 
