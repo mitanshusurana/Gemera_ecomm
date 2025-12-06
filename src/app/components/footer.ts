@@ -236,8 +236,8 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
         <div
           class="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-300"
         >
-          <div>&copy; 2024 Gemara Fine Jewels. All rights reserved.</div>
-          <div class="flex gap-6">
+          <div class="text-center md:text-left">&copy; 2024 Gemara Fine Jewels. All rights reserved.</div>
+          <div class="flex flex-wrap justify-center gap-4 md:gap-6 text-center">
             <a
               routerLink="/privacy"
               class="hover:text-gold-400 transition-colors duration-300"
