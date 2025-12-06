@@ -358,20 +358,63 @@ export class CheckoutComponent implements OnInit {
   }
 
   placeOrder(): void {
+    this.isProcessing.set(true);
+
     const orderData = {
       shippingAddress: this.shippingData,
       billingAddress: this.billingSameAsShipping ? this.shippingData : {},
       paymentMethod: 'CREDIT_CARD',
       shippingMethod: 'EXPRESS',
+      items: this.cartItems(),
+      total: this.cartTotal(),
     };
 
     this.apiService.createOrder(orderData).subscribe({
       next: (order) => {
         console.log('Order created:', order);
-        // Navigate to order confirmation or success page
+
+        const subtotal = order.items.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+        const tax = subtotal * 0.1;
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 3);
+
+        this.emailService
+          .sendOrderConfirmation({
+            email: this.shippingData.email,
+            orderNumber: order.orderNumber,
+            orderTotal: order.total,
+            items: order.items.map((item) => ({
+              name: item.product.name,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            shippingAddress: this.shippingData,
+            estimatedDelivery: deliveryDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            }),
+          })
+          .subscribe({
+            next: () => {
+              console.log('Confirmation email sent');
+              sessionStorage.setItem('lastOrderId', order.id);
+              this.router.navigate(['/order-confirmation']);
+            },
+            error: (emailError) => {
+              console.error('Error sending email:', emailError);
+              sessionStorage.setItem('lastOrderId', order.id);
+              this.router.navigate(['/order-confirmation']);
+            },
+          });
       },
       error: (error) => {
         console.error('Error creating order:', error);
+        this.isProcessing.set(false);
+        alert('Error placing order. Please try again.');
       },
     });
   }
