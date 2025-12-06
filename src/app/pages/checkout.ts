@@ -240,11 +240,11 @@ import { EmailNotificationService } from '../services/email-notification.service
               </div>
 
               <div class="flex gap-4">
-                <button type="button" (click)="previousStep()" class="flex-1 btn-ghost border border-diamond-300">
+                <button type="button" (click)="previousStep()" class="flex-1 btn-ghost border border-diamond-300" [disabled]="isProcessing()">
                   Back
                 </button>
-                <button (click)="placeOrder()" class="flex-1 btn-primary">
-                  Place Order
+                <button (click)="placeOrder()" class="flex-1 btn-primary" [disabled]="isProcessing()">
+                  {{ isProcessing() ? 'Processing...' : 'Place Order' }}
                 </button>
               </div>
             </div>
