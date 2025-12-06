@@ -27,6 +27,13 @@ html {
 body {
   @apply bg-white text-gray-900 font-sans;
   color: var(--color-text);
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 h1,
