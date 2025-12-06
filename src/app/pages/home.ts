@@ -27,12 +27,12 @@ interface CollectionUI {
   ],
   template: `
     <!-- Premium Hero Section -->
-    <section class="relative w-full overflow-hidden">
+    <section class="relative w-full overflow-hidden min-h-screen">
       <!-- Background Image with Overlay -->
       <div
         class="absolute inset-0 bg-gradient-to-r from-diamond-900 via-diamond-800 to-gold-900/30"
       ></div>
-      <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0 opacity-20 pointer-events-none">
         <svg
           class="absolute inset-0 w-full h-full"
           preserveAspectRatio="none"
@@ -59,7 +59,7 @@ interface CollectionUI {
       </div>
 
       <div
-        class="relative z-10 h-screen flex flex-col items-center justify-center text-center px-4"
+        class="relative z-10 min-h-screen flex flex-col items-center justify-center text-center px-4 py-20"
       >
         <!-- Trust Badge -->
         <div

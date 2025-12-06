@@ -29,9 +29,9 @@ import { ApiService, Cart } from '../services/api.service';
           <!-- Cart Items -->
           <div class="lg:col-span-2">
             <div *ngIf="!isEmpty()" class="space-y-6">
-              <div *ngFor="let item of cartItems()" class="card p-6 flex gap-6">
+              <div *ngFor="let item of cartItems()" class="card p-6 flex flex-col sm:flex-row gap-6">
                 <!-- Image -->
-                <div class="w-32 h-32 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                <div class="w-full sm:w-32 h-32 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
                    <img *ngIf="item.product.imageUrl" [src]="item.product.imageUrl" class="w-full h-full object-cover" onerror="this.style.display='none'">
                    <span *ngIf="!item.product.imageUrl" class="text-4xl absolute">💎</span>
                 </div>
@@ -50,7 +50,7 @@ import { ApiService, Cart } from '../services/api.service';
                     </button>
                   </div>
 
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
                       <button (click)="decreaseQuantity(item.id)" class="w-8 h-8 border border-diamond-300 rounded hover:border-gold-500 flex items-center justify-center">
                         −
