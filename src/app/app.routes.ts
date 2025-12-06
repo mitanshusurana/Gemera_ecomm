@@ -7,6 +7,7 @@ import { CheckoutComponent } from "./pages/checkout";
 import { AccountComponent } from "./pages/account";
 import { StripePaymentComponent } from "./pages/stripe-payment";
 import { RazorpayPaymentComponent } from "./pages/razorpay-payment";
+import { OrderConfirmationComponent } from "./pages/order-confirmation";
 import { AboutComponent } from "./pages/about";
 import { ContactComponent } from "./pages/contact";
 import { authGuard } from "./guards/auth.guard";
