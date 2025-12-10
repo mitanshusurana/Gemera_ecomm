@@ -8,7 +8,7 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
   standalone: true,
   imports: [CommonModule, WhatsappButtonComponent, RouterLink],
   template: `
-    <footer class="bg-gradient-luxury text-white">
+    <footer class="bg-gradient-luxury text-white w-full overflow-hidden">
       <!-- Main Footer -->
       <div class="container-luxury section-padding">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-12">
@@ -254,7 +254,7 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
               >Accessibility</a
             >
           </div>
-          <div class="flex gap-3">
+          <div class="flex flex-wrap justify-center gap-3">
             <img
               src="https://img.shields.io/badge/Visa-1A1F71?style=for-the-badge&logo=Visa&logoColor=white"
               alt="Visa"
