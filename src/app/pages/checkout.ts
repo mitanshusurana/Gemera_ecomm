@@ -94,14 +94,29 @@ import { EmailNotificationService } from "../services/email-notification.service
           </div>
         </div>
 
+        <!-- Guest Checkout Banner -->
+        <div *ngIf="!isAuthenticated()" class="bg-diamond-50 border border-diamond-200 rounded-lg p-4 mb-8 flex justify-between items-center animate-fade-in-up">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">👤</span>
+            <div>
+              <p class="font-bold text-diamond-900">Already have an account?</p>
+              <p class="text-sm text-gray-600">Sign in for a faster checkout experience.</p>
+            </div>
+          </div>
+          <a routerLink="/login" class="btn-outline text-sm px-4 py-2">Sign In</a>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Main Content -->
           <div class="lg:col-span-2">
             <!-- Step 1: Shipping Address -->
             <div *ngIf="currentStep() === 1" class="card p-8 animate-slideUp">
-              <h2 class="text-2xl font-bold text-diamond-900 mb-6">
-                Shipping Address
-              </h2>
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-diamond-900">
+                  Shipping Address
+                </h2>
+                <span *ngIf="!isAuthenticated()" class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">GUEST CHECKOUT</span>
+              </div>
 
               <form
                 (ngSubmit)="nextStep()"
@@ -615,8 +630,15 @@ export class CheckoutComponent implements OnInit {
     private router: Router,
   ) {}
 
+  isAuthenticated = signal(false);
+
   ngOnInit(): void {
+    this.checkAuth();
     this.loadCartData();
+  }
+
+  private checkAuth(): void {
+    this.isAuthenticated.set(this.apiService.isAuthenticated());
   }
 
   private loadCartData(): void {

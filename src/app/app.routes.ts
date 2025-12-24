@@ -15,6 +15,7 @@ import { ContactComponent } from "./pages/contact";
 import { PrivacyPolicyComponent } from "./pages/privacy";
 import { TermsComponent } from "./pages/terms";
 import { CompareComponent } from "./pages/compare";
+import { JournalComponent } from "./pages/journal";
 import { authGuard } from "./guards/auth.guard";
 import { AdminLayoutComponent } from "./pages/admin/admin-layout";
 import { AdminDashboardComponent } from "./pages/admin/dashboard";
@@ -28,28 +29,26 @@ export const routes: Routes = [
   { path: "products/:id", component: ProductDetailComponent },
   { path: "compare", component: CompareComponent },
   { path: "cart", component: CartComponent },
-  { path: "checkout", component: CheckoutComponent, canActivate: [authGuard] },
+  { path: "checkout", component: CheckoutComponent },
   {
     path: "checkout/payment/stripe",
     component: StripePaymentComponent,
-    canActivate: [authGuard],
   },
   {
     path: "checkout/payment/razorpay",
     component: RazorpayPaymentComponent,
-    canActivate: [authGuard],
   },
   { path: "account", component: AccountComponent, canActivate: [authGuard] },
   {
     path: "order-confirmation",
     component: OrderConfirmationComponent,
-    canActivate: [authGuard],
   },
   { path: "rfq", component: RFQRequestComponent },
   { path: "about", component: AboutComponent },
   { path: "contact", component: ContactComponent },
   { path: "privacy", component: PrivacyPolicyComponent },
   { path: "terms", component: TermsComponent },
+  { path: "journal", component: JournalComponent },
   {
     path: "admin",
     component: AdminLayoutComponent,

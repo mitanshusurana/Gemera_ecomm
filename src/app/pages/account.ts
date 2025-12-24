@@ -124,21 +124,54 @@ import { ApiService, User } from '../services/api.service';
               <div class="card p-8">
                 <h2 class="text-3xl font-bold text-diamond-900 mb-8">My Orders</h2>
 
-                <div class="space-y-4">
-                  <div *ngFor="let order of [1,2,3]" class="border border-diamond-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <div class="space-y-8">
+                  <div *ngFor="let order of [1,2]" class="border border-diamond-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                       <div>
                         <p class="text-sm text-gold-600 font-semibold mb-1">Order #ORD-2024-{{ 100 + order }}</p>
                         <p class="text-gray-600 text-sm">Placed on January {{ order }}, 2024</p>
                       </div>
                       <div class="text-right">
                         <p class="text-2xl font-bold text-diamond-900">{{ formatPrice(45000 + order * 1000) }}</p>
-                        <span class="inline-block mt-2 badge badge-emerald">Delivered</span>
+                        <!-- <span class="inline-block mt-2 badge badge-emerald">Processing</span> -->
                       </div>
                     </div>
-                    <div class="border-t border-diamond-200 pt-4">
-                      <p class="text-gray-600 text-sm mb-3">Diamond Solitaire Ring</p>
-                      <a href="#" class="text-gold-600 hover:text-gold-700 text-sm font-semibold">View Order Details →</a>
+
+                    <!-- Tracking Timeline -->
+                    <div class="relative flex justify-between items-center mb-6 px-4">
+                      <!-- Progress Bar -->
+                      <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10"></div>
+                      <div class="absolute top-1/2 left-0 h-1 bg-gold-500 -z-10 transition-all duration-1000" [style.width]="order === 1 ? '60%' : '20%'"></div>
+
+                      <!-- Step 1 -->
+                      <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gold-500 text-white flex items-center justify-center text-xs font-bold">✓</div>
+                        <span class="text-xs font-semibold text-gray-700">Confirmed</span>
+                      </div>
+                      <!-- Step 2 -->
+                      <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" [ngClass]="order >= 1 ? 'bg-gold-500 text-white' : 'bg-gray-200 text-gray-500'">
+                          {{ order >= 1 ? '✓' : '2' }}
+                        </div>
+                        <span class="text-xs font-semibold" [ngClass]="order >= 1 ? 'text-gray-700' : 'text-gray-400'">Processing</span>
+                      </div>
+                      <!-- Step 3 -->
+                      <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" [ngClass]="order === 1 ? 'bg-gold-500 text-white' : 'bg-gray-200 text-gray-500'">
+                          {{ order === 1 ? '3' : '3' }}
+                        </div>
+                        <span class="text-xs font-semibold" [ngClass]="order === 1 ? 'text-gray-700' : 'text-gray-400'">Polishing</span>
+                      </div>
+                      <!-- Step 4 -->
+                      <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold">4</div>
+                        <span class="text-xs font-semibold text-gray-400">Shipped</span>
+                      </div>
+                    </div>
+
+                    <div class="border-t border-diamond-200 pt-4 flex justify-between items-center">
+                      <p class="text-gray-600 text-sm">Diamond Solitaire Ring</p>
+                      <button class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</button>
                     </div>
                   </div>
                 </div>

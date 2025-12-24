@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService, Cart } from '../services/api.service';
@@ -152,8 +152,13 @@ import { ApiService, Cart } from '../services/api.service';
                   <p class="text-sm text-gray-600">30-day money-back guarantee</p>
                 </div>
                 <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">Secure SSL encrypted checkout</p>
+                  <span class="text-green-600 font-bold mt-0.5">🔒</span>
+                  <p class="text-sm text-gray-600 font-semibold">Secure SSL encrypted checkout</p>
+                </div>
+                <!-- Stock Reservation Timer -->
+                <div class="mt-4 p-3 bg-red-50 text-red-700 text-sm font-semibold rounded flex items-center justify-center gap-2">
+                  <span>⏳</span>
+                  <span>Stock reserved for {{ timerString() }}</span>
                 </div>
               </div>
             </div>
@@ -163,7 +168,7 @@ import { ApiService, Cart } from '../services/api.service';
     </div>
   `,
 })
-export class CartComponent implements OnInit {
+export class CartComponent implements OnInit, OnDestroy {
   apiService = inject(ApiService);
 
   cart = signal<Cart | null>(null);
@@ -183,7 +188,18 @@ export class CartComponent implements OnInit {
     return t;
   });
 
+  // Timer Signal
+  timeLeft = signal(600); // 10 minutes in seconds
+  timerString = computed(() => {
+    const minutes = Math.floor(this.timeLeft() / 60);
+    const seconds = this.timeLeft() % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  });
+
+  private timerInterval: any;
+
   ngOnInit(): void {
+    this.startTimer();
     this.apiService.cart().subscribe((cart) => {
         if (cart) {
             this.cart.set(cart);
@@ -194,6 +210,12 @@ export class CartComponent implements OnInit {
         }
     });
     this.apiService.getCart().subscribe();
+  }
+
+  ngOnDestroy(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
   }
 
   removeItem(itemId: string): void {
@@ -212,6 +234,14 @@ export class CartComponent implements OnInit {
     if (item && item.quantity > 1) {
       this.apiService.updateCartItem(itemId, item.quantity - 1).subscribe();
     }
+  }
+
+  startTimer(): void {
+    this.timerInterval = setInterval(() => {
+      if (this.timeLeft() > 0) {
+        this.timeLeft.set(this.timeLeft() - 1);
+      }
+    }, 1000);
   }
 
   applyCoupon(code: string): void {

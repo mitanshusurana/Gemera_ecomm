@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService, ProductDetail, Product, CustomizationOption, PriceBreakup } from '../services/api.service';
@@ -441,7 +441,7 @@ import { EducationModalComponent } from '../components/education-modal';
     </div>
   `,
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private route = inject(ActivatedRoute);
   private compareService = inject(CompareService);
@@ -516,6 +516,10 @@ export class ProductDetailComponent implements OnInit {
         this.loadProduct(params['id']);
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.closeTryOn();
   }
 
   private loadProduct(productId: string): void {

@@ -435,6 +435,51 @@ interface CollectionUI {
       </div>
     </section>
 
+    <!-- Instagram Feed -->
+    <section id="instagram" class="section-padding bg-white">
+      <div class="container-luxury text-center">
+        <h2 class="text-3xl font-display font-bold text-diamond-900 mb-2">@GemaraJewels</h2>
+        <p class="text-gray-600 mb-8">Follow us on Instagram for daily inspiration</p>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
+            <div class="w-full h-full flex items-center justify-center text-4xl bg-rose-50">💍</div>
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
+              <span class="flex items-center gap-1">❤️ 245</span>
+              <span class="flex items-center gap-1">💬 12</span>
+            </div>
+          </div>
+          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
+            <div class="w-full h-full flex items-center justify-center text-4xl bg-blue-50">💎</div>
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
+              <span class="flex items-center gap-1">❤️ 189</span>
+              <span class="flex items-center gap-1">💬 8</span>
+            </div>
+          </div>
+          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
+            <div class="w-full h-full flex items-center justify-center text-4xl bg-green-50">🕉️</div>
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
+              <span class="flex items-center gap-1">❤️ 562</span>
+              <span class="flex items-center gap-1">💬 45</span>
+            </div>
+          </div>
+          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
+            <div class="w-full h-full flex items-center justify-center text-4xl bg-yellow-50">👑</div>
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
+              <span class="flex items-center gap-1">❤️ 321</span>
+              <span class="flex items-center gap-1">💬 18</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <a href="#" class="btn-outline flex items-center gap-2 mx-auto w-fit">
+            <span>📷</span> Follow Us
+          </a>
+        </div>
+      </div>
+    </section>
+
     <!-- Quick View Modal -->
     <app-quick-view-modal
       [isOpen]="quickViewOpen()"
