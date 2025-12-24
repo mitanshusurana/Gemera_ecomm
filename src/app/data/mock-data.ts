@@ -68,7 +68,23 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     certifications: ["GIA"],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    relatedProducts: ["2", "4"]
+    relatedProducts: ["2", "4"],
+    priceBreakup: {
+      metal: 10000,
+      gemstone: 30000,
+      makingCharges: 3000,
+      tax: 2000,
+      total: 45000
+    },
+    customizationOptions: [
+      { id: "m1", name: "18K White Gold", priceModifier: 0, type: "metal" },
+      { id: "m2", name: "14K White Gold", priceModifier: -2000, type: "metal" },
+      { id: "m3", name: "Platinum", priceModifier: 5000, type: "metal" },
+      { id: "m4", name: "18K Yellow Gold", priceModifier: 0, type: "metal" },
+      { id: "d1", name: "IJ-SI (Good)", priceModifier: -5000, type: "diamond" },
+      { id: "d2", name: "GH-VS (Better)", priceModifier: 0, type: "diamond" },
+      { id: "d3", name: "EF-VVS (Best)", priceModifier: 10000, type: "diamond" }
+    ]
   },
   {
     id: "2",

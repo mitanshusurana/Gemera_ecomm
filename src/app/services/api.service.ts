@@ -26,6 +26,21 @@ export interface Product {
   updatedAt: string;
 }
 
+export interface CustomizationOption {
+  id: string;
+  name: string;
+  priceModifier: number;
+  type: 'metal' | 'diamond' | 'size';
+}
+
+export interface PriceBreakup {
+  metal: number;
+  gemstone: number;
+  makingCharges: number;
+  tax: number;
+  total: number;
+}
+
 export interface ProductDetail extends Product {
   images: { url: string; alt: string }[];
   specifications: {
@@ -36,6 +51,8 @@ export interface ProductDetail extends Product {
     origin?: string;
   };
   relatedProducts: string[];
+  customizationOptions?: CustomizationOption[];
+  priceBreakup?: PriceBreakup;
 }
 
 export interface CartItem {
