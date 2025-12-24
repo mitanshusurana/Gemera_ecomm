@@ -2,13 +2,14 @@ import { Component, OnInit, signal, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
-import { ApiService, Product, Category } from "../services/api.service";
+import { ApiService, Product, Category, ProductDetail } from "../services/api.service";
 import { CompareService } from '../services/compare.service';
+import { QuickViewModalComponent } from '../components/quick-view-modal';
 
 @Component({
   selector: "app-products",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Header -->
@@ -122,6 +123,52 @@ import { CompareService } from '../services/compare.service';
                 </div>
               </div>
 
+              <!-- Occasion Filter (New) -->
+              <div class="card p-6">
+                <h3 class="font-semibold text-gray-900 mb-4">Occasion</h3>
+                <div class="space-y-3">
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Engagement')" (change)="toggleFilter('occasion', 'Engagement')" />
+                    <span class="text-sm text-gray-700">Engagement</span>
+                  </label>
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Wedding')" (change)="toggleFilter('occasion', 'Wedding')" />
+                    <span class="text-sm text-gray-700">Wedding</span>
+                  </label>
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Anniversary')" (change)="toggleFilter('occasion', 'Anniversary')" />
+                    <span class="text-sm text-gray-700">Anniversary</span>
+                  </label>
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Daily Wear')" (change)="toggleFilter('occasion', 'Daily Wear')" />
+                    <span class="text-sm text-gray-700">Daily Wear</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Style Filter (New) -->
+              <div class="card p-6">
+                <h3 class="font-semibold text-gray-900 mb-4">Shop by Look</h3>
+                <div class="space-y-3">
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Modern')" (change)="toggleFilter('style', 'Modern')" />
+                    <span class="text-sm text-gray-700">Modern</span>
+                  </label>
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Vintage')" (change)="toggleFilter('style', 'Vintage')" />
+                    <span class="text-sm text-gray-700">Vintage</span>
+                  </label>
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Classic Solitaire')" (change)="toggleFilter('style', 'Classic Solitaire')" />
+                    <span class="text-sm text-gray-700">Classic Solitaire</span>
+                  </label>
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Halo')" (change)="toggleFilter('style', 'Halo')" />
+                    <span class="text-sm text-gray-700">Halo</span>
+                  </label>
+                </div>
+              </div>
+
               <!-- Clear Filters -->
               <button (click)="clearFilters()" class="w-full btn-ghost border border-diamond-300">
                 Clear All Filters
@@ -139,13 +186,22 @@ import { CompareService } from '../services/compare.service';
                   <span class="font-semibold">{{ pagination().totalItems }}</span> products
                 </p>
               </div>
-              <select [(ngModel)]="sortBy" (change)="loadProducts()" class="input-field max-w-xs">
-                <option value="newest">Sort by: Newest</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="popular">Most Popular</option>
-                <option value="rated">Best Rated</option>
-              </select>
+              <div class="flex gap-2">
+                <!-- Visual Search Button -->
+                <button (click)="fileInput.click()" class="btn-outline flex items-center gap-2" title="Search by Image">
+                  <span class="text-xl">📷</span>
+                  <span class="hidden sm:inline">Visual Search</span>
+                </button>
+                <input #fileInput type="file" (change)="handleVisualSearch($event)" class="hidden" accept="image/*">
+
+                <select [(ngModel)]="sortBy" (change)="loadProducts()" class="input-field max-w-xs">
+                  <option value="newest">Sort by: Newest</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="popular">Most Popular</option>
+                  <option value="rated">Best Rated</option>
+                </select>
+              </div>
             </div>
 
             <!-- Loading Skeleton -->
@@ -177,6 +233,9 @@ import { CompareService } from '../services/compare.service';
                   </button>
                   <button (click)="handleAddToCompare($event, product)" class="absolute top-16 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300" title="Compare">
                     <span class="text-lg">⚖️</span>
+                  </button>
+                  <button (click)="openQuickView($event, product.id)" class="absolute top-28 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300" title="Quick View">
+                    <span class="text-lg">👁️</span>
                   </button>
                 </div>
 
@@ -290,6 +349,14 @@ import { CompareService } from '../services/compare.service';
           </div>
         </div>
       </div>
+
+      <!-- Quick View Modal -->
+      <app-quick-view-modal
+        [isOpen]="quickViewOpen()"
+        [product]="quickViewProduct()"
+        (close)="quickViewOpen.set(false)"
+        (addToCart)="handleQuickViewAddToCart($event)">
+      </app-quick-view-modal>
     </div>
   `,
 })
@@ -301,10 +368,16 @@ export class ProductsComponent implements OnInit {
   // State management
   categories = signal<Category[]>([]);
   selectedCategories = signal<string[]>([]);
+  selectedOccasions = signal<string[]>([]);
+  selectedStyles = signal<string[]>([]);
   products = signal<Product[]>([]);
   sortBy = "newest";
   isLoading = signal(false);
   
+  // Quick View State
+  quickViewOpen = signal(false);
+  quickViewProduct = signal<ProductDetail | null>(null);
+
   pagination = signal({
     currentPage: 1,
     pageSize: 12,
@@ -344,18 +417,42 @@ export class ProductsComponent implements OnInit {
     const filters = {
         category: this.selectedCategories().length > 0 ? this.selectedCategories()[0] : undefined,
         sortBy: this.sortBy === "newest" ? "newest" : "price",
-        order: this.sortBy === "price-high" ? "desc" : "asc"
+        order: this.sortBy === "price-high" ? "desc" : "asc",
+        // Pass custom filters to API (mock service will likely ignore but good for structure)
+        occasions: this.selectedOccasions().join(','),
+        styles: this.selectedStyles().join(',')
     };
 
     // API uses 0-indexed pages
     this.apiService.getProducts(this.pagination().currentPage - 1, this.pagination().pageSize, filters)
         .subscribe({
             next: (res) => {
-                this.products.set(res.content);
+                // Client-side filtering for new mock filters since API/MockService might not support them yet
+                let content = res.content;
+                if (this.selectedOccasions().length > 0) {
+                    // Mock logic: randomly filter or check if description contains keyword
+                    content = content.filter(p =>
+                        this.selectedOccasions().some(occ =>
+                            p.description.includes(occ) || p.name.includes(occ) || Math.random() > 0.7
+                        )
+                    );
+                }
+                if (this.selectedStyles().length > 0) {
+                     content = content.filter(p =>
+                        this.selectedStyles().some(sty =>
+                            p.description.includes(sty) || p.name.includes(sty) || Math.random() > 0.7
+                        )
+                    );
+                }
+
+                this.products.set(content);
+                // Adjust total items roughly for mock
+                const total = this.selectedOccasions().length || this.selectedStyles().length ? content.length : res.pageable.totalElements;
+
                 this.pagination.update(p => ({
                     ...p,
-                    totalItems: res.pageable.totalElements,
-                    totalPages: res.pageable.totalPages
+                    totalItems: total,
+                    totalPages: Math.ceil(total / p.pageSize) || 1
                 }));
                 this.isLoading.set(false);
             },
@@ -374,10 +471,6 @@ export class ProductsComponent implements OnInit {
       if (current.includes(categoryId)) {
         this.selectedCategories.set(current.filter((id) => id !== categoryId));
       } else {
-        // For now support multiple selection in UI but API filter logic might need adjustment
-        // My mock service does: products.filter(p => p.category.includes(cat))
-        // If I pass multiple, I need to decide how to handle.
-        // Let's stick to single selection logic for simplicity in integration for now, or just append.
         this.selectedCategories.set([...current, categoryId]);
       }
     }
@@ -385,8 +478,30 @@ export class ProductsComponent implements OnInit {
     this.loadProducts();
   }
 
+  toggleFilter(type: 'occasion' | 'style', value: string): void {
+      if (type === 'occasion') {
+          const current = this.selectedOccasions();
+          if (current.includes(value)) {
+              this.selectedOccasions.set(current.filter(v => v !== value));
+          } else {
+              this.selectedOccasions.set([...current, value]);
+          }
+      } else {
+          const current = this.selectedStyles();
+          if (current.includes(value)) {
+              this.selectedStyles.set(current.filter(v => v !== value));
+          } else {
+              this.selectedStyles.set([...current, value]);
+          }
+      }
+      this.pagination.update(p => ({ ...p, currentPage: 1 }));
+      this.loadProducts();
+  }
+
   clearFilters(): void {
     this.selectedCategories.set([]);
+    this.selectedOccasions.set([]);
+    this.selectedStyles.set([]);
     this.sortBy = "newest";
     this.pagination.update(p => ({ ...p, currentPage: 1 }));
     this.loadProducts();
@@ -404,6 +519,35 @@ export class ProductsComponent implements OnInit {
       event.preventDefault();
       event.stopPropagation();
       this.compareService.addToCompare(product);
+  }
+
+  openQuickView(event: Event, productId: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // We need ProductDetail, but list has Product. Fetch detail.
+    this.apiService.getProductById(productId).subscribe(product => {
+      this.quickViewProduct.set(product);
+      this.quickViewOpen.set(true);
+    });
+  }
+
+  handleQuickViewAddToCart(event: { productId: string, quantity: number }): void {
+    this.apiService.addToCart(event.productId, event.quantity).subscribe(() => {
+        alert("Added to cart");
+    });
+  }
+
+  handleVisualSearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      // Mock visual search
+      this.isLoading.set(true);
+      setTimeout(() => {
+        alert(`Searching for products similar to ${input.files![0].name}... (Mock)`);
+        this.isLoading.set(false);
+      }, 1500);
+    }
   }
 
   goToPage(page: number): void {

@@ -66,6 +66,24 @@ import { ApiService, User } from '../services/api.service';
           <div class="md:col-span-3">
             <!-- Profile Tab -->
             <div *ngIf="activeTab() === 'profile'" class="card p-8 animate-slideUp">
+
+              <!-- Loyalty Points Summary -->
+              <div class="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl p-6 mb-8 flex justify-between items-center shadow-lg">
+                <div>
+                  <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Gemara Loyalty Points</p>
+                  <h3 class="text-3xl font-bold font-display flex items-center gap-2">
+                    <span class="text-4xl">💎</span> 1,250
+                  </h3>
+                  <p class="text-gray-400 text-xs mt-2">You are 750 points away from Platinum Tier</p>
+                </div>
+                <div class="text-right">
+                  <button class="bg-gold-500 hover:bg-gold-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors mb-2">
+                    Redeem Points
+                  </button>
+                  <p class="text-xs text-gray-400">Expires: Dec 31, 2025</p>
+                </div>
+              </div>
+
               <h2 class="text-3xl font-bold text-diamond-900 mb-8">Profile Information</h2>
 
               <form (ngSubmit)="updateProfile()" #profileForm="ngForm" class="space-y-6">
@@ -163,7 +181,19 @@ import { ApiService, User } from '../services/api.service';
             <!-- Wishlist Tab -->
             <div *ngIf="activeTab() === 'wishlist'" class="space-y-6 animate-slideUp">
               <div class="card p-8">
-                <h2 class="text-3xl font-bold text-diamond-900 mb-8">My Wishlist</h2>
+                <div class="flex justify-between items-center mb-8">
+                  <h2 class="text-3xl font-bold text-diamond-900">My Wishlists</h2>
+                  <button (click)="createBoard()" class="btn-outline flex items-center gap-2">
+                    <span>+</span> Create Board
+                  </button>
+                </div>
+
+                <!-- Boards Tabs (Mock) -->
+                <div class="flex gap-4 mb-6 border-b border-gray-200 pb-2">
+                  <button class="text-gold-600 border-b-2 border-gold-600 font-semibold px-2 pb-2">All Items</button>
+                  <button class="text-gray-500 hover:text-gray-700 px-2 pb-2">Wedding Ideas</button>
+                  <button class="text-gray-500 hover:text-gray-700 px-2 pb-2">Gifts for Mom</button>
+                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div *ngFor="let _ of [1,2,3]" class="card card-hover group overflow-hidden">
@@ -254,6 +284,13 @@ export class AccountComponent implements OnInit {
         console.error('Error loading user profile:', error);
       },
     });
+  }
+
+  createBoard(): void {
+    const name = prompt("Enter new board name (e.g., 'Dream Ring'):");
+    if (name) {
+      alert(`Created new wishlist board: ${name}`);
+    }
   }
 
   updateProfile(): void {

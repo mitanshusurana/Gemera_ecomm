@@ -73,6 +73,21 @@ import { ApiService, Cart } from '../services/api.service';
                   <button (click)="applyCoupon(couponInput.value)" class="btn-outline">Apply</button>
                 </div>
               </div>
+
+              <!-- Gift Wrapping (New) -->
+              <div class="card p-6 flex items-center justify-between bg-gold-50 border border-gold-200">
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">🎁</span>
+                  <div>
+                    <h3 class="font-bold text-gray-900">Add Premium Gift Wrapping</h3>
+                    <p class="text-sm text-gray-600">Includes handwritten note & signature box</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-gold-700">+$5.00</span>
+                  <input type="checkbox" [checked]="isGiftWrapped()" (change)="isGiftWrapped.set(!isGiftWrapped())" class="w-5 h-5 text-gold-600 focus:ring-gold-500 border-gray-300 rounded">
+                </div>
+              </div>
             </div>
 
             <!-- Empty Cart -->
@@ -103,6 +118,10 @@ import { ApiService, Cart } from '../services/api.service';
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
                   <span class="font-semibold">{{ formatPrice(tax()) }}</span>
+                </div>
+                <div *ngIf="isGiftWrapped()" class="flex justify-between text-gold-700">
+                  <span>Gift Wrapping</span>
+                  <span class="font-semibold">{{ formatPrice(5) }}</span>
                 </div>
                 <div *ngIf="discount() > 0" class="flex justify-between text-emerald-600">
                   <span>Discount</span>
@@ -150,12 +169,19 @@ export class CartComponent implements OnInit {
   cart = signal<Cart | null>(null);
   cartItems = signal<any[]>([]);
   isEmpty = signal(true);
+  isGiftWrapped = signal(false);
 
   subtotal = computed(() => this.cart()?.subtotal || 0);
   shipping = computed(() => this.cart()?.shipping || 0);
   tax = computed(() => this.cart()?.tax || 0);
   discount = computed(() => this.cart()?.appliedDiscount || 0);
-  total = computed(() => this.cart()?.total || 0);
+  total = computed(() => {
+    let t = this.cart()?.total || 0;
+    if (this.isGiftWrapped()) {
+      t += 5;
+    }
+    return t;
+  });
 
   ngOnInit(): void {
     this.apiService.cart().subscribe((cart) => {
