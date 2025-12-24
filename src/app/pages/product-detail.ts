@@ -556,11 +556,16 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   handleAddToCart(): void {
     const p = this.product();
     if (p) {
-        // In a real scenario, we would pass the selected variants (metal, diamond) to the cart API
-        this.apiService.addToCart(p.id, this.quantity()).subscribe(() => {
+        const options = {
+          metal: this.selectedMetal()?.name,
+          diamond: this.selectedDiamondQuality()?.name,
+          price: this.currentPrice()
+        };
+
+        this.apiService.addToCart(p.id, this.quantity(), options).subscribe(() => {
             const variantInfo = [];
-            if (this.selectedMetal()) variantInfo.push(this.selectedMetal()!.name);
-            if (this.selectedDiamondQuality()) variantInfo.push(this.selectedDiamondQuality()!.name);
+            if (options.metal) variantInfo.push(options.metal);
+            if (options.diamond) variantInfo.push(options.diamond);
 
             const variantMsg = variantInfo.length > 0 ? ` with ${variantInfo.join(', ')}` : '';
             alert(`Added ${this.quantity()} item(s)${variantMsg} to cart at ${this.formatPrice(this.currentPrice())}`);
@@ -625,7 +630,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       this.tryOnStream = await navigator.mediaDevices.getUserMedia({ video: true });
       // Small delay to allow modal to render video element
       setTimeout(() => {
-        if (this.videoElement) {
+        if (this.videoElement?.nativeElement) {
           this.videoElement.nativeElement.srcObject = this.tryOnStream;
         }
       }, 100);

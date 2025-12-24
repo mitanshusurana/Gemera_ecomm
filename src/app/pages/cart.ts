@@ -42,6 +42,10 @@ import { ApiService, Cart } from '../services/api.service';
                     <div>
                       <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ item.product.category }}</p>
                       <h3 class="font-semibold text-gray-900 text-lg">{{ item.product.name }}</h3>
+                      <div class="text-sm text-gray-600 mt-1 space-y-1">
+                        <p *ngIf="item.selectedMetal">Metal: {{ item.selectedMetal }}</p>
+                        <p *ngIf="item.selectedDiamond">Diamond: {{ item.selectedDiamond }}</p>
+                      </div>
                     </div>
                     <button (click)="removeItem(item.id)" class="text-red-500 hover:text-red-700 transition-colors">
                       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -85,7 +89,7 @@ import { ApiService, Cart } from '../services/api.service';
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="font-bold text-gold-700">+$5.00</span>
-                  <input type="checkbox" [checked]="isGiftWrapped()" (change)="isGiftWrapped.set(!isGiftWrapped())" class="w-5 h-5 text-gold-600 focus:ring-gold-500 border-gray-300 rounded">
+                  <input type="checkbox" [checked]="isGiftWrapped()" (change)="toggleGiftWrap($event)" class="w-5 h-5 text-gold-600 focus:ring-gold-500 border-gray-300 rounded">
                 </div>
               </div>
             </div>
@@ -174,19 +178,13 @@ export class CartComponent implements OnInit, OnDestroy {
   cart = signal<Cart | null>(null);
   cartItems = signal<any[]>([]);
   isEmpty = signal(true);
-  isGiftWrapped = signal(false);
+  isGiftWrapped = computed(() => this.cart()?.giftWrap || false);
 
   subtotal = computed(() => this.cart()?.subtotal || 0);
   shipping = computed(() => this.cart()?.shipping || 0);
   tax = computed(() => this.cart()?.tax || 0);
   discount = computed(() => this.cart()?.appliedDiscount || 0);
-  total = computed(() => {
-    let t = this.cart()?.total || 0;
-    if (this.isGiftWrapped()) {
-      t += 5;
-    }
-    return t;
-  });
+  total = computed(() => this.cart()?.total || 0);
 
   // Timer Signal
   timeLeft = signal(600); // 10 minutes in seconds
@@ -234,6 +232,11 @@ export class CartComponent implements OnInit, OnDestroy {
     if (item && item.quantity > 1) {
       this.apiService.updateCartItem(itemId, item.quantity - 1).subscribe();
     }
+  }
+
+  toggleGiftWrap(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.apiService.updateCartOptions({ giftWrap: checked }).subscribe();
   }
 
   startTimer(): void {
