@@ -1,15 +1,16 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService, ProductDetail, Product, CustomizationOption, PriceBreakup } from '../services/api.service';
 import { CompareService } from '../services/compare.service';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
+import { EducationModalComponent } from '../components/education-modal';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent],
+  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -30,7 +31,7 @@ import { SizeGuideModalComponent } from '../components/size-guide-modal';
         <div *ngIf="!loading() && product()" class="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <!-- Image Gallery -->
           <div>
-            <div class="bg-diamond-100 rounded-xl overflow-hidden mb-6 h-96 lg:h-[500px] flex items-center justify-center relative">
+            <div class="bg-diamond-100 rounded-xl overflow-hidden mb-6 h-96 lg:h-[500px] flex items-center justify-center relative group">
                <!-- Video Player -->
                <video *ngIf="showVideo() && product()?.videoUrl"
                       [src]="product()?.videoUrl"
@@ -40,14 +41,29 @@ import { SizeGuideModalComponent } from '../components/size-guide-modal';
                  Your browser does not support the video tag.
                </video>
 
-               <!-- Main Image -->
+               <!-- Main Image (with 360 rotation class if active) -->
                <img *ngIf="!showVideo() && (selectedImage() || product()?.imageUrl)"
                     [src]="selectedImage() || product()?.imageUrl"
-                    class="w-full h-full object-cover animate-fade-in-up"
+                    class="w-full h-full object-cover transition-transform duration-[3s] ease-linear"
+                    [class.animate-spin-slow]="show360()"
                     [alt]="product()?.name">
 
                <!-- Fallback Emoji -->
-               <span *ngIf="!showVideo() && !selectedImage() && !product()?.imageUrl" class="text-7xl">{{ getProductEmoji(product()?.category || '') }}</span>
+               <span *ngIf="!showVideo() && !selectedImage() && !product()?.imageUrl"
+                     class="text-7xl transition-transform duration-[3s] ease-linear"
+                     [class.animate-spin-slow]="show360()">
+                 {{ getProductEmoji(product()?.category || '') }}
+               </span>
+
+               <!-- 360 Controls -->
+               <div *ngIf="!showVideo()" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                 <button (click)="show360.set(!show360())"
+                         [class.bg-gold-600]="show360()"
+                         [class.text-white]="show360()"
+                         class="bg-white/90 hover:bg-gold-500 hover:text-white text-diamond-900 px-4 py-2 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 transition-all">
+                   <span>{{ show360() ? '⏹ Stop' : '🔄 360° View' }}</span>
+                 </button>
+               </div>
 
                <!-- Badge -->
                <div *ngIf="getBadge(product()!) && !showVideo()" class="absolute top-4 right-4">
@@ -61,7 +77,7 @@ import { SizeGuideModalComponent } from '../components/size-guide-modal';
             <div class="grid grid-cols-5 gap-4">
               <!-- Video Thumbnail -->
               <button *ngIf="product()?.videoUrl"
-                      (click)="showVideo.set(true)"
+                      (click)="showVideo.set(true); show360.set(false)"
                       [class.ring-2]="showVideo()"
                       [class.ring-gold-500]="showVideo()"
                       class="aspect-square bg-diamond-100 rounded-lg hover:ring-2 hover:ring-gold-500 transition-all duration-300 flex items-center justify-center overflow-hidden group">
@@ -72,7 +88,7 @@ import { SizeGuideModalComponent } from '../components/size-guide-modal';
 
               <!-- Image Thumbnails -->
               <button *ngFor="let img of product()!.images"
-                      (click)="selectedImage.set(img.url); showVideo.set(false)"
+                      (click)="selectedImage.set(img.url); showVideo.set(false); show360.set(false)"
                       [class.ring-2]="!showVideo() && selectedImage() === img.url"
                       [class.ring-gold-500]="!showVideo() && selectedImage() === img.url"
                       class="aspect-square bg-diamond-100 rounded-lg hover:ring-2 hover:ring-gold-500 transition-all duration-300 flex items-center justify-center overflow-hidden">
@@ -218,20 +234,29 @@ import { SizeGuideModalComponent } from '../components/size-guide-modal';
                   <p class="text-xs text-gold-600 font-semibold uppercase">Carat Weight</p>
                   <p class="text-base md:text-lg font-semibold text-gray-900">{{ product()?.specifications?.carat }} ct</p>
                 </div>
-                <div class="card p-3 md:p-4" *ngIf="product()?.specifications?.clarity">
-                  <p class="text-xs text-gold-600 font-semibold uppercase">Clarity</p>
+                <div class="card p-3 md:p-4 relative group" *ngIf="product()?.specifications?.clarity">
+                  <p class="text-xs text-gold-600 font-semibold uppercase flex justify-between">
+                    Clarity
+                    <button (click)="openEducation('4cs')" class="text-gray-400 hover:text-gold-600">ⓘ</button>
+                  </p>
                   <p class="text-base md:text-lg font-semibold text-gray-900">{{ product()?.specifications?.clarity }}</p>
                 </div>
-                <div class="card p-3 md:p-4" *ngIf="product()?.specifications?.color">
-                  <p class="text-xs text-gold-600 font-semibold uppercase">Color</p>
+                <div class="card p-3 md:p-4 relative group" *ngIf="product()?.specifications?.color">
+                  <p class="text-xs text-gold-600 font-semibold uppercase flex justify-between">
+                    Color
+                    <button (click)="openEducation('4cs')" class="text-gray-400 hover:text-gold-600">ⓘ</button>
+                  </p>
                   <p class="text-base md:text-lg font-semibold text-gray-900">{{ product()?.specifications?.color }}</p>
                 </div>
                 <div class="card p-3 md:p-4" *ngIf="product()?.specifications?.cut">
                   <p class="text-xs text-gold-600 font-semibold uppercase">Cut</p>
                   <p class="text-base md:text-lg font-semibold text-gray-900">{{ product()?.specifications?.cut }}</p>
                 </div>
-                <div class="card p-3 md:p-4" *ngIf="product()?.metal">
-                  <p class="text-xs text-gold-600 font-semibold uppercase">Metal</p>
+                <div class="card p-3 md:p-4 relative group" *ngIf="product()?.metal">
+                  <p class="text-xs text-gold-600 font-semibold uppercase flex justify-between">
+                    Metal
+                    <button (click)="openEducation('metal')" class="text-gray-400 hover:text-gold-600">ⓘ</button>
+                  </p>
                   <p class="text-base md:text-lg font-semibold text-gray-900">{{ product()?.metal }}</p>
                 </div>
                 <div class="card p-3 md:p-4" *ngIf="product()?.weight">
@@ -381,6 +406,38 @@ import { SizeGuideModalComponent } from '../components/size-guide-modal';
 
       <!-- Modals -->
       <app-size-guide-modal [isOpen]="sizeGuideOpen()" (close)="sizeGuideOpen.set(false)"></app-size-guide-modal>
+      <app-education-modal [isOpen]="educationOpen()" [activeTab]="educationTab()" (close)="educationOpen.set(false)"></app-education-modal>
+
+      <!-- Virtual Try-On Modal -->
+      <div *ngIf="showTryOnModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl overflow-hidden max-w-2xl w-full relative">
+           <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gold-50">
+             <h3 class="font-display font-bold text-xl text-diamond-900">Virtual Try-On</h3>
+             <button (click)="closeTryOn()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+           </div>
+
+           <div class="relative bg-black aspect-[4/3] overflow-hidden group">
+             <video #videoElement autoplay playsinline muted class="w-full h-full object-cover transform scale-x-[-1]"></video>
+
+             <!-- Product Overlay (Mock AR) -->
+             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="relative w-1/3 opacity-80 animate-pulse">
+                    <img *ngIf="product()?.imageUrl" [src]="product()?.imageUrl" class="w-full h-full object-contain drop-shadow-2xl">
+                    <span *ngIf="!product()?.imageUrl" class="text-9xl">{{ getProductEmoji(product()?.category || '') }}</span>
+                </div>
+             </div>
+
+             <div class="absolute bottom-4 left-0 right-0 text-center text-white/80 text-sm px-4">
+               <p>Align your hand/face with the overlay. (Basic Demo)</p>
+             </div>
+           </div>
+
+           <div class="p-4 bg-white flex justify-end gap-2">
+             <button (click)="closeTryOn()" class="btn-secondary">Close</button>
+             <button (click)="handleAddToCart(); closeTryOn()" class="btn-primary">Add to Cart</button>
+           </div>
+        </div>
+      </div>
     </div>
   `,
 })
@@ -397,7 +454,13 @@ export class ProductDetailComponent implements OnInit {
   selectedImage = signal<string | null>(null);
   selectedSize = signal<number | null>(null);
   showVideo = signal(false);
+  show360 = signal(false);
   sizeGuideOpen = signal(false);
+  educationOpen = signal(false);
+  educationTab = signal('4cs');
+  showTryOnModal = signal(false);
+  tryOnStream: MediaStream | null = null;
+  @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
 
   // Customization Signals
   selectedMetal = signal<CustomizationOption | null>(null);
@@ -540,6 +603,11 @@ export class ProductDetailComponent implements OnInit {
     }, 1000);
   }
 
+  openEducation(tab: string): void {
+    this.educationTab.set(tab);
+    this.educationOpen.set(true);
+  }
+
   dropHint(): void {
     const email = prompt("Enter the email address to send a hint to:");
     if (email) {
@@ -547,8 +615,29 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 
-  openVirtualTryOn(): void {
-    alert("Virtual Try-On feature is coming soon! This will allow you to see the jewelry on yourself using your camera.");
+  async openVirtualTryOn() {
+    this.showTryOnModal.set(true);
+    try {
+      this.tryOnStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Small delay to allow modal to render video element
+      setTimeout(() => {
+        if (this.videoElement) {
+          this.videoElement.nativeElement.srcObject = this.tryOnStream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Could not access camera for Virtual Try-On. Please ensure you have granted permission.");
+      this.showTryOnModal.set(false);
+    }
+  }
+
+  closeTryOn() {
+    this.showTryOnModal.set(false);
+    if (this.tryOnStream) {
+      this.tryOnStream.getTracks().forEach(track => track.stop());
+      this.tryOnStream = null;
+    }
   }
 
   getProductEmoji(category: string): string {

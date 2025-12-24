@@ -23,65 +23,102 @@ import { ApiService, Product } from '../services/api.service';
            <a routerLink="/products" class="btn-primary">Browse Products</a>
         </div>
 
-        <div *ngIf="compareService.compareList().length > 0" class="overflow-x-auto">
+        <div *ngIf="compareService.compareList().length > 0" class="overflow-x-auto relative shadow-lg rounded-lg bg-white">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr>
-                <th class="p-4 border-b-2 border-diamond-200 w-1/4">Attribute</th>
-                <th *ngFor="let product of compareService.compareList()" class="p-4 border-b-2 border-diamond-200 min-w-[250px]">
+              <tr class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                <th class="p-4 border-b-2 border-diamond-200 w-1/4 bg-gray-50 font-bold text-gray-700">Attribute</th>
+                <th *ngFor="let product of compareService.compareList()" class="p-4 border-b-2 border-diamond-200 min-w-[250px] bg-gray-50 relative">
                     <div class="flex justify-between items-start">
-                        <span class="font-bold text-lg text-diamond-900">{{ product.name }}</span>
-                        <button (click)="compareService.removeFromCompare(product.id)" class="text-red-500 hover:text-red-700">✕</button>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-lg text-diamond-900">{{ product.name }}</span>
+                            <span *ngIf="isBestValue(product)" class="inline-block px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full w-fit mt-1">
+                                Best Value
+                            </span>
+                        </div>
+                        <button (click)="compareService.removeFromCompare(product.id)" class="text-gray-400 hover:text-red-500 transition-colors" title="Remove">✕</button>
                     </div>
                 </th>
               </tr>
             </thead>
             <tbody>
-               <tr>
-                   <td class="p-4 border-b border-diamond-100 font-semibold">Image</td>
+               <!-- Image Row -->
+               <tr [class.bg-yellow-50]="isAttributeDifferent('imageUrl')">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Product</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <div class="w-24 h-24 bg-diamond-100 flex items-center justify-center overflow-hidden rounded">
+                       <div class="w-32 h-32 bg-diamond-100 flex items-center justify-center overflow-hidden rounded-lg mx-auto">
                            <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover">
-                           <span *ngIf="!product.imageUrl">💎</span>
+                           <span *ngIf="!product.imageUrl" class="text-4xl">💎</span>
                        </div>
                    </td>
                </tr>
-               <tr>
-                   <td class="p-4 border-b border-diamond-100 font-semibold">Price</td>
+
+               <!-- Price Row -->
+               <tr [class.bg-yellow-50]="isAttributeDifferent('price')">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Price</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       {{ formatPrice(product.price) }}
+                       <span class="text-xl font-bold text-diamond-900">{{ formatPrice(product.price) }}</span>
                    </td>
                </tr>
-               <tr>
-                   <td class="p-4 border-b border-diamond-100 font-semibold">Category</td>
+
+               <!-- Category Row -->
+               <tr [class.bg-yellow-50]="isAttributeDifferent('category')">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Category</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        {{ product.category }}
                    </td>
                </tr>
-               <tr>
-                   <td class="p-4 border-b border-diamond-100 font-semibold">Rating</td>
+
+               <!-- Metal Row -->
+               <tr [class.bg-yellow-50]="isAttributeDifferent('metal')">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Metal</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       {{ product.rating }} ★ ({{ product.reviewCount }})
+                       {{ product.metal || '-' }}
                    </td>
                </tr>
+
+               <!-- Gemstones -->
+                <tr [class.bg-yellow-50]="isAttributeDifferent('gemstones')">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Gemstones</td>
+                   <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
+                       {{ product.gemstones.join(', ') || '-' }}
+                   </td>
+               </tr>
+
+               <!-- Rating Row -->
+               <tr [class.bg-yellow-50]="isAttributeDifferent('rating')">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Rating</td>
+                   <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
+                       <div class="flex items-center gap-1">
+                           <span class="text-gold-500 font-bold">{{ product.rating }} ★</span>
+                           <span class="text-xs text-gray-500">({{ product.reviewCount }})</span>
+                       </div>
+                   </td>
+               </tr>
+
+               <!-- Description Row -->
                <tr>
-                   <td class="p-4 border-b border-diamond-100 font-semibold">Description</td>
-                   <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100 text-sm text-gray-600">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Description</td>
+                   <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100 text-sm text-gray-600 align-top">
                        {{ product.description }}
                    </td>
                </tr>
-               <tr>
-                   <td class="p-4 border-b border-diamond-100 font-semibold">Availability</td>
+
+               <!-- Availability Row -->
+               <tr [class.bg-yellow-50]="isAttributeDifferent('stock')">
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Availability</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <span [class.text-red-600]="product.stock <= 0" [class.text-green-600]="product.stock > 0">
+                       <span [class.text-red-600]="product.stock <= 0" [class.text-green-600]="product.stock > 0" class="font-medium">
                            {{ product.stock > 0 ? 'In Stock' : 'Out of Stock' }}
                        </span>
                    </td>
                </tr>
-               <tr>
+
+               <!-- Action Row -->
+               <tr class="bg-gray-50">
                    <td class="p-4 border-b border-diamond-100"></td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <button (click)="handleAddToCart(product)" class="btn-primary w-full">Add to Cart</button>
+                       <button (click)="handleAddToCart(product)" class="btn-primary w-full shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">Add to Cart</button>
                    </td>
                </tr>
             </tbody>
@@ -107,5 +144,23 @@ export class CompareComponent {
       currency: "USD",
       minimumFractionDigits: 0,
     }).format(price);
+  }
+
+  isAttributeDifferent(attr: keyof Product): boolean {
+    const list = this.compareService.compareList();
+    if (list.length < 2) return false;
+
+    const firstVal = list[0][attr];
+    // Simple equality check. For arrays/objects might need deep check but sufficient for strings/numbers.
+    return list.some(p => p[attr]?.toString() !== firstVal?.toString());
+  }
+
+  isBestValue(product: Product): boolean {
+    // Logic: Lowest Price AND Rating >= 4.5
+    const list = this.compareService.compareList();
+    if (list.length < 2) return false;
+
+    const minPrice = Math.min(...list.map(p => p.price));
+    return product.price === minPrice && product.rating >= 4.5;
   }
 }
