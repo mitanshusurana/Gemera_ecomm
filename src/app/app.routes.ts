@@ -1,62 +1,91 @@
 import { Routes } from "@angular/router";
-import { HomeComponent } from "./pages/home";
-import { ProductsComponent } from "./pages/products";
-import { ProductDetailComponent } from "./pages/product-detail";
-import { CartComponent } from "./pages/cart";
-import { CheckoutComponent } from "./pages/checkout";
-import { AccountComponent } from "./pages/account";
-import { LoginComponent } from "./pages/login";
-import { StripePaymentComponent } from "./pages/stripe-payment";
-import { RazorpayPaymentComponent } from "./pages/razorpay-payment";
-import { OrderConfirmationComponent } from "./pages/order-confirmation";
-import { RFQRequestComponent } from "./pages/rfq-request";
-import { AboutComponent } from "./pages/about";
-import { ContactComponent } from "./pages/contact";
-import { PrivacyPolicyComponent } from "./pages/privacy";
-import { TermsComponent } from "./pages/terms";
-import { CompareComponent } from "./pages/compare";
-import { JournalComponent } from "./pages/journal";
 import { authGuard } from "./guards/auth.guard";
-import { AdminLayoutComponent } from "./pages/admin/admin-layout";
-import { AdminDashboardComponent } from "./pages/admin/dashboard";
-import { AdminProductListComponent } from "./pages/admin/products";
 import { adminGuard } from "./guards/admin.guard";
 
 export const routes: Routes = [
-  { path: "", component: HomeComponent },
-  { path: "login", component: LoginComponent },
-  { path: "products", component: ProductsComponent },
-  { path: "products/:id", component: ProductDetailComponent },
-  { path: "compare", component: CompareComponent },
-  { path: "cart", component: CartComponent },
-  { path: "checkout", component: CheckoutComponent },
+  {
+    path: "",
+    loadComponent: () => import("./pages/home").then(m => m.HomeComponent)
+  },
+  {
+    path: "login",
+    loadComponent: () => import("./pages/login").then(m => m.LoginComponent)
+  },
+  {
+    path: "products",
+    loadComponent: () => import("./pages/products").then(m => m.ProductsComponent)
+  },
+  {
+    path: "products/:id",
+    loadComponent: () => import("./pages/product-detail").then(m => m.ProductDetailComponent)
+  },
+  {
+    path: "compare",
+    loadComponent: () => import("./pages/compare").then(m => m.CompareComponent)
+  },
+  {
+    path: "cart",
+    loadComponent: () => import("./pages/cart").then(m => m.CartComponent)
+  },
+  {
+    path: "checkout",
+    loadComponent: () => import("./pages/checkout").then(m => m.CheckoutComponent)
+  },
   {
     path: "checkout/payment/stripe",
-    component: StripePaymentComponent,
+    loadComponent: () => import("./pages/stripe-payment").then(m => m.StripePaymentComponent),
   },
   {
     path: "checkout/payment/razorpay",
-    component: RazorpayPaymentComponent,
+    loadComponent: () => import("./pages/razorpay-payment").then(m => m.RazorpayPaymentComponent),
   },
-  { path: "account", component: AccountComponent, canActivate: [authGuard] },
+  {
+    path: "account",
+    loadComponent: () => import("./pages/account").then(m => m.AccountComponent),
+    canActivate: [authGuard]
+  },
   {
     path: "order-confirmation",
-    component: OrderConfirmationComponent,
+    loadComponent: () => import("./pages/order-confirmation").then(m => m.OrderConfirmationComponent),
   },
-  { path: "rfq", component: RFQRequestComponent },
-  { path: "about", component: AboutComponent },
-  { path: "contact", component: ContactComponent },
-  { path: "privacy", component: PrivacyPolicyComponent },
-  { path: "terms", component: TermsComponent },
-  { path: "journal", component: JournalComponent },
+  {
+    path: "rfq",
+    loadComponent: () => import("./pages/rfq-request").then(m => m.RFQRequestComponent)
+  },
+  {
+    path: "about",
+    loadComponent: () => import("./pages/about").then(m => m.AboutComponent)
+  },
+  {
+    path: "contact",
+    loadComponent: () => import("./pages/contact").then(m => m.ContactComponent)
+  },
+  {
+    path: "privacy",
+    loadComponent: () => import("./pages/privacy").then(m => m.PrivacyPolicyComponent)
+  },
+  {
+    path: "terms",
+    loadComponent: () => import("./pages/terms").then(m => m.TermsComponent)
+  },
+  {
+    path: "journal",
+    loadComponent: () => import("./pages/journal").then(m => m.JournalComponent)
+  },
   {
     path: "admin",
-    component: AdminLayoutComponent,
+    loadComponent: () => import("./pages/admin/admin-layout").then(m => m.AdminLayoutComponent),
     canActivate: [adminGuard],
     children: [
       { path: "", redirectTo: "dashboard", pathMatch: "full" },
-      { path: "dashboard", component: AdminDashboardComponent },
-      { path: "products", component: AdminProductListComponent },
+      {
+        path: "dashboard",
+        loadComponent: () => import("./pages/admin/dashboard").then(m => m.AdminDashboardComponent)
+      },
+      {
+        path: "products",
+        loadComponent: () => import("./pages/admin/products").then(m => m.AdminProductListComponent)
+      },
     ]
   },
   { path: "**", redirectTo: "" },
