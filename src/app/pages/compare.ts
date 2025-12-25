@@ -1,8 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Title } from '@angular/platform-browser';
 import { CompareService } from '../services/compare.service';
 import { ApiService, Product } from '../services/api.service';
+import { ToastService } from '../services/toast.service';
 
 @Component({
   selector: 'app-compare',
@@ -23,12 +25,18 @@ import { ApiService, Product } from '../services/api.service';
            <a routerLink="/products" class="btn-primary">Browse Products</a>
         </div>
 
-        <div *ngIf="compareService.compareList().length > 0" class="overflow-x-auto relative shadow-lg rounded-lg bg-white">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-gray-50 sticky top-0 z-10 shadow-sm">
-                <th class="p-4 border-b-2 border-diamond-200 w-1/4 bg-gray-50 font-bold text-gray-700">Attribute</th>
-                <th *ngFor="let product of compareService.compareList()" class="p-4 border-b-2 border-diamond-200 min-w-[250px] bg-gray-50 relative">
+        <div *ngIf="compareService.compareList().length > 0" class="relative shadow-lg rounded-lg bg-white">
+          <!-- Mobile Scroll Hint -->
+          <div class="md:hidden text-xs text-center py-2 text-gray-500 bg-gray-50 italic border-b border-gray-100">
+            Scroll horizontally to see more products &rarr;
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                  <th class="p-4 border-b-2 border-diamond-200 w-1/4 bg-gray-50 font-bold text-gray-700 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Attribute</th>
+                  <th *ngFor="let product of compareService.compareList()" class="p-4 border-b-2 border-diamond-200 min-w-[200px] md:min-w-[250px] bg-gray-50 relative">
                     <div class="flex justify-between items-start">
                         <div class="flex flex-col">
                             <span class="font-bold text-lg text-diamond-900">{{ product.name }}</span>
@@ -44,9 +52,9 @@ import { ApiService, Product } from '../services/api.service';
             <tbody>
                <!-- Image Row -->
                <tr [class.bg-yellow-50]="isAttributeDifferent('imageUrl')">
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Product</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('imageUrl')">Product</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <div class="w-32 h-32 bg-diamond-100 flex items-center justify-center overflow-hidden rounded-lg mx-auto">
+                       <div class="w-24 h-24 md:w-32 md:h-32 bg-diamond-100 flex items-center justify-center overflow-hidden rounded-lg mx-auto">
                            <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover">
                            <span *ngIf="!product.imageUrl" class="text-4xl">💎</span>
                        </div>
@@ -55,15 +63,15 @@ import { ApiService, Product } from '../services/api.service';
 
                <!-- Price Row -->
                <tr [class.bg-yellow-50]="isAttributeDifferent('price')">
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Price</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('price')">Price</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <span class="text-xl font-bold text-diamond-900">{{ formatPrice(product.price) }}</span>
+                       <span class="text-lg md:text-xl font-bold text-diamond-900">{{ formatPrice(product.price) }}</span>
                    </td>
                </tr>
 
                <!-- Category Row -->
                <tr [class.bg-yellow-50]="isAttributeDifferent('category')">
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Category</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('category')">Category</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        {{ product.category }}
                    </td>
@@ -71,7 +79,7 @@ import { ApiService, Product } from '../services/api.service';
 
                <!-- Metal Row -->
                <tr [class.bg-yellow-50]="isAttributeDifferent('metal')">
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Metal</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('metal')">Metal</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        {{ product.metal || '-' }}
                    </td>
@@ -79,7 +87,7 @@ import { ApiService, Product } from '../services/api.service';
 
                <!-- Gemstones -->
                 <tr [class.bg-yellow-50]="isAttributeDifferent('gemstones')">
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Gemstones</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('gemstones')">Gemstones</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        {{ product.gemstones?.join(', ') || '-' }}
                    </td>
@@ -87,7 +95,7 @@ import { ApiService, Product } from '../services/api.service';
 
                <!-- Rating Row -->
                <tr [class.bg-yellow-50]="isAttributeDifferent('rating')">
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Rating</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('rating')">Rating</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        <div class="flex items-center gap-1">
                            <span class="text-gold-500 font-bold">{{ product.rating }} ★</span>
@@ -98,7 +106,7 @@ import { ApiService, Product } from '../services/api.service';
 
                <!-- Description Row -->
                <tr>
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Description</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Description</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100 text-sm text-gray-600 align-top">
                        {{ product.description }}
                    </td>
@@ -106,7 +114,7 @@ import { ApiService, Product } from '../services/api.service';
 
                <!-- Availability Row -->
                <tr [class.bg-yellow-50]="isAttributeDifferent('stock')">
-                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600">Availability</td>
+                   <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('stock')">Availability</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        <span [class.text-red-600]="product.stock <= 0" [class.text-green-600]="product.stock > 0" class="font-medium">
                            {{ product.stock > 0 ? 'In Stock' : 'Out of Stock' }}
@@ -116,25 +124,32 @@ import { ApiService, Product } from '../services/api.service';
 
                <!-- Action Row -->
                <tr class="bg-gray-50">
-                   <td class="p-4 border-b border-diamond-100"></td>
+                   <td class="p-4 border-b border-diamond-100 sticky left-0 bg-gray-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"></td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        <button (click)="handleAddToCart(product)" class="btn-primary w-full shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">Add to Cart</button>
                    </td>
                </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>
   `
 })
-export class CompareComponent {
+export class CompareComponent implements OnInit {
   compareService = inject(CompareService);
   apiService = inject(ApiService);
+  toastService = inject(ToastService);
+  titleService = inject(Title);
+
+  ngOnInit(): void {
+    this.titleService.setTitle('Compare Products | Gemara Fine Jewels');
+  }
 
   handleAddToCart(product: Product): void {
       this.apiService.addToCart(product.id, 1).subscribe(() => {
-          alert('Added to cart');
+          this.toastService.show('Added to cart', 'success');
       });
   }
 

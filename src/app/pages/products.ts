@@ -2,9 +2,11 @@ import { Component, OnInit, signal, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
+import { Title } from '@angular/platform-browser';
 import { ApiService, Product, Category, ProductDetail } from "../services/api.service";
 import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
+import { ToastService } from '../services/toast.service';
 
 @Component({
   selector: "app-products",
@@ -364,6 +366,8 @@ export class ProductsComponent implements OnInit {
   private apiService = inject(ApiService);
   private activatedRoute = inject(ActivatedRoute);
   private compareService = inject(CompareService);
+  private toastService = inject(ToastService);
+  private titleService = inject(Title);
 
   // State management
   categories = signal<Category[]>([]);
@@ -398,6 +402,8 @@ export class ProductsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.titleService.setTitle('Fine Jewellery Collections | Gemara');
+
     // Fetch categories
     this.apiService.getCategories().subscribe(res => {
         this.categories.set(res.categories);
@@ -511,7 +517,7 @@ export class ProductsComponent implements OnInit {
       event.preventDefault();
       event.stopPropagation();
       this.apiService.addToCart(productId, 1).subscribe(() => {
-          alert("Added to cart");
+          this.toastService.show('Added to cart', 'success');
       });
   }
 
@@ -519,6 +525,7 @@ export class ProductsComponent implements OnInit {
       event.preventDefault();
       event.stopPropagation();
       this.compareService.addToCompare(product);
+      this.toastService.show('Added to comparison', 'info');
   }
 
   openQuickView(event: Event, productId: string): void {
@@ -534,7 +541,7 @@ export class ProductsComponent implements OnInit {
 
   handleQuickViewAddToCart(event: { productId: string, quantity: number }): void {
     this.apiService.addToCart(event.productId, event.quantity).subscribe(() => {
-        alert("Added to cart");
+        this.toastService.show('Added to cart', 'success');
     });
   }
 

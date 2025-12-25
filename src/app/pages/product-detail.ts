@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Title } from '@angular/platform-browser';
 import { ApiService, ProductDetail, Product, CustomizationOption, PriceBreakup } from '../services/api.service';
 import { CompareService } from '../services/compare.service';
+import { ToastService } from '../services/toast.service';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { EducationModalComponent } from '../components/education-modal';
@@ -445,6 +447,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private route = inject(ActivatedRoute);
   private compareService = inject(CompareService);
+  private toastService = inject(ToastService);
+  private titleService = inject(Title);
 
   loading = signal(true);
   product = signal<ProductDetail | null>(null);
@@ -527,6 +531,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.apiService.getProductById(productId).subscribe({
       next: (product) => {
         this.product.set(product);
+        this.titleService.setTitle(`${product.name} | Gemara Fine Jewels`);
         this.loading.set(false);
         this.loadRelatedProducts(product.category);
         this.showVideo.set(false);
@@ -567,8 +572,10 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
             if (options.metal) variantInfo.push(options.metal);
             if (options.diamond) variantInfo.push(options.diamond);
 
-            const variantMsg = variantInfo.length > 0 ? ` with ${variantInfo.join(', ')}` : '';
-            alert(`Added ${this.quantity()} item(s)${variantMsg} to cart at ${this.formatPrice(this.currentPrice())}`);
+            this.toastService.show(
+              `Added ${this.quantity()} item(s) to cart`,
+              'success'
+            );
         });
     }
   }
@@ -577,6 +584,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     const p = this.product();
     if (p) {
         this.compareService.addToCompare(p);
+        this.toastService.show('Product added to comparison', 'info');
     }
   }
 
