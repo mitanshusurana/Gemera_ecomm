@@ -8,11 +8,13 @@ import { ToastService } from '../services/toast.service';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { EducationModalComponent } from '../components/education-modal';
+import { RecentlyViewedComponent } from '../components/recently-viewed';
+import { HistoryService } from '../services/history.service';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent],
+  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent, RecentlyViewedComponent],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -49,6 +51,12 @@ import { EducationModalComponent } from '../components/education-modal';
                     class="w-full h-full object-cover transition-transform duration-[3s] ease-linear"
                     [class.animate-spin-slow]="show360()"
                     [alt]="product()?.name">
+
+               <!-- Engraving Preview Overlay -->
+               <div *ngIf="engravingText() && !showVideo() && !show360()"
+                    class="absolute bottom-[20%] left-1/2 -translate-x-1/2 text-gold-500 font-serif italic text-2xl drop-shadow-md pointer-events-none opacity-80 rotate-[-5deg] z-10">
+                 {{ engravingText() }}
+               </div>
 
                <!-- Fallback Emoji -->
                <span *ngIf="!showVideo() && !selectedImage() && !product()?.imageUrl"
@@ -211,6 +219,20 @@ import { EducationModalComponent } from '../components/education-modal';
                     </span>
                   </button>
                 </div>
+              </div>
+
+              <!-- Engraving Option (Ring Only) -->
+              <div *ngIf="product()?.category?.includes('Ring')" class="mb-6 bg-gold-50 p-4 rounded-lg border border-gold-200">
+                <h3 class="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <span>✒️</span> Add Free Engraving
+                </h3>
+                <input type="text"
+                       [ngModel]="engravingText()"
+                       (ngModelChange)="engravingText.set($event)"
+                       maxlength="15"
+                       placeholder="e.g. Forever Yours"
+                       class="input-field w-full placeholder:italic font-serif text-lg">
+                <p class="text-xs text-gray-500 mt-1 text-right">{{ engravingText().length }}/15 characters</p>
               </div>
             </div>
 
@@ -406,6 +428,9 @@ import { EducationModalComponent } from '../components/education-modal';
         </div>
       </section>
 
+      <!-- Recently Viewed -->
+      <app-recently-viewed></app-recently-viewed>
+
       <!-- Modals -->
       <app-size-guide-modal [isOpen]="sizeGuideOpen()" (close)="sizeGuideOpen.set(false)"></app-size-guide-modal>
       <app-education-modal [isOpen]="educationOpen()" [activeTab]="educationTab()" (close)="educationOpen.set(false)"></app-education-modal>
@@ -449,6 +474,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private compareService = inject(CompareService);
   private toastService = inject(ToastService);
   private titleService = inject(Title);
+  private historyService = inject(HistoryService);
 
   loading = signal(true);
   product = signal<ProductDetail | null>(null);
@@ -469,6 +495,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   // Customization Signals
   selectedMetal = signal<CustomizationOption | null>(null);
   selectedDiamondQuality = signal<CustomizationOption | null>(null);
+  engravingText = signal('');
 
   // Delivery Checker
   pincode = signal('');
@@ -531,6 +558,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.apiService.getProductById(productId).subscribe({
       next: (product) => {
         this.product.set(product);
+        this.historyService.add(product);
         this.titleService.setTitle(`${product.name} | Gemara Fine Jewels`);
         this.loading.set(false);
         this.loadRelatedProducts(product.category);
@@ -564,6 +592,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         const options = {
           metal: this.selectedMetal()?.name,
           diamond: this.selectedDiamondQuality()?.name,
+          engraving: this.engravingText(),
           price: this.currentPrice()
         };
 
@@ -571,6 +600,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
             const variantInfo = [];
             if (options.metal) variantInfo.push(options.metal);
             if (options.diamond) variantInfo.push(options.diamond);
+            if (options.engraving) variantInfo.push(`Engraving: "${options.engraving}"`);
 
             this.toastService.show(
               `Added ${this.quantity()} item(s) to cart`,
