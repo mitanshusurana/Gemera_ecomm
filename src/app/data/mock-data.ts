@@ -38,6 +38,12 @@ export const MOCK_CATEGORIES: Category[] = [
     displayName: "Bespoke Custom",
     image: "",
   },
+  {
+    id: "7",
+    name: "ring-settings",
+    displayName: "Ring Settings",
+    image: "",
+  }
 ];
 
 export const MOCK_PRODUCTS: ProductDetail[] = [
@@ -263,4 +269,48 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
   { id: "9", name: "Emerald Statement Necklace", price: 35000, category: "Gemstone Jewelry", subcategory: "Necklace", rating: 4.9, reviewCount: 89, stock: 5, imageUrl: "", description: "Stunning emerald necklace", gemstones: ["Emerald"], metal: "Gold", weight: 20, sku: "EN-009", certifications: [], createdAt: "", updatedAt: "", specifications: {}, images: [], relatedProducts: [] },
   { id: "10", name: "Sapphire Drop Earrings", price: 28000, category: "Gemstone Jewelry", subcategory: "Earrings", rating: 4.7, reviewCount: 156, stock: 8, imageUrl: "", description: "Elegant sapphire earrings", gemstones: ["Sapphire"], metal: "Platinum", weight: 5, sku: "SE-010", certifications: [], createdAt: "", updatedAt: "", specifications: {}, images: [], relatedProducts: [] },
   { id: "11", name: "Gold Engagement Ring", price: 55000, category: "Engagement Ring", subcategory: "Gold", rating: 4.9, reviewCount: 203, stock: 2, imageUrl: "", description: "Classic gold engagement ring", gemstones: ["Diamond"], metal: "Gold", weight: 4, sku: "GR-011", certifications: [], createdAt: "", updatedAt: "", specifications: {}, images: [], relatedProducts: [] },
+  {
+    id: "12",
+    name: "Classic Solitaire Setting",
+    price: 15000,
+    category: "Ring Setting",
+    subcategory: "Solitaire",
+    rating: 4.8,
+    reviewCount: 45,
+    stock: 10,
+    imageUrl: "",
+    description: "A timeless six-prong solitaire setting in 18K White Gold.",
+    gemstones: [],
+    metal: "18K White Gold",
+    weight: 3.5,
+    sku: "SET-001",
+    certifications: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    specifications: { metal: "18K White Gold" },
+    images: [],
+    relatedProducts: []
+  },
+  {
+    id: "13",
+    name: "Halo Diamond Setting",
+    price: 25000,
+    category: "Ring Setting",
+    subcategory: "Halo",
+    rating: 4.9,
+    reviewCount: 32,
+    stock: 8,
+    imageUrl: "",
+    description: "Elegant pave halo setting that enhances the center stone size.",
+    gemstones: ["Diamond Accents"],
+    metal: "Platinum",
+    weight: 4.2,
+    sku: "SET-002",
+    certifications: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    specifications: { metal: "Platinum" },
+    images: [],
+    relatedProducts: []
+  }
 ];

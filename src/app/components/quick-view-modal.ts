@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter } from "@angular/core";
+import { Component, Input, Output, EventEmitter, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ProductDetail } from "../services/api.service";
+import { CurrencyService } from "../services/currency.service";
 
 @Component({
   selector: "app-quick-view-modal",
@@ -195,6 +196,8 @@ export class QuickViewModalComponent {
   }>();
   @Output() viewDetails = new EventEmitter<string>();
 
+  private currencyService = inject(CurrencyService);
+
   onBackdropClick(): void {
     this.close.emit();
   }
@@ -244,11 +247,6 @@ export class QuickViewModalComponent {
   }
 
   formatPrice(price: number): string {
-    if (!price) return "$0";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 }

@@ -5,6 +5,7 @@ import { Title } from '@angular/platform-browser';
 import { CompareService } from '../services/compare.service';
 import { ApiService, Product } from '../services/api.service';
 import { ToastService } from '../services/toast.service';
+import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: 'app-compare',
@@ -142,6 +143,7 @@ export class CompareComponent implements OnInit {
   apiService = inject(ApiService);
   toastService = inject(ToastService);
   titleService = inject(Title);
+  private currencyService = inject(CurrencyService);
 
   ngOnInit(): void {
     this.titleService.setTitle('Compare Products | Gemara Fine Jewels');
@@ -154,11 +156,7 @@ export class CompareComponent implements OnInit {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 
   isAttributeDifferent(attr: keyof Product): boolean {

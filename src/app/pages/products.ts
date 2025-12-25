@@ -7,6 +7,7 @@ import { ApiService, Product, Category, ProductDetail } from "../services/api.se
 import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
+import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: "app-products",
@@ -368,6 +369,7 @@ export class ProductsComponent implements OnInit {
   private compareService = inject(CompareService);
   private toastService = inject(ToastService);
   private titleService = inject(Title);
+  private currencyService = inject(CurrencyService);
 
   // State management
   categories = signal<Category[]>([]);
@@ -614,11 +616,7 @@ export class ProductsComponent implements OnInit {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 
   getProductEmoji(category: string): string {

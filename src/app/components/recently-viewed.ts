@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HistoryService } from '../services/history.service';
+import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: 'app-recently-viewed',
@@ -32,12 +33,9 @@ import { HistoryService } from '../services/history.service';
 })
 export class RecentlyViewedComponent {
   historyService = inject(HistoryService);
+  private currencyService = inject(CurrencyService);
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 }

@@ -5,16 +5,20 @@ import { Title } from '@angular/platform-browser';
 import { ApiService, ProductDetail, Product, CustomizationOption, PriceBreakup } from '../services/api.service';
 import { CompareService } from '../services/compare.service';
 import { ToastService } from '../services/toast.service';
+import { SeoService } from '../services/seo.service';
+import { FocusTrapDirective } from '../directives/focus-trap.directive';
+import { FadeInDirective } from '../directives/fade-in.directive';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { EducationModalComponent } from '../components/education-modal';
 import { RecentlyViewedComponent } from '../components/recently-viewed';
 import { HistoryService } from '../services/history.service';
+import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent, RecentlyViewedComponent],
+  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent, RecentlyViewedComponent, FocusTrapDirective, FadeInDirective],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -475,6 +479,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private titleService = inject(Title);
   private historyService = inject(HistoryService);
+  private seoService = inject(SeoService);
+  private currencyService = inject(CurrencyService);
 
   loading = signal(true);
   product = signal<ProductDetail | null>(null);
@@ -559,7 +565,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       next: (product) => {
         this.product.set(product);
         this.historyService.add(product);
-        this.titleService.setTitle(`${product.name} | Gemara Fine Jewels`);
+        this.seoService.updateTags({
+            title: `${product.name} | Gemara Fine Jewels`,
+            description: product.description,
+            image: product.imageUrl
+        });
         this.loading.set(false);
         this.loadRelatedProducts(product.category);
         this.showVideo.set(false);
@@ -619,21 +629,17 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 
   viewCertificate(cert: string): void {
-      alert(`Opening ${cert} certificate document...`);
+      this.toastService.show(`Opening ${cert} certificate document...`, 'info');
       // In real app: window.open(product.certificateUrl, '_blank');
   }
 
   checkDelivery(): void {
     if (!this.pincode() || this.pincode().length < 4) {
-      alert('Please enter a valid pincode');
+      this.toastService.show('Please enter a valid pincode', 'error');
       return;
     }
 
@@ -658,7 +664,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   dropHint(): void {
     const email = prompt("Enter the email address to send a hint to:");
     if (email) {
-      alert(`Hint sent to ${email}! 🤫`);
+      this.toastService.show(`Hint sent to ${email}! 🤫`, 'success');
     }
   }
 
@@ -674,7 +680,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       }, 100);
     } catch (err) {
       console.error("Error accessing camera:", err);
-      alert("Could not access camera for Virtual Try-On. Please ensure you have granted permission.");
+      this.toastService.show("Could not access camera. Please check permissions.", 'error');
       this.showTryOnModal.set(false);
     }
   }

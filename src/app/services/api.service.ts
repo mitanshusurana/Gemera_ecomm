@@ -24,6 +24,14 @@ export interface Product {
   certifications: string[];
   createdAt: string;
   updatedAt: string;
+  specifications?: {
+    carat?: number;
+    clarity?: string;
+    color?: string;
+    cut?: string;
+    origin?: string;
+    metal?: string;
+  };
 }
 
 export interface CustomizationOption {
@@ -43,13 +51,6 @@ export interface PriceBreakup {
 
 export interface ProductDetail extends Product {
   images: { url: string; alt: string }[];
-  specifications: {
-    carat?: number;
-    clarity?: string;
-    color?: string;
-    cut?: string;
-    origin?: string;
-  };
   relatedProducts: string[];
   customizationOptions?: CustomizationOption[];
   priceBreakup?: PriceBreakup;
@@ -63,6 +64,9 @@ export interface CartItem {
   product: Product;
   selectedMetal?: string;
   selectedDiamond?: string;
+  stoneId?: string;
+  stoneName?: string;
+  customization?: string;
 }
 
 export interface Cart {
@@ -385,7 +389,7 @@ export class ApiService {
       .pipe(tap((cart) => this.cart$.next(cart)));
   }
 
-  addToCart(productId: string, quantity: number = 1, options?: { metal?: string, diamond?: string, price?: number }): Observable<Cart> {
+  addToCart(productId: string, quantity: number = 1, options?: { metal?: string, diamond?: string, price?: number, stoneId?: string, stoneName?: string, customization?: string }): Observable<Cart> {
     if (this.useMock) {
         const product = MOCK_PRODUCTS.find(p => p.id === productId);
         if (product) {
@@ -393,7 +397,8 @@ export class ApiService {
             const existing = this.mockCart.items.find(i =>
               i.productId === productId &&
               i.selectedMetal === options?.metal &&
-              i.selectedDiamond === options?.diamond
+              i.selectedDiamond === options?.diamond &&
+              i.stoneId === options?.stoneId
             );
 
             if (existing) {
@@ -406,7 +411,10 @@ export class ApiService {
                     price: options?.price || product.price,
                     product: product,
                     selectedMetal: options?.metal,
-                    selectedDiamond: options?.diamond
+                    selectedDiamond: options?.diamond,
+                    stoneId: options?.stoneId,
+                    stoneName: options?.stoneName,
+                    customization: options?.customization
                 });
             }
             this.calculateCartTotals();

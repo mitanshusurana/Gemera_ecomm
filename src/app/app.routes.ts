@@ -20,6 +20,10 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/product-detail").then(m => m.ProductDetailComponent)
   },
   {
+    path: "builder",
+    loadComponent: () => import("./pages/builder").then(m => m.BuilderComponent)
+  },
+  {
     path: "compare",
     loadComponent: () => import("./pages/compare").then(m => m.CompareComponent)
   },
@@ -38,6 +42,10 @@ export const routes: Routes = [
   {
     path: "checkout/payment/razorpay",
     loadComponent: () => import("./pages/razorpay-payment").then(m => m.RazorpayPaymentComponent),
+  },
+  {
+    path: "verify-certificate",
+    loadComponent: () => import("./pages/verify-certificate").then(m => m.VerifyCertificateComponent),
   },
   {
     path: "account",

@@ -79,6 +79,13 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
             <ul class="space-y-3">
               <li>
                 <a
+                  routerLink="/builder"
+                  class="text-sm font-bold text-gold-400 hover:text-white transition-colors duration-300 flex items-center gap-1"
+                  >✨ Build Your Own</a
+                >
+              </li>
+              <li>
+                <a
                   routerLink="/products"
                   [queryParams]="{category: 'ring'}"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
@@ -161,7 +168,7 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
               </li>
               <li>
                 <a
-                  routerLink="/about"
+                  routerLink="/verify-certificate"
                   class="text-sm text-gray-300 hover:text-gold-400 transition-colors duration-300"
                   >Certifications</a
                 >

@@ -4,6 +4,7 @@ import { RouterLink } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
 import { WhatsappButtonComponent } from "../components/whatsapp-button";
 import { ApiService, Product, ProductDetail } from "../services/api.service";
+import { CurrencyService } from "../services/currency.service";
 
 interface CollectionUI {
   id: string;
@@ -495,6 +496,7 @@ interface CollectionUI {
 })
 export class HomeComponent implements OnInit {
   private apiService = inject(ApiService);
+  private currencyService = inject(CurrencyService);
 
   quickViewOpen = signal(false);
   selectedProduct = signal<ProductDetail | null>(null);
@@ -544,11 +546,7 @@ export class HomeComponent implements OnInit {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 
   getBadge(product: Product): string | undefined {

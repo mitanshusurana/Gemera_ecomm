@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CompareService } from '../services/compare.service';
 import { ApiService, Product } from '../services/api.service';
+import { CurrencyService, CurrencyCode } from '../services/currency.service';
 
 @Component({
   selector: 'app-header',
@@ -13,6 +14,17 @@ import { ApiService, Product } from '../services/api.service';
     <header class="sticky top-0 z-50 bg-white border-b border-diamond-200 backdrop-blur-md bg-white/95" (click)="onOutsideClick($event)">
       <div class="container-luxury">
         <div class="flex items-center justify-between h-20">
+          <!-- Currency Switcher (Mobile/Desktop) -->
+          <div class="absolute top-0 right-0 sm:right-auto sm:left-0 sm:top-auto sm:relative z-50 p-2 sm:p-0">
+             <select [ngModel]="currencyService.currentCurrency()" (ngModelChange)="currencyService.setCurrency($event)"
+                     class="bg-transparent text-xs font-bold text-gray-500 border-none focus:ring-0 cursor-pointer hover:text-gold-600 transition-colors">
+               <option value="USD">USD ($)</option>
+               <option value="EUR">EUR (€)</option>
+               <option value="GBP">GBP (£)</option>
+               <option value="INR">INR (₹)</option>
+             </select>
+          </div>
+
           <!-- Logo -->
           <a routerLink="/" class="flex items-center gap-2 group">
             <div class="w-10 h-10 bg-gradient-to-br from-gold-500 to-gold-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -133,6 +145,7 @@ import { ApiService, Product } from '../services/api.service';
 export class HeaderComponent implements OnInit {
   compareService = inject(CompareService);
   apiService = inject(ApiService);
+  currencyService = inject(CurrencyService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
 
@@ -200,10 +213,6 @@ export class HeaderComponent implements OnInit {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 }

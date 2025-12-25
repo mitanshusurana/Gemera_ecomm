@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService, User } from '../services/api.service';
+import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: 'app-account',
@@ -302,7 +303,7 @@ export class AccountComponent implements OnInit {
   activeTab = signal('profile');
   user = signal<User | null>(null);
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private currencyService: CurrencyService) {}
 
   ngOnInit(): void {
     this.loadUserProfile();
@@ -352,10 +353,6 @@ export class AccountComponent implements OnInit {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 }

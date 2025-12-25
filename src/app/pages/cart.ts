@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService, Cart } from '../services/api.service';
+import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: 'app-cart',
@@ -174,6 +175,7 @@ import { ApiService, Cart } from '../services/api.service';
 })
 export class CartComponent implements OnInit, OnDestroy {
   apiService = inject(ApiService);
+  private currencyService = inject(CurrencyService);
 
   cart = signal<Cart | null>(null);
   cartItems = signal<any[]>([]);
@@ -252,10 +254,6 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 }
