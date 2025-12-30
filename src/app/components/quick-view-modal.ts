@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter } from "@angular/core";
+import { Component, Input, Output, EventEmitter, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ProductDetail } from "../services/api.service";
+import { CurrencyService } from "../services/currency.service";
 
 @Component({
   selector: "app-quick-view-modal",
@@ -78,13 +79,6 @@ import { ProductDetail } from "../services/api.service";
                 >
                   {{ product?.category || "Product" }}
                 </span>
-                <!-- Badge logic or field -->
-                <!-- <span
-                  *ngIf="product && product.badge"
-                  class="px-3 py-1 bg-gold-500 text-white text-xs font-bold rounded-full"
-                >
-                  {{ product.badge }}
-                </span> -->
               </div>
 
               <!-- Name -->
@@ -160,28 +154,12 @@ import { ProductDetail } from "../services/api.service";
                       }}</span>
                     </p>
                   </div>
-                  <div *ngIf="product.specifications.origin">
-                    <p class="text-gray-600">
-                      Origin:
-                      <span class="font-semibold">{{
-                        product.specifications.origin
-                      }}</span>
-                    </p>
-                  </div>
                   <div *ngIf="product.metal">
                     <p class="text-gray-600">
                       Metal:
                       <span class="font-semibold">{{
                         product.metal
                       }}</span>
-                    </p>
-                  </div>
-                  <div *ngIf="product.weight">
-                    <p class="text-gray-600">
-                      Weight:
-                      <span class="font-semibold">{{
-                         product.weight
-                      }}g</span>
                     </p>
                   </div>
                 </div>
@@ -191,23 +169,6 @@ import { ProductDetail } from "../services/api.service";
               <div class="flex gap-3">
                 <button (click)="onAddToCart()" class="flex-1 btn-primary py-3">
                   Add to Cart
-                </button>
-                <button
-                  class="px-4 py-3 border-2 border-diamond-300 rounded-lg hover:border-gold-500 hover:bg-gold-50 transition-all"
-                >
-                  <svg
-                    class="w-6 h-6 text-diamond-700"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    ></path>
-                  </svg>
                 </button>
               </div>
 
@@ -234,6 +195,8 @@ export class QuickViewModalComponent {
     quantity: number;
   }>();
   @Output() viewDetails = new EventEmitter<string>();
+
+  private currencyService = inject(CurrencyService);
 
   onBackdropClick(): void {
     this.close.emit();
@@ -284,11 +247,6 @@ export class QuickViewModalComponent {
   }
 
   formatPrice(price: number): string {
-    if (!price) return "$0";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 }

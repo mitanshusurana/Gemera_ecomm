@@ -24,18 +24,36 @@ export interface Product {
   certifications: string[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ProductDetail extends Product {
-  images: { url: string; alt: string }[];
-  specifications: {
+  specifications?: {
     carat?: number;
     clarity?: string;
     color?: string;
     cut?: string;
     origin?: string;
+    metal?: string;
   };
+}
+
+export interface CustomizationOption {
+  id: string;
+  name: string;
+  priceModifier: number;
+  type: 'metal' | 'diamond' | 'size';
+}
+
+export interface PriceBreakup {
+  metal: number;
+  gemstone: number;
+  makingCharges: number;
+  tax: number;
+  total: number;
+}
+
+export interface ProductDetail extends Product {
+  images: { url: string; alt: string }[];
   relatedProducts: string[];
+  customizationOptions?: CustomizationOption[];
+  priceBreakup?: PriceBreakup;
 }
 
 export interface CartItem {
@@ -44,6 +62,11 @@ export interface CartItem {
   quantity: number;
   price: number;
   product: Product;
+  selectedMetal?: string;
+  selectedDiamond?: string;
+  stoneId?: string;
+  stoneName?: string;
+  customization?: string;
 }
 
 export interface Cart {
@@ -54,6 +77,7 @@ export interface Cart {
   shipping: number;
   total: number;
   appliedDiscount: number;
+  giftWrap?: boolean;
 }
 
 export interface Order {
@@ -122,7 +146,8 @@ export class ApiService {
       const subtotal = this.mockCart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const tax = Math.round(subtotal * 0.1);
       const shipping = subtotal > 0 ? (subtotal > 50000 ? 0 : 500) : 0; // Example shipping logic
-      const total = subtotal + tax + shipping - this.mockCart.appliedDiscount;
+      const giftWrapFee = this.mockCart.giftWrap ? 5 : 0;
+      const total = subtotal + tax + shipping + giftWrapFee - this.mockCart.appliedDiscount;
 
       this.mockCart.subtotal = subtotal;
       this.mockCart.tax = tax;
@@ -364,11 +389,18 @@ export class ApiService {
       .pipe(tap((cart) => this.cart$.next(cart)));
   }
 
-  addToCart(productId: string, quantity: number = 1): Observable<Cart> {
+  addToCart(productId: string, quantity: number = 1, options?: { metal?: string, diamond?: string, price?: number, stoneId?: string, stoneName?: string, customization?: string }): Observable<Cart> {
     if (this.useMock) {
         const product = MOCK_PRODUCTS.find(p => p.id === productId);
         if (product) {
-            const existing = this.mockCart.items.find(i => i.productId === productId);
+            // Check if item exists with SAME options
+            const existing = this.mockCart.items.find(i =>
+              i.productId === productId &&
+              i.selectedMetal === options?.metal &&
+              i.selectedDiamond === options?.diamond &&
+              i.stoneId === options?.stoneId
+            );
+
             if (existing) {
                 existing.quantity += quantity;
             } else {
@@ -376,8 +408,13 @@ export class ApiService {
                     id: 'item-' + Math.random().toString(36).substring(7),
                     productId,
                     quantity,
-                    price: product.price,
-                    product: product
+                    price: options?.price || product.price,
+                    product: product,
+                    selectedMetal: options?.metal,
+                    selectedDiamond: options?.diamond,
+                    stoneId: options?.stoneId,
+                    stoneName: options?.stoneName,
+                    customization: options?.customization
                 });
             }
             this.calculateCartTotals();
@@ -389,12 +426,27 @@ export class ApiService {
     return this.http
       .post<Cart>(
         `${this.baseUrl}/cart/items`,
-        { productId, quantity },
+        { productId, quantity, options },
         {
           headers: { Authorization: `Bearer ${this.getAuthToken()}` },
         }
       )
       .pipe(tap((cart) => this.cart$.next(cart)));
+  }
+
+  updateCartOptions(options: { giftWrap: boolean }): Observable<Cart> {
+    if (this.useMock) {
+        this.mockCart.giftWrap = options.giftWrap;
+        this.calculateCartTotals();
+        const cart = { ...this.mockCart };
+        this.cart$.next(cart);
+        return of(cart).pipe(delay(300));
+    }
+    return this.http.post<Cart>(
+      `${this.baseUrl}/cart/options`,
+      options,
+      { headers: { Authorization: `Bearer ${this.getAuthToken()}` } }
+    ).pipe(tap(cart => this.cart$.next(cart)));
   }
 
   updateCartItem(itemId: string, quantity: number): Observable<Cart> {

@@ -1,7 +1,8 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService, Cart } from '../services/api.service';
+import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: 'app-cart',
@@ -42,6 +43,10 @@ import { ApiService, Cart } from '../services/api.service';
                     <div>
                       <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ item.product.category }}</p>
                       <h3 class="font-semibold text-gray-900 text-lg">{{ item.product.name }}</h3>
+                      <div class="text-sm text-gray-600 mt-1 space-y-1">
+                        <p *ngIf="item.selectedMetal">Metal: {{ item.selectedMetal }}</p>
+                        <p *ngIf="item.selectedDiamond">Diamond: {{ item.selectedDiamond }}</p>
+                      </div>
                     </div>
                     <button (click)="removeItem(item.id)" class="text-red-500 hover:text-red-700 transition-colors">
                       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -71,6 +76,21 @@ import { ApiService, Cart } from '../services/api.service';
                 <div class="flex gap-2">
                   <input type="text" #couponInput placeholder="Enter coupon code" class="input-field flex-1">
                   <button (click)="applyCoupon(couponInput.value)" class="btn-outline">Apply</button>
+                </div>
+              </div>
+
+              <!-- Gift Wrapping (New) -->
+              <div class="card p-6 flex items-center justify-between bg-gold-50 border border-gold-200">
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">🎁</span>
+                  <div>
+                    <h3 class="font-bold text-gray-900">Add Premium Gift Wrapping</h3>
+                    <p class="text-sm text-gray-600">Includes handwritten note & signature box</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-gold-700">+$5.00</span>
+                  <input type="checkbox" [checked]="isGiftWrapped()" (change)="toggleGiftWrap($event)" class="w-5 h-5 text-gold-600 focus:ring-gold-500 border-gray-300 rounded">
                 </div>
               </div>
             </div>
@@ -104,6 +124,10 @@ import { ApiService, Cart } from '../services/api.service';
                   <span class="text-gray-600">Tax</span>
                   <span class="font-semibold">{{ formatPrice(tax()) }}</span>
                 </div>
+                <div *ngIf="isGiftWrapped()" class="flex justify-between text-gold-700">
+                  <span>Gift Wrapping</span>
+                  <span class="font-semibold">{{ formatPrice(5) }}</span>
+                </div>
                 <div *ngIf="discount() > 0" class="flex justify-between text-emerald-600">
                   <span>Discount</span>
                   <span class="font-semibold">-{{ formatPrice(discount()) }}</span>
@@ -133,8 +157,13 @@ import { ApiService, Cart } from '../services/api.service';
                   <p class="text-sm text-gray-600">30-day money-back guarantee</p>
                 </div>
                 <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">Secure SSL encrypted checkout</p>
+                  <span class="text-green-600 font-bold mt-0.5">🔒</span>
+                  <p class="text-sm text-gray-600 font-semibold">Secure SSL encrypted checkout</p>
+                </div>
+                <!-- Stock Reservation Timer -->
+                <div class="mt-4 p-3 bg-red-50 text-red-700 text-sm font-semibold rounded flex items-center justify-center gap-2">
+                  <span>⏳</span>
+                  <span>Stock reserved for {{ timerString() }}</span>
                 </div>
               </div>
             </div>
@@ -144,12 +173,14 @@ import { ApiService, Cart } from '../services/api.service';
     </div>
   `,
 })
-export class CartComponent implements OnInit {
+export class CartComponent implements OnInit, OnDestroy {
   apiService = inject(ApiService);
+  private currencyService = inject(CurrencyService);
 
   cart = signal<Cart | null>(null);
   cartItems = signal<any[]>([]);
   isEmpty = signal(true);
+  isGiftWrapped = computed(() => this.cart()?.giftWrap || false);
 
   subtotal = computed(() => this.cart()?.subtotal || 0);
   shipping = computed(() => this.cart()?.shipping || 0);
@@ -157,7 +188,18 @@ export class CartComponent implements OnInit {
   discount = computed(() => this.cart()?.appliedDiscount || 0);
   total = computed(() => this.cart()?.total || 0);
 
+  // Timer Signal
+  timeLeft = signal(600); // 10 minutes in seconds
+  timerString = computed(() => {
+    const minutes = Math.floor(this.timeLeft() / 60);
+    const seconds = this.timeLeft() % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  });
+
+  private timerInterval: any;
+
   ngOnInit(): void {
+    this.startTimer();
     this.apiService.cart().subscribe((cart) => {
         if (cart) {
             this.cart.set(cart);
@@ -168,6 +210,12 @@ export class CartComponent implements OnInit {
         }
     });
     this.apiService.getCart().subscribe();
+  }
+
+  ngOnDestroy(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
   }
 
   removeItem(itemId: string): void {
@@ -188,15 +236,24 @@ export class CartComponent implements OnInit {
     }
   }
 
+  toggleGiftWrap(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.apiService.updateCartOptions({ giftWrap: checked }).subscribe();
+  }
+
+  startTimer(): void {
+    this.timerInterval = setInterval(() => {
+      if (this.timeLeft() > 0) {
+        this.timeLeft.set(this.timeLeft() - 1);
+      }
+    }, 1000);
+  }
+
   applyCoupon(code: string): void {
       this.apiService.applyCoupon(code).subscribe();
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return this.currencyService.format(price);
   }
 }
