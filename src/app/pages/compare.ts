@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { CompareService } from '../services/compare.service';
-import { ApiService, Product } from '../services/api.service';
+import { CartService } from '../services/cart.service';
+import { Product } from '../core/models';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
 
@@ -140,7 +141,7 @@ import { CurrencyService } from '../services/currency.service';
 })
 export class CompareComponent implements OnInit {
   compareService = inject(CompareService);
-  apiService = inject(ApiService);
+  cartService = inject(CartService);
   toastService = inject(ToastService);
   titleService = inject(Title);
   private currencyService = inject(CurrencyService);
@@ -150,7 +151,7 @@ export class CompareComponent implements OnInit {
   }
 
   handleAddToCart(product: Product): void {
-      this.apiService.addToCart(product.id, 1).subscribe(() => {
+      this.cartService.addToCart(product.id, 1).subscribe(() => {
           this.toastService.show('Added to cart', 'success');
       });
   }

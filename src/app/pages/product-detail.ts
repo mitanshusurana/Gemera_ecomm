@@ -2,7 +2,9 @@ import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, Elem
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import { ApiService, ProductDetail, Product, CustomizationOption, PriceBreakup } from '../services/api.service';
+import { ProductService } from '../services/product.service';
+import { CartService } from '../services/cart.service';
+import { ProductDetail, Product, CustomizationOption, PriceBreakup } from '../core/models';
 import { CompareService } from '../services/compare.service';
 import { ToastService } from '../services/toast.service';
 import { SeoService } from '../services/seo.service';
@@ -473,7 +475,8 @@ import { CurrencyService } from '../services/currency.service';
   `,
 })
 export class ProductDetailComponent implements OnInit, OnDestroy {
-  private apiService = inject(ApiService);
+  private productService = inject(ProductService);
+  private cartService = inject(CartService);
   private route = inject(ActivatedRoute);
   private compareService = inject(CompareService);
   private toastService = inject(ToastService);
@@ -561,7 +564,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   private loadProduct(productId: string): void {
     this.loading.set(true);
-    this.apiService.getProductById(productId).subscribe({
+    this.productService.getProductById(productId).subscribe({
       next: (product) => {
         this.product.set(product);
         this.historyService.add(product);
@@ -591,7 +594,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   private loadRelatedProducts(category: string) {
-      this.apiService.getProducts(0, 4, { category }).subscribe(res => {
+      this.productService.getProducts(0, 4, { category }).subscribe(res => {
           this.relatedProducts.set(res.content.filter(p => p.id !== this.product()?.id));
       });
   }
@@ -606,7 +609,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           price: this.currentPrice()
         };
 
-        this.apiService.addToCart(p.id, this.quantity(), options).subscribe(() => {
+        this.cartService.addToCart(p.id, this.quantity(), options).subscribe(() => {
             const variantInfo = [];
             if (options.metal) variantInfo.push(options.metal);
             if (options.diamond) variantInfo.push(options.diamond);

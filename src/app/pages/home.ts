@@ -3,7 +3,9 @@ import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
 import { WhatsappButtonComponent } from "../components/whatsapp-button";
-import { ApiService, Product, ProductDetail } from "../services/api.service";
+import { ProductService } from "../services/product.service";
+import { CartService } from "../services/cart.service";
+import { Product, ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
 
 interface CollectionUI {
@@ -495,7 +497,8 @@ interface CollectionUI {
   `,
 })
 export class HomeComponent implements OnInit {
-  private apiService = inject(ApiService);
+  private productService = inject(ProductService);
+  private cartService = inject(CartService);
   private currencyService = inject(CurrencyService);
 
   quickViewOpen = signal(false);
@@ -515,7 +518,7 @@ export class HomeComponent implements OnInit {
   };
 
   ngOnInit() {
-    this.apiService.getCategories().subscribe(res => {
+    this.productService.getCategories().subscribe(res => {
         const mapped = res.categories.map(c => ({
             id: c.id,
             name: c.name,
@@ -529,7 +532,7 @@ export class HomeComponent implements OnInit {
         this.collections.set(mapped);
     });
 
-    this.apiService.getProducts(0, 8).subscribe(res => {
+    this.productService.getProducts(0, 8).subscribe(res => {
         this.featuredProducts.set(res.content);
     });
   }
@@ -557,7 +560,7 @@ export class HomeComponent implements OnInit {
 
   openQuickView(product: Product): void {
     // Fetch full details
-    this.apiService.getProductById(product.id).subscribe(details => {
+    this.productService.getProductById(product.id).subscribe(details => {
         this.selectedProduct.set(details);
         this.quickViewOpen.set(true);
     });
@@ -572,7 +575,7 @@ export class HomeComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     console.log("Add to cart:", productId);
-    this.apiService.addToCart(productId, 1).subscribe(() => {
+    this.cartService.addToCart(productId, 1).subscribe(() => {
         alert('Added to cart!');
     });
   }
@@ -586,7 +589,7 @@ export class HomeComponent implements OnInit {
 
   handleAddToCartFromModal(event: { productId: string; quantity: number }): void {
     console.log("Add to cart from quick view:", event);
-    this.apiService.addToCart(event.productId, event.quantity).subscribe(() => {
+    this.cartService.addToCart(event.productId, event.quantity).subscribe(() => {
         alert(`Added ${event.quantity} item(s) to cart`);
         this.closeQuickView();
     });

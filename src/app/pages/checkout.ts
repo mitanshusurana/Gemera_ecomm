@@ -2,7 +2,9 @@ import { Component, signal, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router } from "@angular/router";
-import { ApiService } from "../services/api.service";
+import { AuthService } from "../services/auth.service";
+import { CartService } from "../services/cart.service";
+import { OrderService } from "../services/order.service";
 import { EmailNotificationService } from "../services/email-notification.service";
 
 @Component({
@@ -623,14 +625,15 @@ export class CheckoutComponent implements OnInit {
   };
 
   billingSameAsShipping = true;
+  isAuthenticated = signal(false);
 
   constructor(
-    private apiService: ApiService,
+    private authService: AuthService,
+    private cartService: CartService,
+    private orderService: OrderService,
     private emailService: EmailNotificationService,
     private router: Router,
   ) {}
-
-  isAuthenticated = signal(false);
 
   ngOnInit(): void {
     this.checkAuth();
@@ -638,11 +641,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   private checkAuth(): void {
-    this.isAuthenticated.set(this.apiService.isAuthenticated());
+    this.isAuthenticated.set(this.authService.isAuthenticated());
   }
 
   private loadCartData(): void {
-    this.apiService.getCart().subscribe({
+    this.cartService.getCart().subscribe({
       next: (cart) => {
         this.cartItems.set(cart.items);
         this.cartTotal.set(cart.total);
@@ -681,7 +684,7 @@ export class CheckoutComponent implements OnInit {
       total: this.cartTotal(),
     };
 
-    this.apiService.createOrder(orderData).subscribe({
+    this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
         console.log("Order created:", order);
 

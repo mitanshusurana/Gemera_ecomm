@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ApiService, Cart } from '../services/api.service';
+import { CartService } from '../services/cart.service';
+import { Cart } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 
 @Component({
@@ -174,7 +175,7 @@ import { CurrencyService } from '../services/currency.service';
   `,
 })
 export class CartComponent implements OnInit, OnDestroy {
-  apiService = inject(ApiService);
+  cartService = inject(CartService);
   private currencyService = inject(CurrencyService);
 
   cart = signal<Cart | null>(null);
@@ -200,7 +201,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.startTimer();
-    this.apiService.cart().subscribe((cart) => {
+    this.cartService.cart().subscribe((cart) => {
         if (cart) {
             this.cart.set(cart);
             this.cartItems.set(cart.items);
@@ -209,7 +210,7 @@ export class CartComponent implements OnInit, OnDestroy {
             this.isEmpty.set(true);
         }
     });
-    this.apiService.getCart().subscribe();
+    this.cartService.getCart().subscribe();
   }
 
   ngOnDestroy(): void {
@@ -219,26 +220,26 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   removeItem(itemId: string): void {
-    this.apiService.removeFromCart(itemId).subscribe();
+    this.cartService.removeFromCart(itemId).subscribe();
   }
 
   increaseQuantity(itemId: string): void {
     const item = this.cartItems().find((i) => i.id === itemId);
     if (item) {
-      this.apiService.updateCartItem(itemId, item.quantity + 1).subscribe();
+      this.cartService.updateCartItem(itemId, item.quantity + 1).subscribe();
     }
   }
 
   decreaseQuantity(itemId: string): void {
     const item = this.cartItems().find((i) => i.id === itemId);
     if (item && item.quantity > 1) {
-      this.apiService.updateCartItem(itemId, item.quantity - 1).subscribe();
+      this.cartService.updateCartItem(itemId, item.quantity - 1).subscribe();
     }
   }
 
   toggleGiftWrap(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
-    this.apiService.updateCartOptions({ giftWrap: checked }).subscribe();
+    this.cartService.updateCartOptions({ giftWrap: checked }).subscribe();
   }
 
   startTimer(): void {
@@ -250,7 +251,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   applyCoupon(code: string): void {
-      this.apiService.applyCoupon(code).subscribe();
+      this.cartService.applyCoupon(code).subscribe();
   }
 
   formatPrice(price: number): string {

@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiService, Product } from '../../services/api.service';
+import { ProductService } from '../../services/product.service';
+import { Product } from '../../core/models';
 
 @Component({
   selector: 'app-admin-products',
@@ -73,11 +74,11 @@ import { ApiService, Product } from '../../services/api.service';
   `
 })
 export class AdminProductListComponent implements OnInit {
-  private apiService = inject(ApiService);
+  private productService = inject(ProductService);
   products = signal<Product[]>([]);
 
   ngOnInit() {
-    this.apiService.getProducts(0, 10).subscribe(res => {
+    this.productService.getProducts(0, 10).subscribe(res => {
       this.products.set(res.content);
     });
   }

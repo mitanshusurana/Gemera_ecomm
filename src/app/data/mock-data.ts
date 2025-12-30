@@ -1,4 +1,4 @@
-import { Product, ProductDetail, Category } from '../services/api.service';
+import { Product, ProductDetail, Category } from '../core/models';
 
 export const MOCK_CATEGORIES: Category[] = [
   {

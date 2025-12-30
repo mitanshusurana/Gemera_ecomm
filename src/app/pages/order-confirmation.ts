@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
-import { ApiService } from "../services/api.service";
+import { OrderService } from "../services/order.service";
 
 @Component({
   selector: "app-order-confirmation",
@@ -322,7 +322,7 @@ export class OrderConfirmationComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private apiService: ApiService,
+    private orderService: OrderService,
   ) {}
 
   ngOnInit(): void {
@@ -345,7 +345,7 @@ export class OrderConfirmationComponent implements OnInit {
   }
 
   private loadOrder(orderId: string): void {
-    this.apiService.getOrderById(orderId).subscribe({
+    this.orderService.getOrderById(orderId).subscribe({
       next: (order) => {
         this.orderNumber.set(order.orderNumber);
         this.orderItems.set(order.items);

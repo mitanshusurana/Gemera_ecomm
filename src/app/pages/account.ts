@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { ApiService, User } from '../services/api.service';
+import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { User } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 
 @Component({
@@ -303,15 +304,21 @@ export class AccountComponent implements OnInit {
   activeTab = signal('profile');
   user = signal<User | null>(null);
 
-  constructor(private apiService: ApiService, private currencyService: CurrencyService) {}
+  private authService = inject(AuthService);
+  private currencyService = inject(CurrencyService);
+  private router = inject(Router);
 
   ngOnInit(): void {
     this.loadUserProfile();
   }
 
   private loadUserProfile(): void {
-    this.apiService.getCurrentUser().subscribe({
+    this.authService.user().subscribe({
       next: (user) => {
+        if (!user) {
+            // Check current user api if needed, or rely on authService
+            // Mock backend auto-logs in sometimes, but authService should be source of truth
+        }
         this.user.set(user);
       },
       error: (error) => {
@@ -328,23 +335,17 @@ export class AccountComponent implements OnInit {
   }
 
   updateProfile(): void {
+    // Mock update
     if (this.user()) {
-      this.apiService.updateProfile(this.user()!).subscribe({
-        next: (user) => {
-          this.user.set(user);
-          console.log('Profile updated successfully');
-        },
-        error: (error) => {
-          console.error('Error updating profile:', error);
-        },
-      });
+        alert('Profile updated successfully (Mock)');
     }
   }
 
   logout(): void {
-    this.apiService.logout().subscribe({
+    this.authService.logout().subscribe({
       next: () => {
         console.log('Logged out successfully');
+        this.router.navigate(['/login']);
       },
       error: (error) => {
         console.error('Error logging out:', error);

@@ -1,0 +1,54 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Order } from '../core/models';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class OrderService {
+  private http = inject(HttpClient);
+  private baseUrl = '/api/v1/orders';
+
+  createOrder(orderData: any): Observable<Order> {
+    return this.http.post<Order>(this.baseUrl, orderData);
+  }
+
+  getOrderById(orderId: string): Observable<Order> {
+    return this.http.get<Order>(`${this.baseUrl}/${orderId}`);
+  }
+
+  getUserOrders(page: number = 0, size: number = 10): Observable<any> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    return this.http.get<any>(this.baseUrl, { params });
+  }
+
+  updateOrderStatus(orderId: string, status: string, trackingNumber?: string): Observable<any> {
+    return this.http.put(
+      `${this.baseUrl}/${orderId}/status`,
+      { status, trackingNumber }
+    );
+  }
+
+  initializePayment(
+    orderId: string,
+    amount: number,
+    currency: string = 'USD',
+    paymentMethod: string = 'CREDIT_CARD'
+  ): Observable<any> {
+    return this.http.post(
+      '/api/v1/payments/initialize',
+      { orderId, amount, currency, paymentMethod }
+    );
+  }
+
+  verifyPayment(paymentId: string, paymentToken: string): Observable<any> {
+    return this.http.post(
+      '/api/v1/payments/verify',
+      { paymentId, paymentToken }
+    );
+  }
+}

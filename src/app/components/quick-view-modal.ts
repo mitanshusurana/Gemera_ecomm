@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ProductDetail } from "../services/api.service";
+import { ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
 
 @Component({

@@ -2,7 +2,6 @@ import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ApiService } from '../services/api.service';
 import { FadeInDirective } from '../directives/fade-in.directive';
 
 @Component({
@@ -126,8 +125,6 @@ export class VerifyCertificateComponent {
   loading = signal(false);
   error = signal(false);
   result = signal<{id: string, lab: string, carat: number, color: string, clarity: string} | null>(null);
-
-  private apiService = inject(ApiService);
 
   verify() {
     if (!this.reportNumber.trim()) return;

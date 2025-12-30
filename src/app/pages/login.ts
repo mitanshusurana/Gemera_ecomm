@@ -1,8 +1,8 @@
-import { Component, signal } from "@angular/core";
+import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router, ActivatedRoute } from "@angular/router";
-import { ApiService } from "../services/api.service";
+import { AuthService } from "../services/auth.service";
 
 @Component({
   selector: "app-login",
@@ -283,11 +283,9 @@ export class LoginComponent {
   phone = "";
   confirmPassword = "";
 
-  constructor(
-    private apiService: ApiService,
-    private router: Router,
-    private route: ActivatedRoute,
-  ) {}
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   toggleMode(): void {
     this.isLogin.update((val) => !val);
@@ -298,7 +296,7 @@ export class LoginComponent {
     this.isLoading.set(true);
     this.errorMessage.set("");
 
-    this.apiService.login(this.email, this.password).subscribe({
+    this.authService.login(this.email, this.password).subscribe({
       next: () => {
         this.isLoading.set(false);
         const returnUrl = this.route.snapshot.queryParams["returnUrl"] || "/";
@@ -321,7 +319,7 @@ export class LoginComponent {
     this.isLoading.set(true);
     this.errorMessage.set("");
 
-    this.apiService
+    this.authService
       .register({
         email: this.email,
         password: this.password,

@@ -2,7 +2,9 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { BuilderService } from '../services/builder.service';
-import { ApiService, Product } from '../services/api.service';
+import { ProductService } from '../services/product.service';
+import { CartService } from '../services/cart.service';
+import { Product } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 import { FadeInDirective } from '../directives/fade-in.directive';
 import { ToastService } from '../services/toast.service';
@@ -194,7 +196,8 @@ import { ToastService } from '../services/toast.service';
 })
 export class BuilderComponent implements OnInit {
   builder = inject(BuilderService);
-  api = inject(ApiService);
+  productService = inject(ProductService);
+  cartService = inject(CartService);
   currency = inject(CurrencyService);
   toast = inject(ToastService);
   router = inject(Router);
@@ -208,22 +211,22 @@ export class BuilderComponent implements OnInit {
 
   loadData() {
     // Load Settings
-    this.api.getProducts(0, 100, { category: 'Ring Setting' }).subscribe(res => {
+    this.productService.getProducts(0, 100, { category: 'Ring Setting' }).subscribe(res => {
         this.settings.set(res.content);
         // Fallback if empty (mock issues)
         if (res.content.length === 0) {
             // Try fetching all and filtering manually for demo
-            this.api.getProducts(0, 100).subscribe(all => {
+            this.productService.getProducts(0, 100).subscribe(all => {
                 this.settings.set(all.content.filter(p => p.category === 'Ring Setting' || p.name.includes('Setting')));
             });
         }
     });
 
     // Load Stones
-    this.api.getProducts(0, 100, { category: 'Loose Gemstone' }).subscribe(res => {
+    this.productService.getProducts(0, 100, { category: 'Loose Gemstone' }).subscribe(res => {
         this.stones.set(res.content);
         if (res.content.length === 0) {
-             this.api.getProducts(0, 100).subscribe(all => {
+             this.productService.getProducts(0, 100).subscribe(all => {
                 this.stones.set(all.content.filter(p => p.category === 'Loose Gemstone'));
             });
         }
@@ -248,7 +251,7 @@ export class BuilderComponent implements OnInit {
         // OR add both items.
 
         // Let's add the Setting with metadata
-        this.api.addToCart(setting.id, 1, {
+        this.cartService.addToCart(setting.id, 1, {
             stoneId: stone.id,
             stoneName: stone.name,
             customization: 'Build Your Own Ring'
