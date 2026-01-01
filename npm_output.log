@@ -1,0 +1,42 @@
+
+> fusion-angular-tailwind-starter@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names              |  Raw size
+main.js             | main               | 120.91 kB |
+styles.css          | styles             |  96.42 kB |
+chunk-VI4BSPWZ.js   | -                  |  13.32 kB |
+chunk-SV35GBPL.js   | -                  |   2.45 kB |
+chunk-ASUZUG4V.js   | -                  |   2.35 kB |
+chunk-WL2GWKC4.js   | -                  |   2.17 kB |
+chunk-EVSPGG2W.js   | -                  |   1.64 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 240.55 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-PUWNIVSK.js   | product-detail     | 160.29 kB |
+chunk-LEBPXDOY.js   | checkout           |  65.63 kB |
+chunk-RVHE4AOY.js   | products           |  65.02 kB |
+chunk-BSROP6LV.js   | home               |  51.31 kB |
+chunk-G77ED64P.js   | rfq-request        |  49.42 kB |
+chunk-2OXUAOJY.js   | account            |  45.10 kB |
+chunk-WBLZBBAH.js   | razorpay-payment   |  37.93 kB |
+chunk-D7KX7MMY.js   | builder            |  35.37 kB |
+chunk-GB2B3WAH.js   | cart               |  30.90 kB |
+chunk-H6UCHQ36.js   | order-confirmation |  30.17 kB |
+chunk-SG3HT4EQ.js   | stripe-payment     |  28.49 kB |
+chunk-JNX7RRKQ.js   | login              |  27.92 kB |
+chunk-6HRAMB6S.js   | compare            |  27.58 kB |
+chunk-6FRWU2WO.js   | -                  |  24.30 kB |
+chunk-TLD53XPT.js   | dashboard          |  23.34 kB |
+...and 11 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [7.148 seconds]
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/

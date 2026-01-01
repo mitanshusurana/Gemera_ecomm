@@ -14,7 +14,10 @@ import {
   AddToCartRequest,
   UpdateCartItemRequest,
   UpdateCartOptionsRequest,
-  ApplyCouponRequest
+  ApplyCouponRequest,
+  CreateOrderRequest,
+  InitializePaymentRequest,
+  VerifyPaymentRequest
 } from '../core/dtos';
 
 @Injectable()
@@ -80,6 +83,23 @@ export class MockInterceptor implements HttpInterceptor {
     }
     if (url.endsWith('/cart/apply-coupon') && method === 'POST') {
         return this.mockBackend.handleApplyCoupon(body as ApplyCouponRequest);
+    }
+
+    // --- Order Routes ---
+    if (url.endsWith('/orders') && method === 'POST') {
+        return this.mockBackend.handleCreateOrder(body as CreateOrderRequest);
+    }
+    if (url.match(/\/orders\/[^\/]+$/) && method === 'GET') {
+        const id = url.split('/').pop()!;
+        return this.mockBackend.handleGetOrderById(id);
+    }
+
+    // --- Payment Routes ---
+    if (url.endsWith('/payments/initialize') && method === 'POST') {
+        return this.mockBackend.handleInitializePayment(body as InitializePaymentRequest);
+    }
+    if (url.endsWith('/payments/verify') && method === 'POST') {
+        return this.mockBackend.handleVerifyPayment(body as VerifyPaymentRequest);
     }
 
     // If no match, pass through (or error if we want strict mock)

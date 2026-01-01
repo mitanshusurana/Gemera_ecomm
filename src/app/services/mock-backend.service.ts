@@ -10,7 +10,10 @@ import {
   AddToCartRequest,
   UpdateCartItemRequest,
   UpdateCartOptionsRequest,
-  ApplyCouponRequest
+  ApplyCouponRequest,
+  CreateOrderRequest,
+  InitializePaymentRequest,
+  VerifyPaymentRequest
 } from '../core/dtos';
 
 @Injectable({
@@ -252,6 +255,50 @@ export class MockBackendService {
       }
       this.calculateCartTotals();
       return of(new HttpResponse({ status: 200, body: { ...this.mockCart } })).pipe(delay(500));
+  }
+
+  // --- Order Handlers ---
+  handleCreateOrder(body: CreateOrderRequest): Observable<HttpResponse<Order>> {
+      const order: Order = {
+          id: 'mock-order-' + Math.random().toString(36).substring(7),
+          orderNumber: 'ORD-' + Date.now(),
+          userId: this.mockUser?.id || 'guest',
+          items: this.mockCart.items, // Copy from cart
+          status: 'PENDING',
+          total: body.total,
+          trackingNumber: '',
+          estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString()
+      };
+
+      // Clear cart after order
+      this.mockCart.items = [];
+      this.calculateCartTotals();
+
+      return of(new HttpResponse({ status: 200, body: order })).pipe(delay(1000));
+  }
+
+  handleGetOrderById(id: string): Observable<HttpResponse<Order>> {
+      // Mock order
+      const order: Order = {
+          id: id,
+          orderNumber: 'ORD-' + Math.floor(Math.random() * 10000),
+          userId: 'mock-user-123',
+          items: [], // Mock empty for retrieval simplicity or persist if needed
+          status: 'PROCESSING',
+          total: 45000,
+          createdAt: new Date().toISOString()
+      };
+      return of(new HttpResponse({ status: 200, body: order })).pipe(delay(500));
+  }
+
+  // --- Payment Handlers ---
+  handleInitializePayment(body: InitializePaymentRequest): Observable<HttpResponse<any>> {
+      return of(new HttpResponse({ status: 200, body: { clientSecret: 'mock_secret_123' } })).pipe(delay(500));
+  }
+
+  handleVerifyPayment(body: VerifyPaymentRequest): Observable<HttpResponse<any>> {
+      return of(new HttpResponse({ status: 200, body: { status: 'succeeded' } })).pipe(delay(500));
   }
 
   // --- Helper ---
