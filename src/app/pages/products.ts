@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from "@angular/core";
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -15,6 +15,7 @@ import { CurrencyService } from '../services/currency.service';
   selector: "app-products",
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
       <!-- Header -->

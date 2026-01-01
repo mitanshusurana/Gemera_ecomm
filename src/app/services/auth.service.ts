@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AuthResponse, User } from '../core/models';
+import { LoginRequest, RegisterRequest } from '../core/dtos';
 
 @Injectable({
   providedIn: 'root'
@@ -19,12 +20,13 @@ export class AuthService {
     }
   }
 
-  register(data: { email: string; password: string; firstName: string; lastName: string; phone: string }): Observable<User> {
+  register(data: RegisterRequest): Observable<User> {
     return this.http.post<User>(`${this.baseUrl}/register`, data);
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/login`, { email, password }).pipe(
+    const body: LoginRequest = { email, password };
+    return this.http.post<AuthResponse>(`${this.baseUrl}/login`, body).pipe(
       tap(response => {
         this.setAuthToken(response.token);
         this.user$.next(response.user);

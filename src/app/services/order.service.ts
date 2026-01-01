@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Order } from '../core/models';
+import { CreateOrderRequest, InitializePaymentRequest, VerifyPaymentRequest } from '../core/dtos';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,7 @@ export class OrderService {
   private http = inject(HttpClient);
   private baseUrl = '/api/v1/orders';
 
-  createOrder(orderData: any): Observable<Order> {
+  createOrder(orderData: CreateOrderRequest): Observable<Order> {
     return this.http.post<Order>(this.baseUrl, orderData);
   }
 
@@ -39,16 +40,18 @@ export class OrderService {
     currency: string = 'USD',
     paymentMethod: string = 'CREDIT_CARD'
   ): Observable<any> {
+    const body: InitializePaymentRequest = { orderId, amount, currency, paymentMethod };
     return this.http.post(
       '/api/v1/payments/initialize',
-      { orderId, amount, currency, paymentMethod }
+      body
     );
   }
 
   verifyPayment(paymentId: string, paymentToken: string): Observable<any> {
+    const body: VerifyPaymentRequest = { paymentId, paymentToken };
     return this.http.post(
       '/api/v1/payments/verify',
-      { paymentId, paymentToken }
+      body
     );
   }
 }

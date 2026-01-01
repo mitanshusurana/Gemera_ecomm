@@ -1,18 +1,17 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { BuilderService } from '../services/builder.service';
 import { ProductService } from '../services/product.service';
 import { CartService } from '../services/cart.service';
 import { Product } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
-import { FadeInDirective } from '../directives/fade-in.directive';
 import { ToastService } from '../services/toast.service';
 
 @Component({
   selector: 'app-builder',
   standalone: true,
-  imports: [CommonModule, RouterLink, FadeInDirective],
+  imports: [CommonModule],
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Builder Header -->

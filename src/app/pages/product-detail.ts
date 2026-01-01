@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -8,8 +8,6 @@ import { ProductDetail, Product, CustomizationOption, PriceBreakup } from '../co
 import { CompareService } from '../services/compare.service';
 import { ToastService } from '../services/toast.service';
 import { SeoService } from '../services/seo.service';
-import { FocusTrapDirective } from '../directives/focus-trap.directive';
-import { FadeInDirective } from '../directives/fade-in.directive';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { EducationModalComponent } from '../components/education-modal';
@@ -20,7 +18,8 @@ import { CurrencyService } from '../services/currency.service';
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent, RecentlyViewedComponent, FocusTrapDirective, FadeInDirective],
+  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent, RecentlyViewedComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->

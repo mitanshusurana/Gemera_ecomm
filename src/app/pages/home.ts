@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, inject } from "@angular/core";
+import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
@@ -28,6 +28,7 @@ interface CollectionUI {
     QuickViewModalComponent,
     WhatsappButtonComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Premium Hero Section -->
     <section class="relative w-full overflow-hidden min-h-screen flex items-center">

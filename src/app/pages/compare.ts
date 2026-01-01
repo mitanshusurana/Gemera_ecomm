@@ -91,7 +91,7 @@ import { CurrencyService } from '../services/currency.service';
                 <tr [class.bg-yellow-50]="isAttributeDifferent('gemstones')">
                    <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('gemstones')">Gemstones</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       {{ product.gemstones?.join(', ') || '-' }}
+                       {{ product.gemstones.join(', ') || '-' }}
                    </td>
                </tr>
 

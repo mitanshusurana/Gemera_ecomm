@@ -1,13 +1,11 @@
 import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { FadeInDirective } from '../directives/fade-in.directive';
 
 @Component({
   selector: 'app-verify-certificate',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, FadeInDirective],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Header -->

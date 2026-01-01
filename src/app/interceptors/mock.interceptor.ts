@@ -24,10 +24,10 @@ export class MockInterceptor implements HttpInterceptor {
 
     // --- Auth Routes ---
     if (url.endsWith('/auth/login') && method === 'POST') {
-      return this.mockBackend.handleLogin(body);
+      return this.mockBackend.handleLogin(body as any);
     }
     if (url.endsWith('/auth/register') && method === 'POST') {
-      return this.mockBackend.handleRegister(body);
+      return this.mockBackend.handleRegister(body as any);
     }
     if (url.endsWith('/auth/logout') && method === 'POST') {
       return this.mockBackend.handleLogout();
@@ -57,21 +57,21 @@ export class MockInterceptor implements HttpInterceptor {
         return this.mockBackend.handleGetCart();
     }
     if (url.endsWith('/cart/items') && method === 'POST') {
-        return this.mockBackend.handleAddToCart(body);
+        return this.mockBackend.handleAddToCart(body as any);
     }
     if (url.match(/\/cart\/items\/[^\/]+$/) && method === 'PUT') {
         const id = url.split('/').pop()!;
-        return this.mockBackend.handleUpdateCartItem(id, body);
+        return this.mockBackend.handleUpdateCartItem(id, body as any);
     }
     if (url.match(/\/cart\/items\/[^\/]+$/) && method === 'DELETE') {
         const id = url.split('/').pop()!;
         return this.mockBackend.handleRemoveFromCart(id);
     }
     if (url.endsWith('/cart/options') && method === 'POST') {
-        return this.mockBackend.handleUpdateCartOptions(body);
+        return this.mockBackend.handleUpdateCartOptions(body as any);
     }
     if (url.endsWith('/cart/apply-coupon') && method === 'POST') {
-        return this.mockBackend.handleApplyCoupon(body);
+        return this.mockBackend.handleApplyCoupon(body as any);
     }
 
     // If no match, pass through (or error if we want strict mock)

@@ -4,6 +4,14 @@ import { Observable, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '../data/mock-data';
 import { Product, ProductDetail, Cart, CartItem, User, AuthResponse, Order, Category } from '../core/models';
+import {
+  LoginRequest,
+  RegisterRequest,
+  AddToCartRequest,
+  UpdateCartItemRequest,
+  UpdateCartOptionsRequest,
+  ApplyCouponRequest
+} from '../core/dtos';
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +33,7 @@ export class MockBackendService {
   constructor() {}
 
   // --- Auth Handlers ---
-  handleLogin(body: any): Observable<HttpResponse<AuthResponse>> {
+  handleLogin(body: LoginRequest): Observable<HttpResponse<AuthResponse>> {
     const { email } = body;
     const mockUser: User = {
       id: 'mock-user-123',
@@ -49,7 +57,7 @@ export class MockBackendService {
     return of(new HttpResponse({ status: 200, body: response })).pipe(delay(500));
   }
 
-  handleRegister(body: any): Observable<HttpResponse<User>> {
+  handleRegister(body: RegisterRequest): Observable<HttpResponse<User>> {
     const user: User = {
       id: 'mock-user-' + Math.random().toString(36).substring(7),
       email: body.email,
@@ -179,7 +187,7 @@ export class MockBackendService {
       return of(new HttpResponse({ status: 200, body: { ...this.mockCart } })).pipe(delay(300));
   }
 
-  handleAddToCart(body: any): Observable<HttpResponse<Cart>> {
+  handleAddToCart(body: AddToCartRequest): Observable<HttpResponse<Cart>> {
       const { productId, quantity, options } = body;
       const product = MOCK_PRODUCTS.find(p => p.id === productId);
 
@@ -212,7 +220,7 @@ export class MockBackendService {
       return of(new HttpResponse({ status: 200, body: { ...this.mockCart } })).pipe(delay(300));
   }
 
-  handleUpdateCartItem(id: string, body: any): Observable<HttpResponse<Cart>> {
+  handleUpdateCartItem(id: string, body: UpdateCartItemRequest): Observable<HttpResponse<Cart>> {
       const item = this.mockCart.items.find(i => i.id === id);
       if (item) {
           item.quantity = body.quantity;
@@ -230,13 +238,13 @@ export class MockBackendService {
       return of(new HttpResponse({ status: 200, body: { ...this.mockCart } })).pipe(delay(300));
   }
 
-  handleUpdateCartOptions(body: any): Observable<HttpResponse<Cart>> {
+  handleUpdateCartOptions(body: UpdateCartOptionsRequest): Observable<HttpResponse<Cart>> {
       this.mockCart.giftWrap = body.giftWrap;
       this.calculateCartTotals();
       return of(new HttpResponse({ status: 200, body: { ...this.mockCart } })).pipe(delay(300));
   }
 
-  handleApplyCoupon(body: any): Observable<HttpResponse<Cart>> {
+  handleApplyCoupon(body: ApplyCouponRequest): Observable<HttpResponse<Cart>> {
       if (body.couponCode === 'DISCOUNT10') {
           this.mockCart.appliedDiscount = 1000;
       } else {
