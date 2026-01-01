@@ -8,6 +8,14 @@ import {
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { MockBackendService } from '../services/mock-backend.service';
+import {
+  LoginRequest,
+  RegisterRequest,
+  AddToCartRequest,
+  UpdateCartItemRequest,
+  UpdateCartOptionsRequest,
+  ApplyCouponRequest
+} from '../core/dtos';
 
 @Injectable()
 export class MockInterceptor implements HttpInterceptor {
@@ -24,10 +32,10 @@ export class MockInterceptor implements HttpInterceptor {
 
     // --- Auth Routes ---
     if (url.endsWith('/auth/login') && method === 'POST') {
-      return this.mockBackend.handleLogin(body as any);
+      return this.mockBackend.handleLogin(body as LoginRequest);
     }
     if (url.endsWith('/auth/register') && method === 'POST') {
-      return this.mockBackend.handleRegister(body as any);
+      return this.mockBackend.handleRegister(body as RegisterRequest);
     }
     if (url.endsWith('/auth/logout') && method === 'POST') {
       return this.mockBackend.handleLogout();
@@ -57,21 +65,21 @@ export class MockInterceptor implements HttpInterceptor {
         return this.mockBackend.handleGetCart();
     }
     if (url.endsWith('/cart/items') && method === 'POST') {
-        return this.mockBackend.handleAddToCart(body as any);
+        return this.mockBackend.handleAddToCart(body as AddToCartRequest);
     }
     if (url.match(/\/cart\/items\/[^\/]+$/) && method === 'PUT') {
         const id = url.split('/').pop()!;
-        return this.mockBackend.handleUpdateCartItem(id, body as any);
+        return this.mockBackend.handleUpdateCartItem(id, body as UpdateCartItemRequest);
     }
     if (url.match(/\/cart\/items\/[^\/]+$/) && method === 'DELETE') {
         const id = url.split('/').pop()!;
         return this.mockBackend.handleRemoveFromCart(id);
     }
     if (url.endsWith('/cart/options') && method === 'POST') {
-        return this.mockBackend.handleUpdateCartOptions(body as any);
+        return this.mockBackend.handleUpdateCartOptions(body as UpdateCartOptionsRequest);
     }
     if (url.endsWith('/cart/apply-coupon') && method === 'POST') {
-        return this.mockBackend.handleApplyCoupon(body as any);
+        return this.mockBackend.handleApplyCoupon(body as ApplyCouponRequest);
     }
 
     // If no match, pass through (or error if we want strict mock)
