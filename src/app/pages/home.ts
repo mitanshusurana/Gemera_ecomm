@@ -1,5 +1,5 @@
 import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
 import { WhatsappButtonComponent } from "../components/whatsapp-button";
@@ -7,6 +7,7 @@ import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
 import { Product, ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
+import { SeoService } from "../services/seo.service";
 
 interface CollectionUI {
   id: string;
@@ -24,6 +25,7 @@ interface CollectionUI {
   standalone: true,
   imports: [
     CommonModule,
+    NgOptimizedImage,
     RouterLink,
     QuickViewModalComponent,
     WhatsappButtonComponent,
@@ -281,7 +283,7 @@ interface CollectionUI {
             <div
               class="relative overflow-hidden h-72 bg-gradient-to-br from-gold-100 to-diamond-100"
             >
-              <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover" [alt]="product.name" onerror="this.style.display='none'">
+              <img *ngIf="product.imageUrl" [ngSrc]="product.imageUrl" fill class="object-cover" [alt]="product.name">
               <div
                 *ngIf="!product.imageUrl"
                 class="w-full h-full flex items-center justify-center text-5xl"
@@ -501,6 +503,7 @@ export class HomeComponent implements OnInit {
   private productService = inject(ProductService);
   private cartService = inject(CartService);
   private currencyService = inject(CurrencyService);
+  private seoService = inject(SeoService);
 
   quickViewOpen = signal(false);
   selectedProduct = signal<ProductDetail | null>(null);
@@ -519,6 +522,12 @@ export class HomeComponent implements OnInit {
   };
 
   ngOnInit() {
+    // Add default SEO tags for Home
+    this.seoService.updateTags({
+      title: 'Gemara | Curated Heritage Gemstones & Jewelry',
+      description: 'Discover museum-quality loose stones, hand-carved idols, and heirloom jewelry collections. Certified authentic and ethically sourced.'
+    });
+
     this.productService.getCategories().subscribe(res => {
         const mapped = res.categories.map(c => ({
             id: c.id,
