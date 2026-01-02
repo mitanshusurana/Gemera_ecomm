@@ -575,7 +575,6 @@ export class HomeComponent implements OnInit {
   handleAddToCart(event: Event, productId: string): void {
     event.preventDefault();
     event.stopPropagation();
-    console.log("Add to cart:", productId);
     this.cartService.addToCart(productId, 1).subscribe(() => {
         alert('Added to cart!');
     });
@@ -584,12 +583,10 @@ export class HomeComponent implements OnInit {
   handleWishlist(event: Event, productId: string): void {
       event.preventDefault();
       event.stopPropagation();
-      console.log("Add to wishlist:", productId);
       // Api call would go here
   }
 
   handleAddToCartFromModal(event: { productId: string; quantity: number }): void {
-    console.log("Add to cart from quick view:", event);
     this.cartService.addToCart(event.productId, event.quantity).subscribe(() => {
         alert(`Added ${event.quantity} item(s) to cart`);
         this.closeQuickView();
@@ -597,7 +594,6 @@ export class HomeComponent implements OnInit {
   }
 
   handleViewDetails(productId: string): void {
-    console.log("View details for product:", productId);
     // In real app, navigate to product detail page
     // RouterLink in template handles navigation if set, but here it's an event
   }

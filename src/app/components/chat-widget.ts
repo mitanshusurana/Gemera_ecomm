@@ -95,7 +95,7 @@ export class ChatWidgetComponent {
     this.isOpen = !this.isOpen;
   }
 
-  handleOption(option: any) {
+  handleOption(option: { label: string, action: string }) {
     this.addMessage(option.label, true);
     this.currentOptions = []; // Clear options
     this.isTyping = true;

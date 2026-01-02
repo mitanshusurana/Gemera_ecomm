@@ -52,6 +52,8 @@ export interface ShippingAddress {
   country: string;
 }
 
+import { CartItem } from './models';
+
 export interface PaymentInfo {
   cardName: string;
   cardNumber: string;
@@ -64,7 +66,7 @@ export interface CreateOrderRequest {
   billingAddress: ShippingAddress | {};
   paymentMethod: string;
   shippingMethod: string;
-  items: any[]; // Ideally typed as CartItem[] but avoiding circular deps if complex
+  items: CartItem[];
   total: number;
 }
 

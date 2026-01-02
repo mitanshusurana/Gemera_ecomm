@@ -198,7 +198,7 @@ export class CartComponent implements OnInit, OnDestroy {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   });
 
-  private timerInterval: any;
+  private timerInterval: any; // Ideally ReturnType<typeof setInterval> but standard 'any' or 'number' is safer across envs for now
 
   ngOnInit(): void {
     this.startTimer();

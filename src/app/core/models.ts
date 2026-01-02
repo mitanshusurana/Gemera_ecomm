@@ -111,3 +111,15 @@ export interface AuthResponse {
   refreshToken: string;
   user: User;
 }
+
+export interface Pageable {
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  pageable: Pageable;
+}

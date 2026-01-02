@@ -344,7 +344,6 @@ export class AccountComponent implements OnInit {
   logout(): void {
     this.authService.logout().subscribe({
       next: () => {
-        console.log('Logged out successfully');
         this.router.navigate(['/login']);
       },
       error: (error) => {
