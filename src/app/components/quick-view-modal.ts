@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from "@angular/core";
+import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
@@ -7,6 +7,7 @@ import { CurrencyService } from "../services/currency.service";
   selector: "app-quick-view-modal",
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
       *ngIf="isOpen"

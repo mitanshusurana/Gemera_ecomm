@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -6,11 +6,12 @@ import { Router } from '@angular/router';
   selector: 'app-chat-widget',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
 
       <!-- Chat Window -->
-      <div *ngIf="isOpen" class="bg-white rounded-2xl shadow-2xl w-80 overflow-hidden border border-gray-100 pointer-events-auto animate-fade-in-up">
+      <div *ngIf="isOpen()" class="bg-white rounded-2xl shadow-2xl w-80 overflow-hidden border border-gray-100 pointer-events-auto animate-fade-in-up">
         <div class="bg-diamond-900 p-4 text-white flex justify-between items-center">
           <div class="flex items-center gap-2">
             <span class="text-2xl">🤖</span>
@@ -32,7 +33,7 @@ import { Router } from '@angular/router';
           </div>
 
           <!-- User Messages (Simulated History) -->
-          <div *ngFor="let msg of messages" class="flex gap-2" [ngClass]="{'flex-row-reverse': msg.isUser}">
+          <div *ngFor="let msg of messages()" class="flex gap-2" [ngClass]="{'flex-row-reverse': msg.isUser}">
             <div *ngIf="!msg.isUser" class="w-8 h-8 rounded-full bg-diamond-100 flex items-center justify-center text-lg">💎</div>
             <div class="p-3 rounded-lg shadow-sm max-w-[80%] text-sm"
                  [ngClass]="msg.isUser ? 'bg-gold-500 text-white rounded-tl-lg rounded-bl-lg rounded-br-lg' : 'bg-white text-gray-700 rounded-tr-lg rounded-br-lg rounded-bl-lg'">
@@ -41,7 +42,7 @@ import { Router } from '@angular/router';
           </div>
 
           <!-- Typing Indicator -->
-          <div *ngIf="isTyping" class="flex gap-2">
+          <div *ngIf="isTyping()" class="flex gap-2">
              <div class="w-8 h-8 rounded-full bg-diamond-100 flex items-center justify-center text-lg">💎</div>
              <div class="bg-white p-3 rounded-lg shadow-sm flex gap-1">
                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
@@ -54,7 +55,7 @@ import { Router } from '@angular/router';
         <!-- Quick Replies -->
         <div class="p-4 bg-white border-t border-gray-100">
           <div class="flex flex-wrap gap-2 justify-end" *ngIf="!showInput">
-            <button *ngFor="let option of currentOptions"
+            <button *ngFor="let option of currentOptions()"
                     (click)="handleOption(option)"
                     class="px-3 py-2 bg-diamond-50 hover:bg-gold-50 text-gold-700 text-xs font-semibold rounded-full border border-gold-200 transition-colors">
               {{ option.label }}
@@ -69,7 +70,7 @@ import { Router } from '@angular/router';
 
       <!-- Chat Bubble -->
       <button (click)="toggleChat()"
-              [class.scale-0]="isOpen"
+              [class.scale-0]="isOpen()"
               class="pointer-events-auto w-14 h-14 bg-diamond-900 hover:bg-diamond-800 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl transition-all hover:scale-110 mb-20 md:mb-0">
         💬
       </button>
@@ -77,85 +78,85 @@ import { Router } from '@angular/router';
   `
 })
 export class ChatWidgetComponent {
-  isOpen = false;
-  isTyping = false;
-  showInput = false;
-  messages: { text: string, isUser: boolean }[] = [];
+  isOpen = signal(false);
+  isTyping = signal(false);
+  showInput = signal(false);
+  messages = signal<{ text: string, isUser: boolean }[]>([]);
 
-  currentOptions = [
+  currentOptions = signal([
     { label: 'Engagement Rings', action: 'rings' },
     { label: 'Gift Ideas', action: 'gifts' },
     { label: 'Track Order', action: 'track' },
     { label: 'Speak to Human', action: 'human' }
-  ];
+  ]);
 
   constructor(private router: Router) {}
 
   toggleChat() {
-    this.isOpen = !this.isOpen;
+    this.isOpen.update(v => !v);
   }
 
   handleOption(option: { label: string, action: string }) {
     this.addMessage(option.label, true);
-    this.currentOptions = []; // Clear options
-    this.isTyping = true;
+    this.currentOptions.set([]); // Clear options
+    this.isTyping.set(true);
 
     setTimeout(() => {
-      this.isTyping = false;
+      this.isTyping.set(false);
       this.processAction(option.action);
     }, 1000);
   }
 
   addMessage(text: string, isUser: boolean) {
-    this.messages.push({ text, isUser });
+    this.messages.update(m => [...m, { text, isUser }]);
   }
 
   processAction(action: string) {
     switch (action) {
       case 'rings':
         this.addMessage("Excellent choice! Are you looking for a classic solitaire or something more modern?", false);
-        this.currentOptions = [
+        this.currentOptions.set([
           { label: 'Classic Solitaire', action: 'nav_solitaire' },
           { label: 'Modern/Halo', action: 'nav_halo' }
-        ];
+        ]);
         break;
       case 'gifts':
         this.addMessage("How thoughtful! What is your budget range?", false);
-        this.currentOptions = [
+        this.currentOptions.set([
           { label: 'Under $500', action: 'nav_gift_low' },
           { label: '$500 - $2000', action: 'nav_gift_mid' },
           { label: '$2000+', action: 'nav_gift_high' }
-        ];
+        ]);
         break;
       case 'track':
         this.addMessage("You can track your order in your account dashboard. Would you like me to take you there?", false);
-        this.currentOptions = [
+        this.currentOptions.set([
           { label: 'Yes, go to Account', action: 'nav_account' },
           { label: 'No, thanks', action: 'reset' }
-        ];
+        ]);
         break;
       case 'nav_account':
         this.router.navigate(['/account']);
-        this.isOpen = false;
+        this.isOpen.set(false);
         break;
       case 'nav_solitaire':
       case 'nav_halo':
         this.addMessage("Navigating you to our exclusive collection...", false);
         setTimeout(() => {
             this.router.navigate(['/products'], { queryParams: { category: 'ring' } });
-            this.isOpen = false;
+            this.isOpen.set(false);
         }, 1500);
         break;
       case 'reset':
         this.addMessage("Is there anything else I can help you with?", false);
-        this.currentOptions = [
+        this.currentOptions.set([
             { label: 'Engagement Rings', action: 'rings' },
             { label: 'Gift Ideas', action: 'gifts' }
-        ];
+        ]);
         break;
       default:
         this.addMessage("Connecting you with a specialist...", false);
-        this.showInput = true;
+        this.showInput.set(true);
     }
   }
 }
