@@ -686,7 +686,6 @@ export class CheckoutComponent implements OnInit {
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
-        console.log("Order created:", order);
 
         const subtotal = order.items.reduce(
           (sum, item) => sum + item.price * item.quantity,
@@ -715,7 +714,6 @@ export class CheckoutComponent implements OnInit {
           })
           .subscribe({
             next: () => {
-              console.log("Confirmation email sent");
               sessionStorage.setItem("lastOrderId", order.id);
               this.router.navigate(["/order-confirmation"]);
             },

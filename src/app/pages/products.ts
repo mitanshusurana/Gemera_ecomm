@@ -1,4 +1,5 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from "@angular/core";
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -374,6 +375,7 @@ export class ProductsComponent implements OnInit {
   private toastService = inject(ToastService);
   private titleService = inject(Title);
   private currencyService = inject(CurrencyService);
+  private destroyRef = inject(DestroyRef);
 
   // State management
   categories = signal<Category[]>([]);
@@ -411,11 +413,15 @@ export class ProductsComponent implements OnInit {
     this.titleService.setTitle('Fine Jewellery Collections | Gemara');
 
     // Fetch categories
-    this.productService.getCategories().subscribe(res => {
+    this.productService.getCategories()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(res => {
         this.categories.set(res.categories);
     });
 
-    this.activatedRoute.queryParams.subscribe((params) => {
+    this.activatedRoute.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
       if (params["category"]) {
         const categoryId = params["category"];
         this.selectedCategories.set([categoryId]);
@@ -437,6 +443,7 @@ export class ProductsComponent implements OnInit {
 
     // API uses 0-indexed pages
     this.productService.getProducts(this.pagination().currentPage - 1, this.pagination().pageSize, filters)
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
             next: (res) => {
                 // Client-side filtering for new mock filters since API/MockService might not support them yet
@@ -522,7 +529,9 @@ export class ProductsComponent implements OnInit {
   handleAddToCart(event: Event, productId: string): void {
       event.preventDefault();
       event.stopPropagation();
-      this.cartService.addToCart(productId, 1).subscribe(() => {
+      this.cartService.addToCart(productId, 1)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
           this.toastService.show('Added to cart', 'success');
       });
   }
@@ -539,14 +548,18 @@ export class ProductsComponent implements OnInit {
     event.stopPropagation();
 
     // We need ProductDetail, but list has Product. Fetch detail.
-    this.productService.getProductById(productId).subscribe(product => {
+    this.productService.getProductById(productId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(product => {
       this.quickViewProduct.set(product);
       this.quickViewOpen.set(true);
     });
   }
 
   handleQuickViewAddToCart(event: { productId: string, quantity: number }): void {
-    this.cartService.addToCart(event.productId, event.quantity).subscribe(() => {
+    this.cartService.addToCart(event.productId, event.quantity)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
         this.toastService.show('Added to cart', 'success');
     });
   }

@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../services/cart.service';
@@ -178,6 +179,7 @@ import { CurrencyService } from '../services/currency.service';
 export class CartComponent implements OnInit, OnDestroy {
   cartService = inject(CartService);
   private currencyService = inject(CurrencyService);
+  private destroyRef = inject(DestroyRef);
 
   cart = signal<Cart | null>(null);
   cartItems = signal<any[]>([]);
@@ -198,11 +200,13 @@ export class CartComponent implements OnInit, OnDestroy {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   });
 
-  private timerInterval: any;
+  private timerInterval: any; // Ideally ReturnType<typeof setInterval> but standard 'any' or 'number' is safer across envs for now
 
   ngOnInit(): void {
     this.startTimer();
-    this.cartService.cart().subscribe((cart) => {
+    this.cartService.cart()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((cart) => {
         if (cart) {
             this.cart.set(cart);
             this.cartItems.set(cart.items);

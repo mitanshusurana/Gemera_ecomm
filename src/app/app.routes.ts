@@ -36,14 +36,6 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/checkout").then(m => m.CheckoutComponent)
   },
   {
-    path: "checkout/payment/stripe",
-    loadComponent: () => import("./pages/stripe-payment").then(m => m.StripePaymentComponent),
-  },
-  {
-    path: "checkout/payment/razorpay",
-    loadComponent: () => import("./pages/razorpay-payment").then(m => m.RazorpayPaymentComponent),
-  },
-  {
     path: "verify-certificate",
     loadComponent: () => import("./pages/verify-certificate").then(m => m.VerifyCertificateComponent),
   },

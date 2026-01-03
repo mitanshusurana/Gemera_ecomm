@@ -3,7 +3,7 @@ import { HttpResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '../data/mock-data';
-import { Product, ProductDetail, Cart, CartItem, User, AuthResponse, Order, Category } from '../core/models';
+import { Product, ProductDetail, Cart, CartItem, User, AuthResponse, Order, Category, PaginatedResponse } from '../core/models';
 import {
   LoginRequest,
   RegisterRequest,
@@ -104,7 +104,7 @@ export class MockBackendService {
   }
 
   // --- Product Handlers ---
-  handleGetProducts(params: any): Observable<HttpResponse<{ content: Product[]; pageable: any }>> {
+  handleGetProducts(params: any): Observable<HttpResponse<PaginatedResponse<Product>>> {
     let products = [...MOCK_PRODUCTS];
     const category = params.get('category');
     const search = params.get('search');

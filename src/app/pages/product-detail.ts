@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { ProductService } from '../services/product.service';
@@ -18,7 +18,7 @@ import { CurrencyService } from '../services/currency.service';
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent, RecentlyViewedComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent, RecentlyViewedComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
@@ -52,8 +52,10 @@ import { CurrencyService } from '../services/currency.service';
 
                <!-- Main Image (with 360 rotation class if active) -->
                <img *ngIf="!showVideo() && (selectedImage() || product()?.imageUrl)"
-                    [src]="selectedImage() || product()?.imageUrl"
-                    class="w-full h-full object-cover transition-transform duration-[3s] ease-linear"
+                    [ngSrc]="selectedImage() || product()?.imageUrl || ''"
+                    fill
+                    priority
+                    class="object-cover transition-transform duration-[3s] ease-linear"
                     [class.animate-spin-slow]="show360()"
                     [alt]="product()?.name">
 
@@ -106,8 +108,8 @@ import { CurrencyService } from '../services/currency.service';
                       (click)="selectedImage.set(img.url); showVideo.set(false); show360.set(false)"
                       [class.ring-2]="!showVideo() && selectedImage() === img.url"
                       [class.ring-gold-500]="!showVideo() && selectedImage() === img.url"
-                      class="aspect-square bg-diamond-100 rounded-lg hover:ring-2 hover:ring-gold-500 transition-all duration-300 flex items-center justify-center overflow-hidden">
-                <img [src]="img.url" [alt]="img.alt" class="w-full h-full object-cover">
+                      class="aspect-square bg-diamond-100 rounded-lg hover:ring-2 hover:ring-gold-500 transition-all duration-300 flex items-center justify-center overflow-hidden relative">
+                <img [ngSrc]="img.url" [alt]="img.alt" fill class="object-cover">
               </button>
             </div>
           </div>
