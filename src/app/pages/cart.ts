@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../services/cart.service';
-import { Cart } from '../core/models';
+import { Cart, CartItem } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 
 @Component({
@@ -182,7 +182,7 @@ export class CartComponent implements OnInit, OnDestroy {
   private destroyRef = inject(DestroyRef);
 
   cart = signal<Cart | null>(null);
-  cartItems = signal<any[]>([]);
+  cartItems = signal<CartItem[]>([]);
   isEmpty = signal(true);
   isGiftWrapped = computed(() => this.cart()?.giftWrap || false);
 
@@ -200,7 +200,7 @@ export class CartComponent implements OnInit, OnDestroy {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   });
 
-  private timerInterval: any; // Ideally ReturnType<typeof setInterval> but standard 'any' or 'number' is safer across envs for now
+  private timerInterval: ReturnType<typeof setInterval> | undefined;
 
   ngOnInit(): void {
     this.startTimer();

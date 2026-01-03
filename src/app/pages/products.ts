@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { Title } from '@angular/platform-browser';
@@ -15,7 +15,7 @@ import { CurrencyService } from '../services/currency.service';
 @Component({
   selector: "app-products",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent],
+  imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
@@ -33,153 +33,177 @@ import { CurrencyService } from '../services/currency.service';
 
       <!-- Main Content -->
       <div class="container-luxury section-padding">
+        <!-- Mobile Filter Toggle -->
+        <div class="lg:hidden mb-6">
+          <button (click)="isFilterOpen.set(true)" class="flex items-center gap-2 btn-outline w-full justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+            Filters & Sort
+          </button>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <!-- Sidebar Filters -->
-          <div class="lg:col-span-1">
-            <div class="space-y-6">
-              <!-- Category Filter -->
-              <div class="card p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Categories</h3>
-                <div class="space-y-3">
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4"
-                      [checked]="selectedCategories().length === 0"
-                      (change)="toggleCategory('all')"
-                    />
-                    <span class="text-sm text-gray-700">All Products</span>
-                  </label>
-                  <label
-                    *ngFor="let category of categories()"
-                    class="flex items-center gap-3 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4"
-                      [checked]="selectedCategories().includes(category.name)"
-                      (change)="toggleCategory(category.name)"
-                    />
-                    <span class="text-sm text-gray-700">{{ category.displayName }}</span>
-                  </label>
-                </div>
+          <div [class.fixed]="true" [class.inset-0]="true" [class.z-50]="true" [class.lg:static]="true" [class.lg:z-auto]="true"
+               [class.hidden]="!isFilterOpen()" [class.lg:block]="true" class="lg:col-span-1">
+
+            <!-- Mobile Overlay -->
+            <div *ngIf="isFilterOpen()" (click)="isFilterOpen.set(false)" class="absolute inset-0 bg-black/50 lg:hidden"></div>
+
+            <!-- Drawer Content -->
+            <div class="relative h-full w-80 bg-white p-6 overflow-y-auto lg:h-auto lg:w-auto lg:p-0 lg:bg-transparent transition-transform duration-300"
+                 [class.translate-x-0]="isFilterOpen()"
+                 [class.-translate-x-full]="!isFilterOpen() && false"> <!-- Note: lg:block handles desktop visibility -->
+
+              <!-- Mobile Header -->
+              <div class="flex items-center justify-between mb-6 lg:hidden">
+                <h3 class="font-display font-bold text-xl">Filters</h3>
+                <button (click)="isFilterOpen.set(false)" class="p-2 hover:bg-gray-100 rounded-full">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
               </div>
 
-              <!-- Price Filter -->
-              <div class="card p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Price Range</h3>
-                <div class="space-y-3">
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">Under $10,000</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">$10,000 - $25,000</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">$25,000 - $50,000</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">$50,000+</span>
-                  </label>
+              <div class="space-y-6">
+                <!-- Category Filter -->
+                <div class="card p-6">
+                  <h3 class="font-semibold text-gray-900 mb-4">Categories</h3>
+                  <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        class="w-4 h-4"
+                        [checked]="selectedCategories().length === 0"
+                        (change)="toggleCategory('all')"
+                      />
+                      <span class="text-sm text-gray-700">All Products</span>
+                    </label>
+                    <label
+                      *ngFor="let category of categories()"
+                      class="flex items-center gap-3 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        class="w-4 h-4"
+                        [checked]="selectedCategories().includes(category.name)"
+                        (change)="toggleCategory(category.name)"
+                      />
+                      <span class="text-sm text-gray-700">{{ category.displayName }}</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Metal Filter -->
-              <div class="card p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Metal Type</h3>
-                <div class="space-y-3">
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">Gold</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">Platinum</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">Silver</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">White Gold</span>
-                  </label>
+                <!-- Price Filter -->
+                <div class="card p-6">
+                  <h3 class="font-semibold text-gray-900 mb-4">Price Range</h3>
+                  <div class="space-y-3">
+                    <label *ngFor="let range of priceRanges" class="flex items-center gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            class="w-4 h-4"
+                            [checked]="selectedPriceRanges().includes(range.id)"
+                            (change)="togglePriceRange(range.id)"
+                        />
+                        <span class="text-sm text-gray-700">{{ range.label }}</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Certification Filter -->
-              <div class="card p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Certification</h3>
-                <div class="space-y-3">
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">GIA</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">IGI</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" />
-                    <span class="text-sm text-gray-700">AGS</span>
-                  </label>
+                <!-- Metal Filter -->
+                <div class="card p-6">
+                  <h3 class="font-semibold text-gray-900 mb-4">Metal Type</h3>
+                  <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" />
+                      <span class="text-sm text-gray-700">Gold</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" />
+                      <span class="text-sm text-gray-700">Platinum</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" />
+                      <span class="text-sm text-gray-700">Silver</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" />
+                      <span class="text-sm text-gray-700">White Gold</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Occasion Filter (New) -->
-              <div class="card p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Occasion</h3>
-                <div class="space-y-3">
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Engagement')" (change)="toggleFilter('occasion', 'Engagement')" />
-                    <span class="text-sm text-gray-700">Engagement</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Wedding')" (change)="toggleFilter('occasion', 'Wedding')" />
-                    <span class="text-sm text-gray-700">Wedding</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Anniversary')" (change)="toggleFilter('occasion', 'Anniversary')" />
-                    <span class="text-sm text-gray-700">Anniversary</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Daily Wear')" (change)="toggleFilter('occasion', 'Daily Wear')" />
-                    <span class="text-sm text-gray-700">Daily Wear</span>
-                  </label>
+                <!-- Certification Filter -->
+                <div class="card p-6">
+                  <h3 class="font-semibold text-gray-900 mb-4">Certification</h3>
+                  <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" />
+                      <span class="text-sm text-gray-700">GIA</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" />
+                      <span class="text-sm text-gray-700">IGI</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" />
+                      <span class="text-sm text-gray-700">AGS</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Style Filter (New) -->
-              <div class="card p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Shop by Look</h3>
-                <div class="space-y-3">
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Modern')" (change)="toggleFilter('style', 'Modern')" />
-                    <span class="text-sm text-gray-700">Modern</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Vintage')" (change)="toggleFilter('style', 'Vintage')" />
-                    <span class="text-sm text-gray-700">Vintage</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Classic Solitaire')" (change)="toggleFilter('style', 'Classic Solitaire')" />
-                    <span class="text-sm text-gray-700">Classic Solitaire</span>
-                  </label>
-                  <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Halo')" (change)="toggleFilter('style', 'Halo')" />
-                    <span class="text-sm text-gray-700">Halo</span>
-                  </label>
+                <!-- Occasion Filter (New) -->
+                <div class="card p-6">
+                  <h3 class="font-semibold text-gray-900 mb-4">Occasion</h3>
+                  <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Engagement')" (change)="toggleFilter('occasion', 'Engagement')" />
+                      <span class="text-sm text-gray-700">Engagement</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Wedding')" (change)="toggleFilter('occasion', 'Wedding')" />
+                      <span class="text-sm text-gray-700">Wedding</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Anniversary')" (change)="toggleFilter('occasion', 'Anniversary')" />
+                      <span class="text-sm text-gray-700">Anniversary</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Daily Wear')" (change)="toggleFilter('occasion', 'Daily Wear')" />
+                      <span class="text-sm text-gray-700">Daily Wear</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Clear Filters -->
-              <button (click)="clearFilters()" class="w-full btn-ghost border border-diamond-300">
-                Clear All Filters
-              </button>
+                <!-- Style Filter (New) -->
+                <div class="card p-6">
+                  <h3 class="font-semibold text-gray-900 mb-4">Shop by Look</h3>
+                  <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Modern')" (change)="toggleFilter('style', 'Modern')" />
+                      <span class="text-sm text-gray-700">Modern</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Vintage')" (change)="toggleFilter('style', 'Vintage')" />
+                      <span class="text-sm text-gray-700">Vintage</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Classic Solitaire')" (change)="toggleFilter('style', 'Classic Solitaire')" />
+                      <span class="text-sm text-gray-700">Classic Solitaire</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Halo')" (change)="toggleFilter('style', 'Halo')" />
+                      <span class="text-sm text-gray-700">Halo</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Clear Filters -->
+                <button (click)="clearFilters(); isFilterOpen.set(false)" class="w-full btn-ghost border border-diamond-300">
+                  Clear All Filters
+                </button>
+              </div>
             </div>
           </div>
 
@@ -229,7 +253,7 @@ import { CurrencyService } from '../services/currency.service';
               <a *ngFor="let product of products()" [routerLink]="['/products', product.id]" class="card card-hover group overflow-hidden block cursor-pointer w-full">
                 <!-- Image Container with Lazy Loading -->
                 <div class="relative overflow-hidden h-64 bg-diamond-100">
-                  <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover" [alt]="product.name" onerror="this.style.display='none'">
+                  <img *ngIf="product.imageUrl" [ngSrc]="product.imageUrl" fill class="object-cover" [alt]="product.name">
                   <div *ngIf="!product.imageUrl" class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
                     <span class="text-4xl">{{ getProductEmoji(product.category) }}</span>
                   </div>
@@ -378,13 +402,23 @@ export class ProductsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   // State management
+  isFilterOpen = signal(false);
   categories = signal<Category[]>([]);
   selectedCategories = signal<string[]>([]);
   selectedOccasions = signal<string[]>([]);
   selectedStyles = signal<string[]>([]);
+  selectedPriceRanges = signal<string[]>([]);
   products = signal<Product[]>([]);
   sortBy = "newest";
   isLoading = signal(false);
+
+  // Price Ranges
+  priceRanges = [
+    { label: 'Under $10,000', min: 0, max: 10000, id: '0-10000' },
+    { label: '$10,000 - $25,000', min: 10000, max: 25000, id: '10000-25000' },
+    { label: '$25,000 - $50,000', min: 25000, max: 50000, id: '25000-50000' },
+    { label: '$50,000+', min: 50000, max: null, id: '50000-plus' }
+  ];
   
   // Quick View State
   quickViewOpen = signal(false);
@@ -448,8 +482,9 @@ export class ProductsComponent implements OnInit {
             next: (res) => {
                 // Client-side filtering for new mock filters since API/MockService might not support them yet
                 let content = res.content;
+
+                // --- Mock Logic for Filters ---
                 if (this.selectedOccasions().length > 0) {
-                    // Mock logic: randomly filter or check if description contains keyword
                     content = content.filter(p =>
                         this.selectedOccasions().some(occ =>
                             p.description.includes(occ) || p.name.includes(occ) || Math.random() > 0.7
@@ -463,10 +498,22 @@ export class ProductsComponent implements OnInit {
                         )
                     );
                 }
+                if (this.selectedPriceRanges().length > 0) {
+                    content = content.filter(p => {
+                        return this.selectedPriceRanges().some(rangeId => {
+                            const range = this.priceRanges.find(r => r.id === rangeId);
+                            if (!range) return false;
+                            const max = range.max === null ? Infinity : range.max;
+                            return p.price >= range.min && p.price <= max;
+                        });
+                    });
+                }
 
                 this.products.set(content);
-                // Adjust total items roughly for mock
-                const total = this.selectedOccasions().length || this.selectedStyles().length ? content.length : res.pageable.totalElements;
+
+                // Adjust total items roughly for mock filtering
+                const hasFilters = this.selectedOccasions().length > 0 || this.selectedStyles().length > 0 || this.selectedPriceRanges().length > 0;
+                const total = hasFilters ? content.length : res.pageable.totalElements;
 
                 this.pagination.update(p => ({
                     ...p,
@@ -517,10 +564,22 @@ export class ProductsComponent implements OnInit {
       this.loadProducts();
   }
 
+  togglePriceRange(rangeId: string): void {
+      const current = this.selectedPriceRanges();
+      if (current.includes(rangeId)) {
+          this.selectedPriceRanges.set(current.filter(id => id !== rangeId));
+      } else {
+          this.selectedPriceRanges.set([...current, rangeId]);
+      }
+      this.pagination.update(p => ({ ...p, currentPage: 1 }));
+      this.loadProducts();
+  }
+
   clearFilters(): void {
     this.selectedCategories.set([]);
     this.selectedOccasions.set([]);
     this.selectedStyles.set([]);
+    this.selectedPriceRanges.set([]);
     this.sortBy = "newest";
     this.pagination.update(p => ({ ...p, currentPage: 1 }));
     this.loadProducts();
@@ -570,7 +629,7 @@ export class ProductsComponent implements OnInit {
       // Mock visual search
       this.isLoading.set(true);
       setTimeout(() => {
-        alert(`Searching for products similar to ${input.files![0].name}... (Mock)`);
+        this.toastService.show(`Searching for products similar to ${input.files![0].name}... (Mock)`, 'info');
         this.isLoading.set(false);
       }, 1500);
     }
