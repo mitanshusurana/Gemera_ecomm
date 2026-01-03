@@ -8,6 +8,7 @@ import { CartService } from "../services/cart.service";
 import { Product, ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
 import { SeoService } from "../services/seo.service";
+import { ToastService } from "../services/toast.service";
 
 interface CollectionUI {
   id: string;
@@ -504,6 +505,7 @@ export class HomeComponent implements OnInit {
   private cartService = inject(CartService);
   private currencyService = inject(CurrencyService);
   private seoService = inject(SeoService);
+  private toastService = inject(ToastService);
 
   quickViewOpen = signal(false);
   selectedProduct = signal<ProductDetail | null>(null);
@@ -585,7 +587,7 @@ export class HomeComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.cartService.addToCart(productId, 1).subscribe(() => {
-        alert('Added to cart!');
+        this.toastService.show('Added to cart!', 'success');
     });
   }
 
@@ -597,7 +599,7 @@ export class HomeComponent implements OnInit {
 
   handleAddToCartFromModal(event: { productId: string; quantity: number }): void {
     this.cartService.addToCart(event.productId, event.quantity).subscribe(() => {
-        alert(`Added ${event.quantity} item(s) to cart`);
+        this.toastService.show(`Added ${event.quantity} item(s) to cart`, 'success');
         this.closeQuickView();
     });
   }
