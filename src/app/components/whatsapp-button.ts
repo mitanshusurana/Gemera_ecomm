@@ -12,7 +12,7 @@ import { CommonModule } from "@angular/common";
       [href]="whatsappLink"
       target="_blank"
       rel="noopener noreferrer"
-      class="fixed bottom-6 right-6 z-40 group"
+      class="fixed bottom-6 right-6 md:bottom-24 z-40 group"
       [attr.aria-label]="'Contact us on WhatsApp'"
     >
       <!-- Main Button -->

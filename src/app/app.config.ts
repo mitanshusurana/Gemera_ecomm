@@ -22,7 +22,7 @@ export const appConfig: ApplicationConfig = {
         enabled: !isDevMode(),
         registrationStrategy: 'registerWhenStable:30000'
     }),
-    { provide: HTTP_INTERCEPTORS, useClass: MockInterceptor, multi: true },
+    // { provide: HTTP_INTERCEPTORS, useClass: MockInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
     { provide: ErrorHandler, useClass: GlobalErrorHandler }
   ]
