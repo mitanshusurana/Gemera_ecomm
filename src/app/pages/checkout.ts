@@ -738,7 +738,7 @@ export class CheckoutComponent implements OnInit {
         this.emailService
           .sendOrderConfirmation({
             email: this.shippingData.email,
-            orderNumber: order.orderNumber,
+            orderNumber: order.orderNumber || `ORD-${order.id?.substring(0, 8)}`,
             orderTotal: order.total,
             items: order.items.map((item) => ({
               name: item.product.name,

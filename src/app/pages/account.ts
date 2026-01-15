@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { User } from '../core/models';
+import { User, Order } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 import { OrderService } from '../services/order.service';
 
@@ -180,8 +180,8 @@ import { OrderService } from '../services/order.service';
                     </div>
 
                     <div class="border-t border-diamond-200 pt-4 flex justify-between items-center">
-                      <p class="text-gray-600 text-sm" *ngIf="order.items.length > 0">{{ order.items[0].product.name }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
-                      <p class="text-gray-600 text-sm" *ngIf="order.items.length === 0">No items</p>
+                      <p class="text-gray-600 text-sm" *ngIf="order.items && order.items.length > 0">{{ getItemName(order.items[0]) }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
+                      <p class="text-gray-600 text-sm" *ngIf="!order.items || order.items.length === 0">No items</p>
                       <button class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</button>
                     </div>
                   </div>
@@ -337,7 +337,21 @@ export class AccountComponent implements OnInit {
   private loadOrders(): void {
     this.orderService.getUserOrders().subscribe({
         next: (response) => {
-            this.orders.set(response);
+            // Handle both paginated and direct array responses
+            const ordersData = Array.isArray(response) 
+              ? { content: response } 
+              : (response.content ? response : { content: [response] });
+            
+            // Add orderNumber if missing
+            if (ordersData.content) {
+              ordersData.content = ordersData.content.map((order: any, index: number) => ({
+                ...order,
+                orderNumber: order.orderNumber || `ORD-${order.id?.substring(0, 8) || index + 1}`
+              }));
+            }
+            
+            this.orders.set(ordersData);
+            console.log('Orders loaded:', ordersData);
         },
         error: (error) => console.error('Error loading orders:', error)
     });
@@ -385,5 +399,12 @@ export class AccountComponent implements OnInit {
 
   formatPrice(price: number): string {
     return this.currencyService.format(price);
+  }
+
+  getItemName(item: any): string {
+    if (item?.product?.name) {
+      return item.product.name;
+    }
+    return 'Unknown Item';
   }
 }
