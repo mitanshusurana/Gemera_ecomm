@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Cart } from '../core/models';
 import { AuthService } from './auth.service';
+import { ApiConfigService } from './api-config.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,8 @@ import { AuthService } from './auth.service';
 export class CartService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private baseUrl = '/api/v1/cart';
+  private apiConfig = inject(ApiConfigService);
+  private baseUrl = this.apiConfig.getEndpoint('cart');
   private cart$ = new BehaviorSubject<Cart | null>(null);
 
   constructor() {
