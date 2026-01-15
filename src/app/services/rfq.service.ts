@@ -1,6 +1,7 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Observable } from "rxjs";
+import { ApiConfigService } from "./api-config.service";
 
 export interface RFQItem {
   productId: string;
@@ -73,7 +74,8 @@ export interface RFQResponse {
   providedIn: "root",
 })
 export class RFQService {
-  private baseUrl = "/api/v1/rfq";
+  private apiConfig = inject(ApiConfigService);
+  private baseUrl = this.apiConfig.getEndpoint("rfq");
 
   constructor(private http: HttpClient) {}
 

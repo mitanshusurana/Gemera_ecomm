@@ -1,6 +1,7 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
+import { ApiConfigService } from "./api-config.service";
 
 export interface EmailNotification {
   id?: string;
@@ -25,7 +26,8 @@ export interface EmailTemplate {
   providedIn: "root",
 })
 export class EmailNotificationService {
-  private baseUrl = "/api/v1/email";
+  private apiConfig = inject(ApiConfigService);
+  private baseUrl = this.apiConfig.getEndpoint("email");
 
   constructor(private http: HttpClient) {}
 

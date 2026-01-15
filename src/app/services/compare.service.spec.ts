@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CompareService } from './compare.service';
-import { Product } from './api.service';
+import { Product } from '../core/models';
 
 describe('CompareService', () => {
   let service: CompareService;

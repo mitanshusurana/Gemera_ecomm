@@ -4,13 +4,15 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AuthResponse, User } from '../core/models';
 import { LoginRequest, RegisterRequest } from '../core/dtos';
+import { ApiConfigService } from './api-config.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private http = inject(HttpClient);
-  private baseUrl = '/api/v1/auth';
+  private apiConfig = inject(ApiConfigService);
+  private baseUrl = this.apiConfig.getEndpoint('auth');
   private authToken$ = new BehaviorSubject<string | null>(localStorage.getItem('authToken'));
   private user$ = new BehaviorSubject<User | null>(null);
 
@@ -45,7 +47,7 @@ export class AuthService {
 
   // Helper to fetch user if token exists but user is null (page reload)
   private refreshUser() {
-    this.http.get<User>('/api/v1/users/me').subscribe({
+    this.http.get<User>(`${this.apiConfig.getEndpoint('users')}/me`).subscribe({
         next: user => this.user$.next(user),
         error: () => this.logout() // Token invalid
     });
