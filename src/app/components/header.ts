@@ -120,7 +120,7 @@ import { WishlistService } from '../services/wishlist.service';
               <div *ngIf="user()" class="absolute right-0 top-full pt-2 hidden group-hover:block w-48 z-50">
                 <div class="bg-white shadow-lg rounded-lg py-2 border border-gray-100">
                   <a routerLink="/account" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Account</a>
-                  <a routerLink="/account/orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Orders</a>
+                  <a [routerLink]="['/account']" [queryParams]="{tab: 'orders'}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Orders</a>
                   <button (click)="logout()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</button>
                 </div>
               </div>

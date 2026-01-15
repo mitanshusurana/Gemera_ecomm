@@ -1,10 +1,11 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { User } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
+import { OrderService } from '../services/order.service';
 
 @Component({
   selector: 'app-account',
@@ -127,15 +128,15 @@ import { CurrencyService } from '../services/currency.service';
                 <h2 class="text-3xl font-bold text-diamond-900 mb-8">My Orders</h2>
 
                 <div class="space-y-8">
-                  <div *ngFor="let order of [1,2]" class="border border-diamond-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+                  <div *ngFor="let order of orders().content" class="border border-diamond-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                       <div>
-                        <p class="text-sm text-gold-600 font-semibold mb-1">Order #ORD-2024-{{ 100 + order }}</p>
-                        <p class="text-gray-600 text-sm">Placed on January {{ order }}, 2024</p>
+                        <p class="text-sm text-gold-600 font-semibold mb-1">Order #{{ order.orderNumber }}</p>
+                        <p class="text-gray-600 text-sm">Placed on {{ order.createdAt | date }}</p>
                       </div>
                       <div class="text-right">
-                        <p class="text-2xl font-bold text-diamond-900">{{ formatPrice(45000 + order * 1000) }}</p>
-                        <!-- <span class="inline-block mt-2 badge badge-emerald">Processing</span> -->
+                        <p class="text-2xl font-bold text-diamond-900">{{ formatPrice(order.total) }}</p>
+                        <!-- <span class="inline-block mt-2 badge badge-emerald">{{ order.status }}</span> -->
                       </div>
                     </div>
 
@@ -143,38 +144,50 @@ import { CurrencyService } from '../services/currency.service';
                     <div class="relative flex justify-between items-center mb-6 px-4">
                       <!-- Progress Bar -->
                       <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10"></div>
-                      <div class="absolute top-1/2 left-0 h-1 bg-gold-500 -z-10 transition-all duration-1000" [style.width]="order === 1 ? '60%' : '20%'"></div>
+                      <div class="absolute top-1/2 left-0 h-1 bg-gold-500 -z-10 transition-all duration-1000"
+                           [style.width]="order.status === 'DELIVERED' ? '100%' : (order.status === 'SHIPPED' ? '75%' : (order.status === 'PROCESSING' ? '50%' : '25%'))">
+                      </div>
 
-                      <!-- Step 1 -->
+                      <!-- Step 1: Confirmed -->
                       <div class="flex flex-col items-center gap-2">
                         <div class="w-8 h-8 rounded-full bg-gold-500 text-white flex items-center justify-center text-xs font-bold">✓</div>
                         <span class="text-xs font-semibold text-gray-700">Confirmed</span>
                       </div>
-                      <!-- Step 2 -->
+                      <!-- Step 2: Processing -->
                       <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" [ngClass]="order >= 1 ? 'bg-gold-500 text-white' : 'bg-gray-200 text-gray-500'">
-                          {{ order >= 1 ? '✓' : '2' }}
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                             [ngClass]="['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-gold-500 text-white' : 'bg-gray-200 text-gray-500'">
+                             {{ ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? '✓' : '2' }}
                         </div>
-                        <span class="text-xs font-semibold" [ngClass]="order >= 1 ? 'text-gray-700' : 'text-gray-400'">Processing</span>
+                        <span class="text-xs font-semibold" [ngClass]="['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? 'text-gray-700' : 'text-gray-400'">Processing</span>
                       </div>
-                      <!-- Step 3 -->
+                      <!-- Step 3: Shipped -->
                       <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" [ngClass]="order === 1 ? 'bg-gold-500 text-white' : 'bg-gray-200 text-gray-500'">
-                          {{ order === 1 ? '3' : '3' }}
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                             [ngClass]="['SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-gold-500 text-white' : 'bg-gray-200 text-gray-500'">
+                             {{ ['SHIPPED', 'DELIVERED'].includes(order.status) ? '✓' : '3' }}
                         </div>
-                        <span class="text-xs font-semibold" [ngClass]="order === 1 ? 'text-gray-700' : 'text-gray-400'">Polishing</span>
+                        <span class="text-xs font-semibold" [ngClass]="['SHIPPED', 'DELIVERED'].includes(order.status) ? 'text-gray-700' : 'text-gray-400'">Shipped</span>
                       </div>
-                      <!-- Step 4 -->
+                      <!-- Step 4: Delivered -->
                       <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold">4</div>
-                        <span class="text-xs font-semibold text-gray-400">Shipped</span>
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                             [ngClass]="order.status === 'DELIVERED' ? 'bg-gold-500 text-white' : 'bg-gray-200 text-gray-500'">
+                             {{ order.status === 'DELIVERED' ? '✓' : '4' }}
+                        </div>
+                        <span class="text-xs font-semibold" [ngClass]="order.status === 'DELIVERED' ? 'text-gray-700' : 'text-gray-400'">Delivered</span>
                       </div>
                     </div>
 
                     <div class="border-t border-diamond-200 pt-4 flex justify-between items-center">
-                      <p class="text-gray-600 text-sm">Diamond Solitaire Ring</p>
+                      <p class="text-gray-600 text-sm" *ngIf="order.items.length > 0">{{ order.items[0].product.name }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
+                      <p class="text-gray-600 text-sm" *ngIf="order.items.length === 0">No items</p>
                       <button class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</button>
                     </div>
+                  </div>
+
+                  <div *ngIf="orders().content?.length === 0" class="text-center py-8 text-gray-500">
+                      No orders found.
                   </div>
                 </div>
               </div>
@@ -303,13 +316,31 @@ import { CurrencyService } from '../services/currency.service';
 export class AccountComponent implements OnInit {
   activeTab = signal('profile');
   user = signal<User | null>(null);
+  orders = signal<any>({ content: [] });
 
   private authService = inject(AuthService);
   private currencyService = inject(CurrencyService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private orderService = inject(OrderService);
 
   ngOnInit(): void {
     this.loadUserProfile();
+    this.loadOrders();
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab.set(params['tab']);
+      }
+    });
+  }
+
+  private loadOrders(): void {
+    this.orderService.getUserOrders().subscribe({
+        next: (response) => {
+            this.orders.set(response);
+        },
+        error: (error) => console.error('Error loading orders:', error)
+    });
   }
 
   private loadUserProfile(): void {
