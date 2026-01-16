@@ -291,47 +291,56 @@ import { EmailNotificationService } from "../services/email-notification.service
 
                 <div class="space-y-4 mb-8">
                   <label
-                    class="flex items-center gap-4 p-4 border-2 border-gold-500 rounded-lg cursor-pointer bg-gold-50"
+                    class="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors duration-300"
+                    [ngClass]="selectedPaymentMethod() === 'card' ? 'border-gold-500 bg-gold-50' : 'border-diamond-300 hover:border-gold-500'"
                   >
                     <input
                       type="radio"
                       name="payment"
                       value="card"
-                      checked
-                      class="w-4 h-4"
+                      [checked]="selectedPaymentMethod() === 'card'"
+                      (change)="selectedPaymentMethod.set('card')"
+                      class="w-4 h-4 text-gold-600 focus:ring-gold-500"
                     />
                     <span class="font-semibold text-gray-900"
                       >Credit / Debit Card</span
                     >
                   </label>
                   <label
-                    class="flex items-center gap-4 p-4 border-2 border-diamond-300 rounded-lg cursor-pointer hover:border-gold-500"
+                    class="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors duration-300"
+                    [ngClass]="selectedPaymentMethod() === 'paypal' ? 'border-gold-500 bg-gold-50' : 'border-diamond-300 hover:border-gold-500'"
                   >
                     <input
                       type="radio"
                       name="payment"
                       value="paypal"
-                      class="w-4 h-4"
+                      [checked]="selectedPaymentMethod() === 'paypal'"
+                      (change)="selectedPaymentMethod.set('paypal')"
+                      class="w-4 h-4 text-gold-600 focus:ring-gold-500"
                     />
                     <span class="font-semibold text-gray-900">PayPal</span>
                   </label>
                   <label
-                    class="flex items-center gap-4 p-4 border-2 border-diamond-300 rounded-lg cursor-pointer hover:border-gold-500"
+                    class="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors duration-300"
+                    [ngClass]="selectedPaymentMethod() === 'apple' ? 'border-gold-500 bg-gold-50' : 'border-diamond-300 hover:border-gold-500'"
                   >
                     <input
                       type="radio"
                       name="payment"
                       value="apple"
-                      class="w-4 h-4"
+                      [checked]="selectedPaymentMethod() === 'apple'"
+                      (change)="selectedPaymentMethod.set('apple')"
+                      class="w-4 h-4 text-gold-600 focus:ring-gold-500"
                     />
                     <span class="font-semibold text-gray-900">Apple Pay</span>
                   </label>
                 </div>
 
-                <form
+                <!-- Credit Card Form -->
+                <form *ngIf="selectedPaymentMethod() === 'card'"
                   (ngSubmit)="nextStep()"
                   #paymentForm="ngForm"
-                  class="space-y-6"
+                  class="space-y-6 animate-fade-in-up"
                 >
                   <div>
                     <label
@@ -414,6 +423,24 @@ import { EmailNotificationService } from "../services/email-notification.service
                     </button>
                   </div>
                 </form>
+
+                <!-- PayPal Placeholder -->
+                <div *ngIf="selectedPaymentMethod() === 'paypal'" class="text-center py-8 animate-fade-in-up">
+                    <p class="text-gray-600 mb-4">You will be redirected to PayPal to complete your purchase securely.</p>
+                    <div class="flex gap-4">
+                        <button type="button" (click)="previousStep()" class="flex-1 btn-ghost border border-diamond-300">Back</button>
+                        <button (click)="nextStep()" class="flex-1 btn-primary bg-[#0070ba] border-none hover:bg-[#003087]">Pay with PayPal</button>
+                    </div>
+                </div>
+
+                 <!-- Apple Pay Placeholder -->
+                <div *ngIf="selectedPaymentMethod() === 'apple'" class="text-center py-8 animate-fade-in-up">
+                    <p class="text-gray-600 mb-4">You will be redirected to complete your purchase securely with Apple Pay.</p>
+                     <div class="flex gap-4">
+                        <button type="button" (click)="previousStep()" class="flex-1 btn-ghost border border-diamond-300">Back</button>
+                        <button (click)="nextStep()" class="flex-1 btn-primary bg-black text-white border-none hover:bg-gray-800">Pay with Apple Pay</button>
+                    </div>
+                </div>
               </div>
 
               <!-- Security Info -->
@@ -604,6 +631,7 @@ export class CheckoutComponent implements OnInit {
   cartItems = signal<any[]>([]);
   cartTotal = signal(45000);
   isProcessing = signal(false);
+  selectedPaymentMethod = signal('card');
 
   shippingData = {
     firstName: "",
@@ -638,6 +666,18 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.checkAuth();
     this.loadCartData();
+    this.prefillUserData();
+  }
+
+  private prefillUserData(): void {
+    this.authService.user().subscribe(user => {
+      if (user) {
+        this.shippingData.firstName = user.firstName || '';
+        this.shippingData.lastName = user.lastName || '';
+        this.shippingData.email = user.email || '';
+        this.shippingData.phone = user.phone || '';
+      }
+    });
   }
 
   private checkAuth(): void {
@@ -698,7 +738,7 @@ export class CheckoutComponent implements OnInit {
         this.emailService
           .sendOrderConfirmation({
             email: this.shippingData.email,
-            orderNumber: order.orderNumber,
+            orderNumber: order.orderNumber || `ORD-${order.id?.substring(0, 8)}`,
             orderTotal: order.total,
             items: order.items.map((item) => ({
               name: item.product.name,

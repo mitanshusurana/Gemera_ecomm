@@ -77,13 +77,29 @@ export interface Cart {
 export interface Order {
   id: string;
   orderNumber: string;
-  userId: string;
-  items: CartItem[];
+  userId?: string;
+  user?: User;
+  items: OrderItem[];
   status: string;
   total: number;
   trackingNumber?: string;
   estimatedDelivery?: string;
   createdAt: string;
+  updatedAt?: string;
+  shippingAddress?: string;
+  billingAddress?: string;
+  paymentMethod?: string;
+  shippingMethod?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  product: Product;
+  quantity: number;
+  price: number;
+  options?: any;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Category {

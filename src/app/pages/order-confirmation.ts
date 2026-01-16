@@ -347,7 +347,7 @@ export class OrderConfirmationComponent implements OnInit {
   private loadOrder(orderId: string): void {
     this.orderService.getOrderById(orderId).subscribe({
       next: (order) => {
-        this.orderNumber.set(order.orderNumber);
+        this.orderNumber.set(order.orderNumber || `ORD-${order.id?.substring(0, 8)}`);
         this.orderItems.set(order.items);
 
         const subtotal = order.items.reduce(
