@@ -72,6 +72,7 @@ export interface Cart {
   total: number;
   appliedDiscount: number;
   giftWrap?: boolean;
+  wishlist?: Product[];
 }
 
 export interface Order {

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
@@ -6,6 +6,7 @@ import { AuthService } from '../services/auth.service';
 import { User, Order } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 import { OrderService } from '../services/order.service';
+import { WishlistService } from '../services/wishlist.service';
 
 @Component({
   selector: 'app-account',
@@ -244,23 +245,28 @@ import { OrderService } from '../services/order.service';
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div *ngFor="let _ of [1,2,3]" class="card card-hover group overflow-hidden">
+                  <div *ngFor="let item of wishlistService.items()" class="card card-hover group overflow-hidden">
                     <div class="relative overflow-hidden h-48 bg-diamond-100 flex items-center justify-center">
-                      <span class="text-3xl">💎</span>
-                      <button class="absolute top-4 left-4 w-10 h-10 bg-rose-500 text-white rounded-lg flex items-center justify-center transition-all duration-300">
+                      <img *ngIf="item.imageUrl" [src]="item.imageUrl" class="w-full h-full object-cover">
+                      <span *ngIf="!item.imageUrl" class="text-3xl">💎</span>
+                      <button (click)="wishlistService.removeFromWishlist(item.id)" class="absolute top-4 left-4 w-10 h-10 bg-rose-500 text-white rounded-lg flex items-center justify-center transition-all duration-300">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
                       </button>
                     </div>
                     <div class="p-6">
-                      <p class="text-xs text-gold-600 font-semibold uppercase mb-1">Diamond</p>
-                      <h3 class="font-semibold text-gray-900 mb-3">Diamond Solitaire Ring</h3>
+                      <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ item.category }}</p>
+                      <h3 class="font-semibold text-gray-900 mb-3">{{ item.name }}</h3>
                       <div class="flex justify-between items-center">
-                        <span class="text-2xl font-bold text-diamond-900">$45,000</span>
+                        <span class="text-2xl font-bold text-diamond-900">{{ formatPrice(item.price) }}</span>
                       </div>
-                      <button class="w-full btn-primary mt-4">Add to Cart</button>
+                      <!-- Add to Cart Logic would go here, maybe inject CartService too or just link to product -->
+                      <a [routerLink]="['/products', item.id]" class="block w-full btn-primary mt-4 text-center">View Details</a>
                     </div>
+                  </div>
+                  <div *ngIf="wishlistService.items().length === 0" class="col-span-full text-center py-12 text-gray-500">
+                    Your wishlist is empty.
                   </div>
                 </div>
               </div>
@@ -323,10 +329,19 @@ export class AccountComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
+  wishlistService = inject(WishlistService);
+
+  constructor() {
+    effect(() => {
+      if (this.activeTab() === 'orders') {
+        this.loadOrders();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadUserProfile();
-    this.loadOrders();
+    // this.loadOrders(); // Handled by effect
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
         this.activeTab.set(params['tab']);

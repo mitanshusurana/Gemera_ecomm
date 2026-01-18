@@ -292,6 +292,43 @@ export class MockBackendService {
       return of(new HttpResponse({ status: 200, body: order })).pipe(delay(500));
   }
 
+  handleGetUserOrders(): Observable<HttpResponse<any>> {
+      // Return a list of mock orders
+      const orders = [
+          {
+              id: 'order-1',
+              orderNumber: 'ORD-1001',
+              status: 'PROCESSING',
+              total: 45000,
+              createdAt: new Date(Date.now() - 86400000).toISOString(),
+              items: [
+                  { product: MOCK_PRODUCTS[0], quantity: 1, price: 45000 }
+              ]
+          },
+          {
+              id: 'order-2',
+              orderNumber: 'ORD-1002',
+              status: 'DELIVERED',
+              total: 32000,
+              createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+              items: [
+                  { product: MOCK_PRODUCTS[1], quantity: 1, price: 32000 }
+              ]
+          }
+      ];
+
+      const response = {
+          content: orders,
+          pageable: {
+              pageNumber: 0,
+              pageSize: 10,
+              totalElements: orders.length,
+              totalPages: 1
+          }
+      };
+      return of(new HttpResponse({ status: 200, body: response })).pipe(delay(500));
+  }
+
   // --- Payment Handlers ---
   handleInitializePayment(body: InitializePaymentRequest): Observable<HttpResponse<any>> {
       return of(new HttpResponse({ status: 200, body: { clientSecret: 'mock_secret_123' } })).pipe(delay(500));

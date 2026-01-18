@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Router } from '@angular/router';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AuthResponse, User } from '../core/models';
 import { LoginRequest, RegisterRequest } from '../core/dtos';
@@ -11,6 +12,7 @@ import { ApiConfigService } from './api-config.service';
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private router = inject(Router);
   private apiConfig = inject(ApiConfigService);
   private baseUrl = this.apiConfig.getEndpoint('auth');
   private authToken$ = new BehaviorSubject<string | null>(localStorage.getItem('authToken'));
@@ -37,12 +39,11 @@ export class AuthService {
   }
 
   logout(): Observable<any> {
-    return this.http.post(`${this.baseUrl}/logout`, {}).pipe(
-      tap(() => {
-        this.clearAuthToken();
-        this.user$.next(null);
-      })
-    );
+    // No backend API for logout, just clear local state
+    this.clearAuthToken();
+    this.user$.next(null);
+    this.router.navigate(['/login']);
+    return of(null);
   }
 
   // Helper to fetch user if token exists but user is null (page reload)

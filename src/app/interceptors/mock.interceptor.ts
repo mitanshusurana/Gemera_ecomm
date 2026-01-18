@@ -89,6 +89,9 @@ export class MockInterceptor implements HttpInterceptor {
     if (url.endsWith('/orders') && method === 'POST') {
         return this.mockBackend.handleCreateOrder(body as CreateOrderRequest);
     }
+    if (url.match(/\/orders\/?(\?.*)?$/) && method === 'GET') {
+        return this.mockBackend.handleGetUserOrders();
+    }
     if (url.match(/\/orders\/[^\/]+$/) && method === 'GET') {
         const id = url.split('/').pop()!;
         return this.mockBackend.handleGetOrderById(id);

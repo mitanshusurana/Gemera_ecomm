@@ -57,7 +57,7 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     rating: 4.9,
     reviewCount: 245,
     description: "VS1 clarity, G color, excellent cut - GIA certified. This exquisite diamond solitaire ring features a stunning 1.5 carat diamond with excellent cut quality. Certified by GIA, this diamond showcases exceptional clarity and color grading. Set in lustrous 18K white gold, this timeless piece is perfect for engagements, anniversaries, or as a symbol of your refined taste.",
-    imageUrl: "",
+    imageUrl: "https://placehold.co/600x400",
     stock: 3,
     specifications: {
       carat: 1.5,
