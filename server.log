@@ -188,3 +188,26 @@ Application bundle generation complete. [3.644 seconds]
 
 Stylesheet update sent to client(s).
 Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names  |  Raw size
+main.js             | main   | 125.82 kB |
+styles.css          | styles |  98.73 kB |
+
+Application bundle generation complete. [11.639 seconds]
+
+Stylesheet update sent to client(s).
+Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names  |  Raw size
+main.js             | main   | 125.82 kB |
+styles.css          | styles |  99.26 kB |
+
+Lazy chunk files    | Names  |  Raw size
+chunk-XIBSEO2J.js   | home   |  43.18 kB |
+
+Application bundle generation complete. [3.708 seconds]
+
+Stylesheet update sent to client(s).
+Component update sent to client(s).

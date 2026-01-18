@@ -58,17 +58,19 @@ interface CollectionUI {
     </section>
 
     <!-- Shop By Category (Circular) -->
-    <section class="py-16 md:py-20 bg-white">
-      <div class="container-luxury">
-        <h2 class="text-2xl md:text-4xl font-display font-bold text-primary-900 mb-12 text-center">Shop by Category</h2>
-        <div class="flex flex-wrap justify-center gap-8 md:gap-16">
+    <section class="py-12 md:py-20 bg-white">
+      <div class="container-luxury px-4 md:px-6">
+        <h2 class="text-2xl md:text-4xl font-display font-bold text-primary-900 mb-8 md:mb-12 text-center">Shop by Category</h2>
+
+        <!-- Mobile: Horizontal Scroll | Desktop: Grid/Flex -->
+        <div class="flex overflow-x-auto md:flex-wrap md:justify-center gap-6 md:gap-16 pb-6 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar snap-x snap-mandatory">
            <a *ngFor="let cat of collections()" routerLink="/products" [queryParams]="{category: cat.name}"
-              class="group flex flex-col items-center gap-4 cursor-pointer w-28 md:w-36">
-              <div class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white border border-gray-200 flex items-center justify-center text-4xl md:text-5xl group-hover:border-secondary-500 group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 relative overflow-hidden">
+              class="group flex flex-col items-center gap-3 md:gap-4 cursor-pointer flex-shrink-0 snap-center w-24 md:w-36">
+              <div class="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border border-gray-200 flex items-center justify-center text-3xl md:text-5xl group-hover:border-secondary-500 group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 relative overflow-hidden">
                  <div class="absolute inset-0 bg-secondary-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                  <span class="relative z-10">{{ cat.icon }}</span>
               </div>
-              <span class="font-semibold text-gray-700 group-hover:text-primary-800 transition-colors text-center text-sm md:text-base">{{ cat.title }}</span>
+              <span class="font-semibold text-gray-700 group-hover:text-primary-800 transition-colors text-center text-xs md:text-base whitespace-nowrap">{{ cat.title }}</span>
            </a>
         </div>
       </div>

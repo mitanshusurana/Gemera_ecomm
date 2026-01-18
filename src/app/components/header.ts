@@ -17,18 +17,19 @@ import { APP_CATEGORIES } from '../core/constants';
     <header class="bg-white sticky top-0 z-50 shadow-sm font-sans">
       <!-- Top Bar (Purple) -->
       <div class="bg-primary-800 text-white py-1.5 text-xs tracking-wide">
-        <div class="container mx-auto px-4 flex justify-between items-center overflow-x-auto whitespace-nowrap gap-4 no-scrollbar">
-          <div class="flex gap-4 md:gap-6 flex-shrink-0">
-            <span class="flex items-center gap-1">
-              <svg class="w-3 h-3 text-secondary-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
+        <div class="container mx-auto px-4 flex justify-between items-center overflow-x-auto whitespace-nowrap gap-8 md:gap-4 no-scrollbar mask-fade">
+          <div class="flex gap-6 flex-shrink-0">
+            <span class="flex items-center gap-1.5 font-medium">
+              <svg class="w-3.5 h-3.5 text-secondary-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
               Gemara Treasure Plan
             </span>
-            <span class="inline">Free Shipping on Orders Over $500</span>
+            <span class="hidden sm:inline opacity-80">|</span>
+            <span class="inline font-medium text-secondary-100">Free Shipping on Orders Over $500</span>
           </div>
-          <div class="flex gap-4 md:gap-6 flex-shrink-0">
-            <a routerLink="/stores" class="hover:text-secondary-300 transition-colors">Find a Store</a>
-            <a href="#" class="hover:text-secondary-300 transition-colors">Help</a>
-            <a routerLink="/track-order" class="hover:text-secondary-300 transition-colors">Track Order</a>
+          <div class="flex gap-6 flex-shrink-0 text-primary-100">
+            <a routerLink="/stores" class="hover:text-white transition-colors">Find a Store</a>
+            <a href="#" class="hover:text-white transition-colors">Help</a>
+            <a routerLink="/track-order" class="hover:text-white transition-colors">Track Order</a>
           </div>
         </div>
       </div>
