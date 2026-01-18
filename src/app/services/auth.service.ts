@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { AuthResponse, User } from '../core/models';
+import { AuthResponse, User, Address } from '../core/models';
 import { LoginRequest, RegisterRequest } from '../core/dtos';
 import { ApiConfigService } from './api-config.service';
 
@@ -15,6 +15,7 @@ export class AuthService {
   private router = inject(Router);
   private apiConfig = inject(ApiConfigService);
   private baseUrl = this.apiConfig.getEndpoint('auth');
+  private usersUrl = this.apiConfig.getEndpoint('users');
   private authToken$ = new BehaviorSubject<string | null>(localStorage.getItem('authToken'));
   private user$ = new BehaviorSubject<User | null>(null);
 
@@ -46,9 +47,28 @@ export class AuthService {
     return of(null);
   }
 
+  // Address Management Methods
+  addAddress(address: Omit<Address, 'id'>): Observable<User> {
+    return this.http.post<User>(`${this.usersUrl}/addresses`, address).pipe(
+      tap(user => this.user$.next(user))
+    );
+  }
+
+  updateAddress(id: string, address: Partial<Address>): Observable<User> {
+    return this.http.put<User>(`${this.usersUrl}/addresses/${id}`, address).pipe(
+      tap(user => this.user$.next(user))
+    );
+  }
+
+  deleteAddress(id: string): Observable<User> {
+    return this.http.delete<User>(`${this.usersUrl}/addresses/${id}`).pipe(
+      tap(user => this.user$.next(user))
+    );
+  }
+
   // Helper to fetch user if token exists but user is null (page reload)
   private refreshUser() {
-    this.http.get<User>(`${this.apiConfig.getEndpoint('users')}/me`).subscribe({
+    this.http.get<User>(`${this.usersUrl}/me`).subscribe({
         next: user => this.user$.next(user),
         error: () => this.logout() // Token invalid
     });

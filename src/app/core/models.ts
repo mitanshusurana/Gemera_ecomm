@@ -111,6 +111,19 @@ export interface Category {
   subcategories?: Array<{ id: string; name: string; displayName: string }>;
 }
 
+export interface Address {
+  id: string;
+  firstName: string;
+  lastName: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  phone: string;
+  isDefault?: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -119,6 +132,7 @@ export interface User {
   phone: string;
   avatar?: string;
   role?: 'ADMIN' | 'USER';
+  addresses?: Address[];
   createdAt: string;
   token?: string; // specific for auth response convenience sometimes
 }

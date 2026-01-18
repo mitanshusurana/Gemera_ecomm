@@ -3,7 +3,7 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { User, Order } from '../core/models';
+import { User, Order, Address } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
@@ -199,29 +199,34 @@ import { WishlistService } from '../services/wishlist.service';
               <div class="card p-8">
                 <div class="flex justify-between items-center mb-8">
                   <h2 class="text-3xl font-bold text-diamond-900">Saved Addresses</h2>
-                  <button class="btn-outline">
+                  <button (click)="openAddressModal()" class="btn-outline">
                     + Add New Address
                   </button>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="border-2 border-gold-500 border-dashed rounded-lg p-6 bg-gold-50">
+                  <div *ngFor="let address of user()?.addresses" class="border-2 rounded-lg p-6 relative group"
+                       [ngClass]="address.isDefault ? 'border-gold-500 bg-gold-50' : 'border-diamond-200 bg-white'">
                     <div class="flex justify-between items-start mb-4">
                       <div>
-                        <h3 class="font-bold text-gray-900">John Doe</h3>
-                        <p class="text-xs text-gold-600 font-semibold mt-1">DEFAULT ADDRESS</p>
+                        <h3 class="font-bold text-gray-900">{{ address.firstName }} {{ address.lastName }}</h3>
+                        <p *ngIf="address.isDefault" class="text-xs text-gold-600 font-semibold mt-1">DEFAULT ADDRESS</p>
                       </div>
                     </div>
                     <p class="text-gray-700 text-sm mb-3">
-                      123 Main Street<br>
-                      New York, NY 10001<br>
-                      United States<br>
-                      +1 (555) 000-0000
+                      {{ address.street }}<br>
+                      {{ address.city }}, {{ address.state }} {{ address.zipCode }}<br>
+                      {{ address.country }}<br>
+                      {{ address.phone }}
                     </p>
                     <div class="flex gap-2">
-                      <button class="text-sm text-gold-600 hover:text-gold-700 font-semibold">Edit</button>
-                      <button class="text-sm text-red-600 hover:text-red-700 font-semibold">Delete</button>
+                      <button (click)="openAddressModal(address)" class="text-sm text-gold-600 hover:text-gold-700 font-semibold">Edit</button>
+                      <button (click)="deleteAddress(address.id)" class="text-sm text-red-600 hover:text-red-700 font-semibold">Delete</button>
                     </div>
+                  </div>
+
+                  <div *ngIf="!user()?.addresses || user()!.addresses!.length === 0" class="col-span-full text-center py-8 text-gray-500">
+                    No addresses saved yet.
                   </div>
                 </div>
               </div>
@@ -316,6 +321,39 @@ import { WishlistService } from '../services/wishlist.service';
           </div>
         </div>
       </div>
+
+      <!-- Address Modal -->
+      <div *ngIf="isAddressModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full animate-scaleUp">
+          <h3 class="text-2xl font-bold text-diamond-900 mb-6">{{ currentAddress().id ? 'Edit' : 'Add New' }} Address</h3>
+          <form (ngSubmit)="saveAddress()" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <input [(ngModel)]="currentAddress().firstName" name="firstName" placeholder="First Name" class="input-field" required>
+              <input [(ngModel)]="currentAddress().lastName" name="lastName" placeholder="Last Name" class="input-field" required>
+            </div>
+            <input [(ngModel)]="currentAddress().street" name="street" placeholder="Street Address" class="input-field" required>
+            <div class="grid grid-cols-2 gap-4">
+              <input [(ngModel)]="currentAddress().city" name="city" placeholder="City" class="input-field" required>
+              <input [(ngModel)]="currentAddress().state" name="state" placeholder="State" class="input-field" required>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <input [(ngModel)]="currentAddress().zipCode" name="zipCode" placeholder="ZIP Code" class="input-field" required>
+              <input [(ngModel)]="currentAddress().country" name="country" placeholder="Country" class="input-field" required>
+            </div>
+            <input [(ngModel)]="currentAddress().phone" name="phone" placeholder="Phone" class="input-field" required>
+
+            <label class="flex items-center gap-2">
+              <input type="checkbox" [(ngModel)]="currentAddress().isDefault" name="isDefault">
+              <span class="text-sm text-gray-700">Set as default address</span>
+            </label>
+
+            <div class="flex gap-2 pt-4">
+              <button type="button" (click)="isAddressModalOpen.set(false)" class="btn-ghost flex-1">Cancel</button>
+              <button type="submit" class="btn-primary flex-1">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   `,
 })
@@ -323,6 +361,10 @@ export class AccountComponent implements OnInit {
   activeTab = signal('profile');
   user = signal<User | null>(null);
   orders = signal<any>({ content: [] });
+
+  // Address State
+  isAddressModalOpen = signal(false);
+  currentAddress = signal<Partial<Address>>({});
 
   private authService = inject(AuthService);
   private currencyService = inject(CurrencyService);
@@ -421,5 +463,30 @@ export class AccountComponent implements OnInit {
       return item.product.name;
     }
     return 'Unknown Item';
+  }
+
+  // Address Methods
+  openAddressModal(address?: Address) {
+    this.currentAddress.set(address ? { ...address } : { country: 'United States' });
+    this.isAddressModalOpen.set(true);
+  }
+
+  saveAddress() {
+    const addr = this.currentAddress();
+    if (addr.id) {
+      this.authService.updateAddress(addr.id, addr).subscribe(() => {
+        this.isAddressModalOpen.set(false);
+      });
+    } else {
+      this.authService.addAddress(addr as Address).subscribe(() => {
+        this.isAddressModalOpen.set(false);
+      });
+    }
+  }
+
+  deleteAddress(id: string) {
+    if (confirm('Are you sure you want to delete this address?')) {
+      this.authService.deleteAddress(id).subscribe();
+    }
   }
 }

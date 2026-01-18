@@ -3,7 +3,7 @@ import { HttpResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from '../data/mock-data';
-import { Product, ProductDetail, Cart, CartItem, User, AuthResponse, Order, Category, PaginatedResponse } from '../core/models';
+import { Product, ProductDetail, Cart, CartItem, User, AuthResponse, Order, Category, PaginatedResponse, Address } from '../core/models';
 import {
   LoginRequest,
   RegisterRequest,
@@ -45,6 +45,20 @@ export class MockBackendService {
       lastName: 'User',
       phone: '1234567890',
       role: email.includes('admin') ? 'ADMIN' : 'USER',
+      addresses: [
+        {
+            id: 'addr-1',
+            firstName: 'Test',
+            lastName: 'User',
+            street: '123 Mock Street',
+            city: 'Mock City',
+            state: 'NY',
+            zipCode: '10001',
+            country: 'USA',
+            phone: '1234567890',
+            isDefault: true
+        }
+      ],
       createdAt: new Date().toISOString()
     };
 
@@ -82,12 +96,6 @@ export class MockBackendService {
 
   handleCurrentUser(): Observable<HttpResponse<User>> {
       if (!this.mockUser) {
-          // Attempt to restore from "token" if implied, but for mock backend let's say 401 if no user?
-          // For simplicity in this session, if we have a token in localStorage (managed by AuthService),
-          // we might want to return a dummy user.
-          // But strict adherence: if handleLogin wasn't called in this session, we might return 401.
-          // However, for reload persistence, we often just return a user if a token exists.
-          // Let's assume the Auth service checks token existence.
           const user: User = {
             id: 'mock-user-123',
             email: 'test@example.com',
@@ -95,12 +103,58 @@ export class MockBackendService {
             lastName: 'User',
             phone: '1234567890',
             role: 'USER',
+            addresses: [
+                {
+                    id: 'addr-1',
+                    firstName: 'Test',
+                    lastName: 'User',
+                    street: '123 Mock Street',
+                    city: 'Mock City',
+                    state: 'NY',
+                    zipCode: '10001',
+                    country: 'USA',
+                    phone: '1234567890',
+                    isDefault: true
+                }
+            ],
             createdAt: new Date().toISOString()
           };
-          this.mockUser = user; // Auto-login for mock convenience
+          this.mockUser = user;
           return of(new HttpResponse({ status: 200, body: user })).pipe(delay(200));
       }
       return of(new HttpResponse({ status: 200, body: this.mockUser })).pipe(delay(200));
+  }
+
+  handleAddAddress(address: Address): Observable<HttpResponse<User>> {
+      if (this.mockUser) {
+          const newAddress = { ...address, id: 'addr-' + Date.now() };
+          this.mockUser.addresses = [...(this.mockUser.addresses || []), newAddress];
+          // If default, unset others
+          if (newAddress.isDefault) {
+              this.mockUser.addresses.forEach(a => { if (a.id !== newAddress.id) a.isDefault = false; });
+          }
+      }
+      return of(new HttpResponse({ status: 200, body: this.mockUser! })).pipe(delay(300));
+  }
+
+  handleUpdateAddress(id: string, address: Partial<Address>): Observable<HttpResponse<User>> {
+      if (this.mockUser && this.mockUser.addresses) {
+          const index = this.mockUser.addresses.findIndex(a => a.id === id);
+          if (index !== -1) {
+              this.mockUser.addresses[index] = { ...this.mockUser.addresses[index], ...address };
+              if (address.isDefault) {
+                  this.mockUser.addresses.forEach(a => { if (a.id !== id) a.isDefault = false; });
+              }
+          }
+      }
+      return of(new HttpResponse({ status: 200, body: this.mockUser! })).pipe(delay(300));
+  }
+
+  handleDeleteAddress(id: string): Observable<HttpResponse<User>> {
+      if (this.mockUser && this.mockUser.addresses) {
+          this.mockUser.addresses = this.mockUser.addresses.filter(a => a.id !== id);
+      }
+      return of(new HttpResponse({ status: 200, body: this.mockUser! })).pipe(delay(300));
   }
 
   // --- Product Handlers ---
