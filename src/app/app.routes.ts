@@ -53,6 +53,10 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/rfq-request").then(m => m.RFQRequestComponent)
   },
   {
+    path: "treasure",
+    loadComponent: () => import("./pages/treasure-chest").then(m => m.TreasureChestComponent)
+  },
+  {
     path: "about",
     loadComponent: () => import("./pages/about").then(m => m.AboutComponent)
   },

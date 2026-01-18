@@ -11,50 +11,48 @@ import { WishlistService } from '../services/wishlist.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule],
   template: `
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <!-- Top Bar -->
-      <div class="bg-primary-900 text-white py-2 text-sm hidden sm:block">
+    <header class="bg-white sticky top-0 z-50 shadow-sm font-sans">
+      <!-- Top Bar (Purple) -->
+      <div class="bg-primary-800 text-white py-1.5 text-xs tracking-wide">
         <div class="container mx-auto px-4 flex justify-between items-center">
-          <div class="flex gap-4">
-            <span>Free Shipping on Orders Over $500</span>
-            <span>Lifetime Warranty</span>
+          <div class="flex gap-6">
+            <span class="flex items-center gap-1">
+              <svg class="w-3 h-3 text-secondary-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
+              Gemara Treasure Plan
+            </span>
+            <span class="hidden sm:inline">Free Shipping on Orders Over $500</span>
           </div>
-          <div class="flex gap-4">
-            <a href="tel:+1234567890" class="hover:text-gold-400">+1 (234) 567-890</a>
-            <a routerLink="/track-order" class="hover:text-gold-400">Track Order</a>
+          <div class="flex gap-6">
+            <a href="#" class="hover:text-secondary-300 transition-colors">Find a Store</a>
+            <a href="#" class="hover:text-secondary-300 transition-colors">Help</a>
+            <a routerLink="/track-order" class="hover:text-secondary-300 transition-colors">Track Order</a>
           </div>
         </div>
       </div>
 
       <!-- Main Header -->
-      <div class="container mx-auto px-4 py-4">
-        <div class="flex items-center justify-between gap-4">
-          <!-- Mobile Menu Button -->
-          <button class="lg:hidden p-2" (click)="toggleMobileMenu()">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-          </button>
+      <div class="container mx-auto px-4 py-3">
+        <div class="flex items-center justify-between gap-6">
 
-          <!-- Logo -->
-          <a routerLink="/" class="text-2xl font-serif font-bold text-primary-900 flex-shrink-0">
-            GEMARA
-          </a>
+          <!-- Mobile Menu & Logo -->
+          <div class="flex items-center gap-4">
+            <button class="lg:hidden text-primary-900" (click)="toggleMobileMenu()">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
 
-          <!-- Desktop Navigation -->
-          <nav class="hidden lg:flex items-center gap-8">
-            <a routerLink="/" routerLinkActive="text-gold-600" [routerLinkActiveOptions]="{exact: true}" class="font-medium hover:text-gold-600 transition-colors">Home</a>
-            <a routerLink="/products" [queryParams]="{category: 'Engagement Ring'}" routerLinkActive="text-gold-600" class="font-medium hover:text-gold-600 transition-colors">Engagement</a>
-            <a routerLink="/products" [queryParams]="{category: 'Wedding'}" routerLinkActive="text-gold-600" class="font-medium hover:text-gold-600 transition-colors">Wedding</a>
-            <a routerLink="/products" [queryParams]="{category: 'Gemstone'}" routerLinkActive="text-gold-600" class="font-medium hover:text-gold-600 transition-colors">Gemstones</a>
-            <a routerLink="/builder" routerLinkActive="text-gold-600" class="font-medium hover:text-gold-600 transition-colors">Build Your Ring</a>
-            <a routerLink="/about" routerLinkActive="text-gold-600" class="font-medium hover:text-gold-600 transition-colors">Our Story</a>
-          </nav>
+            <!-- Logo -->
+            <a routerLink="/" class="flex flex-col items-center leading-none">
+              <span class="text-2xl font-display font-bold text-primary-800 tracking-wide">GEMARA</span>
+              <span class="text-[0.6rem] uppercase tracking-[0.2em] text-secondary-600 font-semibold">Fine Jewels</span>
+            </a>
+          </div>
 
-          <!-- Search Bar -->
-          <div class="hidden md:block flex-1 max-w-md mx-4 relative group">
+          <!-- Search Bar (Central) -->
+          <div class="hidden md:block flex-1 max-w-xl relative group">
             <div class="relative">
               <input
                 type="text"
@@ -62,91 +60,134 @@ import { WishlistService } from '../services/wishlist.service';
                 (input)="onSearchInput()"
                 (focus)="isSearchFocused = true"
                 (blur)="onSearchBlur()"
-                placeholder="Search for diamonds, rings..."
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:border-gold-500 transition-all duration-300"
+                placeholder="Search for Rings, Earrings, Gemstones..."
+                class="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-primary-200 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-sm placeholder-gray-400 text-gray-800"
               >
-              <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
+              <button class="absolute right-0 top-0 h-full px-4 bg-primary-800 text-white rounded-r-lg hover:bg-primary-900 transition-colors">
+                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </button>
             </div>
 
             <!-- Search Results Dropdown -->
-            <div *ngIf="isSearchFocused && searchResults.length > 0" class="absolute top-full left-0 w-full bg-white shadow-lg rounded-b-lg mt-1 border border-gray-100 py-2 z-50">
+            <div *ngIf="isSearchFocused && searchResults.length > 0" class="absolute top-full left-0 w-full bg-white shadow-xl rounded-b-lg mt-0.5 border-x border-b border-gray-100 py-2 z-50">
               <a
                 *ngFor="let result of searchResults"
                 [routerLink]="['/products', result.id]"
-                class="block px-4 py-2 hover:bg-gray-50 flex items-center gap-3"
+                class="block px-4 py-2 hover:bg-primary-50 flex items-center gap-3 transition-colors"
               >
-                <div class="w-10 h-10 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                <div class="w-10 h-10 bg-gray-100 rounded flex-shrink-0 overflow-hidden border border-gray-200">
                   <img *ngIf="result.imageUrl" [src]="result.imageUrl" class="w-full h-full object-cover">
                 </div>
                 <div>
                   <div class="text-sm font-medium text-gray-900">{{result.name}}</div>
-                  <div class="text-xs text-gray-500">{{result.category}}</div>
+                  <div class="text-xs text-secondary-600 font-semibold uppercase">{{result.category}}</div>
                 </div>
               </a>
             </div>
           </div>
 
-          <!-- Icons -->
-          <div class="flex items-center gap-4">
-            <a routerLink="/wishlist" class="relative hover:text-gold-600 transition-colors">
+          <!-- Icons Actions -->
+          <div class="flex items-center gap-6">
+            <!-- Treasure Icon (New) -->
+            <a routerLink="/treasure" class="hidden sm:flex flex-col items-center text-primary-800 hover:text-primary-600 transition-colors group">
+              <div class="w-6 h-6 flex items-center justify-center mb-0.5">
+                 <span class="text-xl group-hover:scale-110 transition-transform">💎</span>
+              </div>
+              <span class="text-[0.65rem] font-bold uppercase tracking-wide">Plan</span>
+            </a>
+
+            <!-- User -->
+            <div class="relative group">
+              <a [routerLink]="user() ? '/account' : '/login'" class="flex flex-col items-center text-primary-800 hover:text-primary-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span class="text-[0.65rem] font-bold uppercase tracking-wide">Account</span>
+              </a>
+               <!-- User Dropdown -->
+              <div *ngIf="user()" class="absolute right-0 top-full pt-2 hidden group-hover:block w-48 z-50">
+                <div class="bg-white shadow-lg rounded-lg py-2 border border-gray-100">
+                  <div class="px-4 py-2 border-b border-gray-50 text-xs text-gray-500">Hello, {{ user()?.firstName }}</div>
+                  <a routerLink="/account" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700">My Account</a>
+                  <a [routerLink]="['/account']" [queryParams]="{tab: 'orders'}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700">My Orders</a>
+                  <a routerLink="/treasure" class="block px-4 py-2 text-sm text-secondary-700 font-semibold hover:bg-secondary-50">My Treasure Plan</a>
+                  <button (click)="logout()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Wishlist -->
+            <a routerLink="/wishlist" class="flex flex-col items-center text-primary-800 hover:text-primary-600 transition-colors relative">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
               </svg>
-              <span *ngIf="wishlistCount() > 0" class="absolute -top-2 -right-2 bg-gold-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+              <span class="text-[0.65rem] font-bold uppercase tracking-wide">Wishlist</span>
+              <span *ngIf="wishlistCount() > 0" class="absolute -top-1 -right-1 bg-secondary-500 text-white text-[0.6rem] w-4 h-4 flex items-center justify-center rounded-full font-bold shadow-sm">
                 {{ wishlistCount() }}
               </span>
             </a>
 
-            <a routerLink="/cart" class="relative hover:text-gold-600 transition-colors">
+            <!-- Cart -->
+            <a routerLink="/cart" class="flex flex-col items-center text-primary-800 hover:text-primary-600 transition-colors relative">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
               </svg>
-              <span *ngIf="cartCount() > 0" class="absolute -top-2 -right-2 bg-gold-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+              <span class="text-[0.65rem] font-bold uppercase tracking-wide">Cart</span>
+              <span *ngIf="cartCount() > 0" class="absolute -top-1 -right-1 bg-secondary-500 text-white text-[0.6rem] w-4 h-4 flex items-center justify-center rounded-full font-bold shadow-sm">
                 {{ cartCount() }}
               </span>
             </a>
-
-            <div class="relative group">
-              <a [routerLink]="user() ? '/account' : '/login'" class="hover:text-gold-600 transition-colors flex items-center gap-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-                <span *ngIf="user()" class="text-sm font-medium hidden sm:block">Hi, {{ user()?.firstName }}</span>
-              </a>
-
-              <!-- User Dropdown -->
-              <div *ngIf="user()" class="absolute right-0 top-full pt-2 hidden group-hover:block w-48 z-50">
-                <div class="bg-white shadow-lg rounded-lg py-2 border border-gray-100">
-                  <a routerLink="/account" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Account</a>
-                  <a [routerLink]="['/account']" [queryParams]="{tab: 'orders'}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Orders</a>
-                  <button (click)="logout()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
+
+        <!-- Navigation Categories (Desktop) -->
+        <nav class="hidden lg:flex justify-center items-center gap-8 mt-4 border-t border-gray-100 pt-3">
+            <a routerLink="/products" [queryParams]="{category: 'New'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
+                New Arrivals
+                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+            </a>
+            <a routerLink="/products" [queryParams]="{category: 'Engagement Ring'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
+                Rings
+                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+            </a>
+            <a routerLink="/products" [queryParams]="{category: 'Earrings'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
+                Earrings
+                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+            </a>
+            <a routerLink="/products" [queryParams]="{category: 'Gemstone'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
+                Gemstones
+                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+            </a>
+            <a routerLink="/treasure" class="text-sm font-bold text-secondary-600 hover:text-secondary-700 uppercase tracking-wide px-2 py-1 relative group flex items-center gap-1">
+                <span class="text-lg">💎</span> Treasure Plan
+            </a>
+            <a routerLink="/builder" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
+                Build Your Own
+                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+            </a>
+        </nav>
       </div>
 
       <!-- Mobile Menu -->
-      <div *ngIf="isMobileMenuOpen" class="lg:hidden border-t border-gray-200 bg-white">
-        <div class="container mx-auto px-4 py-4 flex flex-col gap-4">
+      <div *ngIf="isMobileMenuOpen" class="lg:hidden border-t border-gray-100 bg-white absolute w-full shadow-lg">
+        <div class="px-4 py-4 flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
           <div class="relative">
              <input
                 type="text"
                 [(ngModel)]="searchQuery"
                 (input)="onSearchInput()"
                 placeholder="Search..."
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500"
               >
           </div>
-          <a routerLink="/" (click)="toggleMobileMenu()" class="font-medium text-gray-800">Home</a>
-          <a routerLink="/products" [queryParams]="{category: 'Engagement Ring'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800">Engagement Rings</a>
-          <a routerLink="/products" [queryParams]="{category: 'Wedding'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800">Wedding</a>
-          <a routerLink="/products" [queryParams]="{category: 'Gemstone'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800">Gemstones</a>
-          <a routerLink="/builder" (click)="toggleMobileMenu()" class="font-medium text-gray-800">Build Your Ring</a>
-          <a routerLink="/about" (click)="toggleMobileMenu()" class="font-medium text-gray-800">Our Story</a>
+          <a routerLink="/" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Home</a>
+          <a routerLink="/products" [queryParams]="{category: 'New'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">New Arrivals</a>
+          <a routerLink="/products" [queryParams]="{category: 'Engagement Ring'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Rings</a>
+          <a routerLink="/products" [queryParams]="{category: 'Earrings'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Earrings</a>
+          <a routerLink="/treasure" (click)="toggleMobileMenu()" class="font-bold text-secondary-700 py-2 border-b border-gray-50 flex items-center gap-2">💎 Treasure Plan</a>
+          <a routerLink="/builder" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Build Your Ring</a>
         </div>
       </div>
     </header>

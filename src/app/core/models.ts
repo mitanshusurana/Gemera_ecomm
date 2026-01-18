@@ -42,6 +42,8 @@ export interface PriceBreakup {
   makingCharges: number;
   tax: number;
   total: number;
+  discount?: number;
+  grandTotal?: number;
 }
 
 export interface ProductDetail extends Product {
@@ -125,6 +127,18 @@ export interface Address {
   isDefault?: boolean;
 }
 
+export interface TreasureChestAccount {
+  id: string;
+  planName: string;
+  installmentAmount: number;
+  installmentsPaid: number;
+  totalInstallments: number;
+  balance: number;
+  status: 'ACTIVE' | 'MATURED' | 'CLOSED';
+  startDate: string;
+  nextDueDate: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -135,7 +149,8 @@ export interface User {
   role?: 'ADMIN' | 'USER';
   addresses?: Address[];
   createdAt: string;
-  token?: string; // specific for auth response convenience sometimes
+  token?: string;
+  treasureChest?: TreasureChestAccount;
 }
 
 export interface AuthResponse {

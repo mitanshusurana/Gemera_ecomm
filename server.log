@@ -5,48 +5,73 @@
 ❯ Building...
 ✔ Building...
 Initial chunk files | Names              |  Raw size
-main.js             | main               | 125.66 kB |
-styles.css          | styles             |  96.93 kB |
+styles.css          | styles             | 101.90 kB |
+main.js             | main               | 100.62 kB |
 chunk-XCU54PUX.js   | -                  |  13.47 kB |
-chunk-PRHLERTS.js   | -                  |   6.72 kB |
-chunk-OKNG3WR5.js   | -                  |   3.12 kB |
+chunk-XIM65A6U.js   | -                  |   8.05 kB |
+chunk-YC3X4XN5.js   | -                  |   3.12 kB |
 chunk-HXQ63BFM.js   | -                  |   2.28 kB |
-chunk-XWLXMCJQ.js   | -                  |   2.07 kB |
-chunk-AIRHBJUR.js   | -                  |   1.75 kB |
+chunk-C7V6LZTG.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
 chunk-D5XJJI6Y.js   | -                  |   1.32 kB |
 chunk-4S3FCL3R.js   | -                  |   1.19 kB |
 polyfills.js        | polyfills          |  95 bytes |
 
-                    | Initial total      | 254.63 kB
+                    | Initial total      | 235.33 kB
 
 Lazy chunk files    | Names              |  Raw size
-chunk-B77AIGYX.js   | product-detail     | 158.82 kB |
-chunk-OEQ2JNFO.js   | checkout           |  82.12 kB |
-chunk-PQ2BXCIR.js   | products           |  72.21 kB |
-chunk-2HUHIMMX.js   | account            |  69.22 kB |
-chunk-G35LNM4H.js   | home               |  51.55 kB |
-chunk-X47AQSAL.js   | rfq-request        |  49.55 kB |
-chunk-SD542QWY.js   | builder            |  35.40 kB |
-chunk-FI7UZFC5.js   | cart               |  31.09 kB |
-chunk-H437HQGQ.js   | order-confirmation |  30.24 kB |
-chunk-DD2VIYI6.js   | login              |  27.95 kB |
-chunk-QJKG4G2I.js   | compare            |  27.61 kB |
-chunk-VLTICCKA.js   | -                  |  24.42 kB |
-chunk-DO4F7XUH.js   | dashboard          |  23.34 kB |
-chunk-F2JHWVHX.js   | verify-certificate |  18.95 kB |
-chunk-T7SN525X.js   | journal            |  12.36 kB |
-...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+chunk-KESHWZVV.js   | product-detail     | 128.43 kB |
+chunk-B3C7E33Y.js   | checkout           |  82.10 kB |
+chunk-OHP26L2E.js   | products           |  72.55 kB |
+chunk-K7D3IPLA.js   | account            |  69.50 kB |
+chunk-2JUA4WZH.js   | rfq-request        |  49.55 kB |
+chunk-AVOITAI3.js   | home               |  38.36 kB |
+chunk-XRDN3BHL.js   | builder            |  35.40 kB |
+chunk-YIIJYKDP.js   | cart               |  31.40 kB |
+chunk-DT4JDQX2.js   | order-confirmation |  31.10 kB |
+chunk-LJVSUWUI.js   | compare            |  28.05 kB |
+chunk-JKYEFYNP.js   | login              |  27.95 kB |
+chunk-5MADAUDM.js   | -                  |  25.08 kB |
+chunk-SCKQTEYL.js   | treasure-chest     |  24.16 kB |
+chunk-EZHOAMQU.js   | dashboard          |  23.34 kB |
+chunk-PA3H2N4Q.js   | verify-certificate |  18.95 kB |
+...and 11 more lazy chunks files. Use "--verbose" to show all the files.
 
-Application bundle generation complete. [13.094 seconds]
+Application bundle generation complete. [7.262 seconds]
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLinkActive is not used within the template of HeaderComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/header.ts:14:38:
+[37m      14 │   imports: [CommonModule, RouterLink, [32mRouterLinkActive[37m, FormsModule],
+         ╵                                       [32m~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RecentlyViewedComponent is not used within the template of ProductDetailComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/product-detail.ts:21:119:
+[37m      21 │ ...ModalComponent, EducationModalComponent, [32mRecentlyViewedComponent[37m],
+         ╵                                             [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: RouterLink is not used within the template of TreasureChestComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/treasure-chest.ts:12:39:
+[37m      12 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
 
 Watch mode enabled. Watching for file changes...
 NOTE: Raw file sizes do not reflect development server per-request transformations.
   ➜  Local:   http://localhost:4200/
 ❯ Changes detected. Rebuilding...
 ✔ Changes detected. Rebuilding...
-Initial chunk files | Names |  Raw size
-main.js             | main  | 125.99 kB |
+Initial chunk files | Names          |  Raw size
+main.js             | main           | 100.55 kB |
 
-Application bundle generation complete. [4.256 seconds]
+Lazy chunk files    | Names          |  Raw size
+chunk-BOMF3SXK.js   | product-detail | 120.39 kB |
+chunk-I3J7BW4J.js   | treasure-chest |  24.08 kB |
+
+Application bundle generation complete. [4.173 seconds]
 
 Page reload sent to client(s).

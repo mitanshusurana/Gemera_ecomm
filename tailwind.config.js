@@ -4,14 +4,40 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Luxury palette for jewellery
+        // CaratLane-inspired Palette
+        primary: {
+            50: "#f5f3f9",
+            100: "#ebe4f1",
+            200: "#d9cbe3",
+            300: "#bfa4cc",
+            400: "#a378b0",
+            500: "#865394",
+            600: "#6d3e7a",
+            700: "#593063",
+            800: "#4f3267", // CaratLane Purple (Base)
+            900: "#3d264d",
+            950: "#271633",
+        },
+        secondary: {
+            50: "#fff9f0",
+            100: "#fff0db",
+            200: "#ffddb3",
+            300: "#ffc480",
+            400: "#ff9f4d",
+            500: "#ff7f1a",
+            600: "#e65c00",
+            700: "#b34700",
+            800: "#8c3800", // Darker accent
+            900: "#662900",
+        },
+        // Existing Luxury palette (Retained for compatibility)
         gold: {
           50: "#fffbf0",
           100: "#fef3e2",
           200: "#fce8c9",
           300: "#f9d9a8",
           400: "#f4c280",
-          500: "#e8a857",
+          500: "#deaa6f",
           600: "#d4874a",
           700: "#b8693d",
           800: "#8f5435",
@@ -30,6 +56,19 @@ module.exports = {
           800: "#1f2937",
           900: "#111827",
         },
+        diamond: {
+          50: "#fafaf9",
+          100: "#f5f5f4",
+          200: "#e7e5e4",
+          300: "#d6d3d1",
+          400: "#a8a29e",
+          500: "#78716c",
+          600: "#57534e",
+          700: "#44403c",
+          800: "#292524",
+          900: "#1c1917",
+        },
+        // Restored colors for badges
         emerald: {
           50: "#f0fdf4",
           100: "#dcfce7",
@@ -66,23 +105,11 @@ module.exports = {
           800: "#7f1d1d",
           900: "#4c0519",
         },
-        diamond: {
-          50: "#fafaf9",
-          100: "#f5f5f4",
-          200: "#e7e5e4",
-          300: "#d6d3d1",
-          400: "#a8a29e",
-          500: "#78716c",
-          600: "#57534e",
-          700: "#44403c",
-          800: "#292524",
-          900: "#1c1917",
-        },
       },
       fontFamily: {
-        sans: ["'Segoe UI'", "'Trebuchet MS'", "sans-serif"],
+        sans: ["'Segoe UI'", "'Roboto'", "'Helvetica Neue'", "sans-serif"],
         serif: ["'Playfair Display'", "Georgia", "serif"],
-        display: ["'Playfair Display'", "Georgia", "serif"],
+        display: ["'Playfair Display'", "serif"],
       },
       fontSize: {
         xs: ["0.75rem", { lineHeight: "1rem" }],
@@ -96,15 +123,6 @@ module.exports = {
         "5xl": ["3rem", { lineHeight: "1" }],
         "6xl": ["3.75rem", { lineHeight: "1" }],
       },
-      spacing: {
-        xs: "0.5rem",
-        sm: "1rem",
-        md: "1.5rem",
-        lg: "2rem",
-        xl: "3rem",
-        "2xl": "4rem",
-        "3xl": "6rem",
-      },
       boxShadow: {
         sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
         base: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
@@ -114,21 +132,12 @@ module.exports = {
         luxury: "0 20px 40px -10px rgba(0, 0, 0, 0.15)",
         "luxury-lg": "0 40px 80px -20px rgba(0, 0, 0, 0.2)",
       },
-      backdropBlur: {
-        xs: "2px",
-        sm: "4px",
-        md: "12px",
-        lg: "16px",
-      },
-      backgroundImage: {
-        "gradient-luxury": "linear-gradient(135deg, #1c1917 0%, #44403c 100%)",
-        "gradient-gold": "linear-gradient(135deg, #e8a857 0%, #f4c280 100%)",
-        "gradient-light": "linear-gradient(135deg, #fafaf9 0%, #f5f5f4 100%)",
-      },
       animation: {
         shimmer: "shimmer 2s infinite",
         fadeIn: "fadeIn 0.5s ease-in",
         slideUp: "slideUp 0.5s ease-out",
+        float: "float 3s ease-in-out infinite",
+        blob: "blob 7s infinite",
       },
       keyframes: {
         shimmer: {
@@ -149,15 +158,16 @@ module.exports = {
             transform: "translateY(0)",
           },
         },
-      },
-      borderRadius: {
-        none: "0",
-        sm: "0.25rem",
-        base: "0.375rem",
-        md: "0.5rem",
-        lg: "0.75rem",
-        xl: "1rem",
-        "2xl": "1.5rem",
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        blob: {
+          "0%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+          "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+          "100%": { transform: "translate(0px, 0px) scale(1)" },
+        },
       },
     },
   },
