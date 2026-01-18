@@ -25,7 +25,7 @@ import { WishlistService } from '../services/wishlist.service';
             <span class="hidden sm:inline">Free Shipping on Orders Over $500</span>
           </div>
           <div class="flex gap-6">
-            <a href="#" class="hover:text-secondary-300 transition-colors">Find a Store</a>
+            <a routerLink="/stores" class="hover:text-secondary-300 transition-colors">Find a Store</a>
             <a href="#" class="hover:text-secondary-300 transition-colors">Help</a>
             <a routerLink="/track-order" class="hover:text-secondary-300 transition-colors">Track Order</a>
           </div>

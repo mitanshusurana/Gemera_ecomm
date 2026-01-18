@@ -57,6 +57,10 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/treasure-chest").then(m => m.TreasureChestComponent)
   },
   {
+    path: "stores",
+    loadComponent: () => import("./pages/store-locator").then(m => m.StoreLocatorComponent)
+  },
+  {
     path: "about",
     loadComponent: () => import("./pages/about").then(m => m.AboutComponent)
   },

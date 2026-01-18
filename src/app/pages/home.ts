@@ -100,6 +100,28 @@ interface CollectionUI {
        </div>
     </section>
 
+    <!-- Try at Home Banner -->
+    <section class="py-16 bg-secondary-50">
+       <div class="container-luxury flex flex-col md:flex-row items-center justify-between gap-8 bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100">
+          <div class="flex-1">
+             <h2 class="font-display font-bold text-3xl text-gray-900 mb-4">Try at Home</h2>
+             <p class="text-gray-600 mb-6 text-lg">Don't just look, feel the sparkle. Book a free appointment and try our designs at your doorstep.</p>
+             <ul class="space-y-3 mb-8">
+                <li class="flex items-center gap-2 text-gray-700">
+                   <span class="text-green-500 text-xl">✓</span> No obligation to buy
+                </li>
+                <li class="flex items-center gap-2 text-gray-700">
+                   <span class="text-green-500 text-xl">✓</span> 100% Safe & Sanitized
+                </li>
+             </ul>
+             <a routerLink="/products" class="btn-primary">Browse Designs</a>
+          </div>
+          <div class="flex-1 flex justify-center">
+             <div class="text-9xl">🏠💍</div>
+          </div>
+       </div>
+    </section>
+
     <!-- Featured Collections -->
     <section class="py-20 bg-gray-50">
       <div class="container-luxury">
