@@ -89,6 +89,11 @@ import { CurrencyService } from '../services/currency.service';
 
             <div class="h-px bg-gray-100 mb-6"></div>
 
+            <!-- Description -->
+            <p class="text-gray-600 mb-6 leading-relaxed text-sm md:text-base">
+               {{ product()?.description || 'Experience the timeless elegance of this handcrafted masterpiece. Each stone is carefully selected for its brilliance and set by our master artisans.' }}
+            </p>
+
             <!-- Price Section -->
             <div class="mb-6">
                <div class="flex items-baseline gap-3 mb-2">
@@ -173,6 +178,43 @@ import { CurrencyService } from '../services/currency.service';
                <div class="flex gap-4">
                   <button (click)="handleAddToCart()" class="flex-1 btn-primary py-3.5 rounded-lg shadow-lg">ADD TO CART</button>
                   <button (click)="openTryAtHome()" class="flex-1 btn-secondary py-3.5 rounded-lg border-2">🏠 TRY AT HOME</button>
+               </div>
+            </div>
+
+            <!-- Product Details / Specifications -->
+            <div class="mt-8 pt-6 border-t border-gray-100 bg-gray-50 p-4 rounded-lg">
+               <h3 class="font-display font-bold text-gray-900 mb-4 text-lg">Product Details</h3>
+               <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                  <ng-container *ngIf="product()?.specifications as specs">
+                     <div *ngIf="specs.carat" class="flex justify-between border-b border-gray-200 pb-1">
+                        <span class="text-gray-500">Carat</span>
+                        <span class="font-medium text-gray-900">{{ specs.carat }}</span>
+                     </div>
+                     <div *ngIf="specs.clarity" class="flex justify-between border-b border-gray-200 pb-1">
+                        <span class="text-gray-500">Clarity</span>
+                        <span class="font-medium text-gray-900">{{ specs.clarity }}</span>
+                     </div>
+                     <div *ngIf="specs.color" class="flex justify-between border-b border-gray-200 pb-1">
+                        <span class="text-gray-500">Color</span>
+                        <span class="font-medium text-gray-900">{{ specs.color }}</span>
+                     </div>
+                     <div *ngIf="specs.metal" class="flex justify-between border-b border-gray-200 pb-1">
+                        <span class="text-gray-500">Metal</span>
+                        <span class="font-medium text-gray-900">{{ specs.metal }}</span>
+                     </div>
+                     <div *ngIf="specs.cut" class="flex justify-between border-b border-gray-200 pb-1">
+                        <span class="text-gray-500">Cut</span>
+                        <span class="font-medium text-gray-900">{{ specs.cut }}</span>
+                     </div>
+                  </ng-container>
+                  <div *ngIf="product()?.weight" class="flex justify-between border-b border-gray-200 pb-1">
+                     <span class="text-gray-500">Gross Weight</span>
+                     <span class="font-medium text-gray-900">{{ product()?.weight }}g</span>
+                  </div>
+                  <div *ngIf="product()?.sku" class="flex justify-between border-b border-gray-200 pb-1">
+                     <span class="text-gray-500">SKU</span>
+                     <span class="font-medium text-gray-900">{{ product()?.sku }}</span>
+                  </div>
                </div>
             </div>
           </div>
