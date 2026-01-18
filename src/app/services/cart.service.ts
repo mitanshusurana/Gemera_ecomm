@@ -47,10 +47,12 @@ export class CartService {
   addToCart(
       productId: string,
       quantity: number = 1,
-      options?: { metal?: string, diamond?: string, price?: number, stoneId?: string, stoneName?: string, customization?: string, engraving?: string }
+      options?: { metal?: string, diamond?: string, price?: number, stoneId?: string, stoneName?: string, customization?: string, engraving?: string, product?: any }
   ): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
-      return this.http.post<Cart>(`${this.baseUrl}/items`, { productId, quantity, options })
+      // Clean up options before sending to API if needed, or API ignores extra fields
+      const { product, ...apiOptions } = options || {};
+      return this.http.post<Cart>(`${this.baseUrl}/items`, { productId, quantity, options: apiOptions })
         .pipe(tap(cart => this.cart$.next(cart)));
     } else {
       return of(this.addToGuestCart(productId, quantity, options)).pipe(
@@ -141,41 +143,41 @@ export class CartService {
 
   private addToGuestCart(productId: string, quantity: number, options: any): Cart {
     const cart = this.getGuestCart();
-    // Simplified: in real app we'd fetch product details to get price/image
-    // For now we trust the options.price or basic mock logic
-    // We'll create a mock product object to store in the item
-    const price = options?.price || 1000; // Fallback price
+    const price = options?.price || 1000;
 
-    // Check if item exists (simple check)
+    // Check if item exists
     const existing = cart.items.find(i => i.productId === productId && JSON.stringify(i.selectedMetal) === JSON.stringify(options?.metal));
 
     if (existing) {
       existing.quantity += quantity;
     } else {
+      // Use provided product details or fallback
+      const productData = options?.product || {
+          id: productId,
+          name: 'Product ' + productId,
+          price: price,
+          imageUrl: '',
+          description: '',
+          rating: 5,
+          reviewCount: 0,
+          category: 'Ring',
+          subcategory: '',
+          gemstones: [],
+          metal: '',
+          weight: 0,
+          stock: 10,
+          sku: '',
+          certifications: [],
+          createdAt: '',
+          updatedAt: ''
+      };
+
       cart.items.push({
         id: Math.random().toString(36).substr(2, 9),
         productId,
         quantity,
         price,
-        product: {
-            id: productId,
-            name: 'Product ' + productId,
-            price: price,
-            imageUrl: '',
-            description: '',
-            rating: 5,
-            reviewCount: 0,
-            category: 'Ring',
-            subcategory: '',
-            gemstones: [],
-            metal: '',
-            weight: 0,
-            stock: 10,
-            sku: '',
-            certifications: [],
-            createdAt: '',
-            updatedAt: ''
-        }, // Needs full product really, but for now this holds the place
+        product: productData,
         selectedMetal: options?.metal,
         selectedDiamond: options?.diamond,
         customization: options?.engraving

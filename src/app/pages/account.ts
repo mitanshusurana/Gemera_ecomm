@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -11,7 +11,7 @@ import { WishlistService } from '../services/wishlist.service';
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -247,9 +247,9 @@ import { WishlistService } from '../services/wishlist.service';
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div *ngFor="let item of wishlistService.items()" class="card card-hover group overflow-hidden">
                     <div class="relative overflow-hidden h-48 bg-diamond-100 flex items-center justify-center">
-                      <img *ngIf="item.imageUrl" [src]="item.imageUrl" class="w-full h-full object-cover">
+                      <img *ngIf="item.imageUrl" [ngSrc]="item.imageUrl" fill class="object-cover">
                       <span *ngIf="!item.imageUrl" class="text-3xl">💎</span>
-                      <button (click)="wishlistService.removeFromWishlist(item.id)" class="absolute top-4 left-4 w-10 h-10 bg-rose-500 text-white rounded-lg flex items-center justify-center transition-all duration-300">
+                      <button (click)="wishlistService.removeFromWishlist(item.id)" class="absolute top-4 left-4 w-10 h-10 bg-rose-500 text-white rounded-lg flex items-center justify-center transition-all duration-300 z-10">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
