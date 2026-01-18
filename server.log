@@ -5,48 +5,52 @@
 ❯ Building...
 ✔ Building...
 Initial chunk files | Names              |  Raw size
-main.js             | main               | 125.66 kB |
-styles.css          | styles             |  96.93 kB |
+styles.css          | styles             |  99.23 kB |
+main.js             | main               |  97.97 kB |
 chunk-XCU54PUX.js   | -                  |  13.47 kB |
-chunk-PRHLERTS.js   | -                  |   6.72 kB |
-chunk-OKNG3WR5.js   | -                  |   3.12 kB |
+chunk-XIM65A6U.js   | -                  |   8.05 kB |
+chunk-YC3X4XN5.js   | -                  |   3.12 kB |
 chunk-HXQ63BFM.js   | -                  |   2.28 kB |
-chunk-XWLXMCJQ.js   | -                  |   2.07 kB |
-chunk-AIRHBJUR.js   | -                  |   1.75 kB |
+chunk-C7V6LZTG.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
 chunk-D5XJJI6Y.js   | -                  |   1.32 kB |
 chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
 polyfills.js        | polyfills          |  95 bytes |
 
-                    | Initial total      | 254.63 kB
+                    | Initial total      | 230.92 kB
 
 Lazy chunk files    | Names              |  Raw size
-chunk-B77AIGYX.js   | product-detail     | 158.82 kB |
-chunk-OEQ2JNFO.js   | checkout           |  82.12 kB |
-chunk-PQ2BXCIR.js   | products           |  72.21 kB |
-chunk-2HUHIMMX.js   | account            |  69.22 kB |
-chunk-G35LNM4H.js   | home               |  51.55 kB |
-chunk-X47AQSAL.js   | rfq-request        |  49.55 kB |
-chunk-SD542QWY.js   | builder            |  35.40 kB |
-chunk-FI7UZFC5.js   | cart               |  31.09 kB |
-chunk-H437HQGQ.js   | order-confirmation |  30.24 kB |
-chunk-DD2VIYI6.js   | login              |  27.95 kB |
-chunk-QJKG4G2I.js   | compare            |  27.61 kB |
-chunk-VLTICCKA.js   | -                  |  24.42 kB |
-chunk-DO4F7XUH.js   | dashboard          |  23.34 kB |
-chunk-F2JHWVHX.js   | verify-certificate |  18.95 kB |
-chunk-T7SN525X.js   | journal            |  12.36 kB |
-...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+chunk-45BMLNW4.js   | product-detail     |  92.58 kB |
+chunk-B3C7E33Y.js   | checkout           |  82.10 kB |
+chunk-XFNMCZRD.js   | account            |  75.42 kB |
+chunk-M2R2JWLT.js   | products           |  72.90 kB |
+chunk-2JUA4WZH.js   | rfq-request        |  49.55 kB |
+chunk-XIBSEO2J.js   | home               |  43.18 kB |
+chunk-XRDN3BHL.js   | builder            |  35.40 kB |
+chunk-YIIJYKDP.js   | cart               |  31.40 kB |
+chunk-DT4JDQX2.js   | order-confirmation |  31.10 kB |
+chunk-LJVSUWUI.js   | compare            |  28.05 kB |
+chunk-JKYEFYNP.js   | login              |  27.95 kB |
+chunk-5MADAUDM.js   | -                  |  25.08 kB |
+chunk-I3J7BW4J.js   | treasure-chest     |  24.08 kB |
+chunk-EZHOAMQU.js   | dashboard          |  23.34 kB |
+chunk-PA3H2N4Q.js   | verify-certificate |  18.95 kB |
+...and 13 more lazy chunks files. Use "--verbose" to show all the files.
 
-Application bundle generation complete. [13.094 seconds]
+Application bundle generation complete. [16.278 seconds]
 
 Watch mode enabled. Watching for file changes...
 NOTE: Raw file sizes do not reflect development server per-request transformations.
   ➜  Local:   http://localhost:4200/
 ❯ Changes detected. Rebuilding...
 ✔ Changes detected. Rebuilding...
-Initial chunk files | Names |  Raw size
-main.js             | main  | 125.99 kB |
+Initial chunk files | Names | Raw size
+main.js             | main  | 97.97 kB |
 
-Application bundle generation complete. [4.256 seconds]
+Lazy chunk files    | Names | Raw size
+chunk-3QMCA5IS.js   | home  | 43.16 kB |
+
+Application bundle generation complete. [5.932 seconds]
 
 Page reload sent to client(s).

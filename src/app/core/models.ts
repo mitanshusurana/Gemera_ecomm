@@ -1,3 +1,40 @@
+export interface ProductSpecifications {
+  [key: string]: any; // Allow flexibility for now
+
+  // Legacy fields (kept for backward compatibility with QuickView/Builder)
+  carat?: number;
+  clarity?: string;
+  color?: string;
+  cut?: string;
+  origin?: string;
+  metal?: string;
+
+  // New Structured Fields
+  diamondDetails?: {
+    type?: string;
+    carat?: number;
+    clarity?: string;
+    color?: string;
+    cut?: string;
+    shape?: string;
+    count?: number;
+    settingType?: string;
+    totalWeight?: number;
+  }[];
+  metalDetails?: {
+    type: string;
+    purity: string;
+    weight: number; // in grams
+  }[];
+  productDetails?: {
+    sku?: string;
+    width?: string;
+    height?: string;
+    grossWeight?: number;
+    styleNo?: string;
+  };
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -19,14 +56,7 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   images?: string[];
-  specifications?: {
-    carat?: number;
-    clarity?: string;
-    color?: string;
-    cut?: string;
-    origin?: string;
-    metal?: string;
-  };
+  specifications?: ProductSpecifications;
 }
 
 export interface CustomizationOption {
@@ -42,6 +72,8 @@ export interface PriceBreakup {
   makingCharges: number;
   tax: number;
   total: number;
+  discount?: number;
+  grandTotal?: number;
 }
 
 export interface ProductDetail extends Product {
@@ -100,8 +132,14 @@ export interface OrderItem {
   quantity: number;
   price: number;
   options?: any;
+  selectedMetal?: any;
+  selectedDiamond?: any;
   createdAt?: string;
   updatedAt?: string;
+  shippingAddress?: string;
+  billingAddress?: string;
+  paymentMethod?: string;
+  shippingMethod?: string;
 }
 
 export interface Category {
@@ -125,6 +163,18 @@ export interface Address {
   isDefault?: boolean;
 }
 
+export interface TreasureChestAccount {
+  id: string;
+  planName: string;
+  installmentAmount: number;
+  installmentsPaid: number;
+  totalInstallments: number;
+  balance: number;
+  status: 'ACTIVE' | 'MATURED' | 'CLOSED';
+  startDate: string;
+  nextDueDate: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -135,7 +185,8 @@ export interface User {
   role?: 'ADMIN' | 'USER';
   addresses?: Address[];
   createdAt: string;
-  token?: string; // specific for auth response convenience sometimes
+  token?: string;
+  treasureChest?: TreasureChestAccount;
 }
 
 export interface AuthResponse {

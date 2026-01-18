@@ -33,7 +33,8 @@ import { WishlistService } from '../services/wishlist.service';
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <!-- Sidebar Navigation -->
           <div class="md:col-span-1">
-            <div class="card p-4 space-y-2 sticky top-24">
+            <!-- Desktop Sidebar -->
+            <div class="hidden md:block card p-4 space-y-2 sticky top-24">
               <button (click)="activeTab.set('profile')" 
                       [ngClass]="activeTab() === 'profile' ? 'bg-gold-50 text-gold-600 border-l-4 border-gold-600' : 'text-gray-700 hover:bg-diamond-50'"
                       class="w-full text-left px-4 py-3 font-medium transition-all duration-300">
@@ -63,6 +64,41 @@ import { WishlistService } from '../services/wishlist.service';
               <button (click)="logout()" class="w-full text-left px-4 py-3 font-medium text-red-600 hover:bg-red-50 transition-all duration-300">
                 Logout
               </button>
+            </div>
+
+            <!-- Mobile Navigation (Horizontal Scroll) -->
+            <div class="md:hidden mb-6 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+               <div class="flex gap-2">
+                  <button (click)="activeTab.set('profile')"
+                          [class]="activeTab() === 'profile' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                     Profile
+                  </button>
+                  <button (click)="activeTab.set('orders')"
+                          [class]="activeTab() === 'orders' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                     Orders
+                  </button>
+                  <button (click)="activeTab.set('addresses')"
+                          [class]="activeTab() === 'addresses' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                     Addresses
+                  </button>
+                  <button (click)="activeTab.set('wishlist')"
+                          [class]="activeTab() === 'wishlist' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                     Wishlist
+                  </button>
+                  <button (click)="activeTab.set('settings')"
+                          [class]="activeTab() === 'settings' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                     Settings
+                  </button>
+                  <button (click)="logout()"
+                          class="px-4 py-2 rounded-full border border-red-200 bg-red-50 text-red-600 text-sm font-semibold whitespace-nowrap">
+                     Logout
+                  </button>
+               </div>
             </div>
           </div>
 
@@ -183,7 +219,7 @@ import { WishlistService } from '../services/wishlist.service';
                     <div class="border-t border-diamond-200 pt-4 flex justify-between items-center">
                       <p class="text-gray-600 text-sm" *ngIf="order.items && order.items.length > 0">{{ getItemName(order.items[0]) }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
                       <p class="text-gray-600 text-sm" *ngIf="!order.items || order.items.length === 0">No items</p>
-                      <button class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</button>
+                      <a [routerLink]="['/track-order']" [queryParams]="{id: order.orderNumber}" class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</a>
                     </div>
                   </div>
 

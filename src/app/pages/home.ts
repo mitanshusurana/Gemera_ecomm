@@ -14,11 +14,7 @@ interface CollectionUI {
   id: string;
   name: string;
   title: string;
-  description: string;
-  productCount: number;
   icon: string;
-  color: string;
-  accentColor: string;
 }
 
 @Component({
@@ -33,269 +29,142 @@ interface CollectionUI {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Premium Hero Section -->
-    <section class="relative w-full overflow-hidden min-h-screen flex items-center">
-      <!-- Background Image with Overlay -->
-      <div
-        class="absolute inset-0 bg-gradient-to-r from-diamond-900 via-diamond-800 to-gold-900/30"
-      ></div>
-      <div class="absolute inset-0 opacity-20 pointer-events-none">
-        <svg
-          class="absolute inset-0 w-full h-full"
-          preserveAspectRatio="none"
-          viewBox="0 0 1200 600"
-        >
-          <defs>
-            <pattern
-              id="grid"
-              width="40"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 40 0 L 0 0 0 40"
-                fill="none"
-                stroke="white"
-                stroke-width="0.5"
-                opacity="0.1"
-              />
-            </pattern>
-          </defs>
-          <rect width="1200" height="600" fill="url(#grid)" />
-        </svg>
-      </div>
+    <!-- Hero Slider (Mocked) -->
+    <section class="relative w-full h-[500px] md:h-[600px] bg-gradient-to-b from-primary-50 to-white overflow-hidden flex items-center">
+       <div class="container-luxury grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full px-6 md:px-12 pt-20 md:pt-0">
+          <div class="z-10 animate-fade-in-up text-center md:text-left">
+            <h2 class="text-sm font-bold tracking-[0.2em] text-secondary-600 mb-4 uppercase">New Collection</h2>
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-primary-900 mb-6 leading-tight">
+              Radiance of <br/> <span class="text-primary-600">Rare Gemstones</span>
+            </h1>
+            <p class="text-gray-600 text-lg mb-8 max-w-md mx-auto md:mx-0 leading-relaxed">
+               Explore our latest arrival of certified Sapphires, Rubies and Emeralds set in 18K Gold.
+            </p>
+            <a routerLink="/products" class="inline-block btn-primary text-lg px-10 py-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+              Shop Now
+            </a>
+          </div>
+          <div class="relative h-full w-full flex items-center justify-center">
+             <!-- Placeholder for Hero Image -->
+             <div class="w-72 h-72 md:w-[450px] md:h-[450px] bg-gradient-to-br from-secondary-100 to-primary-50 rounded-full flex items-center justify-center relative animate-float shadow-2xl border-4 border-white">
+                <span class="text-8xl md:text-9xl filter drop-shadow-xl">💍</span>
 
-      <div
-        class="relative z-10 w-full flex flex-col items-center justify-center text-center px-4 pt-20 pb-12"
-      >
-        <!-- Trust Badge -->
-        <div
-          class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-gold-400/30 animate-fade-in-up"
-        >
-          <span class="text-sm text-gold-300 font-semibold"
-            >🏆 Trusted by Collectors & Connoisseurs</span
-          >
-        </div>
+                <!-- Decorative Elements -->
+                <div class="absolute -top-8 -right-8 w-24 h-24 bg-secondary-200 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-blob"></div>
+                <div class="absolute -bottom-12 -left-8 w-32 h-32 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-blob animation-delay-2000"></div>
+             </div>
+          </div>
+       </div>
+    </section>
 
-        <!-- Main Headline -->
-        <h1
-          class="text-5xl md:text-8xl font-display font-bold text-white mb-6 leading-tight animate-fade-in-up delay-100"
-        >
-          <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-gold-300 to-gold-500"
-            >Curated</span
-          ><br />
-          Heritage Gemstones
-        </h1>
+    <!-- Shop By Category (Circular) -->
+    <section class="py-12 md:py-20 bg-white">
+      <div class="container-luxury px-4 md:px-6">
+        <h2 class="text-2xl md:text-4xl font-display font-bold text-primary-900 mb-8 md:mb-12 text-center">Shop by Category</h2>
 
-        <!-- Subheading -->
-        <p
-          class="text-lg md:text-2xl text-gold-100 max-w-3xl mx-auto mb-8 leading-relaxed animate-fade-in-up delay-200"
-        >
-          Museum-quality loose stones, hand-carved idols, and heirloom jewelry
-          collections. Every piece certified and authenticated.
-        </p>
-
-        <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-fade-in-up delay-300 w-full sm:w-auto">
-          <a
-            routerLink="/products"
-            class="group relative px-8 py-4 bg-gold-500 hover:bg-gold-600 text-white font-bold rounded-lg transition-all duration-300 shadow-luxury hover:shadow-luxury-lg hover:-translate-y-1 w-full sm:w-auto"
-          >
-            <span class="flex items-center justify-center">
-              Explore Collections
-              <svg
-                class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                ></path>
-              </svg>
-            </span>
-          </a>
-          <button
-            class="px-8 py-4 border-2 border-gold-400 text-gold-300 hover:bg-gold-400/10 font-bold rounded-lg transition-all duration-300 w-full sm:w-auto"
-          >
-            View Certifications
-          </button>
-        </div>
-
-        <!-- Scroll Indicator -->
-        <div
-          class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce hidden md:block"
-        >
-          <svg
-            class="w-6 h-6 text-gold-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            ></path>
-          </svg>
+        <!-- Mobile: Horizontal Scroll | Desktop: Grid/Flex -->
+        <div class="flex overflow-x-auto md:flex-wrap md:justify-center gap-6 md:gap-16 pb-6 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar snap-x snap-mandatory">
+           <a *ngFor="let cat of collections()" routerLink="/products" [queryParams]="{category: cat.name}"
+              class="group flex flex-col items-center gap-3 md:gap-4 cursor-pointer flex-shrink-0 snap-center w-24 md:w-36">
+              <div class="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border border-gray-200 flex items-center justify-center text-3xl md:text-5xl group-hover:border-secondary-500 group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 relative overflow-hidden">
+                 <div class="absolute inset-0 bg-secondary-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                 <span class="relative z-10">{{ cat.icon }}</span>
+              </div>
+              <span class="font-semibold text-gray-700 group-hover:text-primary-800 transition-colors text-center text-xs md:text-base whitespace-nowrap">{{ cat.title }}</span>
+           </a>
         </div>
       </div>
     </section>
 
-    <!-- Trust & Heritage Section -->
-    <section class="section-padding bg-white border-b border-diamond-200">
-      <div class="container-luxury">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
-          <div class="text-center">
-            <div class="text-4xl mb-3">🔐</div>
-            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Certified Authentic</h3>
-            <p class="text-gray-600 text-sm">
-              GIA, IGI & AGS certified
-            </p>
+    <!-- Treasure Plan Banner -->
+    <section class="py-16 bg-primary-900 text-white overflow-hidden relative">
+       <!-- Background Pattern -->
+       <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
+
+       <div class="container-luxury relative z-10 flex flex-col md:flex-row items-center justify-between gap-12 px-6">
+          <div class="flex-1 text-center md:text-left">
+             <div class="inline-block px-4 py-1.5 bg-secondary-500 text-white text-xs font-bold tracking-widest uppercase rounded-full mb-6">Smart Savings</div>
+             <h2 class="text-3xl md:text-5xl font-display font-bold mb-6 leading-tight">Gemara <span class="text-secondary-400">Treasure Plan</span></h2>
+             <p class="text-primary-100 text-lg mb-8 max-w-xl leading-relaxed">
+               Plan your jewellery purchase smartly. Pay for 9 months and get <span class="text-white font-bold">100% off</span> on the 10th month installment by us.
+             </p>
+             <a routerLink="/treasure" class="inline-block bg-white text-primary-900 font-bold px-8 py-4 rounded-full hover:bg-secondary-50 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+               Start Saving Now
+             </a>
           </div>
-          <div class="text-center">
-            <div class="text-4xl mb-3">👨‍🎨</div>
-            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Master Artisans</h3>
-            <p class="text-gray-600 text-sm">
-              Multi-generational craft
-            </p>
+          <div class="flex-1 flex justify-center">
+             <div class="w-72 h-48 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 flex flex-col items-center justify-center p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500 shadow-2xl relative">
+                <div class="absolute -top-4 -right-4 bg-secondary-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">POPULAR</div>
+                <span class="text-6xl mb-4">💎</span>
+                <span class="font-display font-bold text-2xl">Get 1 Month FREE</span>
+             </div>
           </div>
-          <div class="text-center">
-            <div class="text-4xl mb-3">🌍</div>
-            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Ethical Sourcing</h3>
-            <p class="text-gray-600 text-sm">
-              Conflict-free stones
-            </p>
-          </div>
-          <div class="text-center">
-            <div class="text-4xl mb-3">♻️</div>
-            <h3 class="font-bold text-gray-900 mb-2 text-lg md:text-xl">Lifetime Warranty</h3>
-            <p class="text-gray-600 text-sm">
-              Care & restoration included
-            </p>
-          </div>
-        </div>
-      </div>
+       </div>
     </section>
 
-    <!-- Collection Categories - Premium Grid -->
-    <section class="section-padding bg-diamond-50">
+    <!-- Try at Home Banner -->
+    <section class="py-16 bg-secondary-50">
+       <div class="container-luxury flex flex-col md:flex-row items-center justify-between gap-8 bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100">
+          <div class="flex-1">
+             <h2 class="font-display font-bold text-3xl text-gray-900 mb-4">Try at Home</h2>
+             <p class="text-gray-600 mb-6 text-lg">Don't just look, feel the sparkle. Book a free appointment and try our designs at your doorstep.</p>
+             <ul class="space-y-3 mb-8">
+                <li class="flex items-center gap-2 text-gray-700">
+                   <span class="text-green-500 text-xl">✓</span> No obligation to buy
+                </li>
+                <li class="flex items-center gap-2 text-gray-700">
+                   <span class="text-green-500 text-xl">✓</span> 100% Safe & Sanitized
+                </li>
+             </ul>
+             <a routerLink="/products" class="btn-primary">Browse Designs</a>
+          </div>
+          <div class="flex-1 flex justify-center">
+             <div class="text-9xl">🏠💍</div>
+          </div>
+       </div>
+    </section>
+
+    <!-- Featured Collections -->
+    <section class="py-20 bg-gray-50">
       <div class="container-luxury">
-        <div class="text-center mb-12">
-          <h2
-            class="text-4xl md:text-6xl font-display font-bold text-diamond-900 mb-4"
-          >
-            Curated Collections
-          </h2>
-          <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            From precious diamonds to hand-carved spiritual idols
-          </p>
-        </div>
-
-        <!-- 6-Item Grid Layout -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <a
-            *ngFor="let collection of collections()"
-            routerLink="/products"
-            [queryParams]="{ category: collection.name }"
-            class="group relative overflow-hidden rounded-2xl h-80 md:h-96 cursor-pointer card-hover block"
-          >
-            <!-- Background Gradient -->
-            <div
-              class="absolute inset-0"
-              [ngClass]="'bg-gradient-to-br ' + collection.color"
-            ></div>
-
-            <!-- Icon & Content -->
-            <div
-              class="absolute inset-0 flex flex-col justify-end p-6 md:p-8 text-white"
-            >
-              <!-- Icon -->
-              <div
-                class="text-5xl md:text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-300"
-              >
-                {{ collection.icon }}
-              </div>
-
-              <!-- Text -->
-              <h3 class="font-display text-2xl md:text-3xl font-bold mb-2">
-                {{ collection.title }}
-              </h3>
-              <p class="text-gray-100 text-sm mb-4 line-clamp-2 md:line-clamp-none">
-                {{ collection.description }}
-              </p>
-              <p class="text-gold-200 text-xs font-semibold mb-4">
-                {{ collection.productCount }}+ items
-              </p>
-
-              <!-- CTA -->
-              <div
-                class="inline-flex items-center text-gold-300 group-hover:text-gold-200 transition-colors"
-              >
-                <span class="text-sm font-semibold">Explore</span>
-                <svg
-                  class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  ></path>
-                </svg>
-              </div>
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+            <div>
+                <h2 class="text-3xl md:text-5xl font-display font-bold text-primary-900 mb-4">
+                  Trending Now
+                </h2>
+                <p class="text-lg text-gray-600">
+                  Discover exceptional pieces handpicked by our curators
+                </p>
             </div>
-
-            <!-- Overlay -->
-            <div
-              class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all duration-300"
-            ></div>
-          </a>
+            <a routerLink="/products" class="text-primary-700 font-bold hover:text-primary-900 flex items-center gap-2 group">
+                View All
+                <span class="group-hover:translate-x-1 transition-transform">→</span>
+            </a>
         </div>
-      </div>
-    </section>
-
-    <!-- Featured Collections Carousel -->
-    <section class="section-padding bg-white">
-      <div class="container-luxury">
-        <h2 class="text-4xl md:text-5xl font-display font-bold text-diamond-900 mb-4">
-          Gallery Highlights
-        </h2>
-        <p class="text-lg md:text-xl text-gray-600 mb-12 max-w-2xl">
-          Discover exceptional pieces handpicked by our expert curators
-        </p>
 
         <!-- Featured Items Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <a
             *ngFor="let product of featuredProducts()"
             [routerLink]="['/products', product.id]"
-            class="card group overflow-hidden hover:shadow-luxury-lg transition-all duration-300 block cursor-pointer"
+            class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 block cursor-pointer border border-gray-100"
           >
             <!-- Image Container -->
             <div
-              class="relative overflow-hidden aspect-square bg-gradient-to-br from-gold-100 to-diamond-100"
+              class="relative overflow-hidden aspect-[4/5] bg-gray-100"
             >
-              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover" [alt]="product.name">
+              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" [alt]="product.name">
               <div
                 *ngIf="!product.imageUrl && !product.images?.[0]"
-                class="w-full h-full flex items-center justify-center text-5xl"
+                class="w-full h-full flex items-center justify-center text-5xl bg-gray-50"
               >
                 {{ getProductEmoji(product.category) }}
               </div>
 
               <!-- Badge -->
-              <div *ngIf="getBadge(product)" class="absolute top-4 right-4">
+              <div *ngIf="getBadge(product)" class="absolute top-3 left-3">
                 <span
-                  class="inline-block px-3 py-1 bg-gold-500 text-white text-xs font-bold rounded-full"
+                  class="inline-block px-2 py-1 bg-primary-900 text-white text-[10px] font-bold tracking-widest uppercase rounded"
                 >
                   {{ getBadge(product) }}
                 </span>
@@ -304,10 +173,10 @@ interface CollectionUI {
               <!-- Wishlist -->
               <button
                 (click)="handleWishlist($event, product.id)"
-                class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all shadow-md"
+                class="absolute top-3 right-3 w-8 h-8 bg-white hover:bg-secondary-500 hover:text-white rounded-full flex items-center justify-center transition-all shadow-md opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
               >
                 <svg
-                  class="w-5 h-5"
+                  class="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -320,169 +189,65 @@ interface CollectionUI {
                   ></path>
                 </svg>
               </button>
+
+              <!-- Quick Add Overlay -->
+              <button
+                (click)="handleAddToCart($event, product.id)"
+                class="absolute bottom-4 left-4 right-4 bg-white/90 hover:bg-primary-900 hover:text-white text-primary-900 font-bold py-3 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 text-sm backdrop-blur-sm"
+              >
+                Add to Cart
+              </button>
             </div>
 
             <!-- Product Info -->
-            <div class="p-6">
-              <!-- Category & Name -->
-              <p
-                class="text-xs text-gold-600 font-bold uppercase tracking-widest mb-2"
-              >
-                {{ product.category }}
-              </p>
-              <h3 class="font-semibold text-gray-900 text-lg mb-3 line-clamp-2">
+            <div class="p-5">
+              <div class="flex justify-between items-start mb-2">
+                 <p class="text-[10px] text-secondary-600 font-bold uppercase tracking-widest">
+                    {{ product.category }}
+                 </p>
+                 <div class="flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-100" *ngIf="product.rating">
+                    <span class="text-[10px] font-bold text-green-700">{{ product.rating }} ★</span>
+                 </div>
+              </div>
+
+              <h3 class="font-semibold text-gray-900 text-base mb-2 line-clamp-1 group-hover:text-primary-700 transition-colors">
                 {{ product.name }}
               </h3>
 
-              <!-- Rating -->
-              <div class="flex items-center gap-2 mb-4">
-                <div class="flex gap-0.5">
-                  <span
-                    *ngFor="let i of [1, 2, 3, 4, 5]"
-                    class="text-gold-500 text-xs"
-                    >★</span
-                  >
-                </div>
-                <span class="text-xs text-gray-500"
-                  >({{ product.reviewCount }})</span
-                >
-              </div>
-
-              <!-- Price -->
-              <div class="mb-4">
-                <span class="text-2xl font-bold text-diamond-900">{{
-                  formatPrice(product.price)
-                }}</span>
+              <div class="flex items-baseline gap-2">
+                <span class="text-xl font-bold text-gray-900">{{ formatPrice(product.price) }}</span>
                 <span
                   *ngIf="product.originalPrice"
-                  class="text-sm text-gray-500 line-through ml-2"
+                  class="text-xs text-gray-400 line-through"
                   >{{ formatPrice(product.originalPrice) }}</span
                 >
               </div>
-
-              <!-- Add to Cart & Quick View -->
-              <div class="flex gap-2">
-                <button
-                  (click)="handleAddToCart($event, product.id)"
-                  class="flex-1 btn-primary text-sm px-4"
-                >
-                  Add to Cart
-                </button>
-                <button
-                  (click)="
-                    $event.preventDefault();
-                    $event.stopPropagation();
-                    openQuickView(product)
-                  "
-                  class="flex-1 px-4 py-3 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-semibold rounded-lg transition-all text-sm"
-                >
-                  Quick View
-                </button>
-              </div>
             </div>
-          </a>
-        </div>
-
-        <!-- View All CTA -->
-        <div class="text-center">
-          <a
-            routerLink="/products"
-            class="inline-block px-8 py-4 border-2 border-gold-500 text-gold-600 hover:bg-gold-50 font-bold rounded-lg transition-all w-full sm:w-auto"
-          >
-            View Complete Collections
           </a>
         </div>
       </div>
     </section>
 
-    <!-- About/Story Section -->
-    <section
-      class="section-padding bg-gradient-to-r from-diamond-900 to-diamond-800 text-white"
-    >
-      <div class="container-luxury">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <!-- Left: Image/Visual -->
-          <div
-            class="relative h-64 md:h-96 rounded-2xl overflow-hidden shadow-luxury-lg"
-          >
-            <div
-              class="w-full h-full bg-gradient-to-br from-gold-300 to-gold-600 flex items-center justify-center"
-            >
-              <span class="text-9xl">💎</span>
-            </div>
-          </div>
-
-          <!-- Right: Story -->
-          <div>
-            <div
-              class="inline-block mb-4 px-4 py-2 bg-gold-500/20 rounded-full border border-gold-400/50"
-            >
-              <span class="text-sm font-semibold text-gold-300"
-                >Our Legacy</span
-              >
-            </div>
-
-            <h2 class="text-3xl md:text-5xl font-display font-bold mb-6">
-              Heritage Meets Modern Excellence
-            </h2>
-
-            <p class="text-base md:text-lg text-gray-200 mb-4 leading-relaxed">
-              With over 25 years of expertise, Gemara stands as a trusted
-              custodian of precious gemstones and spiritual artifacts.
-            </p>
-
-            <a
-              href="#contact"
-              class="inline-block px-8 py-4 bg-gold-500 hover:bg-gold-600 text-white font-bold rounded-lg transition-all hover:shadow-luxury w-full sm:w-auto text-center"
-            >
-              Learn More About Us
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Instagram Feed -->
-    <section id="instagram" class="section-padding bg-white">
+    <!-- Instagram Feed (Re-styled) -->
+    <section class="py-20 bg-white">
       <div class="container-luxury text-center">
-        <h2 class="text-3xl font-display font-bold text-diamond-900 mb-2">@GemaraJewels</h2>
-        <p class="text-gray-600 mb-8">Follow us on Instagram for daily inspiration</p>
+        <h2 class="text-3xl font-display font-bold text-primary-900 mb-2">@GemaraJewels</h2>
+        <p class="text-gray-500 mb-10">Follow us on Instagram for daily inspiration</p>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
-            <div class="w-full h-full flex items-center justify-center text-4xl bg-rose-50">💍</div>
-            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
-              <span class="flex items-center gap-1">❤️ 245</span>
-              <span class="flex items-center gap-1">💬 12</span>
-            </div>
-          </div>
-          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
-            <div class="w-full h-full flex items-center justify-center text-4xl bg-blue-50">💎</div>
-            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
-              <span class="flex items-center gap-1">❤️ 189</span>
-              <span class="flex items-center gap-1">💬 8</span>
-            </div>
-          </div>
-          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
-            <div class="w-full h-full flex items-center justify-center text-4xl bg-green-50">🕉️</div>
-            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
-              <span class="flex items-center gap-1">❤️ 562</span>
-              <span class="flex items-center gap-1">💬 45</span>
-            </div>
-          </div>
-          <div class="relative group aspect-square overflow-hidden rounded-lg bg-gray-100 cursor-pointer">
-            <div class="w-full h-full flex items-center justify-center text-4xl bg-yellow-50">👑</div>
-            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-4">
-              <span class="flex items-center gap-1">❤️ 321</span>
-              <span class="flex items-center gap-1">💬 18</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-8">
-          <a href="#" class="btn-outline flex items-center gap-2 mx-auto w-fit">
-            <span>📷</span> Follow Us
-          </a>
+           <!-- ... (Keep existing simple placeholders but clean up if needed) -->
+           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-rose-50/50">💍</div>
+           </div>
+           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-blue-50/50">💎</div>
+           </div>
+           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-green-50/50">🕉️</div>
+           </div>
+           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-yellow-50/50">👑</div>
+           </div>
         </div>
       </div>
     </section>
@@ -510,38 +275,20 @@ export class HomeComponent implements OnInit {
   quickViewOpen = signal(false);
   selectedProduct = signal<ProductDetail | null>(null);
 
-  collections = signal<CollectionUI[]>([]);
+  collections = signal<CollectionUI[]>([
+    { id: '1', name: 'Engagement Ring', title: 'Rings', icon: '💍' },
+    { id: '2', name: 'Loose Gemstone', title: 'Loose Stones', icon: '💎' },
+    { id: '3', name: 'Spiritual Idol', title: 'Idols', icon: '🕉️' },
+    { id: '4', name: 'Gemstone Jewelry', title: 'Gemstones', icon: '👑' },
+    { id: '5', name: 'Precious Metal', title: 'Gold', icon: '🏆' },
+    { id: '6', name: 'Custom', title: 'Custom', icon: '✨' },
+  ]);
   featuredProducts = signal<Product[]>([]);
 
-  // UI Metadata map
-  private categoryMeta: {[key: string]: Partial<CollectionUI>} = {
-    'engagement-rings': { title: 'Diamond Rings', icon: '💍', color: 'from-rose-100 to-rose-200', accentColor: 'text-rose-700', description: 'Certified solitaires and bespoke designs', productCount: 248 },
-    'loose-gemstones': { title: 'Loose Stones', icon: '💎', color: 'from-sapphire-100 to-sapphire-200', accentColor: 'text-sapphire-700', description: 'Museum-quality unset precious & semi-precious gems', productCount: 312 },
-    'spiritual-idols': { title: 'Carved Figures', icon: '🕉️', color: 'from-emerald-100 to-emerald-200', accentColor: 'text-emerald-700', description: 'Hand-carved spiritual and devotional sculptures', productCount: 156 },
-    'gemstone-jewelry': { title: 'Colored Gemstones', icon: '👑', color: 'from-purple-100 to-purple-200', accentColor: 'text-purple-700', description: 'Emerald, sapphire, ruby & precious stone pieces', productCount: 189 },
-    'precious-metals': { title: 'Gold & Platinum', icon: '🏆', color: 'from-yellow-100 to-yellow-200', accentColor: 'text-yellow-700', description: '24K gold, platinum & silver collections', productCount: 94 },
-    'bespoke-custom': { title: 'Made to Order', icon: '✨', color: 'from-pink-100 to-pink-200', accentColor: 'text-pink-700', description: 'Personalized designs with master craftspeople', productCount: 0 },
-  };
-
   ngOnInit() {
-    // Add default SEO tags for Home
     this.seoService.updateTags({
       title: 'Gemara | Curated Heritage Gemstones & Jewelry',
       description: 'Discover museum-quality loose stones, hand-carved idols, and heirloom jewelry collections. Certified authentic and ethically sourced.'
-    });
-
-    this.productService.getCategories().subscribe(res => {
-        const mapped = res.categories.map(c => ({
-            id: c.id,
-            name: c.name,
-            title: this.categoryMeta[c.name]?.title || c.displayName,
-            description: this.categoryMeta[c.name]?.description || '',
-            productCount: this.categoryMeta[c.name]?.productCount || 0,
-            icon: this.categoryMeta[c.name]?.icon || '💎',
-            color: this.categoryMeta[c.name]?.color || 'from-gray-100 to-gray-200',
-            accentColor: this.categoryMeta[c.name]?.accentColor || 'text-gray-700'
-        }));
-        this.collections.set(mapped);
     });
 
     this.productService.getProducts(0, 8).subscribe(res => {
@@ -571,7 +318,6 @@ export class HomeComponent implements OnInit {
   }
 
   openQuickView(product: Product): void {
-    // Fetch full details
     this.productService.getProductById(product.id).subscribe(details => {
         this.selectedProduct.set(details);
         this.quickViewOpen.set(true);
@@ -594,7 +340,7 @@ export class HomeComponent implements OnInit {
   handleWishlist(event: Event, productId: string): void {
       event.preventDefault();
       event.stopPropagation();
-      // Api call would go here
+      this.toastService.show('Added to Wishlist', 'success');
   }
 
   handleAddToCartFromModal(event: { productId: string; quantity: number }): void {
@@ -605,7 +351,6 @@ export class HomeComponent implements OnInit {
   }
 
   handleViewDetails(productId: string): void {
-    // In real app, navigate to product detail page
-    // RouterLink in template handles navigation if set, but here it's an event
+    // Handled by router link usually
   }
 }

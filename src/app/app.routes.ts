@@ -36,8 +36,16 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/checkout").then(m => m.CheckoutComponent)
   },
   {
+    path: "track-order",
+    loadComponent: () => import("./pages/track-order").then(m => m.TrackOrderComponent),
+  },
+  {
     path: "verify-certificate",
     loadComponent: () => import("./pages/verify-certificate").then(m => m.VerifyCertificateComponent),
+  },
+  {
+    path: "wishlist",
+    loadComponent: () => import("./pages/wishlist").then(m => m.WishlistComponent)
   },
   {
     path: "account",
@@ -51,6 +59,14 @@ export const routes: Routes = [
   {
     path: "rfq",
     loadComponent: () => import("./pages/rfq-request").then(m => m.RFQRequestComponent)
+  },
+  {
+    path: "treasure",
+    loadComponent: () => import("./pages/treasure-chest").then(m => m.TreasureChestComponent)
+  },
+  {
+    path: "stores",
+    loadComponent: () => import("./pages/store-locator").then(m => m.StoreLocatorComponent)
   },
   {
     path: "about",
