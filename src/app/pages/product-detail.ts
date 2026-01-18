@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { HistoryService } from '../services/history.service';
 import { CurrencyService } from '../services/currency.service';
+import { RING_CATEGORIES } from '../core/constants';
 
 @Component({
   selector: 'app-product-detail',
@@ -227,7 +228,7 @@ import { CurrencyService } from '../services/currency.service';
                    </div>
 
                    <!-- Size -->
-                   <div>
+                   <div *ngIf="isRingCategory()">
                       <div class="flex justify-between mb-2">
                          <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Ring Size</span>
                          <button (click)="sizeGuideOpen.set(true)" class="text-xs text-[#deaa6f] underline">Size Guide</button>
@@ -409,6 +410,12 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     setTimeout(() => {
        this.deliveryDate.set('Mon, 21 Aug');
     }, 800);
+  }
+
+  isRingCategory(): boolean {
+      const cat = this.product()?.category;
+      if (!cat) return false;
+      return RING_CATEGORIES.some(c => cat.includes(c));
   }
 
   // Helpers

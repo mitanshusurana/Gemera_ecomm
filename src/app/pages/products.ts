@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
-import { ActivatedRoute, RouterLink } from "@angular/router";
+import { ActivatedRoute, RouterLink, Router } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { Title } from '@angular/platform-browser';
 import { ProductService } from "../services/product.service";
@@ -11,6 +11,7 @@ import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
+import { APP_CATEGORIES } from '../core/constants';
 
 @Component({
   selector: "app-products",
@@ -81,14 +82,14 @@ import { CurrencyService } from '../services/currency.service';
                       <span class="text-sm text-gray-700">All Products</span>
                     </label>
                     <label
-                      *ngFor="let category of categories()"
+                      *ngFor="let category of appCategories"
                       class="flex items-center gap-3 cursor-pointer"
                     >
                       <input
                         type="checkbox"
                         class="w-4 h-4"
-                        [checked]="selectedCategories().includes(category.name)"
-                        (change)="toggleCategory(category.name)"
+                        [checked]="selectedCategories().includes(category.value)"
+                        (change)="toggleCategory(category.value)"
                       />
                       <span class="text-sm text-gray-700">{{ category.displayName }}</span>
                     </label>
@@ -386,12 +387,14 @@ import { CurrencyService } from '../services/currency.service';
         [isOpen]="quickViewOpen()"
         [product]="quickViewProduct()"
         (close)="quickViewOpen.set(false)"
-        (addToCart)="handleQuickViewAddToCart($event)">
+        (addToCart)="handleQuickViewAddToCart($event)"
+        (viewDetails)="handleViewDetails($event)">
       </app-quick-view-modal>
     </div>
   `,
 })
 export class ProductsComponent implements OnInit {
+  appCategories = APP_CATEGORIES;
   private productService = inject(ProductService);
   private cartService = inject(CartService);
   private activatedRoute = inject(ActivatedRoute);
@@ -403,7 +406,7 @@ export class ProductsComponent implements OnInit {
 
   // State management
   isFilterOpen = signal(false);
-  categories = signal<Category[]>([]);
+  // categories = signal<Category[]>([]); // Removed in favor of constant
   selectedCategories = signal<string[]>([]);
   selectedOccasions = signal<string[]>([]);
   selectedStyles = signal<string[]>([]);
@@ -443,15 +446,10 @@ export class ProductsComponent implements OnInit {
     };
   });
 
+  private router = inject(Router);
+
   ngOnInit(): void {
     this.titleService.setTitle('Fine Jewellery Collections | Gemara');
-
-    // Fetch categories
-    this.productService.getCategories()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(res => {
-        this.categories.set(res.categories);
-    });
 
     this.activatedRoute.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -621,6 +619,10 @@ export class ProductsComponent implements OnInit {
         .subscribe(() => {
         this.toastService.show('Added to cart', 'success');
     });
+  }
+
+  handleViewDetails(productId: string): void {
+    this.router.navigate(['/products', productId]);
   }
 
   handleVisualSearch(event: Event): void {

@@ -132,6 +132,8 @@ export interface OrderItem {
   quantity: number;
   price: number;
   options?: any;
+  selectedMetal?: any;
+  selectedDiamond?: any;
   createdAt?: string;
   updatedAt?: string;
   shippingAddress?: string;

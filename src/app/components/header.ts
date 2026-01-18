@@ -7,6 +7,7 @@ import { ProductService } from '../services/product.service';
 import { Product, User } from '../core/models';
 import { FormsModule } from '@angular/forms';
 import { WishlistService } from '../services/wishlist.service';
+import { APP_CATEGORIES } from '../core/constants';
 
 @Component({
   selector: 'app-header',
@@ -144,28 +145,15 @@ import { WishlistService } from '../services/wishlist.service';
 
         <!-- Navigation Categories (Desktop) -->
         <nav class="hidden lg:flex justify-center items-center gap-8 mt-4 border-t border-gray-100 pt-3">
-            <a routerLink="/products" [queryParams]="{category: 'New'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
-                New Arrivals
-                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-            </a>
-            <a routerLink="/products" [queryParams]="{category: 'Engagement Ring'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
-                Rings
-                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-            </a>
-            <a routerLink="/products" [queryParams]="{category: 'Earrings'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
-                Earrings
-                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-            </a>
-            <a routerLink="/products" [queryParams]="{category: 'Gemstone'}" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
-                Gemstones
+            <a *ngFor="let cat of categories"
+               [routerLink]="['/products']"
+               [queryParams]="{category: cat.value}"
+               class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
+                {{ cat.displayName }}
                 <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
             </a>
             <a routerLink="/treasure" class="text-sm font-bold text-secondary-600 hover:text-secondary-700 uppercase tracking-wide px-2 py-1 relative group flex items-center gap-1">
                 <span class="text-lg">💎</span> Treasure Plan
-            </a>
-            <a routerLink="/builder" class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
-                Build Your Own
-                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
             </a>
         </nav>
       </div>
@@ -183,11 +171,14 @@ import { WishlistService } from '../services/wishlist.service';
               >
           </div>
           <a routerLink="/" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Home</a>
-          <a routerLink="/products" [queryParams]="{category: 'New'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">New Arrivals</a>
-          <a routerLink="/products" [queryParams]="{category: 'Engagement Ring'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Rings</a>
-          <a routerLink="/products" [queryParams]="{category: 'Earrings'}" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Earrings</a>
+          <a *ngFor="let cat of categories"
+             [routerLink]="['/products']"
+             [queryParams]="{category: cat.value}"
+             (click)="toggleMobileMenu()"
+             class="font-medium text-gray-800 py-2 border-b border-gray-50">
+             {{ cat.displayName }}
+          </a>
           <a routerLink="/treasure" (click)="toggleMobileMenu()" class="font-bold text-secondary-700 py-2 border-b border-gray-50 flex items-center gap-2">💎 Treasure Plan</a>
-          <a routerLink="/builder" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Build Your Ring</a>
         </div>
       </div>
     </header>
@@ -198,6 +189,7 @@ export class HeaderComponent {
   searchQuery = '';
   searchResults: Product[] = [];
   isSearchFocused = false;
+  categories = APP_CATEGORIES;
 
   private authService = inject(AuthService);
   private cartService = inject(CartService);

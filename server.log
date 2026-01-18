@@ -42,3 +42,126 @@ Application bundle generation complete. [7.592 seconds]
 Watch mode enabled. Watching for file changes...
 NOTE: Raw file sizes do not reflect development server per-request transformations.
   ➜  Local:   http://localhost:4200/
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [21.911 seconds]
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2304: Cannot find name 'Router'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/products.ts:449:26:
+[37m      449 │   private router = inject([32mRouter[37m);
+          ╵                           [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2571: Object is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/products.ts:625:4:
+[37m      625 │     [32mthis.router[37m.navigate(['/products', productId]);
+          ╵     [32m~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'selectedMetal' does not exist on type 'OrderItem'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/track-order.ts:57:61:
+[37m      57 │ ...s text-gray-500">{{ item.[32mselectedMetal[37m?.name }} {{ item.selecte...
+         ╵                             [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'selectedDiamond' does not exist on type 'OrderItem'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/track-order.ts:57:92:
+[37m      57 │ ...{ item.selectedMetal?.name }} {{ item.[32mselectedDiamond[37m?.name }}</p>
+         ╵                                          [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2352: Conversion of type '{ id: string; orderNumber: string; userId: string; status: string; total: number; createdAt: string; estimatedDelivery: string; items: { id: string; productId: string; product: any; quantity: number; price: number; }[]; }' to type 'Order' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'items' are incompatible.
+    Type '{ id: string; productId: string; product: any; quantity: number; price: number; }[]' is not comparable to type 'OrderItem[]'.
+      Object literal may only specify known properties, but 'productId' does not exist in type 'OrderItem'. Did you mean to write 'product'?[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/track-order.ts:115:28:
+[37m      115 │                             [32mproductId[37m: '1',
+          ╵                             [32m~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.754 seconds]
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2304: Cannot find name 'Router'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/products.ts:449:26:
+[37m      449 │   private router = inject([32mRouter[37m);
+          ╵                           [32m~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2571: Object is of type 'unknown'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/products.ts:625:4:
+[37m      625 │     [32mthis.router[37m.navigate(['/products', productId]);
+          ╵     [32m~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'selectedMetal' does not exist on type 'OrderItem'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/track-order.ts:57:61:
+[37m      57 │ ...s text-gray-500">{{ item.[32mselectedMetal[37m?.name }} {{ item.selecte...
+         ╵                             [32m~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'selectedDiamond' does not exist on type 'OrderItem'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/track-order.ts:57:92:
+[37m      57 │ ...{ item.selectedMetal?.name }} {{ item.[32mselectedDiamond[37m?.name }}</p>
+         ╵                                          [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2352: Conversion of type '{ id: string; orderNumber: string; userId: string; status: string; total: number; createdAt: string; estimatedDelivery: string; items: { id: string; productId: string; product: any; quantity: number; price: number; }[]; }' to type 'Order' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'items' are incompatible.
+    Type '{ id: string; productId: string; product: any; quantity: number; price: number; }[]' is not comparable to type 'OrderItem[]'.
+      Object literal may only specify known properties, but 'productId' does not exist in type 'OrderItem'. Did you mean to write 'product'?[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/track-order.ts:115:28:
+[37m      115 │                             [32mproductId[37m: '1',
+          ╵                             [32m~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names              |  Raw size
+main.js             | main               | 125.21 kB |
+styles.css          | styles             |  98.35 kB |
+chunk-XCU54PUX.js   | -                  |  13.47 kB |
+chunk-XIM65A6U.js   | -                  |   8.05 kB |
+chunk-YC3X4XN5.js   | -                  |   3.12 kB |
+chunk-HXQ63BFM.js   | -                  |   2.28 kB |
+chunk-C7V6LZTG.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-D5XJJI6Y.js   | -                  |   1.32 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 257.27 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-45BMLNW4.js   | product-detail     |  92.58 kB |
+chunk-B3C7E33Y.js   | checkout           |  82.10 kB |
+chunk-M2R2JWLT.js   | products           |  72.90 kB |
+chunk-K7D3IPLA.js   | account            |  69.50 kB |
+chunk-2JUA4WZH.js   | rfq-request        |  49.55 kB |
+chunk-BHMBQHF2.js   | home               |  42.65 kB |
+chunk-XRDN3BHL.js   | builder            |  35.40 kB |
+chunk-YIIJYKDP.js   | cart               |  31.40 kB |
+chunk-DT4JDQX2.js   | order-confirmation |  31.10 kB |
+chunk-LJVSUWUI.js   | compare            |  28.05 kB |
+chunk-JKYEFYNP.js   | login              |  27.95 kB |
+chunk-5MADAUDM.js   | -                  |  25.08 kB |
+chunk-I3J7BW4J.js   | treasure-chest     |  24.08 kB |
+chunk-EZHOAMQU.js   | dashboard          |  23.34 kB |
+chunk-PA3H2N4Q.js   | verify-certificate |  18.95 kB |
+...and 12 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [2.866 seconds]
+
+Page reload sent to client(s).
