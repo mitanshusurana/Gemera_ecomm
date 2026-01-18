@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HistoryService } from '../services/history.service';
 import { CurrencyService } from '../services/currency.service';
@@ -7,7 +7,7 @@ import { CurrencyService } from '../services/currency.service';
 @Component({
   selector: 'app-recently-viewed',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, NgOptimizedImage],
   template: `
     <section *ngIf="historyService.recentlyViewed().length > 0" class="py-12 border-t border-gray-100 bg-gray-50">
       <div class="container-luxury">
@@ -17,8 +17,8 @@ import { CurrencyService } from '../services/currency.service';
              [routerLink]="['/products', product.id]"
              class="card card-hover group block bg-white">
             <div class="aspect-square bg-gray-100 flex items-center justify-center relative overflow-hidden">
-               <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover">
-               <span *ngIf="!product.imageUrl" class="text-3xl">💎</span>
+               <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover">
+               <span *ngIf="!product.imageUrl && !product.images?.[0]" class="text-3xl">💎</span>
             </div>
             <div class="p-3">
               <p class="text-xs text-gold-600 font-semibold uppercase truncate">{{ product.category }}</p>

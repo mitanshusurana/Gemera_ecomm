@@ -4,20 +4,21 @@ export interface Product {
   description: string;
   price: number;
   originalPrice?: number;
-  rating: number;
-  reviewCount: number;
-  imageUrl: string;
+  rating?: number;
+  reviewCount?: number;
+  imageUrl?: string;
   videoUrl?: string;
   category: string;
-  subcategory: string;
-  gemstones: string[];
-  metal: string;
-  weight: number;
+  subcategory?: string;
+  gemstones?: string[];
+  metal?: string;
+  weight?: number;
   stock: number;
-  sku: string;
-  certifications: string[];
+  sku?: string;
+  certifications?: string[];
   createdAt: string;
   updatedAt: string;
+  images?: string[];
   specifications?: {
     carat?: number;
     clarity?: string;
@@ -44,8 +45,8 @@ export interface PriceBreakup {
 }
 
 export interface ProductDetail extends Product {
-  images: { url: string; alt: string }[];
-  relatedProducts: string[];
+  images?: string[];
+  relatedProducts?: string[];
   customizationOptions?: CustomizationOption[];
   priceBreakup?: PriceBreakup;
 }

@@ -1,12 +1,12 @@
 import { Component, OnInit, signal } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
 
 @Component({
   selector: "app-order-confirmation",
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, NgOptimizedImage],
   template: `
     <div class="min-h-screen bg-gradient-to-b from-gold-50 to-white">
       <!-- Breadcrumb -->
@@ -120,16 +120,19 @@ import { OrderService } from "../services/order.service";
                         class="flex gap-4 pb-4 border-b border-diamond-200 last:border-b-0"
                       >
                         <img
-                          [src]="item.product.imageUrl"
+                          [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''"
                           [alt]="item.product.name"
-                          class="w-20 h-20 rounded-lg object-cover"
+                          width="80"
+                          height="80"
+                          class="rounded-lg object-cover"
+                          *ngIf="item.product.imageUrl || item.product.images?.[0]"
                         />
                         <div class="flex-1">
                           <p class="font-semibold text-gray-900">
                             {{ item.product.name }}
                           </p>
                           <p class="text-sm text-gray-600">
-                            SKU: {{ item.product.sku }}
+                            SKU: {{ item.product.sku || 'N/A' }}
                           </p>
                           <p class="text-sm text-gray-600">
                             Qty: {{ item.quantity }}

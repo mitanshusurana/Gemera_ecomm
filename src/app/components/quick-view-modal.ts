@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
 
 @Component({
   selector: "app-quick-view-modal",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -56,11 +56,11 @@ import { CurrencyService } from "../services/currency.service";
             <!-- Image -->
             <div>
               <div
-                class="bg-gradient-to-br from-gold-100 to-diamond-100 rounded-xl overflow-hidden h-80 flex items-center justify-center"
+                class="relative bg-gradient-to-br from-gold-100 to-diamond-100 rounded-xl overflow-hidden aspect-square flex items-center justify-center"
               >
-                <!-- Use imageUrl if available, else emoji -->
-                <img *ngIf="product?.imageUrl" [src]="product?.imageUrl" class="w-full h-full object-cover" [alt]="product?.name" onerror="this.style.display='none'">
-                <span *ngIf="!product?.imageUrl" class="text-6xl">{{
+                <!-- Use imageUrl or images array if available, else emoji -->
+                <img *ngIf="product?.imageUrl || product?.images?.[0]" [ngSrc]="product?.imageUrl || product?.images?.[0] || ''" fill class="w-full h-full object-cover" [alt]="product?.name">
+                <span *ngIf="!product?.imageUrl && !product?.images?.[0]" class="text-6xl relative z-10">{{
                   product ? getProductEmoji(product.category) : "✦"
                 }}</span>
               </div>
@@ -123,7 +123,7 @@ import { CurrencyService } from "../services/currency.service";
               <div *ngIf="product && product.specifications" class="mb-6">
                 <h4 class="font-semibold text-gray-900 mb-3">Key Specs</h4>
                 <div class="grid grid-cols-2 gap-2 text-sm">
-                  <div *ngIf="product.specifications.carat">
+                  <div *ngIf="product.specifications?.carat">
                     <p class="text-gray-600">
                       Carat:
                       <span class="font-semibold">{{
@@ -131,7 +131,7 @@ import { CurrencyService } from "../services/currency.service";
                       }}</span>
                     </p>
                   </div>
-                  <div *ngIf="product.specifications.clarity">
+                  <div *ngIf="product.specifications?.clarity">
                     <p class="text-gray-600">
                       Clarity:
                       <span class="font-semibold">{{
@@ -139,7 +139,7 @@ import { CurrencyService } from "../services/currency.service";
                       }}</span>
                     </p>
                   </div>
-                  <div *ngIf="product.specifications.color">
+                  <div *ngIf="product.specifications?.color">
                     <p class="text-gray-600">
                       Color:
                       <span class="font-semibold">{{
@@ -147,7 +147,7 @@ import { CurrencyService } from "../services/currency.service";
                       }}</span>
                     </p>
                   </div>
-                  <div *ngIf="product.specifications.cut">
+                  <div *ngIf="product.specifications?.cut">
                     <p class="text-gray-600">
                       Cut:
                       <span class="font-semibold">{{

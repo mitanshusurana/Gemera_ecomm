@@ -282,11 +282,11 @@ interface CollectionUI {
           >
             <!-- Image Container -->
             <div
-              class="relative overflow-hidden h-72 bg-gradient-to-br from-gold-100 to-diamond-100"
+              class="relative overflow-hidden aspect-square bg-gradient-to-br from-gold-100 to-diamond-100"
             >
-              <img *ngIf="product.imageUrl" [ngSrc]="product.imageUrl" fill class="object-cover" [alt]="product.name">
+              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover" [alt]="product.name">
               <div
-                *ngIf="!product.imageUrl"
+                *ngIf="!product.imageUrl && !product.images?.[0]"
                 class="w-full h-full flex items-center justify-center text-5xl"
               >
                 {{ getProductEmoji(product.category) }}

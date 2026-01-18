@@ -36,7 +36,13 @@ export class CartService {
 
   getCart(): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
-      return this.http.get<Cart>(this.baseUrl).pipe(tap(cart => this.cart$.next(cart)));
+      return this.http.get<Cart>(this.baseUrl).pipe(
+        tap(cart => {
+          // Ensure all numeric values are properly typed as numbers
+          this.normalizeCart(cart);
+          this.cart$.next(cart);
+        })
+      );
     } else {
       const guestCart = this.getGuestCart();
       this.cart$.next(guestCart);
@@ -53,7 +59,10 @@ export class CartService {
       // Clean up options before sending to API if needed, or API ignores extra fields
       const { product, ...apiOptions } = options || {};
       return this.http.post<Cart>(`${this.baseUrl}/items`, { productId, quantity, options: apiOptions })
-        .pipe(tap(cart => this.cart$.next(cart)));
+        .pipe(tap(cart => {
+          this.normalizeCart(cart);
+          this.cart$.next(cart);
+        }));
     } else {
       return of(this.addToGuestCart(productId, quantity, options)).pipe(
         tap(cart => this.cart$.next(cart))
@@ -190,10 +199,35 @@ export class CartService {
   }
 
   private recalculateTotals(cart: Cart) {
-    cart.subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    cart.subtotal = cart.items.reduce((sum, item) => {
+      const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+      return sum + (itemPrice * item.quantity);
+    }, 0);
     cart.tax = cart.subtotal * 0.1; // Mock 10% tax
     cart.shipping = cart.subtotal > 500 ? 0 : 50;
     cart.total = cart.subtotal + cart.tax + cart.shipping - cart.appliedDiscount;
+  }
+
+  private normalizeCart(cart: Cart): void {
+    // Ensure all prices are numbers
+    if (cart.items) {
+      cart.items.forEach(item => {
+        // If item.price is not set, use product.price
+        if (!item.price || item.price === 0) {
+          item.price = item.product?.price ? (typeof item.product.price === 'string' ? parseFloat(item.product.price) : Number(item.product.price)) : 0;
+        } else {
+          item.price = typeof item.price === 'string' ? parseFloat(item.price) : Number(item.price) || 0;
+        }
+        item.quantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : Number(item.quantity) || 0;
+      });
+    }
+    
+    // Ensure cart totals are numbers
+    cart.subtotal = typeof cart.subtotal === 'string' ? parseFloat(cart.subtotal) : Number(cart.subtotal) || 0;
+    cart.tax = typeof cart.tax === 'string' ? parseFloat(cart.tax) : Number(cart.tax) || 0;
+    cart.shipping = typeof cart.shipping === 'string' ? parseFloat(cart.shipping) : Number(cart.shipping) || 0;
+    cart.total = typeof cart.total === 'string' ? parseFloat(cart.total) : Number(cart.total) || 0;
+    cart.appliedDiscount = typeof cart.appliedDiscount === 'string' ? parseFloat(cart.appliedDiscount) : Number(cart.appliedDiscount) || 0;
   }
 
   private syncGuestCart(): Observable<any> {
