@@ -276,12 +276,12 @@ export class HomeComponent implements OnInit {
   selectedProduct = signal<ProductDetail | null>(null);
 
   collections = signal<CollectionUI[]>([
-    { id: '1', name: 'engagement-rings', title: 'Rings', icon: '💍' },
-    { id: '2', name: 'loose-gemstones', title: 'Loose Stones', icon: '💎' },
-    { id: '3', name: 'spiritual-idols', title: 'Idols', icon: '🕉️' },
-    { id: '4', name: 'gemstone-jewelry', title: 'Gemstones', icon: '👑' },
-    { id: '5', name: 'precious-metals', title: 'Gold', icon: '🏆' },
-    { id: '6', name: 'bespoke-custom', title: 'Custom', icon: '✨' },
+    { id: '1', name: 'Engagement Ring', title: 'Rings', icon: '💍' },
+    { id: '2', name: 'Loose Gemstone', title: 'Loose Stones', icon: '💎' },
+    { id: '3', name: 'Spiritual Idol', title: 'Idols', icon: '🕉️' },
+    { id: '4', name: 'Gemstone Jewelry', title: 'Gemstones', icon: '👑' },
+    { id: '5', name: 'Precious Metal', title: 'Gold', icon: '🏆' },
+    { id: '6', name: 'Custom', title: 'Custom', icon: '✨' },
   ]);
   featuredProducts = signal<Product[]>([]);
 

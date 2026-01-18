@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { OrderService } from '../services/order.service';
 import { ToastService } from '../services/toast.service';
 import { Order } from '../core/models';
@@ -67,14 +68,24 @@ import { CurrencyService } from '../services/currency.service';
     </div>
   `
 })
-export class TrackOrderComponent {
+export class TrackOrderComponent implements OnInit {
   orderId = '';
   loading = signal(false);
   order = signal<Order | null>(null);
 
+  private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
   private toastService = inject(ToastService);
   private currencyService = inject(CurrencyService);
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['id']) {
+        this.orderId = params['id'];
+        this.trackOrder();
+      }
+    });
+  }
 
   trackOrder() {
     if (!this.orderId) {

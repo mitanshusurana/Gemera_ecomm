@@ -44,6 +44,10 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/verify-certificate").then(m => m.VerifyCertificateComponent),
   },
   {
+    path: "wishlist",
+    loadComponent: () => import("./pages/wishlist").then(m => m.WishlistComponent)
+  },
+  {
     path: "account",
     loadComponent: () => import("./pages/account").then(m => m.AccountComponent),
     canActivate: [authGuard]

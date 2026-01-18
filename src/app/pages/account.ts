@@ -219,7 +219,7 @@ import { WishlistService } from '../services/wishlist.service';
                     <div class="border-t border-diamond-200 pt-4 flex justify-between items-center">
                       <p class="text-gray-600 text-sm" *ngIf="order.items && order.items.length > 0">{{ getItemName(order.items[0]) }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
                       <p class="text-gray-600 text-sm" *ngIf="!order.items || order.items.length === 0">No items</p>
-                      <button class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</button>
+                      <a [routerLink]="['/track-order']" [queryParams]="{id: order.orderNumber}" class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</a>
                     </div>
                   </div>
 
