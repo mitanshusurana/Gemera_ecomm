@@ -165,3 +165,26 @@ chunk-PA3H2N4Q.js   | verify-certificate |  18.95 kB |
 Application bundle generation complete. [2.866 seconds]
 
 Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names  |  Raw size
+main.js             | main   | 125.44 kB |
+styles.css          | styles |  98.41 kB |
+
+Application bundle generation complete. [12.200 seconds]
+
+Stylesheet update sent to client(s).
+Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names   |  Raw size
+main.js             | main    | 125.44 kB |
+styles.css          | styles  |  98.47 kB |
+
+Lazy chunk files    | Names   |  Raw size
+chunk-55OJFSOF.js   | account |  75.08 kB |
+
+Application bundle generation complete. [3.644 seconds]
+
+Stylesheet update sent to client(s).
+Component update sent to client(s).
