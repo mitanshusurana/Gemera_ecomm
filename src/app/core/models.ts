@@ -1,3 +1,40 @@
+export interface ProductSpecifications {
+  [key: string]: any; // Allow flexibility for now
+
+  // Legacy fields (kept for backward compatibility with QuickView/Builder)
+  carat?: number;
+  clarity?: string;
+  color?: string;
+  cut?: string;
+  origin?: string;
+  metal?: string;
+
+  // New Structured Fields
+  diamondDetails?: {
+    type?: string;
+    carat?: number;
+    clarity?: string;
+    color?: string;
+    cut?: string;
+    shape?: string;
+    count?: number;
+    settingType?: string;
+    totalWeight?: number;
+  }[];
+  metalDetails?: {
+    type: string;
+    purity: string;
+    weight: number; // in grams
+  }[];
+  productDetails?: {
+    sku?: string;
+    width?: string;
+    height?: string;
+    grossWeight?: number;
+    styleNo?: string;
+  };
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -19,14 +56,7 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   images?: string[];
-  specifications?: {
-    carat?: number;
-    clarity?: string;
-    color?: string;
-    cut?: string;
-    origin?: string;
-    metal?: string;
-  };
+  specifications?: ProductSpecifications;
 }
 
 export interface CustomizationOption {
@@ -104,6 +134,10 @@ export interface OrderItem {
   options?: any;
   createdAt?: string;
   updatedAt?: string;
+  shippingAddress?: string;
+  billingAddress?: string;
+  paymentMethod?: string;
+  shippingMethod?: string;
 }
 
 export interface Category {

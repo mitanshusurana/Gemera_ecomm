@@ -1,257 +1,306 @@
-import { Component, OnInit, OnDestroy, signal, computed, inject, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Title } from '@angular/platform-browser';
 import { ProductService } from '../services/product.service';
 import { CartService } from '../services/cart.service';
 import { ProductDetail, Product, CustomizationOption, PriceBreakup } from '../core/models';
-import { CompareService } from '../services/compare.service';
 import { ToastService } from '../services/toast.service';
-import { SeoService } from '../services/seo.service';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
-import { EducationModalComponent } from '../components/education-modal';
-import { RecentlyViewedComponent } from '../components/recently-viewed';
 import { HistoryService } from '../services/history.service';
 import { CurrencyService } from '../services/currency.service';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterLink, FormsModule, SizeGuideModalComponent, EducationModalComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterLink, FormsModule, SizeGuideModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
-    <div class="min-h-screen bg-white font-sans">
+    <div class="min-h-screen bg-white font-sans text-[#4f3267]">
+
       <!-- Breadcrumb -->
-      <div class="bg-gray-50 border-b border-gray-100">
-        <div class="container-luxury py-3">
+      <nav class="bg-white border-b border-gray-100">
+        <div class="container mx-auto px-4 lg:px-12 py-3">
           <div class="flex items-center gap-2 text-xs text-gray-500">
-            <a routerLink="/" class="hover:text-primary-600">Home</a>
+            <a routerLink="/" class="hover:text-[#deaa6f] transition-colors">Home</a>
             <span>/</span>
-            <a routerLink="/products" class="hover:text-primary-600">Products</a>
+            <a routerLink="/products" class="hover:text-[#deaa6f] transition-colors">Products</a>
             <span>/</span>
-            <span class="text-gray-900 font-medium">{{ product()?.name }}</span>
+            <span class="text-gray-900 font-medium truncate max-w-[200px]">{{ product()?.name }}</span>
           </div>
         </div>
-      </div>
+      </nav>
 
-      <!-- Product Details -->
-      <div class="container-luxury section-padding pt-8">
-        <div *ngIf="!loading() && product()" class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+      <div class="container mx-auto px-4 lg:px-12 py-8">
+        <div *ngIf="loading()" class="h-96 flex items-center justify-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4f3267]"></div>
+        </div>
 
-          <!-- Image Gallery (Left Side - Col 7) -->
-          <div class="lg:col-span-7 flex flex-col-reverse lg:flex-row gap-4">
-            <!-- Vertical Thumbnails -->
-            <div class="hidden lg:flex flex-col gap-3 w-20 flex-shrink-0">
-               <button *ngFor="let img of product()?.images"
-                       (click)="selectedImage.set(img); showVideo.set(false)"
-                       [class.ring-2]="!showVideo() && selectedImage() === img"
-                       [class.ring-primary-500]="!showVideo() && selectedImage() === img"
-                       class="aspect-square bg-gray-50 rounded-lg overflow-hidden hover:opacity-80 transition-opacity border border-gray-200">
-                  <img [ngSrc]="img || ''" width="80" height="80" class="w-full h-full object-cover">
-               </button>
-               <button *ngIf="product()?.videoUrl"
-                        (click)="showVideo.set(true)"
-                        [class.ring-2]="showVideo()"
-                        class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-2xl text-primary-800">
-                  ▶️
-               </button>
-            </div>
+        <div *ngIf="!loading() && product()" class="lg:flex lg:gap-12 relative">
 
-            <!-- Main Image Area -->
-            <div class="flex-1 bg-white rounded-xl overflow-hidden relative group border border-gray-100 h-[400px] md:h-[600px] flex items-center justify-center">
-               <video *ngIf="showVideo() && product()?.videoUrl" [src]="product()?.videoUrl" controls autoplay class="w-full h-full object-cover"></video>
-               <img *ngIf="!showVideo() && (selectedImage() || product()?.images?.[0] || product()?.imageUrl)"
-                    [ngSrc]="selectedImage() || product()?.images?.[0] || product()?.imageUrl || ''"
-                    fill priority class="object-contain p-4 hover:scale-110 transition-transform duration-700 cursor-zoom-in"
-                    [alt]="product()?.name">
-                <span *ngIf="!showVideo() && !selectedImage() && !product()?.images?.[0] && !product()?.imageUrl" class="text-9xl text-gray-200">{{ getProductEmoji(product()?.category || '') }}</span>
-               <div class="absolute top-4 left-4 flex flex-col gap-2">
-                 <span *ngIf="getBadge(product()!)" class="px-2 py-1 bg-secondary-500 text-white text-[10px] font-bold uppercase tracking-wider rounded">{{ getBadge(product()!) }}</span>
-               </div>
-            </div>
-          </div>
+          <!-- LEFT COLUMN: Scrollable Content (Images + Details) -->
+          <div class="lg:w-[58%] flex flex-col gap-12">
 
-          <!-- Product Info (Right Side - Col 5) -->
-          <div class="lg:col-span-5">
-            <h1 class="text-2xl md:text-3xl font-display font-bold text-gray-900 mb-2 leading-tight">
-              {{ product()?.name }}
-            </h1>
-
-            <div class="flex items-center gap-4 mb-6">
-              <div class="flex items-center gap-1 bg-green-50 px-2 py-1 rounded border border-green-100">
-                 <span class="text-green-700 font-bold text-sm">{{ product()?.rating || '4.8' }} ★</span>
-              </div>
-              <span class="text-sm text-gray-500 underline hover:text-primary-600 cursor-pointer">{{ product()?.reviewCount || 12 }} Reviews</span>
-              <span class="text-gray-300">|</span>
-              <span class="text-sm text-gray-500">SKU: {{ product()?.sku || 'GEM-001' }}</span>
-            </div>
-
-            <div class="h-px bg-gray-100 mb-6"></div>
-
-            <!-- Description -->
-            <p class="text-gray-600 mb-6 leading-relaxed text-sm md:text-base">
-               {{ product()?.description || 'Experience the timeless elegance of this handcrafted masterpiece. Each stone is carefully selected for its brilliance and set by our master artisans.' }}
-            </p>
-
-            <!-- Price Section -->
-            <div class="mb-6">
-               <div class="flex items-baseline gap-3 mb-2">
-                  <span class="text-3xl font-bold text-gray-900">{{ formatPrice(currentPriceBreakup()?.total || currentPrice()) }}</span>
-                  <span *ngIf="product()?.originalPrice" class="text-lg text-gray-400 line-through decoration-1">{{ formatPrice(product()?.originalPrice || 0) }}</span>
-               </div>
-               <p class="text-xs text-green-700 font-semibold mb-4">Inclusive of all taxes</p>
-               <button (click)="showPriceBreakup.set(!showPriceBreakup())" class="text-sm text-primary-600 font-semibold flex items-center gap-1 hover:underline">
-                 View Price Breakup <span class="transform transition-transform" [class.rotate-180]="showPriceBreakup()">▼</span>
-               </button>
-               <div *ngIf="showPriceBreakup() && currentPriceBreakup()" class="mt-4 bg-gray-50 rounded-lg p-4 border border-gray-200 text-sm animate-fade-in-up">
-                  <div class="flex justify-between mb-2 pb-2 border-b border-gray-200">
-                     <span class="text-gray-600">Gold/Metal Value</span>
-                     <span class="font-medium">{{ formatPrice(currentPriceBreakup()!.metal) }}</span>
+            <!-- Image Gallery (Stacked/Grid) -->
+            <div class="flex flex-col gap-4">
+              <!-- Main Image -->
+               <div class="relative w-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group cursor-zoom-in h-[500px] flex items-center justify-center">
+                  <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                    <span *ngIf="product()?.stock! < 5" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100">Only {{product()?.stock}} left</span>
+                    <span class="px-2 py-1 bg-white/90 backdrop-blur text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded border border-gray-200 shadow-sm">Best Seller</span>
                   </div>
-                  <div class="flex justify-between mb-2 pb-2 border-b border-gray-200">
-                     <span class="text-gray-600">Stone Value</span>
-                     <span class="font-medium">{{ formatPrice(currentPriceBreakup()!.gemstone) }}</span>
-                  </div>
-                  <div class="flex justify-between mb-2 pb-2 border-b border-gray-200">
-                     <span class="text-gray-600">Making Charges</span>
-                     <span class="font-medium">{{ formatPrice(currentPriceBreakup()!.makingCharges) }}</span>
-                  </div>
-                  <div class="flex justify-between font-bold text-gray-900 pt-1">
-                     <span>Grand Total</span>
-                     <span>{{ formatPrice(currentPriceBreakup()!.total) }}</span>
-                  </div>
-               </div>
-            </div>
 
-            <!-- Customization -->
-            <div class="mb-8 space-y-6">
-               <!-- Postcards Feature (Video Message) -->
-               <div class="flex items-center justify-between bg-primary-50 p-3 rounded-lg border border-primary-100">
-                  <div class="flex items-center gap-2">
-                     <span class="text-2xl">💌</span>
-                     <div>
-                        <span class="text-sm font-bold text-primary-900 block">Add Video Message (Postcards)</span>
-                        <span class="text-xs text-gray-600">Embed a digital message with this gift.</span>
-                     </div>
-                  </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" [ngModel]="addPostcard()" (ngModelChange)="addPostcard.set($event)" class="sr-only peer">
-                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary-500"></div>
-                  </label>
+                  <img [ngSrc]="selectedImage() || product()?.images?.[0] || product()?.imageUrl || ''"
+                       fill priority
+                       class="object-contain p-8 transition-transform duration-500 hover:scale-110"
+                       [alt]="product()?.name">
                </div>
 
-               <!-- Metal -->
-               <div *ngIf="hasOption('metal')">
-                  <span class="text-sm font-bold text-gray-700 block mb-2">Metal Color</span>
-                  <div class="flex gap-3">
-                     <button *ngFor="let opt of getOptions('metal')" (click)="selectedMetal.set(opt)"
-                             [class.ring-2]="selectedMetal()?.id === opt.id"
-                             [class.ring-primary-500]="selectedMetal()?.id === opt.id"
-                             [class.ring-offset-2]="selectedMetal()?.id === opt.id"
-                             class="w-8 h-8 rounded-full border border-gray-200 shadow-sm transition-all relative group"
-                             [style.background-color]="getMetalColor(opt.name)" [title]="opt.name">
-                     </button>
-                  </div>
-               </div>
-
-               <!-- Diamond & Size (simplified for brevity) -->
-               <div *ngIf="hasOption('diamond')" class="flex flex-wrap gap-2">
-                  <button *ngFor="let opt of getOptions('diamond')" (click)="selectedDiamondQuality.set(opt)"
-                          [class.bg-primary-900]="selectedDiamondQuality()?.id === opt.id"
-                          [class.text-white]="selectedDiamondQuality()?.id === opt.id"
-                          class="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium transition-all hover:border-primary-500">
-                     {{ opt.name }}
-                  </button>
-               </div>
-            </div>
-
-            <!-- Delivery Check -->
-            <div class="mb-6 flex gap-2">
-               <input type="text" [ngModel]="pincode()" (ngModelChange)="pincode.set($event)" placeholder="Enter Pincode" class="input-field w-40">
-               <button (click)="checkDelivery()" class="text-sm font-bold text-secondary-600 px-2">Check</button>
-            </div>
-            <p *ngIf="deliveryDate()" class="text-xs text-green-700 font-semibold mb-6">Delivery by {{ deliveryDate() }}</p>
-
-            <!-- Actions -->
-            <div class="flex flex-col gap-3 mb-6">
-               <div class="flex gap-4">
-                  <button (click)="handleAddToCart()" class="flex-1 btn-primary py-3.5 rounded-lg shadow-lg">ADD TO CART</button>
-                  <button (click)="openTryAtHome()" class="flex-1 btn-secondary py-3.5 rounded-lg border-2">🏠 TRY AT HOME</button>
-               </div>
-            </div>
-
-            <!-- Product Details / Specifications -->
-            <div class="mt-8 pt-6 border-t border-gray-100 bg-gray-50 p-4 rounded-lg">
-               <h3 class="font-display font-bold text-gray-900 mb-4 text-lg">Product Details</h3>
-               <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
-                  <ng-container *ngIf="product()?.specifications as specs">
-                     <div *ngIf="specs.carat" class="flex justify-between border-b border-gray-200 pb-1">
-                        <span class="text-gray-500">Carat</span>
-                        <span class="font-medium text-gray-900">{{ specs.carat }}</span>
-                     </div>
-                     <div *ngIf="specs.clarity" class="flex justify-between border-b border-gray-200 pb-1">
-                        <span class="text-gray-500">Clarity</span>
-                        <span class="font-medium text-gray-900">{{ specs.clarity }}</span>
-                     </div>
-                     <div *ngIf="specs.color" class="flex justify-between border-b border-gray-200 pb-1">
-                        <span class="text-gray-500">Color</span>
-                        <span class="font-medium text-gray-900">{{ specs.color }}</span>
-                     </div>
-                     <div *ngIf="specs.metal" class="flex justify-between border-b border-gray-200 pb-1">
-                        <span class="text-gray-500">Metal</span>
-                        <span class="font-medium text-gray-900">{{ specs.metal }}</span>
-                     </div>
-                     <div *ngIf="specs.cut" class="flex justify-between border-b border-gray-200 pb-1">
-                        <span class="text-gray-500">Cut</span>
-                        <span class="font-medium text-gray-900">{{ specs.cut }}</span>
-                     </div>
+               <!-- Thumbnails / Secondary Images Grid -->
+               <div class="grid grid-cols-2 gap-4">
+                  <ng-container *ngFor="let img of product()?.images; let i = index">
+                    <div *ngIf="i > 0" (click)="selectedImage.set(img)"
+                         class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition-opacity relative h-[300px] flex items-center justify-center">
+                       <img [ngSrc]="img" fill class="object-contain p-4 hover:scale-105 transition-transform duration-500">
+                    </div>
                   </ng-container>
-                  <div *ngIf="product()?.weight" class="flex justify-between border-b border-gray-200 pb-1">
-                     <span class="text-gray-500">Gross Weight</span>
-                     <span class="font-medium text-gray-900">{{ product()?.weight }}g</span>
-                  </div>
-                  <div *ngIf="product()?.sku" class="flex justify-between border-b border-gray-200 pb-1">
-                     <span class="text-gray-500">SKU</span>
-                     <span class="font-medium text-gray-900">{{ product()?.sku }}</span>
-                  </div>
                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Try At Home Modal -->
-      <div *ngIf="tryAtHomeOpen()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in-up">
-         <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
-            <button (click)="tryAtHomeOpen.set(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
-            <div class="bg-primary-900 text-white p-6 text-center">
-               <h3 class="font-display font-bold text-xl">Book Try at Home</h3>
-               <p class="text-primary-200 text-sm mt-1">Experience this jewellery at your doorstep.</p>
-            </div>
-            <div class="p-6 space-y-4">
-               <div>
-                  <label class="block text-xs font-bold text-gray-700 mb-1">Preferred Date</label>
-                  <input type="date" class="input-field">
+            <!-- PRODUCT DETAILS (Moved Below Images) -->
+            <div class="border-t border-gray-200 pt-8">
+               <h3 class="text-xl font-bold text-[#4f3267] mb-6 font-serif">Product Details</h3>
+
+               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+
+                  <!-- Product Specs -->
+                  <div *ngIf="product()?.specifications?.productDetails as pd">
+                     <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
+                     <div class="space-y-2 text-sm">
+                        <div class="flex justify-between" *ngFor="let item of pd | keyvalue">
+                           <span class="text-gray-500 capitalize">{{ formatKey(item.key) }}</span>
+                           <span class="font-medium text-gray-900">{{ item.value }}</span>
+                        </div>
+                     </div>
+                  </div>
+
+                  <!-- Metal Specs -->
+                  <div *ngIf="product()?.specifications?.metalDetails as md">
+                     <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Metal Specifications</h4>
+                     <div *ngFor="let metal of md" class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                           <span class="text-gray-500">Type</span>
+                           <span class="font-medium text-gray-900">{{ metal.type }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                           <span class="text-gray-500">Purity</span>
+                           <span class="font-medium text-gray-900">{{ metal.purity }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                           <span class="text-gray-500">Weight</span>
+                           <span class="font-medium text-gray-900">{{ metal.weight }} g</span>
+                        </div>
+                     </div>
+                  </div>
                </div>
-               <div>
-                  <label class="block text-xs font-bold text-gray-700 mb-1">Time Slot</label>
-                  <select class="input-field">
-                     <option>10:00 AM - 12:00 PM</option>
-                     <option>12:00 PM - 02:00 PM</option>
-                     <option>04:00 PM - 06:00 PM</option>
-                  </select>
+
+               <!-- Diamond Details Table -->
+               <div *ngIf="product()?.specifications?.diamondDetails as dd" class="mt-8">
+                  <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4">Diamond Specifications</h4>
+                  <div class="overflow-hidden border border-gray-200 rounded-lg">
+                     <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 text-gray-600 font-medium">
+                           <tr>
+                              <th class="px-4 py-3">Type</th>
+                              <th class="px-4 py-3">Shape</th>
+                              <th class="px-4 py-3">Weight</th>
+                              <th class="px-4 py-3">Color/Clarity</th>
+                              <th class="px-4 py-3">Setting</th>
+                           </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                           <tr *ngFor="let d of dd">
+                              <td class="px-4 py-3 font-medium text-gray-900">{{ d.type }}</td>
+                              <td class="px-4 py-3 text-gray-600">{{ d.shape }}</td>
+                              <td class="px-4 py-3 text-gray-600">{{ d.carat }} ct</td>
+                              <td class="px-4 py-3 text-gray-600">{{ d.color }} / {{ d.clarity }}</td>
+                              <td class="px-4 py-3 text-gray-600">{{ d.settingType }}</td>
+                           </tr>
+                        </tbody>
+                     </table>
+                  </div>
                </div>
-               <button (click)="confirmTryAtHome()" class="w-full btn-primary mt-2">Confirm Booking</button>
             </div>
-         </div>
+
+            <!-- Tags/Footer of Left Column -->
+            <div class="flex gap-4 mt-4">
+              <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full">
+                <span class="text-xl">🛡️</span> 15-Day Money Back
+              </div>
+              <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full">
+                 <span class="text-xl">💎</span> Lifetime Exchange
+              </div>
+              <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full">
+                 <span class="text-xl">📜</span> BIS Hallmarked
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN: Sticky Buy Box -->
+          <div class="lg:w-[42%] relative">
+             <div class="sticky top-24 bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+
+                <!-- Product Header -->
+                <div class="mb-4">
+                   <div class="flex items-center justify-between mb-1">
+                      <div class="flex items-center gap-1">
+                         <span class="text-orange-400">★★★★☆</span>
+                         <span class="text-xs text-gray-500">({{ product()?.reviewCount }} Reviews)</span>
+                      </div>
+                      <span class="text-xs text-gray-400">SKU: {{ product()?.specifications?.productDetails?.sku || product()?.sku }}</span>
+                   </div>
+                   <h1 class="text-2xl font-serif font-bold text-[#4f3267] leading-snug">{{ product()?.name }}</h1>
+                </div>
+
+                <!-- Price Section -->
+                <div class="mb-6 pb-6 border-b border-gray-100">
+                   <div class="flex items-baseline gap-3 mb-1">
+                      <span class="text-3xl font-bold text-gray-900">{{ formatPrice(currentPriceBreakup()?.total || currentPrice()) }}</span>
+                      <span *ngIf="product()?.originalPrice" class="text-lg text-gray-400 line-through">{{ formatPrice(product()?.originalPrice || 0) }}</span>
+                   </div>
+                   <p class="text-xs text-green-700 font-medium mb-3">Inclusive of all taxes</p>
+
+                   <!-- Price Breakup Toggle -->
+                   <button (click)="togglePriceBreakup()" class="text-xs font-bold text-[#deaa6f] hover:text-[#c59358] flex items-center gap-1 uppercase tracking-wide">
+                      View Price Breakup <span class="transition-transform" [class.rotate-180]="showPriceBreakup()">▼</span>
+                   </button>
+
+                   <div *ngIf="showPriceBreakup() && currentPriceBreakup()" class="mt-3 bg-gray-50 p-3 rounded text-sm text-gray-600 animate-fade-in space-y-2">
+                      <div class="flex justify-between"><span>Metal</span> <span>{{ formatPrice(currentPriceBreakup()!.metal) }}</span></div>
+                      <div class="flex justify-between"><span>Stone</span> <span>{{ formatPrice(currentPriceBreakup()!.gemstone) }}</span></div>
+                      <div class="flex justify-between"><span>Making</span> <span>{{ formatPrice(currentPriceBreakup()!.makingCharges) }}</span></div>
+                      <div class="flex justify-between"><span>GST (3%)</span> <span>{{ formatPrice(currentPriceBreakup()!.tax) }}</span></div>
+                      <div class="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200"><span>Grand Total</span> <span>{{ formatPrice(currentPriceBreakup()!.total) }}</span></div>
+                   </div>
+                </div>
+
+                <!-- Customization Configurator -->
+                <div class="space-y-5 mb-8">
+                   <!-- Metal -->
+                   <div *ngIf="hasOption('metal')">
+                      <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Metal Color & Purity</span>
+                      <div class="flex flex-wrap gap-2">
+                         <button *ngFor="let opt of getOptions('metal')"
+                                 (click)="selectedMetal.set(opt)"
+                                 class="px-4 py-2 rounded-full border text-sm font-medium transition-all"
+                                 [class.bg-[#4f3267]]="selectedMetal()?.id === opt.id"
+                                 [class.text-white]="selectedMetal()?.id === opt.id"
+                                 [class.border-[#4f3267]]="selectedMetal()?.id === opt.id"
+                                 [class.bg-white]="selectedMetal()?.id !== opt.id"
+                                 [class.text-gray-700]="selectedMetal()?.id !== opt.id"
+                                 [class.border-gray-200]="selectedMetal()?.id !== opt.id">
+                            {{ opt.name }}
+                         </button>
+                      </div>
+                   </div>
+
+                   <!-- Diamond -->
+                   <div *ngIf="hasOption('diamond')">
+                      <div class="flex justify-between mb-2">
+                         <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Diamond Quality</span>
+                         <button class="text-xs text-[#deaa6f] underline">Guide</button>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                         <button *ngFor="let opt of getOptions('diamond')"
+                                 (click)="selectedDiamondQuality.set(opt)"
+                                 class="flex-1 px-3 py-2 rounded border text-center text-xs font-medium transition-all"
+                                 [class.border-[#4f3267]]="selectedDiamondQuality()?.id === opt.id"
+                                 [class.text-[#4f3267]]="selectedDiamondQuality()?.id === opt.id"
+                                 [class.bg-[#fbf5ff]]="selectedDiamondQuality()?.id === opt.id"
+                                 [class.border-gray-200]="selectedDiamondQuality()?.id !== opt.id"
+                                 [class.text-gray-600]="selectedDiamondQuality()?.id !== opt.id">
+                            {{ opt.name }}
+                         </button>
+                      </div>
+                   </div>
+
+                   <!-- Size -->
+                   <div>
+                      <div class="flex justify-between mb-2">
+                         <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Ring Size</span>
+                         <button (click)="sizeGuideOpen.set(true)" class="text-xs text-[#deaa6f] underline">Size Guide</button>
+                      </div>
+                      <select [ngModel]="selectedSize()" (ngModelChange)="selectedSize.set($event)" class="w-full p-3 border border-gray-200 rounded-lg bg-white text-sm focus:border-[#4f3267] outline-none">
+                         <option [ngValue]="null">Select Size</option>
+                         <option *ngFor="let i of [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]" [ngValue]="i">Size {{ i }}</option>
+                      </select>
+                   </div>
+                </div>
+
+                <!-- Delivery -->
+                <div class="mb-6">
+                   <div class="relative">
+                      <input type="text" [ngModel]="pincode()" (ngModelChange)="pincode.set($event)"
+                             placeholder="Enter Pincode for Delivery"
+                             class="w-full pl-4 pr-20 py-3 border border-gray-200 rounded-lg text-sm focus:border-[#4f3267] outline-none">
+                      <button (click)="checkDelivery()" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[#4f3267] px-3 py-1.5 hover:bg-gray-50 rounded">
+                         CHECK
+                      </button>
+                   </div>
+                   <p *ngIf="deliveryDate()" class="text-xs text-green-700 font-medium mt-2 pl-1">
+                      Expected delivery by {{ deliveryDate() }}
+                   </p>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-col gap-3">
+                   <button (click)="handleAddToCart()"
+                           class="w-full bg-gradient-to-r from-[#4f3267] to-[#6d448e] text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm">
+                      Add to Cart
+                   </button>
+                   <button (click)="openTryAtHome()"
+                           class="w-full border border-[#deaa6f] text-[#4f3267] font-bold py-3 rounded-lg hover:bg-[#fff9f0] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2">
+                      <span>🏠</span> Book Try at Home
+                   </button>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-100 flex justify-center gap-6 text-xs font-medium text-gray-500">
+                   <button class="hover:text-[#4f3267]">Contact Us</button>
+                   <span>|</span>
+                   <button class="hover:text-[#4f3267]">Chat on WhatsApp</button>
+                </div>
+
+             </div>
+          </div>
+
+        </div>
       </div>
 
       <!-- Modals -->
       <app-size-guide-modal [isOpen]="sizeGuideOpen()" (close)="sizeGuideOpen.set(false)"></app-size-guide-modal>
-      <app-education-modal [isOpen]="educationOpen()" [activeTab]="educationTab()" (close)="educationOpen.set(false)"></app-education-modal>
+
+      <!-- Try At Home Modal (Same as before) -->
+      <div *ngIf="tryAtHomeOpen()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+         <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            <button (click)="tryAtHomeOpen.set(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl z-10">&times;</button>
+            <div class="bg-gradient-to-r from-[#4f3267] to-[#362247] text-white p-6 text-center">
+               <h3 class="font-serif font-bold text-xl">Book Try at Home</h3>
+            </div>
+            <div class="p-6 space-y-4">
+               <p class="text-sm text-gray-600 text-center mb-4">Our consultant will bring this jewellery to your doorstep.</p>
+               <input type="date" class="w-full p-2 border rounded">
+               <button (click)="confirmTryAtHome()" class="w-full bg-[#4f3267] text-white py-3 rounded font-bold">Confirm</button>
+            </div>
+         </div>
+      </div>
+
     </div>
   `,
+  styles: [`
+    :host { display: block; }
+  `]
 })
 export class ProductDetailComponent implements OnInit, OnDestroy {
   private productService = inject(ProductService);
@@ -259,7 +308,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private toastService = inject(ToastService);
   private historyService = inject(HistoryService);
-  private seoService = inject(SeoService);
   private currencyService = inject(CurrencyService);
 
   loading = signal(true);
@@ -268,10 +316,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   // UI State
   selectedImage = signal<string | null>(null);
   showVideo = signal(false);
-  show360 = signal(false);
   sizeGuideOpen = signal(false);
-  educationOpen = signal(false);
-  educationTab = signal('4cs');
   showPriceBreakup = signal(false);
   tryAtHomeOpen = signal(false);
 
@@ -279,15 +324,12 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   selectedMetal = signal<CustomizationOption | null>(null);
   selectedDiamondQuality = signal<CustomizationOption | null>(null);
   selectedSize = signal<number | null>(null);
-  addPostcard = signal(false);
-  engravingText = signal('');
 
   // Delivery
   pincode = signal('');
   deliveryDate = signal<string | null>(null);
-  isCheckingDelivery = signal(false);
 
-  // Price Logic
+  // Computed Prices
   currentPrice = computed(() => {
     let price = this.product()?.price || 0;
     if (this.selectedMetal()) price += this.selectedMetal()!.priceModifier;
@@ -300,15 +342,23 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     if (!base) return null;
     let metalPrice = base.metal;
     let gemstonePrice = base.gemstone;
+
+    // Adjust logic based on modifiers
     if (this.selectedMetal()) metalPrice += this.selectedMetal()!.priceModifier;
     if (this.selectedDiamondQuality()) gemstonePrice += this.selectedDiamondQuality()!.priceModifier;
+
     const subtotal = metalPrice + gemstonePrice + base.makingCharges;
-    const tax = Math.round(subtotal * 0.03); // Approx 3%
+    const tax = Math.round(subtotal * 0.03);
     return { metal: metalPrice, gemstone: gemstonePrice, makingCharges: base.makingCharges, tax, total: subtotal + tax };
   });
 
   ngOnInit(): void {
-    this.route.params.subscribe(p => { if(p['id']) this.loadProduct(p['id']); });
+    this.route.params.subscribe(p => {
+        if(p['id']) {
+            this.loadProduct(p['id']);
+            window.scrollTo(0,0);
+        }
+    });
   }
 
   ngOnDestroy(): void {}
@@ -335,38 +385,34 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         const options = {
           metal: this.selectedMetal()?.name,
           diamond: this.selectedDiamondQuality()?.name,
-          postcard: this.addPostcard(),
           price: this.currentPrice(),
           product: this.product()
         };
         this.cartService.addToCart(this.product()!.id, 1, options).subscribe(() => {
-            this.toastService.show(this.addPostcard() ? 'Added to cart with Video Message!' : 'Added to cart', 'success');
+            this.toastService.show('Added to Shopping Bag', 'success');
         });
     }
   }
 
+  togglePriceBreakup() { this.showPriceBreakup.set(!this.showPriceBreakup()); }
   openTryAtHome() { this.tryAtHomeOpen.set(true); }
   confirmTryAtHome() {
      this.tryAtHomeOpen.set(false);
-     this.toastService.show('Try at Home request booked! Our agent will call you.', 'success');
+     this.toastService.show('Booking Confirmed! Check your email.', 'success');
   }
 
   formatPrice(p: number) { return this.currencyService.format(p); }
 
   checkDelivery() {
-    if (this.pincode().length < 4) return this.toastService.show('Invalid pincode', 'error');
-    this.isCheckingDelivery.set(true);
+    if (this.pincode().length < 6) return this.toastService.show('Please enter a valid 6-digit pincode', 'error');
+    this.toastService.show('Checking availability...', 'info');
     setTimeout(() => {
-       this.deliveryDate.set('Mon, 15 Aug');
-       this.isCheckingDelivery.set(false);
-    }, 500);
+       this.deliveryDate.set('Mon, 21 Aug');
+    }, 800);
   }
 
   // Helpers
-  openEducation(t: string) { this.educationTab.set(t); this.educationOpen.set(true); }
-  getProductEmoji(c: string) { return '💍'; } // Simplified
-  getBadge(p: Product) { return p.stock < 3 ? 'Low Stock' : undefined; }
   hasOption(t: string) { return !!this.product()?.customizationOptions?.some(o => o.type === t); }
   getOptions(t: string) { return this.product()?.customizationOptions?.filter(o => o.type === t) || []; }
-  getMetalColor(n: string) { return n.includes('Rose') ? '#e6a49a' : n.includes('White') ? '#e8e8e8' : '#e5c973'; }
+  formatKey(k: string) { return k.replace(/([A-Z])/g, ' $1').trim(); }
 }

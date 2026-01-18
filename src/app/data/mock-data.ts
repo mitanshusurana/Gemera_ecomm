@@ -60,11 +60,20 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     imageUrl: "https://images.unsplash.com/photo-1515562141207-6461823488d2?w=600&h=400&fit=crop",
     stock: 3,
     specifications: {
-      carat: 1.5,
-      clarity: "VS1",
-      color: "G",
-      cut: "Excellent",
-      origin: "South Africa"
+      productDetails: {
+        sku: "DS-001",
+        grossWeight: 5.5,
+        width: "2.1 mm",
+        height: "22 mm",
+        styleNo: "JR00451-1W0000"
+      },
+      metalDetails: [
+        { type: "18K White Gold", purity: "750", weight: 3.5 }
+      ],
+      diamondDetails: [
+        { type: "Solitaire", carat: 1.5, clarity: "VS1", color: "G", cut: "Excellent", shape: "Round", count: 1, settingType: "Prong", totalWeight: 1.5 },
+        { type: "Accents", carat: 0.2, clarity: "SI", color: "H", shape: "Round", count: 10, settingType: "Pave", totalWeight: 0.2 }
+      ]
     },
     images: [
       "https://images.unsplash.com/photo-1515562141207-6461823488d2?w=600&h=400&fit=crop",
@@ -108,10 +117,17 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     imageUrl: "",
     stock: 2,
     specifications: {
-      carat: 5.2,
-      clarity: "VS2",
-      color: "Vivid Green",
-      origin: "Colombia"
+      productDetails: {
+        sku: "CE-002",
+        grossWeight: 2.1,
+        width: "5 mm",
+        height: "7 mm",
+        styleNo: "GEM-002"
+      },
+      metalDetails: [],
+      diamondDetails: [
+        { type: "Emerald", carat: 5.2, clarity: "VS2", color: "Vivid Green", shape: "Emerald", count: 1, settingType: "Loose", totalWeight: 5.2 }
+      ]
     },
     images: [],
     gemstones: ["Emerald"],
@@ -134,7 +150,15 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     description: "Crystal quartz, artisan-carved, 6 inches",
     imageUrl: "",
     stock: 8,
-    specifications: {},
+    specifications: {
+        productDetails: {
+            sku: "GI-003",
+            grossWeight: 1200,
+            width: "4 inches",
+            height: "6 inches",
+            styleNo: "IDOL-003"
+        }
+    },
     images: [],
     gemstones: ["Crystal Quartz"],
     metal: "",
@@ -158,10 +182,8 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     imageUrl: "",
     stock: 4,
     specifications: {
-      carat: 3.8,
-      clarity: "VS1",
-      color: "Deep Blue",
-      origin: "Kashmir"
+        productDetails: { sku: "KS-004", grossWeight: 1.9 },
+        diamondDetails: [{ type: "Sapphire", carat: 3.8, clarity: "VS1", color: "Deep Blue", shape: "Oval", count: 1, settingType: "Loose" }]
     },
     images: [],
     gemstones: ["Sapphire"],
@@ -185,8 +207,9 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     imageUrl: "",
     stock: 6,
     specifications: {
-      carat: 2.5,
-      color: "Padparadsha"
+        productDetails: { sku: "PS-005", grossWeight: 4.8 },
+        metalDetails: [{ type: "18K Gold", purity: "750", weight: 4.0 }],
+        diamondDetails: [{ type: "Sapphire", carat: 2.5, clarity: "Eye Clean", color: "Padparadsha", shape: "Cushion", count: 1, settingType: "Prong" }]
     },
     images: [],
     gemstones: ["Sapphire"],
@@ -232,10 +255,8 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     imageUrl: "",
     stock: 1,
     specifications: {
-      carat: 2.1,
-      clarity: "VS2",
-      color: "Pigeon Blood Red",
-      origin: "Burma"
+        productDetails: { sku: "RB-007", grossWeight: 1.05 },
+        diamondDetails: [{ type: "Ruby", carat: 2.1, clarity: "VS2", color: "Pigeon Blood Red", shape: "Round", count: 1, settingType: "Loose" }]
     },
     images: [],
     gemstones: ["Ruby"],
@@ -291,7 +312,10 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     certifications: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    specifications: { metal: "18K White Gold" },
+    specifications: {
+        productDetails: { sku: "SET-001", grossWeight: 3.5 },
+        metalDetails: [{ type: "18K White Gold", purity: "750", weight: 3.5 }]
+    },
     images: [],
     relatedProducts: []
   },
@@ -313,7 +337,11 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     certifications: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    specifications: { metal: "Platinum" },
+    specifications: {
+        productDetails: { sku: "SET-002", grossWeight: 4.2 },
+        metalDetails: [{ type: "Platinum", purity: "950", weight: 4.2 }],
+        diamondDetails: [{ type: "Accent Diamonds", carat: 0.3, clarity: "VS", color: "G", shape: "Round", count: 20, settingType: "Pave" }]
+    },
     images: [],
     relatedProducts: []
   }
