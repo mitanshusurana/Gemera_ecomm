@@ -51,8 +51,8 @@ import { CurrencyService } from '../services/currency.service';
                </video>
 
                <!-- Main Image (with 360 rotation class if active) -->
-               <img *ngIf="!showVideo() && (selectedImage() || product()?.imageUrl)"
-                    [ngSrc]="selectedImage() || product()?.imageUrl || ''"
+               <img *ngIf="!showVideo() && (selectedImage() || product()?.images?.[0] || product()?.imageUrl)"
+                    [ngSrc]="selectedImage() || product()?.images?.[0] || product()?.imageUrl || ''"
                     fill
                     priority
                     class="object-cover transition-transform duration-[3s] ease-linear"
@@ -66,7 +66,7 @@ import { CurrencyService } from '../services/currency.service';
                </div>
 
                <!-- Fallback Emoji -->
-               <span *ngIf="!showVideo() && !selectedImage() && !product()?.imageUrl"
+               <span *ngIf="!showVideo() && !selectedImage() && !product()?.images?.[0] && !product()?.imageUrl"
                      class="text-7xl transition-transform duration-[3s] ease-linear"
                      [class.animate-spin-slow]="show360()">
                  {{ getProductEmoji(product()?.category || '') }}
@@ -104,13 +104,15 @@ import { CurrencyService } from '../services/currency.service';
               </button>
 
               <!-- Image Thumbnails -->
-              <button *ngFor="let img of product()!.images"
-                      (click)="selectedImage.set(img.url); showVideo.set(false); show360.set(false)"
-                      [class.ring-2]="!showVideo() && selectedImage() === img.url"
-                      [class.ring-gold-500]="!showVideo() && selectedImage() === img.url"
-                      class="aspect-square bg-diamond-100 rounded-lg hover:ring-2 hover:ring-gold-500 transition-all duration-300 flex items-center justify-center overflow-hidden relative">
-                <img [ngSrc]="img.url" [alt]="img.alt" fill class="object-cover">
-              </button>
+              <ng-container *ngFor="let img of product()?.images">
+                <button *ngIf="img"
+                        (click)="selectedImage.set(img); showVideo.set(false); show360.set(false)"
+                        [class.ring-2]="!showVideo() && selectedImage() === img"
+                        [class.ring-gold-500]="!showVideo() && selectedImage() === img"
+                        class="aspect-square bg-diamond-100 rounded-lg hover:ring-2 hover:ring-gold-500 transition-all duration-300 flex items-center justify-center overflow-hidden relative">
+                  <img [ngSrc]="img" alt="Product image" fill class="object-cover">
+                </button>
+              </ng-container>
             </div>
           </div>
 
@@ -124,7 +126,7 @@ import { CurrencyService } from '../services/currency.service';
                 <div class="flex gap-1">
                   <span *ngFor="let _ of [1,2,3,4,5]" class="text-gold-500 text-xl">★</span>
                 </div>
-                <span class="text-gray-600">({{ product()?.reviewCount }} customer reviews)</span>
+                <span class="text-gray-600">({{ product()?.reviewCount || 0 }} customer reviews)</span>
               </div>
             </div>
 
@@ -319,11 +321,11 @@ import { CurrencyService } from '../services/currency.service';
             </div>
 
             <!-- Certifications -->
-            <div class="mb-8 pb-8 border-b border-diamond-200" *ngIf="product()?.certifications && product()!.certifications.length > 0">
+            <div class="mb-8 pb-8 border-b border-diamond-200" *ngIf="product()?.certifications?.length ?? 0 > 0">
               <h3 class="font-bold text-gray-900 mb-4">Certifications</h3>
               <div class="flex gap-4 flex-wrap">
                 <div class="card p-4 text-center min-w-[120px] group cursor-pointer hover:shadow-md transition-all border border-transparent hover:border-gold-200"
-                     *ngFor="let cert of product()!.certifications"
+                     *ngFor="let cert of product()?.certifications"
                      (click)="viewCertificate(cert)">
                   <div class="text-2xl mb-2">🏆</div>
                   <p class="text-sm font-semibold text-gray-900">{{ cert }} Certified</p>
@@ -412,9 +414,9 @@ import { CurrencyService } from '../services/currency.service';
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <a *ngFor="let product of relatedProducts()" [routerLink]="['/products', product.id]" class="card card-hover group overflow-hidden block cursor-pointer">
-              <div class="relative overflow-hidden h-64 bg-diamond-100 flex items-center justify-center">
-                 <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover" [alt]="product.name" onerror="this.style.display='none'">
-                 <span *ngIf="!product.imageUrl" class="text-4xl">{{ getProductEmoji(product.category) }}</span>
+              <div class="relative overflow-hidden aspect-square bg-diamond-100 flex items-center justify-center">
+                 <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover" [alt]="product.name">
+                 <span *ngIf="!product.imageUrl && !product.images?.[0]" class="text-4xl">{{ getProductEmoji(product.category) }}</span>
               </div>
               <div class="p-6">
                 <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ product.category }}</p>
@@ -572,7 +574,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         this.seoService.updateTags({
             title: `${product.name} | Gemara Fine Jewels`,
             description: product.description,
-            image: product.imageUrl
+            image: product.imageUrl || product.images?.[0]
         });
         this.loading.set(false);
         this.loadRelatedProducts(product.category);
@@ -607,7 +609,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
           metal: this.selectedMetal()?.name,
           diamond: this.selectedDiamondQuality()?.name,
           engraving: this.engravingText(),
-          price: this.currentPrice()
+          price: this.currentPrice(),
+          product: p // Pass full product for guest cart display
         };
 
         this.cartService.addToCart(p.id, this.quantity(), options).subscribe(() => {

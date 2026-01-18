@@ -252,9 +252,9 @@ import { CurrencyService } from '../services/currency.service';
             <div *ngIf="!isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               <a *ngFor="let product of products()" [routerLink]="['/products', product.id]" class="card card-hover group overflow-hidden block cursor-pointer w-full">
                 <!-- Image Container with Lazy Loading -->
-                <div class="relative overflow-hidden h-64 bg-diamond-100">
-                  <img *ngIf="product.imageUrl" [ngSrc]="product.imageUrl" fill class="object-cover" [alt]="product.name">
-                  <div *ngIf="!product.imageUrl" class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
+                <div class="relative overflow-hidden aspect-square bg-diamond-100">
+                  <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover" [alt]="product.name">
+                  <div *ngIf="!product.imageUrl && !product.images?.[0]" class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
                     <span class="text-4xl">{{ getProductEmoji(product.category) }}</span>
                   </div>
                   <button (click)="$event.preventDefault(); $event.stopPropagation()" class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300">

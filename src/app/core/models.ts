@@ -4,20 +4,21 @@ export interface Product {
   description: string;
   price: number;
   originalPrice?: number;
-  rating: number;
-  reviewCount: number;
-  imageUrl: string;
+  rating?: number;
+  reviewCount?: number;
+  imageUrl?: string;
   videoUrl?: string;
   category: string;
-  subcategory: string;
-  gemstones: string[];
-  metal: string;
-  weight: number;
+  subcategory?: string;
+  gemstones?: string[];
+  metal?: string;
+  weight?: number;
   stock: number;
-  sku: string;
-  certifications: string[];
+  sku?: string;
+  certifications?: string[];
   createdAt: string;
   updatedAt: string;
+  images?: string[];
   specifications?: {
     carat?: number;
     clarity?: string;
@@ -44,8 +45,8 @@ export interface PriceBreakup {
 }
 
 export interface ProductDetail extends Product {
-  images: { url: string; alt: string }[];
-  relatedProducts: string[];
+  images?: string[];
+  relatedProducts?: string[];
   customizationOptions?: CustomizationOption[];
   priceBreakup?: PriceBreakup;
 }
@@ -72,6 +73,7 @@ export interface Cart {
   total: number;
   appliedDiscount: number;
   giftWrap?: boolean;
+  wishlist?: Product[];
 }
 
 export interface Order {
@@ -110,6 +112,19 @@ export interface Category {
   subcategories?: Array<{ id: string; name: string; displayName: string }>;
 }
 
+export interface Address {
+  id: string;
+  firstName: string;
+  lastName: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  phone: string;
+  isDefault?: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -118,6 +133,7 @@ export interface User {
   phone: string;
   avatar?: string;
   role?: 'ADMIN' | 'USER';
+  addresses?: Address[];
   createdAt: string;
   token?: string; // specific for auth response convenience sometimes
 }

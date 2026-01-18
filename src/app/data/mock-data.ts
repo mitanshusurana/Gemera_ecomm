@@ -57,7 +57,7 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
     rating: 4.9,
     reviewCount: 245,
     description: "VS1 clarity, G color, excellent cut - GIA certified. This exquisite diamond solitaire ring features a stunning 1.5 carat diamond with excellent cut quality. Certified by GIA, this diamond showcases exceptional clarity and color grading. Set in lustrous 18K white gold, this timeless piece is perfect for engagements, anniversaries, or as a symbol of your refined taste.",
-    imageUrl: "",
+    imageUrl: "https://images.unsplash.com/photo-1515562141207-6461823488d2?w=600&h=400&fit=crop",
     stock: 3,
     specifications: {
       carat: 1.5,
@@ -66,7 +66,11 @@ export const MOCK_PRODUCTS: ProductDetail[] = [
       cut: "Excellent",
       origin: "South Africa"
     },
-    images: [],
+    images: [
+      "https://images.unsplash.com/photo-1515562141207-6461823488d2?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1701097046878-e2e5e6ca2a15?w=600&h=400&fit=crop"
+    ],
     gemstones: ["Diamond"],
     metal: "18K White Gold",
     weight: 5.5,

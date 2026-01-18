@@ -1,0 +1,52 @@
+
+> fusion-angular-tailwind-starter@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names              |  Raw size
+main.js             | main               | 125.99 kB |
+styles.css          | styles             |  96.93 kB |
+chunk-XCU54PUX.js   | -                  |  13.47 kB |
+chunk-PRHLERTS.js   | -                  |   6.72 kB |
+chunk-OKNG3WR5.js   | -                  |   3.12 kB |
+chunk-HXQ63BFM.js   | -                  |   2.28 kB |
+chunk-XWLXMCJQ.js   | -                  |   2.07 kB |
+chunk-AIRHBJUR.js   | -                  |   1.75 kB |
+chunk-D5XJJI6Y.js   | -                  |   1.32 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 254.96 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-B77AIGYX.js   | product-detail     | 158.82 kB |
+chunk-OEQ2JNFO.js   | checkout           |  82.12 kB |
+chunk-PQ2BXCIR.js   | products           |  72.21 kB |
+chunk-2HUHIMMX.js   | account            |  69.22 kB |
+chunk-G35LNM4H.js   | home               |  51.55 kB |
+chunk-X47AQSAL.js   | rfq-request        |  49.55 kB |
+chunk-SD542QWY.js   | builder            |  35.40 kB |
+chunk-FI7UZFC5.js   | cart               |  31.09 kB |
+chunk-H437HQGQ.js   | order-confirmation |  30.24 kB |
+chunk-DD2VIYI6.js   | login              |  27.95 kB |
+chunk-QJKG4G2I.js   | compare            |  27.61 kB |
+chunk-VLTICCKA.js   | -                  |  24.42 kB |
+chunk-DO4F7XUH.js   | dashboard          |  23.34 kB |
+chunk-F2JHWVHX.js   | verify-certificate |  18.95 kB |
+chunk-T7SN525X.js   | journal            |  12.36 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [9.528 seconds]
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 100.04 kB |
+
+Application bundle generation complete. [5.090 seconds]
+
+Page reload sent to client(s).

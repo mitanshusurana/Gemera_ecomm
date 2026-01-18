@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../services/cart.service';
 import { Cart, CartItem } from '../core/models';
@@ -9,7 +9,7 @@ import { CurrencyService } from '../services/currency.service';
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
@@ -35,9 +35,9 @@ import { CurrencyService } from '../services/currency.service';
             <div *ngIf="!isEmpty()" class="space-y-6">
               <div *ngFor="let item of cartItems()" class="card p-6 flex flex-col sm:flex-row gap-6">
                 <!-- Image -->
-                <div class="w-full sm:w-32 h-32 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                   <img *ngIf="item.product.imageUrl" [src]="item.product.imageUrl" class="w-full h-full object-cover" onerror="this.style.display='none'">
-                   <span *ngIf="!item.product.imageUrl" class="text-4xl absolute">💎</span>
+                <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto sm:mx-0 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                   <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" fill class="absolute inset-0 object-cover">
+                   <span *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="text-3xl">💎</span>
                 </div>
 
                 <!-- Details -->

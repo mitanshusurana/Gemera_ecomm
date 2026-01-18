@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from "@angular/core";
+import { Component, signal, OnInit, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router } from "@angular/router";
@@ -6,6 +6,7 @@ import { AuthService } from "../services/auth.service";
 import { CartService } from "../services/cart.service";
 import { OrderService } from "../services/order.service";
 import { EmailNotificationService } from "../services/email-notification.service";
+import { Address } from "../core/models";
 
 @Component({
   selector: "app-checkout",
@@ -120,10 +121,37 @@ import { EmailNotificationService } from "../services/email-notification.service
                 <span *ngIf="!isAuthenticated()" class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">GUEST CHECKOUT</span>
               </div>
 
-              <form
+              <!-- Saved Addresses Selection -->
+              <div *ngIf="isAuthenticated() && savedAddresses().length > 0" class="mb-8 space-y-4">
+                <h3 class="font-semibold text-gray-900">Saved Addresses</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div *ngFor="let address of savedAddresses()"
+                       (click)="selectAddress(address)"
+                       class="border-2 rounded-lg p-4 cursor-pointer hover:border-gold-500 transition-all"
+                       [ngClass]="selectedAddressId() === address.id ? 'border-gold-500 bg-gold-50' : 'border-diamond-200'">
+                    <div class="flex justify-between">
+                      <span class="font-bold text-gray-900">{{ address.firstName }} {{ address.lastName }}</span>
+                      <span *ngIf="address.isDefault" class="text-xs text-gold-600 font-bold">DEFAULT</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">
+                      {{ address.street }}<br>
+                      {{ address.city }}, {{ address.state }} {{ address.zipCode }}
+                    </p>
+                  </div>
+
+                  <!-- New Address Option -->
+                  <div (click)="selectNewAddress()"
+                       class="border-2 border-dashed border-diamond-300 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-gold-500 hover:text-gold-600 text-gray-500 transition-all"
+                       [ngClass]="selectedAddressId() === 'new' ? 'border-gold-500 bg-gold-50 text-gold-600' : ''">
+                    <span class="font-semibold">+ Use New Address</span>
+                  </div>
+                </div>
+              </div>
+
+              <form *ngIf="selectedAddressId() === 'new' || !isAuthenticated()"
                 (ngSubmit)="nextStep()"
                 #shippingForm="ngForm"
-                class="space-y-6"
+                class="space-y-6 animate-fade-in-up"
               >
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -655,6 +683,20 @@ export class CheckoutComponent implements OnInit {
   billingSameAsShipping = true;
   isAuthenticated = signal(false);
 
+  // Address Selection
+  savedAddresses = computed(() => {
+    let addrs: Address[] = [];
+    this.authService.user().subscribe(u => addrs = u?.addresses || []);
+    // Computed might not work well with subscribe inside.
+    // Better to use a signal for user addresses.
+    // However, since authService.user() is an observable, we can't easily compute off it directly
+    // without converting to signal or just using a local signal updated by subscription.
+    return this.userAddresses();
+  });
+
+  userAddresses = signal<Address[]>([]);
+  selectedAddressId = signal<string>('new');
+
   constructor(
     private authService: AuthService,
     private cartService: CartService,
@@ -666,16 +708,28 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.checkAuth();
     this.loadCartData();
-    this.prefillUserData();
-  }
 
-  private prefillUserData(): void {
+    // Subscribe to user changes
     this.authService.user().subscribe(user => {
       if (user) {
-        this.shippingData.firstName = user.firstName || '';
-        this.shippingData.lastName = user.lastName || '';
-        this.shippingData.email = user.email || '';
-        this.shippingData.phone = user.phone || '';
+        // Update basic info if new address form is active
+        if (this.selectedAddressId() === 'new') {
+            this.shippingData.firstName = user.firstName || '';
+            this.shippingData.lastName = user.lastName || '';
+            this.shippingData.email = user.email || '';
+            this.shippingData.phone = user.phone || '';
+        }
+
+        // Update addresses list
+        if (user.addresses && user.addresses.length > 0) {
+            this.userAddresses.set(user.addresses);
+            // Default to first address or default one
+            const defaultAddr = user.addresses.find(a => a.isDefault) || user.addresses[0];
+            this.selectAddress(defaultAddr);
+        } else {
+            this.userAddresses.set([]);
+            this.selectedAddressId.set('new');
+        }
       }
     });
   }
@@ -693,6 +747,41 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         console.error("Error loading cart:", error);
       },
+    });
+  }
+
+  selectAddress(address: Address) {
+    this.selectedAddressId.set(address.id);
+    this.shippingData = {
+        firstName: address.firstName,
+        lastName: address.lastName,
+        email: this.shippingData.email, // Keep email from user profile if possible, address might not have it
+        phone: address.phone,
+        address: address.street,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zipCode,
+        country: address.country
+    };
+  }
+
+  selectNewAddress() {
+    this.selectedAddressId.set('new');
+    // Clear form but keep user contact info
+    this.authService.user().subscribe(user => {
+        if (user) {
+            this.shippingData = {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                phone: user.phone,
+                address: '',
+                city: '',
+                state: '',
+                zipCode: '',
+                country: 'USA'
+            };
+        }
     });
   }
 

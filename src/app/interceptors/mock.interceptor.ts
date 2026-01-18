@@ -8,6 +8,7 @@ import {
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { MockBackendService } from '../services/mock-backend.service';
+import { Address } from '../core/models';
 import {
   LoginRequest,
   RegisterRequest,
@@ -45,6 +46,17 @@ export class MockInterceptor implements HttpInterceptor {
     }
     if (url.endsWith('/users/me') && method === 'GET') {
       return this.mockBackend.handleCurrentUser();
+    }
+    if (url.endsWith('/users/addresses') && method === 'POST') {
+      return this.mockBackend.handleAddAddress(body as Address);
+    }
+    if (url.match(/\/users\/addresses\/[^\/]+$/) && method === 'PUT') {
+      const id = url.split('/').pop()!;
+      return this.mockBackend.handleUpdateAddress(id, body as Partial<Address>);
+    }
+    if (url.match(/\/users\/addresses\/[^\/]+$/) && method === 'DELETE') {
+      const id = url.split('/').pop()!;
+      return this.mockBackend.handleDeleteAddress(id);
     }
 
     // --- Product Routes ---
@@ -88,6 +100,9 @@ export class MockInterceptor implements HttpInterceptor {
     // --- Order Routes ---
     if (url.endsWith('/orders') && method === 'POST') {
         return this.mockBackend.handleCreateOrder(body as CreateOrderRequest);
+    }
+    if (url.match(/\/orders\/?(\?.*)?$/) && method === 'GET') {
+        return this.mockBackend.handleGetUserOrders();
     }
     if (url.match(/\/orders\/[^\/]+$/) && method === 'GET') {
         const id = url.split('/').pop()!;

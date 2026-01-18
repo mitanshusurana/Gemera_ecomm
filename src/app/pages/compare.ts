@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { CompareService } from '../services/compare.service';
@@ -11,7 +11,7 @@ import { CurrencyService } from '../services/currency.service';
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, NgOptimizedImage],
   template: `
     <div class="min-h-screen bg-white">
       <div class="bg-diamond-50 border-b border-diamond-200 section-padding">
@@ -56,9 +56,9 @@ import { CurrencyService } from '../services/currency.service';
                <tr [class.bg-yellow-50]="isAttributeDifferent('imageUrl')">
                    <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('imageUrl')">Product</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <div class="w-24 h-24 md:w-32 md:h-32 bg-diamond-100 flex items-center justify-center overflow-hidden rounded-lg mx-auto">
-                           <img *ngIf="product.imageUrl" [src]="product.imageUrl" class="w-full h-full object-cover">
-                           <span *ngIf="!product.imageUrl" class="text-4xl">💎</span>
+                       <div class="w-24 h-24 md:w-32 md:h-32 bg-diamond-100 flex items-center justify-center overflow-hidden rounded-lg mx-auto relative">
+                           <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover">
+                           <span *ngIf="!product.imageUrl && !product.images?.[0]" class="text-4xl">💎</span>
                        </div>
                    </td>
                </tr>
@@ -91,7 +91,7 @@ import { CurrencyService } from '../services/currency.service';
                 <tr [class.bg-yellow-50]="isAttributeDifferent('gemstones')">
                    <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('gemstones')">Gemstones</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       {{ product.gemstones.join(', ') || '-' }}
+                       {{ product.gemstones?.join(', ') || '-' }}
                    </td>
                </tr>
 
@@ -100,8 +100,8 @@ import { CurrencyService } from '../services/currency.service';
                    <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('rating')">Rating</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
                        <div class="flex items-center gap-1">
-                           <span class="text-gold-500 font-bold">{{ product.rating }} ★</span>
-                           <span class="text-xs text-gray-500">({{ product.reviewCount }})</span>
+                           <span class="text-gold-500 font-bold">{{ product.rating || 'N/A' }} ★</span>
+                           <span class="text-xs text-gray-500">({{ product.reviewCount || 0 }})</span>
                        </div>
                    </td>
                </tr>
@@ -175,6 +175,6 @@ export class CompareComponent implements OnInit {
     if (list.length < 2) return false;
 
     const minPrice = Math.min(...list.map(p => p.price));
-    return product.price === minPrice && product.rating >= 4.5;
+    return product.price === minPrice && (product.rating || 0) >= 4.5;
   }
 }

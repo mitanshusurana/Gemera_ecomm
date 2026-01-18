@@ -248,7 +248,7 @@ interface ComparisonProduct {
                     <div class="flex gap-0.5">
                       <span *ngFor="let i of [1,2,3,4,5]" class="text-gold-500">★</span>
                     </div>
-                    <span class="text-sm text-gray-600">{{ product.rating }}</span>
+                    <span class="text-sm text-gray-600">{{ product.rating || 'N/A' }}</span>
                   </div>
                 </td>
               </tr>
