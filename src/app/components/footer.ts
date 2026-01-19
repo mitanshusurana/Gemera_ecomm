@@ -56,6 +56,7 @@ import { APP_CATEGORIES } from "../core/constants";
           <div>
             <h4 class="font-bold mb-6 font-display text-lg text-white">Collections</h4>
             <ul class="space-y-3">
+              <li><a routerLink="/rfq" class="text-sm font-bold text-secondary-400 hover:text-white transition-colors flex items-center gap-1">📋 Request for Quote</a></li>
               <li><a routerLink="/treasure" class="text-sm font-bold text-secondary-400 hover:text-white transition-colors flex items-center gap-1">✨ Treasure Plan</a></li>
               <li *ngFor="let cat of categories.slice(0, 5)">
                 <a [routerLink]="['/products']" [queryParams]="{category: cat.value}" class="text-sm text-primary-200 hover:text-secondary-400 transition-colors">{{ cat.displayName }}</a>

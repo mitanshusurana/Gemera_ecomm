@@ -5,7 +5,7 @@ import { QuickViewModalComponent } from "../components/quick-view-modal";
 import { WhatsappButtonComponent } from "../components/whatsapp-button";
 import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
-import { Product, ProductDetail } from "../core/models";
+import { Product, ProductDetail, Category } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
 import { SeoService } from "../services/seo.service";
 import { ToastService } from "../services/toast.service";
@@ -275,14 +275,7 @@ export class HomeComponent implements OnInit {
   quickViewOpen = signal(false);
   selectedProduct = signal<ProductDetail | null>(null);
 
-  collections = signal<CollectionUI[]>([
-    { id: '1', name: 'Engagement Ring', title: 'Rings', icon: '💍' },
-    { id: '2', name: 'Loose Gemstone', title: 'Loose Stones', icon: '💎' },
-    { id: '3', name: 'Spiritual Idol', title: 'Idols', icon: '🕉️' },
-    { id: '4', name: 'Gemstone Jewelry', title: 'Gemstones', icon: '👑' },
-    { id: '5', name: 'Precious Metal', title: 'Gold', icon: '🏆' },
-    { id: '6', name: 'Custom', title: 'Custom', icon: '✨' },
-  ]);
+  collections = signal<CollectionUI[]>([]);
   featuredProducts = signal<Product[]>([]);
 
   ngOnInit() {
@@ -294,6 +287,17 @@ export class HomeComponent implements OnInit {
     this.productService.getProducts(0, 8).subscribe(res => {
         this.featuredProducts.set(res.content);
     });
+
+    // Fetch categories dynamically
+    this.productService.getCategories().subscribe(res => {
+        const mappedCollections: CollectionUI[] = res.categories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            title: cat.displayName,
+            icon: this.getProductEmoji(cat.name)
+        }));
+        this.collections.set(mappedCollections);
+    });
   }
 
   getProductEmoji(category: string): string {
@@ -303,7 +307,20 @@ export class HomeComponent implements OnInit {
       "Spiritual Idol": "🕉️",
       "Gemstone Ring": "👑",
       "Precious Metal": "🏆",
+      "DIAMOND": "💎",
+      "GEMSTONE": "🔮",
+      "PRECIOUS_METAL": "🥇",
     };
+    // Normalize key
+    const normalized = category.replace('_', ' ').toLowerCase();
+
+    // Simple fallback logic
+    if (normalized.includes('ring')) return "💍";
+    if (normalized.includes('diamond')) return "💎";
+    if (normalized.includes('gemstone')) return "🔮";
+    if (normalized.includes('idol')) return "🕉️";
+    if (normalized.includes('metal') || normalized.includes('gold')) return "🏆";
+
     return emojiMap[category] || "✦";
   }
 

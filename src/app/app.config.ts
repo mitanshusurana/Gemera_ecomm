@@ -6,7 +6,6 @@ import { provideClientHydration } from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
-import { MockInterceptor } from './interceptors/mock.interceptor';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { ErrorInterceptor } from './interceptors/error.interceptor';
 import { GlobalErrorHandler } from './core/global-error-handler';
@@ -24,7 +23,6 @@ export const appConfig: ApplicationConfig = {
         registrationStrategy: 'registerWhenStable:30000'
     }),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
-    // { provide: HTTP_INTERCEPTORS, useClass: MockInterceptor, multi: true }, // Disabled for production/backend integration
     { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
     { provide: ErrorHandler, useClass: GlobalErrorHandler }
   ]

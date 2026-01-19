@@ -27,6 +27,7 @@ import { APP_CATEGORIES } from '../core/constants';
             <span class="inline font-medium text-secondary-100">Free Shipping on Orders Over $500</span>
           </div>
           <div class="flex gap-6 flex-shrink-0 text-primary-100">
+            <a routerLink="/rfq" class="hover:text-white transition-colors font-bold text-secondary-200">Bulk Orders</a>
             <a routerLink="/stores" class="hover:text-white transition-colors">Find a Store</a>
             <a href="#" class="hover:text-white transition-colors">Help</a>
             <a routerLink="/track-order" class="hover:text-white transition-colors">Track Order</a>
