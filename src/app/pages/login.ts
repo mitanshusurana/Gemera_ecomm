@@ -255,17 +255,6 @@ import { AuthService } from "../services/auth.service";
           >
             {{ errorMessage() }}
           </div>
-
-          <!-- Info Box -->
-          <div
-            class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 text-sm text-blue-900"
-          >
-            <p class="font-semibold mb-2">Demo Mode</p>
-            <p>
-              For testing purposes, use any email and password combination.
-              Authentication is mocked for development.
-            </p>
-          </div>
         </div>
       </div>
     </div>
