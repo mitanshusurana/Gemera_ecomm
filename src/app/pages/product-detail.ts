@@ -408,7 +408,9 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     if (this.pincode().length < 6) return this.toastService.show('Please enter a valid 6-digit pincode', 'error');
     this.toastService.show('Checking availability...', 'info');
     setTimeout(() => {
-       this.deliveryDate.set('Mon, 21 Aug');
+       const date = new Date();
+       date.setDate(date.getDate() + 5);
+       this.deliveryDate.set(date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }));
     }, 800);
   }
 

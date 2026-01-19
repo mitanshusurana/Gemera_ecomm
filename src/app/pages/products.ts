@@ -478,45 +478,11 @@ export class ProductsComponent implements OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
             next: (res) => {
-                // Client-side filtering for new mock filters since API/MockService might not support them yet
-                let content = res.content;
-
-                // --- Mock Logic for Filters ---
-                if (this.selectedOccasions().length > 0) {
-                    content = content.filter(p =>
-                        this.selectedOccasions().some(occ =>
-                            p.description.includes(occ) || p.name.includes(occ) || Math.random() > 0.7
-                        )
-                    );
-                }
-                if (this.selectedStyles().length > 0) {
-                     content = content.filter(p =>
-                        this.selectedStyles().some(sty =>
-                            p.description.includes(sty) || p.name.includes(sty) || Math.random() > 0.7
-                        )
-                    );
-                }
-                if (this.selectedPriceRanges().length > 0) {
-                    content = content.filter(p => {
-                        return this.selectedPriceRanges().some(rangeId => {
-                            const range = this.priceRanges.find(r => r.id === rangeId);
-                            if (!range) return false;
-                            const max = range.max === null ? Infinity : range.max;
-                            return p.price >= range.min && p.price <= max;
-                        });
-                    });
-                }
-
-                this.products.set(content);
-
-                // Adjust total items roughly for mock filtering
-                const hasFilters = this.selectedOccasions().length > 0 || this.selectedStyles().length > 0 || this.selectedPriceRanges().length > 0;
-                const total = hasFilters ? content.length : res.pageable.totalElements;
-
+                this.products.set(res.content);
                 this.pagination.update(p => ({
                     ...p,
-                    totalItems: total,
-                    totalPages: Math.ceil(total / p.pageSize) || 1
+                    totalItems: res.pageable.totalElements,
+                    totalPages: res.pageable.totalPages
                 }));
                 this.isLoading.set(false);
             },
