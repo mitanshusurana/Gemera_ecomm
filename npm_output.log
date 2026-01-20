@@ -1,0 +1,45 @@
+
+> fusion-angular-tailwind-starter@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names              |  Raw size
+main.js             | main               |  98.67 kB |
+styles.css          | styles             |  98.45 kB |
+chunk-XCU54PUX.js   | -                  |  13.47 kB |
+chunk-XIM65A6U.js   | -                  |   8.05 kB |
+chunk-YC3X4XN5.js   | -                  |   3.12 kB |
+chunk-HXQ63BFM.js   | -                  |   2.28 kB |
+chunk-C7V6LZTG.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-D5XJJI6Y.js   | -                  |   1.32 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 230.84 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-QYLLE2EB.js   | product-detail     |  92.58 kB |
+chunk-TOZK3PIY.js   | account            |  75.41 kB |
+chunk-AULYFVQ7.js   | products           |  71.76 kB |
+chunk-5ONH7SVW.js   | checkout           |  62.40 kB |
+chunk-2JUA4WZH.js   | rfq-request        |  49.55 kB |
+chunk-PEE6D3ZM.js   | home               |  43.47 kB |
+chunk-XRDN3BHL.js   | builder            |  35.40 kB |
+chunk-YIIJYKDP.js   | cart               |  31.40 kB |
+chunk-DT4JDQX2.js   | order-confirmation |  31.10 kB |
+chunk-LJVSUWUI.js   | compare            |  28.05 kB |
+chunk-6P2P27EY.js   | login              |  27.10 kB |
+chunk-5MADAUDM.js   | -                  |  25.08 kB |
+chunk-HHRUUBHC.js   | treasure-chest     |  24.38 kB |
+chunk-EZHOAMQU.js   | dashboard          |  23.34 kB |
+chunk-PA3H2N4Q.js   | verify-certificate |  18.95 kB |
+...and 13 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [6.982 seconds]
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/

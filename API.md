@@ -16,6 +16,16 @@
 
 ---
 
+## Address Management
+
+| Method | Endpoint | Description | Request Body | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/users/addresses` | Add new address | `Address` (without ID) | `User` |
+| `PUT` | `/users/addresses/:id` | Update address | `Address` (partial) | `User` |
+| `DELETE` | `/users/addresses/:id` | Delete address | - | `User` |
+
+---
+
 ## Products
 
 | Method | Endpoint | Description | Request | Response |
@@ -93,6 +103,19 @@
 interface LoginRequest { email: string; password: string; }
 interface RegisterRequest { firstName: string; lastName: string; email: string; phone: string; password: string; }
 interface AuthResponse { token: string; refreshToken: string; user: User; }
+
+interface Address {
+  id: string;
+  firstName: string;
+  lastName: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  phone: string;
+  isDefault?: boolean;
+}
 ```
 
 ### Cart & Orders
