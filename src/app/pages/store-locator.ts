@@ -1,15 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-interface Store {
-  id: number;
-  name: string;
-  address: string;
-  phone: string;
-  hours: string;
-  lat: number;
-  lng: number;
-}
+import { StoreService, Store } from '../services/store.service';
 
 @Component({
   selector: 'app-store-locator',
@@ -28,6 +19,15 @@ interface Store {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Store List -->
           <div class="lg:col-span-1 space-y-4 h-[600px] overflow-y-auto pr-2">
+             <div *ngIf="isLoading()" class="text-center py-8">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-900 mx-auto"></div>
+                <p class="text-gray-500 mt-2">Loading stores...</p>
+             </div>
+
+             <div *ngIf="error()" class="bg-red-50 text-red-700 p-4 rounded-lg">
+                {{ error() }}
+             </div>
+
              <div *ngFor="let store of stores()"
                   (click)="selectedStore.set(store)"
                   [class.border-primary-500]="selectedStore()?.id === store.id"
@@ -56,7 +56,7 @@ interface Store {
                    <p class="text-gray-600 text-sm mb-4">{{ selectedStore()?.address }}</p>
                    <button class="w-full btn-primary">Navigate Now</button>
                 </div>
-                <div *ngIf="!selectedStore()" class="bg-white/80 backdrop-blur-md p-4 rounded-lg">
+                <div *ngIf="!selectedStore() && !isLoading()" class="bg-white/80 backdrop-blur-md p-4 rounded-lg">
                    <p class="font-bold text-gray-700">Select a store to view details</p>
                 </div>
              </div>
@@ -66,36 +66,28 @@ interface Store {
     </div>
   `
 })
-export class StoreLocatorComponent {
-  stores = signal<Store[]>([
-    {
-      id: 1,
-      name: 'Gemara Flagship - Mumbai',
-      address: '123, Linking Road, Bandra West, Mumbai, Maharashtra 400050',
-      phone: '+91 22 1234 5678',
-      hours: '10:00 AM - 9:00 PM',
-      lat: 19.0607,
-      lng: 72.8362
-    },
-    {
-      id: 2,
-      name: 'Gemara Boutique - Delhi',
-      address: '45, Khan Market, Rabindra Nagar, New Delhi, Delhi 110003',
-      phone: '+91 11 9876 5432',
-      hours: '10:30 AM - 8:30 PM',
-      lat: 28.6003,
-      lng: 77.2268
-    },
-    {
-      id: 3,
-      name: 'Gemara Studio - Bangalore',
-      address: '88, 100 Feet Rd, Indiranagar, Bengaluru, Karnataka 560038',
-      phone: '+91 80 4567 8901',
-      hours: '10:00 AM - 9:30 PM',
-      lat: 12.9716,
-      lng: 77.5946
-    }
-  ]);
+export class StoreLocatorComponent implements OnInit {
+  private storeService = inject(StoreService);
 
-  selectedStore = signal<Store | null>(this.stores()[0]);
+  stores = signal<Store[]>([]);
+  selectedStore = signal<Store | null>(null);
+  isLoading = signal(true);
+  error = signal('');
+
+  ngOnInit() {
+    this.storeService.getStores().subscribe({
+        next: (response) => {
+            this.stores.set(response.stores);
+            if (response.stores.length > 0) {
+                this.selectedStore.set(response.stores[0]);
+            }
+            this.isLoading.set(false);
+        },
+        error: (err) => {
+            console.error('Failed to load stores', err);
+            this.error.set('Unable to load store locations. Please try again later.');
+            this.isLoading.set(false);
+        }
+    });
+  }
 }

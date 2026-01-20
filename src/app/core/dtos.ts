@@ -68,6 +68,11 @@ export interface CreateOrderRequest {
   shippingMethod: string;
   items: CartItem[];
   total: number;
+  paymentDetails?: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  };
 }
 
 // Payment DTOs
@@ -81,4 +86,27 @@ export interface InitializePaymentRequest {
 export interface VerifyPaymentRequest {
   paymentId: string;
   paymentToken: string;
+}
+
+export interface CreateRazorpayOrderRequest {
+  amount: number;
+  currency: string;
+}
+
+export interface RazorpayOrderResponse {
+  id: string;
+  amount: number;
+  currency: string;
+  receipt?: string;
+  status: string;
+}
+
+export interface TransactionFailureRequest {
+  error_code: string;
+  error_description: string;
+  error_source?: string;
+  error_step?: string;
+  error_reason?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
 }

@@ -1,12 +1,15 @@
-import { Component, signal, OnInit, computed } from "@angular/core";
+import { Component, signal, OnInit, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router } from "@angular/router";
 import { AuthService } from "../services/auth.service";
 import { CartService } from "../services/cart.service";
 import { OrderService } from "../services/order.service";
+import { PaymentService } from "../services/payment.service";
 import { EmailNotificationService } from "../services/email-notification.service";
 import { Address } from "../core/models";
+
+declare var Razorpay: any;
 
 @Component({
   selector: "app-checkout",
@@ -63,20 +66,6 @@ import { Address } from "../core/models";
             >
               2
             </div>
-            <div
-              class="flex-1 h-1"
-              [ngClass]="currentStep() >= 3 ? 'bg-gold-500' : 'bg-diamond-200'"
-            ></div>
-            <div
-              class="flex items-center justify-center w-10 h-10 rounded-full"
-              [ngClass]="
-                currentStep() >= 3
-                  ? 'bg-gold-500 text-white'
-                  : 'bg-diamond-200 text-gray-700'
-              "
-            >
-              3
-            </div>
           </div>
           <div class="flex justify-between mt-4 text-sm">
             <span
@@ -87,12 +76,7 @@ import { Address } from "../core/models";
             <span
               class="font-semibold"
               [ngClass]="currentStep() >= 2 ? 'text-gold-600' : 'text-gray-600'"
-              >Payment</span
-            >
-            <span
-              class="font-semibold"
-              [ngClass]="currentStep() >= 3 ? 'text-gold-600' : 'text-gray-600'"
-              >Confirm</span
+              >Confirm & Pay</span
             >
           </div>
         </div>
@@ -305,197 +289,16 @@ import { Address } from "../core/models";
                   [disabled]="!shippingForm.valid"
                   class="w-full btn-primary"
                 >
-                  Continue to Payment
+                  Continue to Pay
                 </button>
               </form>
             </div>
 
-            <!-- Step 2: Payment Method -->
+            <!-- Step 2: Order Review & Pay -->
             <div *ngIf="currentStep() === 2" class="space-y-6 animate-slideUp">
               <div class="card p-8">
                 <h2 class="text-2xl font-bold text-diamond-900 mb-6">
-                  Payment Method
-                </h2>
-
-                <div class="space-y-4 mb-8">
-                  <label
-                    class="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors duration-300"
-                    [ngClass]="selectedPaymentMethod() === 'card' ? 'border-gold-500 bg-gold-50' : 'border-diamond-300 hover:border-gold-500'"
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="card"
-                      [checked]="selectedPaymentMethod() === 'card'"
-                      (change)="selectedPaymentMethod.set('card')"
-                      class="w-4 h-4 text-gold-600 focus:ring-gold-500"
-                    />
-                    <span class="font-semibold text-gray-900"
-                      >Credit / Debit Card</span
-                    >
-                  </label>
-                  <label
-                    class="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors duration-300"
-                    [ngClass]="selectedPaymentMethod() === 'paypal' ? 'border-gold-500 bg-gold-50' : 'border-diamond-300 hover:border-gold-500'"
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="paypal"
-                      [checked]="selectedPaymentMethod() === 'paypal'"
-                      (change)="selectedPaymentMethod.set('paypal')"
-                      class="w-4 h-4 text-gold-600 focus:ring-gold-500"
-                    />
-                    <span class="font-semibold text-gray-900">PayPal</span>
-                  </label>
-                  <label
-                    class="flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors duration-300"
-                    [ngClass]="selectedPaymentMethod() === 'apple' ? 'border-gold-500 bg-gold-50' : 'border-diamond-300 hover:border-gold-500'"
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="apple"
-                      [checked]="selectedPaymentMethod() === 'apple'"
-                      (change)="selectedPaymentMethod.set('apple')"
-                      class="w-4 h-4 text-gold-600 focus:ring-gold-500"
-                    />
-                    <span class="font-semibold text-gray-900">Apple Pay</span>
-                  </label>
-                </div>
-
-                <!-- Credit Card Form -->
-                <form *ngIf="selectedPaymentMethod() === 'card'"
-                  (ngSubmit)="nextStep()"
-                  #paymentForm="ngForm"
-                  class="space-y-6 animate-fade-in-up"
-                >
-                  <div>
-                    <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
-                      >Cardholder Name</label
-                    >
-                    <input
-                      type="text"
-                      [(ngModel)]="paymentData.cardName"
-                      name="cardName"
-                      required
-                      class="input-field"
-                      placeholder="John Doe"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
-                      >Card Number</label
-                    >
-                    <input
-                      type="text"
-                      [(ngModel)]="paymentData.cardNumber"
-                      name="cardNumber"
-                      required
-                      class="input-field"
-                      placeholder="1234 5678 9012 3456"
-                      maxlength="19"
-                    />
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-6">
-                    <div>
-                      <label
-                        class="block text-sm font-semibold text-gray-900 mb-2"
-                        >Expiry Date</label
-                      >
-                      <input
-                        type="text"
-                        [(ngModel)]="paymentData.expiryDate"
-                        name="expiryDate"
-                        required
-                        class="input-field"
-                        placeholder="MM/YY"
-                        maxlength="5"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        class="block text-sm font-semibold text-gray-900 mb-2"
-                        >CVC</label
-                      >
-                      <input
-                        type="text"
-                        [(ngModel)]="paymentData.cvc"
-                        name="cvc"
-                        required
-                        class="input-field"
-                        placeholder="123"
-                        maxlength="3"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="flex gap-4">
-                    <button
-                      type="button"
-                      (click)="previousStep()"
-                      class="flex-1 btn-ghost border border-diamond-300"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      [disabled]="!paymentForm.valid"
-                      class="flex-1 btn-primary"
-                    >
-                      Review Order
-                    </button>
-                  </div>
-                </form>
-
-                <!-- PayPal Placeholder -->
-                <div *ngIf="selectedPaymentMethod() === 'paypal'" class="text-center py-8 animate-fade-in-up">
-                    <p class="text-gray-600 mb-4">You will be redirected to PayPal to complete your purchase securely.</p>
-                    <div class="flex gap-4">
-                        <button type="button" (click)="previousStep()" class="flex-1 btn-ghost border border-diamond-300">Back</button>
-                        <button (click)="nextStep()" class="flex-1 btn-primary bg-[#0070ba] border-none hover:bg-[#003087]">Pay with PayPal</button>
-                    </div>
-                </div>
-
-                 <!-- Apple Pay Placeholder -->
-                <div *ngIf="selectedPaymentMethod() === 'apple'" class="text-center py-8 animate-fade-in-up">
-                    <p class="text-gray-600 mb-4">You will be redirected to complete your purchase securely with Apple Pay.</p>
-                     <div class="flex gap-4">
-                        <button type="button" (click)="previousStep()" class="flex-1 btn-ghost border border-diamond-300">Back</button>
-                        <button (click)="nextStep()" class="flex-1 btn-primary bg-black text-white border-none hover:bg-gray-800">Pay with Apple Pay</button>
-                    </div>
-                </div>
-              </div>
-
-              <!-- Security Info -->
-              <div
-                class="bg-sapphire-50 border border-sapphire-200 rounded-lg p-6"
-              >
-                <div class="flex gap-3">
-                  <span class="text-2xl flex-shrink-0">🔒</span>
-                  <div>
-                    <h3 class="font-bold text-gray-900 mb-2">
-                      Your payment is secure
-                    </h3>
-                    <p class="text-sm text-gray-700">
-                      Your card information is encrypted and securely
-                      transmitted using SSL technology. We never store your
-                      complete card details.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Step 3: Order Review -->
-            <div *ngIf="currentStep() === 3" class="space-y-6 animate-slideUp">
-              <div class="card p-8">
-                <h2 class="text-2xl font-bold text-diamond-900 mb-6">
-                  Order Review
+                  Review & Pay
                 </h2>
 
                 <div class="space-y-6">
@@ -515,20 +318,6 @@ import { Address } from "../core/models";
                         {{ shippingData.zipCode }}
                       </p>
                       <p>{{ shippingData.country }}</p>
-                    </div>
-                  </div>
-
-                  <div class="border-t border-diamond-200 pt-6">
-                    <h3 class="font-semibold text-gray-900 mb-4">
-                      Payment Method
-                    </h3>
-                    <div
-                      class="bg-diamond-50 rounded-lg p-4 text-sm text-gray-700"
-                    >
-                      <p>
-                        Credit Card ending in
-                        {{ paymentData.cardNumber.slice(-4) }}
-                      </p>
                     </div>
                   </div>
 
@@ -569,11 +358,11 @@ import { Address } from "../core/models";
                   Back
                 </button>
                 <button
-                  (click)="placeOrder()"
+                  (click)="payNow()"
                   class="flex-1 btn-primary"
                   [disabled]="isProcessing()"
                 >
-                  {{ isProcessing() ? "Processing..." : "Place Order" }}
+                  {{ isProcessing() ? "Processing..." : "Pay Now" }}
                 </button>
               </div>
             </div>
@@ -659,7 +448,6 @@ export class CheckoutComponent implements OnInit {
   cartItems = signal<any[]>([]);
   cartTotal = signal(45000);
   isProcessing = signal(false);
-  selectedPaymentMethod = signal('card');
 
   shippingData = {
     firstName: "",
@@ -673,13 +461,6 @@ export class CheckoutComponent implements OnInit {
     country: "USA",
   };
 
-  paymentData = {
-    cardName: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvc: "",
-  };
-
   billingSameAsShipping = true;
   isAuthenticated = signal(false);
 
@@ -687,15 +468,13 @@ export class CheckoutComponent implements OnInit {
   savedAddresses = computed(() => {
     let addrs: Address[] = [];
     this.authService.user().subscribe(u => addrs = u?.addresses || []);
-    // Computed might not work well with subscribe inside.
-    // Better to use a signal for user addresses.
-    // However, since authService.user() is an observable, we can't easily compute off it directly
-    // without converting to signal or just using a local signal updated by subscription.
     return this.userAddresses();
   });
 
   userAddresses = signal<Address[]>([]);
   selectedAddressId = signal<string>('new');
+
+  private paymentService = inject(PaymentService);
 
   constructor(
     private authService: AuthService,
@@ -708,6 +487,7 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.checkAuth();
     this.loadCartData();
+    this.loadRazorpayScript();
 
     // Subscribe to user changes
     this.authService.user().subscribe(user => {
@@ -734,6 +514,13 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
+  loadRazorpayScript() {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
   private checkAuth(): void {
     this.isAuthenticated.set(this.authService.isAuthenticated());
   }
@@ -755,7 +542,7 @@ export class CheckoutComponent implements OnInit {
     this.shippingData = {
         firstName: address.firstName,
         lastName: address.lastName,
-        email: this.shippingData.email, // Keep email from user profile if possible, address might not have it
+        email: this.shippingData.email,
         phone: address.phone,
         address: address.street,
         city: address.city,
@@ -767,7 +554,6 @@ export class CheckoutComponent implements OnInit {
 
   selectNewAddress() {
     this.selectedAddressId.set('new');
-    // Clear form but keep user contact info
     this.authService.user().subscribe(user => {
         if (user) {
             this.shippingData = {
@@ -786,7 +572,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   nextStep(): void {
-    if (this.currentStep() < 3) {
+    if (this.currentStep() < 2) {
       this.currentStep.set(this.currentStep() + 1);
     }
   }
@@ -801,26 +587,92 @@ export class CheckoutComponent implements OnInit {
     return "$" + amount.toFixed(2);
   }
 
-  placeOrder(): void {
+  payNow() {
+    if (typeof Razorpay === 'undefined') {
+        alert('Payment gateway failed to load. Please check your internet connection or disable ad blockers.');
+        return;
+    }
     this.isProcessing.set(true);
 
+    // Create Razorpay Order
+    this.paymentService.createRazorpayOrder(this.cartTotal() * 100, 'INR').subscribe({
+        next: (response) => {
+            this.initiateRazorpayPayment(response);
+        },
+        error: (error) => {
+            console.error('Error creating Razorpay order', error);
+            this.isProcessing.set(false);
+            alert('Failed to initiate payment. Please try again.');
+        }
+    });
+  }
+
+  initiateRazorpayPayment(orderData: any) {
+      const options = {
+          key: 'rzp_test_S5goGHXLEuP6hP',
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'LuxeGems',
+          description: 'Jewellery Purchase',
+          order_id: orderData.id,
+          prefill: {
+              name: `${this.shippingData.firstName} ${this.shippingData.lastName}`,
+              email: this.shippingData.email,
+              contact: this.shippingData.phone
+          },
+          theme: {
+              color: '#D4AF37'
+          },
+          handler: (response: any) => {
+              this.handlePaymentSuccess(response);
+          },
+          modal: {
+              ondismiss: () => {
+                  this.isProcessing.set(false);
+                  this.paymentService.logFailedTransaction({
+                      error_code: 'PAYMENT_CANCELLED',
+                      error_description: 'User closed the payment modal',
+                      razorpay_order_id: orderData.id
+                  }).subscribe();
+              }
+          }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', (response: any) => {
+          this.isProcessing.set(false);
+          this.paymentService.logFailedTransaction({
+              error_code: response.error.code,
+              error_description: response.error.description,
+              error_source: response.error.source,
+              error_step: response.error.step,
+              error_reason: response.error.reason,
+              razorpay_order_id: response.error.metadata.order_id,
+              razorpay_payment_id: response.error.metadata.payment_id
+          }).subscribe();
+          alert('Payment Failed: ' + response.error.description);
+      });
+      rzp.open();
+  }
+
+  handlePaymentSuccess(response: any) {
     const orderData = {
       shippingAddress: this.shippingData,
       billingAddress: this.billingSameAsShipping ? this.shippingData : {},
-      paymentMethod: "CREDIT_CARD",
+      paymentMethod: "RAZORPAY",
       shippingMethod: "EXPRESS",
       items: this.cartItems(),
       total: this.cartTotal(),
+      paymentDetails: {
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature
+      }
     };
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
-
-        const subtotal = order.items.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0,
-        );
-        const tax = subtotal * 0.1;
+        // Send email confirmation
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + 3);
 
@@ -856,7 +708,7 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         console.error("Error creating order:", error);
         this.isProcessing.set(false);
-        alert("Error placing order. Please try again.");
+        alert("Payment successful but order placement failed. Please contact support.");
       },
     });
   }
