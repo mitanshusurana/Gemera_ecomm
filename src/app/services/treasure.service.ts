@@ -1,5 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay } from 'rxjs';
+import { ApiConfigService } from './api-config.service';
+import { TreasureChestAccount } from '../core/models';
 
 export interface TreasurePlanConfig {
   minAmount: number;
@@ -12,6 +15,9 @@ export interface TreasurePlanConfig {
   providedIn: 'root'
 })
 export class TreasureService {
+  private http = inject(HttpClient);
+  private apiConfig = inject(ApiConfigService);
+  private baseUrl = this.apiConfig.getEndpoint('treasure');
 
   private config: TreasurePlanConfig = {
     minAmount: 1000,
@@ -35,8 +41,11 @@ export class TreasureService {
     };
   }
 
-  enroll(amount: number): Observable<boolean> {
-     // Mock API call
-     return of(true).pipe(delay(1500));
+  enroll(amount: number): Observable<TreasureChestAccount> {
+     const payload = {
+       planName: "Golden Treasure Plan",
+       installmentAmount: amount
+     };
+     return this.http.post<TreasureChestAccount>(`${this.baseUrl}/enroll`, payload);
   }
 }
