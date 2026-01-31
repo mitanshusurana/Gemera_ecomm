@@ -42,7 +42,7 @@ export class EmailNotificationService {
     shippingAddress: {
       firstName: string;
       lastName: string;
-      address: string;
+      street: string;
       city: string;
       state: string;
       zipCode: string;

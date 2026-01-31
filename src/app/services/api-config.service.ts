@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 
 /**
  * Centralized API configuration service
  * Provides the base URL for all API endpoints
- * 
- * To change the backend API URL, update the baseUrl property below
  */
 @Injectable({
   providedIn: 'root'
@@ -12,13 +11,8 @@ import { Injectable } from '@angular/core';
 export class ApiConfigService {
   /**
    * Base URL for all API endpoints
-   * Change this to point to your backend server
-   * 
-   * Examples:
-   * - Local development: '/api/v1'
-   * - External API: 'https://api.yourdomain.com/api/v1'
    */
-  readonly baseUrl = 'http://localhost:8080/api/v1';
+  readonly baseUrl = environment.apiUrl;
 
   /**
    * Get the full endpoint URL
