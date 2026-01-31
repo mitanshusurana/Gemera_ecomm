@@ -22,6 +22,8 @@ export class CurrencyService {
     'INR': '₹'
   };
 
+  readonly availableCurrencies: CurrencyCode[] = ['USD', 'EUR', 'GBP', 'INR'];
+
   private getStoredCurrency(): CurrencyCode {
     if (typeof localStorage !== 'undefined') {
       const stored = localStorage.getItem('currency');

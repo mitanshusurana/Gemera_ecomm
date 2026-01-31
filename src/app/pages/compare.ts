@@ -7,11 +7,12 @@ import { CartService } from '../services/cart.service';
 import { Product } from '../core/models';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [CommonModule, RouterLink, NgOptimizedImage],
+  imports: [CommonModule, RouterLink, NgOptimizedImage, CurrencyConvertPipe],
   template: `
     <div class="min-h-screen bg-white">
       <div class="bg-diamond-50 border-b border-diamond-200 section-padding">
@@ -67,7 +68,7 @@ import { CurrencyService } from '../services/currency.service';
                <tr [class.bg-yellow-50]="isAttributeDifferent('price')">
                    <td class="p-4 border-b border-diamond-100 font-semibold text-gray-600 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" [class.bg-yellow-50]="isAttributeDifferent('price')">Price</td>
                    <td *ngFor="let product of compareService.compareList()" class="p-4 border-b border-diamond-100">
-                       <span class="text-lg md:text-xl font-bold text-diamond-900">{{ formatPrice(product.price) }}</span>
+                       <span class="text-lg md:text-xl font-bold text-diamond-900">{{ product.price | currencyConvert }}</span>
                    </td>
                </tr>
 
@@ -154,10 +155,6 @@ export class CompareComponent implements OnInit {
       this.cartService.addToCart(product.id, 1).subscribe(() => {
           this.toastService.show('Added to cart', 'success');
       });
-  }
-
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
   }
 
   isAttributeDifferent(attr: keyof Product): boolean {

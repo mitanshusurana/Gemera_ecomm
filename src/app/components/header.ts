@@ -7,6 +7,7 @@ import { ProductService } from '../services/product.service';
 import { Product, User } from '../core/models';
 import { FormsModule } from '@angular/forms';
 import { WishlistService } from '../services/wishlist.service';
+import { CurrencyService } from '../services/currency.service';
 import { APP_CATEGORIES } from '../core/constants';
 
 @Component({
@@ -26,11 +27,30 @@ import { APP_CATEGORIES } from '../core/constants';
             <span class="hidden sm:inline opacity-80">|</span>
             <span class="inline font-medium text-secondary-100">Free Shipping on Orders Over $500</span>
           </div>
-          <div class="flex gap-6 flex-shrink-0 text-primary-100">
+          <div class="flex gap-6 flex-shrink-0 text-primary-100 items-center">
             <a routerLink="/rfq" class="hover:text-white transition-colors font-bold text-secondary-200">Bulk Orders</a>
             <a routerLink="/stores" class="hover:text-white transition-colors">Find a Store</a>
             <a href="#" class="hover:text-white transition-colors">Help</a>
             <a routerLink="/track-order" class="hover:text-white transition-colors">Track Order</a>
+
+            <!-- Currency Selector -->
+            <div class="relative group ml-2">
+              <button class="flex items-center gap-1 hover:text-white transition-colors font-bold text-secondary-200 uppercase">
+                {{ currentCurrency() }}
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+              <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
+                <div class="bg-white text-gray-800 rounded shadow-lg py-1 border border-gray-100 min-w-[80px]">
+                  <button *ngFor="let code of availableCurrencies"
+                          (click)="setCurrency(code)"
+                          class="block w-full text-left px-4 py-1.5 text-xs hover:bg-primary-50 hover:text-primary-700 font-medium"
+                          [class.text-primary-700]="currentCurrency() === code"
+                          [class.bg-primary-50]="currentCurrency() === code">
+                    {{ code }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -198,12 +218,16 @@ export class HeaderComponent {
   private productService = inject(ProductService);
   private router = inject(Router);
   private wishlistService = inject(WishlistService);
+  private currencyService = inject(CurrencyService);
 
   userSignal = signal<User | null>(null);
   user = this.userSignal;
 
   cartCount = signal(0);
   wishlistCount = this.wishlistService.count;
+
+  availableCurrencies = this.currencyService.availableCurrencies;
+  currentCurrency = this.currencyService.currentCurrency;
 
   constructor() {
     this.authService.user().subscribe(u => this.userSignal.set(u));
@@ -245,5 +269,9 @@ export class HeaderComponent {
     setTimeout(() => {
       this.isSearchFocused = false;
     }, 200);
+  }
+
+  setCurrency(code: any) {
+    this.currencyService.setCurrency(code);
   }
 }

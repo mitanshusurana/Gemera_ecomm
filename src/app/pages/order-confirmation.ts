@@ -2,11 +2,12 @@ import { Component, OnInit, signal } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
+import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 
 @Component({
   selector: "app-order-confirmation",
   standalone: true,
-  imports: [CommonModule, RouterLink, NgOptimizedImage],
+  imports: [CommonModule, RouterLink, NgOptimizedImage, CurrencyConvertPipe],
   template: `
     <div class="min-h-screen bg-gradient-to-b from-gold-50 to-white">
       <!-- Breadcrumb -->
@@ -140,7 +141,7 @@ import { OrderService } from "../services/order.service";
                         </div>
                         <div class="text-right">
                           <p class="font-semibold text-gray-900">
-                            {{ formatPrice(item.price * item.quantity) }}
+                            {{ (item.price * item.quantity) | currencyConvert }}
                           </p>
                         </div>
                       </div>
@@ -219,7 +220,7 @@ import { OrderService } from "../services/order.service";
                 <div class="flex justify-between">
                   <span class="text-gray-600">Subtotal</span>
                   <span class="font-semibold">{{
-                    formatPrice(orderSummary().subtotal)
+                    orderSummary().subtotal | currencyConvert
                   }}</span>
                 </div>
                 <div class="flex justify-between">
@@ -229,7 +230,7 @@ import { OrderService } from "../services/order.service";
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
                   <span class="font-semibold">{{
-                    formatPrice(orderSummary().tax)
+                    orderSummary().tax | currencyConvert
                   }}</span>
                 </div>
               </div>
@@ -237,7 +238,7 @@ import { OrderService } from "../services/order.service";
               <div class="flex justify-between mb-6 text-xl">
                 <span class="font-bold text-gray-900">Total</span>
                 <span class="font-bold text-2xl text-gold-600">{{
-                  formatPrice(orderSummary().total)
+                  orderSummary().total | currencyConvert
                 }}</span>
               </div>
 
@@ -341,10 +342,6 @@ export class OrderConfirmationComponent implements OnInit {
       this.loadOrder(sessionOrderId);
       sessionStorage.removeItem("lastOrderId");
     }
-  }
-
-  formatPrice(amount: number): string {
-    return "$" + amount.toFixed(2);
   }
 
   private loadOrder(orderId: string): void {

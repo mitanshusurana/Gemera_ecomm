@@ -2,11 +2,12 @@ import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
+import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 
 @Component({
   selector: "app-quick-view-modal",
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage],
+  imports: [CommonModule, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -103,13 +104,13 @@ import { CurrencyService } from "../services/currency.service";
               <div class="mb-6 pb-6 border-b border-diamond-200">
                 <div class="flex items-baseline gap-3">
                   <span class="text-3xl font-bold text-diamond-900">
-                    {{ formatPrice(product?.price || 0) }}
+                    {{ (product?.price || 0) | currencyConvert }}
                   </span>
                   <span
                     *ngIf="product && product.originalPrice"
                     class="text-lg text-gray-500 line-through"
                   >
-                    {{ formatPrice(product.originalPrice) }}
+                    {{ product.originalPrice | currencyConvert }}
                   </span>
                 </div>
               </div>
@@ -245,9 +246,5 @@ export class QuickViewModalComponent {
     if (this.product.stock > 0)
       return `⚠ Only ${this.product.stock} left in stock`;
     return "✗ Out of Stock";
-  }
-
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
   }
 }

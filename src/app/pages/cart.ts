@@ -5,11 +5,12 @@ import { RouterLink } from '@angular/router';
 import { CartService } from '../services/cart.service';
 import { Cart, CartItem } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, NgOptimizedImage],
+  imports: [CommonModule, RouterLink, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
@@ -68,7 +69,7 @@ import { CurrencyService } from '../services/currency.service';
                         +
                       </button>
                     </div>
-                    <span class="text-2xl font-bold text-diamond-900">{{ formatPrice(item.price * item.quantity) }}</span>
+                    <span class="text-2xl font-bold text-diamond-900">{{ (item.price * item.quantity) | currencyConvert }}</span>
                   </div>
                 </div>
               </div>
@@ -92,7 +93,7 @@ import { CurrencyService } from '../services/currency.service';
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="font-bold text-gold-700">+$5.00</span>
+                  <span class="font-bold text-gold-700">+{{ 5 | currencyConvert }}</span>
                   <input type="checkbox" [checked]="isGiftWrapped()" (change)="toggleGiftWrap($event)" class="w-5 h-5 text-gold-600 focus:ring-gold-500 border-gray-300 rounded">
                 </div>
               </div>
@@ -117,29 +118,29 @@ import { CurrencyService } from '../services/currency.service';
               <div class="space-y-4 mb-6 pb-6 border-b border-diamond-200">
                 <div class="flex justify-between">
                   <span class="text-gray-600">Subtotal</span>
-                  <span class="font-semibold">{{ formatPrice(subtotal()) }}</span>
+                  <span class="font-semibold">{{ subtotal() | currencyConvert }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Shipping</span>
-                  <span class="font-semibold">{{ formatPrice(shipping()) }}</span>
+                  <span class="font-semibold">{{ shipping() | currencyConvert }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
-                  <span class="font-semibold">{{ formatPrice(tax()) }}</span>
+                  <span class="font-semibold">{{ tax() | currencyConvert }}</span>
                 </div>
                 <div *ngIf="isGiftWrapped()" class="flex justify-between text-gold-700">
                   <span>Gift Wrapping</span>
-                  <span class="font-semibold">{{ formatPrice(5) }}</span>
+                  <span class="font-semibold">{{ 5 | currencyConvert }}</span>
                 </div>
                 <div *ngIf="discount() > 0" class="flex justify-between text-emerald-600">
                   <span>Discount</span>
-                  <span class="font-semibold">-{{ formatPrice(discount()) }}</span>
+                  <span class="font-semibold">-{{ discount() | currencyConvert }}</span>
                 </div>
               </div>
 
               <div class="flex justify-between mb-8 text-xl">
                 <span class="font-bold text-gray-900">Total</span>
-                <span class="font-bold text-2xl text-gold-600">{{ formatPrice(total()) }}</span>
+                <span class="font-bold text-2xl text-gold-600">{{ total() | currencyConvert }}</span>
               </div>
 
               <a routerLink="/checkout" class="w-full btn-primary block text-center mb-4">
@@ -257,9 +258,5 @@ export class CartComponent implements OnInit, OnDestroy {
 
   applyCoupon(code: string): void {
       this.cartService.applyCoupon(code).subscribe();
-  }
-
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
   }
 }

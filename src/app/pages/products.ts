@@ -12,11 +12,12 @@ import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
 import { APP_CATEGORIES } from '../core/constants';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: "app-products",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent, NgOptimizedImage],
+  imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
@@ -284,7 +285,7 @@ import { APP_CATEGORIES } from '../core/constants';
                   <!-- Price -->
                   <div class="mb-4">
                     <span class="text-2xl font-bold text-diamond-900">
-                      {{ formatPrice(product.price) }}
+                      {{ product.price | currencyConvert }}
                     </span>
                   </div>
 
@@ -638,10 +639,6 @@ export class ProductsComponent implements OnInit {
   shouldShowEllipsis(): boolean {
     const pages = this.visiblePages();
     return pages.length > 0 && pages[pages.length - 1] < this.pagination().totalPages;
-  }
-
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
   }
 
   getProductEmoji(category: string): string {
