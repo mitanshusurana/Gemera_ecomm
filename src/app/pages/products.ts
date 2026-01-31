@@ -219,13 +219,6 @@ import { APP_CATEGORIES } from '../core/constants';
                 </p>
               </div>
               <div class="flex gap-2">
-                <!-- Visual Search Button -->
-                <button (click)="fileInput.click()" class="btn-outline flex items-center gap-2" title="Search by Image">
-                  <span class="text-xl">📷</span>
-                  <span class="hidden sm:inline">Visual Search</span>
-                </button>
-                <input #fileInput type="file" (change)="handleVisualSearch($event)" class="hidden" accept="image/*">
-
                 <select [(ngModel)]="sortBy" (change)="loadProducts()" class="input-field max-w-xs">
                   <option value="newest">Sort by: Newest</option>
                   <option value="price-low">Price: Low to High</option>
@@ -589,18 +582,6 @@ export class ProductsComponent implements OnInit {
 
   handleViewDetails(productId: string): void {
     this.router.navigate(['/products', productId]);
-  }
-
-  handleVisualSearch(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      // Mock visual search
-      this.isLoading.set(true);
-      setTimeout(() => {
-        this.toastService.show(`Searching for products similar to ${input.files![0].name}... (Mock)`, 'info');
-        this.isLoading.set(false);
-      }, 1500);
-    }
   }
 
   goToPage(page: number): void {

@@ -23,24 +23,15 @@ export class AuthInterceptor implements HttpInterceptor {
     // AuthService also stores the token here after login
     const authToken = localStorage.getItem('authToken');
 
-    console.log('[AuthInterceptor] Token from localStorage:', authToken ? 'Present' : 'Not found');
-    console.log('[AuthInterceptor] Request URL:', request.url);
-
     // Only add token to API requests (skip assets, etc.)
     // Check if request is to our API by looking for /api/ in the URL
     if (authToken && request.url.includes('/api/')) {
-      console.log('[AuthInterceptor] Adding Authorization header with token');
       // Clone the request and add the Authorization header
       request = request.clone({
         setHeaders: {
           Authorization: `Bearer ${authToken}`
         }
       });
-      console.log('[AuthInterceptor] Authorization header added. Headers:', request.headers.keys());
-    } else if (!authToken) {
-      console.log('[AuthInterceptor] No token found in localStorage');
-    } else if (!request.url.includes('/api/')) {
-      console.log('[AuthInterceptor] Request URL does not contain /api/, skipping token');
     }
 
     return next.handle(request);

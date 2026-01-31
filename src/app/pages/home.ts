@@ -1,6 +1,6 @@
 import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
-import { RouterLink } from "@angular/router";
+import { RouterLink, Router } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
 import { WhatsappButtonComponent } from "../components/whatsapp-button";
 import { ProductService } from "../services/product.service";
@@ -271,6 +271,7 @@ export class HomeComponent implements OnInit {
   private currencyService = inject(CurrencyService);
   private seoService = inject(SeoService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   quickViewOpen = signal(false);
   selectedProduct = signal<ProductDetail | null>(null);
@@ -368,6 +369,7 @@ export class HomeComponent implements OnInit {
   }
 
   handleViewDetails(productId: string): void {
-    // Handled by router link usually
+    this.router.navigate(['/products', productId]);
+    this.closeQuickView();
   }
 }

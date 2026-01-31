@@ -6,6 +6,7 @@ import { AuthService } from "../services/auth.service";
 import { CartService } from "../services/cart.service";
 import { OrderService } from "../services/order.service";
 import { PaymentService } from "../services/payment.service";
+import { CurrencyService } from "../services/currency.service";
 import { EmailNotificationService } from "../services/email-notification.service";
 import { Address } from "../core/models";
 import { environment } from "../../environments/environment";
@@ -476,6 +477,7 @@ export class CheckoutComponent implements OnInit {
   selectedAddressId = signal<string>('new');
 
   private paymentService = inject(PaymentService);
+  private currencyService = inject(CurrencyService);
 
   constructor(
     private authService: AuthService,
@@ -585,7 +587,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   formatPrice(amount: number): string {
-    return "$" + amount.toFixed(2);
+    return this.currencyService.format(amount);
   }
 
   payNow() {
@@ -595,8 +597,13 @@ export class CheckoutComponent implements OnInit {
     }
     this.isProcessing.set(true);
 
+    // Convert base amount (USD) to INR
+    const amountInINR = this.currencyService.convert(this.cartTotal(), 'INR');
+    // Convert to paise (smallest unit)
+    const amountInPaise = Math.round(amountInINR * 100);
+
     // Create Razorpay Order
-    this.paymentService.createRazorpayOrder(this.cartTotal() * 100, 'INR').subscribe({
+    this.paymentService.createRazorpayOrder(amountInPaise, 'INR').subscribe({
         next: (response) => {
             this.initiateRazorpayPayment(response);
         },

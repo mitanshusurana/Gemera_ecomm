@@ -51,4 +51,9 @@ export class CurrencyService {
       maximumFractionDigits: 0
     }).format(value);
   }
+
+  convert(amount: number, toCurrency: CurrencyCode): number {
+    const rate = this.rates[toCurrency];
+    return amount * rate;
+  }
 }
