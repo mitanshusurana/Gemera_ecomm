@@ -10,11 +10,12 @@ import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { HistoryService } from '../services/history.service';
 import { CurrencyService } from '../services/currency.service';
 import { RING_CATEGORIES } from '../core/constants';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterLink, FormsModule, SizeGuideModalComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterLink, FormsModule, SizeGuideModalComponent, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -168,8 +169,8 @@ import { RING_CATEGORIES } from '../core/constants';
                 <!-- Price Section -->
                 <div class="mb-6 pb-6 border-b border-gray-100">
                    <div class="flex items-baseline gap-3 mb-1">
-                      <span class="text-3xl font-bold text-gray-900">{{ formatPrice(currentPriceBreakup()?.total || currentPrice()) }}</span>
-                      <span *ngIf="product()?.originalPrice" class="text-lg text-gray-400 line-through">{{ formatPrice(product()?.originalPrice || 0) }}</span>
+                      <span class="text-3xl font-bold text-gray-900">{{ (currentPriceBreakup()?.total || currentPrice()) | currencyConvert }}</span>
+                      <span *ngIf="product()?.originalPrice" class="text-lg text-gray-400 line-through">{{ (product()?.originalPrice || 0) | currencyConvert }}</span>
                    </div>
                    <p class="text-xs text-green-700 font-medium mb-3">Inclusive of all taxes</p>
 
@@ -179,11 +180,11 @@ import { RING_CATEGORIES } from '../core/constants';
                    </button>
 
                    <div *ngIf="showPriceBreakup() && currentPriceBreakup()" class="mt-3 bg-gray-50 p-3 rounded text-sm text-gray-600 animate-fade-in space-y-2">
-                      <div class="flex justify-between"><span>Metal</span> <span>{{ formatPrice(currentPriceBreakup()!.metal) }}</span></div>
-                      <div class="flex justify-between"><span>Stone</span> <span>{{ formatPrice(currentPriceBreakup()!.gemstone) }}</span></div>
-                      <div class="flex justify-between"><span>Making</span> <span>{{ formatPrice(currentPriceBreakup()!.makingCharges) }}</span></div>
-                      <div class="flex justify-between"><span>GST (3%)</span> <span>{{ formatPrice(currentPriceBreakup()!.tax) }}</span></div>
-                      <div class="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200"><span>Grand Total</span> <span>{{ formatPrice(currentPriceBreakup()!.total) }}</span></div>
+                      <div class="flex justify-between"><span>Metal</span> <span>{{ currentPriceBreakup()!.metal | currencyConvert }}</span></div>
+                      <div class="flex justify-between"><span>Stone</span> <span>{{ currentPriceBreakup()!.gemstone | currencyConvert }}</span></div>
+                      <div class="flex justify-between"><span>Making</span> <span>{{ currentPriceBreakup()!.makingCharges | currencyConvert }}</span></div>
+                      <div class="flex justify-between"><span>GST (3%)</span> <span>{{ currentPriceBreakup()!.tax | currencyConvert }}</span></div>
+                      <div class="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200"><span>Grand Total</span> <span>{{ currentPriceBreakup()!.total | currencyConvert }}</span></div>
                    </div>
                 </div>
 
@@ -401,8 +402,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
      this.tryAtHomeOpen.set(false);
      this.toastService.show('Booking Confirmed! Check your email.', 'success');
   }
-
-  formatPrice(p: number) { return this.currencyService.format(p); }
 
   checkDelivery() {
     if (this.pincode().length < 6) return this.toastService.show('Please enter a valid 6-digit pincode', 'error');

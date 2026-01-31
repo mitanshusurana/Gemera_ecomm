@@ -6,7 +6,9 @@ import { AuthService } from "../services/auth.service";
 import { CartService } from "../services/cart.service";
 import { OrderService } from "../services/order.service";
 import { PaymentService } from "../services/payment.service";
+import { CurrencyService } from "../services/currency.service";
 import { EmailNotificationService } from "../services/email-notification.service";
+import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { Address } from "../core/models";
 import { environment } from "../../environments/environment";
 
@@ -15,7 +17,7 @@ declare var Razorpay: any;
 @Component({
   selector: "app-checkout",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, CurrencyConvertPipe],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -385,7 +387,7 @@ declare var Razorpay: any;
                   >
                     <span class="text-gray-600">{{ item.product.name }}</span>
                     <span class="font-semibold">{{
-                      formatPrice(item.price * item.quantity)
+                      (item.price * item.quantity) | currencyConvert
                     }}</span>
                   </div>
                 </ng-container>
@@ -395,7 +397,7 @@ declare var Razorpay: any;
                 <div class="flex justify-between">
                   <span class="text-gray-600">Subtotal</span>
                   <span class="font-semibold">{{
-                    formatPrice(cartTotal() * 0.9)
+                    (cartTotal() * 0.9) | currencyConvert
                   }}</span>
                 </div>
                 <div class="flex justify-between">
@@ -405,7 +407,7 @@ declare var Razorpay: any;
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
                   <span class="font-semibold">{{
-                    formatPrice(cartTotal() * 0.1)
+                    (cartTotal() * 0.1) | currencyConvert
                   }}</span>
                 </div>
               </div>
@@ -413,7 +415,7 @@ declare var Razorpay: any;
               <div class="flex justify-between mb-6 text-xl">
                 <span class="font-bold text-gray-900">Total</span>
                 <span class="font-bold text-2xl text-gold-600">{{
-                  formatPrice(cartTotal())
+                  cartTotal() | currencyConvert
                 }}</span>
               </div>
 
@@ -476,6 +478,7 @@ export class CheckoutComponent implements OnInit {
   selectedAddressId = signal<string>('new');
 
   private paymentService = inject(PaymentService);
+  private currencyService = inject(CurrencyService);
 
   constructor(
     private authService: AuthService,
@@ -584,10 +587,6 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  formatPrice(amount: number): string {
-    return "$" + amount.toFixed(2);
-  }
-
   payNow() {
     if (typeof Razorpay === 'undefined') {
         alert('Payment gateway failed to load. Please check your internet connection or disable ad blockers.');
@@ -595,8 +594,14 @@ export class CheckoutComponent implements OnInit {
     }
     this.isProcessing.set(true);
 
+    // Convert base amount (USD) to INR
+    // Razorpay integration is currently configured for INR payments only.
+    const amountInINR = this.currencyService.convert(this.cartTotal(), 'INR');
+    // Convert to paise (smallest unit)
+    const amountInPaise = Math.round(amountInINR * 100);
+
     // Create Razorpay Order
-    this.paymentService.createRazorpayOrder(this.cartTotal() * 100, 'INR').subscribe({
+    this.paymentService.createRazorpayOrder(amountInPaise, 'INR').subscribe({
         next: (response) => {
             this.initiateRazorpayPayment(response);
         },

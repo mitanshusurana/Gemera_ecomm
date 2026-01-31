@@ -1,6 +1,6 @@
 import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
-import { RouterLink } from "@angular/router";
+import { RouterLink, Router } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
 import { WhatsappButtonComponent } from "../components/whatsapp-button";
 import { ProductService } from "../services/product.service";
@@ -9,6 +9,7 @@ import { Product, ProductDetail, Category } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
 import { SeoService } from "../services/seo.service";
 import { ToastService } from "../services/toast.service";
+import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 
 interface CollectionUI {
   id: string;
@@ -26,6 +27,7 @@ interface CollectionUI {
     RouterLink,
     QuickViewModalComponent,
     WhatsappButtonComponent,
+    CurrencyConvertPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -215,11 +217,11 @@ interface CollectionUI {
               </h3>
 
               <div class="flex items-baseline gap-2">
-                <span class="text-xl font-bold text-gray-900">{{ formatPrice(product.price) }}</span>
+                <span class="text-xl font-bold text-gray-900">{{ product.price | currencyConvert }}</span>
                 <span
                   *ngIf="product.originalPrice"
                   class="text-xs text-gray-400 line-through"
-                  >{{ formatPrice(product.originalPrice) }}</span
+                  >{{ product.originalPrice | currencyConvert }}</span
                 >
               </div>
             </div>
@@ -271,6 +273,7 @@ export class HomeComponent implements OnInit {
   private currencyService = inject(CurrencyService);
   private seoService = inject(SeoService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   quickViewOpen = signal(false);
   selectedProduct = signal<ProductDetail | null>(null);
@@ -324,10 +327,6 @@ export class HomeComponent implements OnInit {
     return emojiMap[category] || "✦";
   }
 
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
-  }
-
   getBadge(product: Product): string | undefined {
     if (product.stock <= 3) return 'LOW STOCK';
     if (product.price > 40000) return 'EXCLUSIVE';
@@ -368,6 +367,7 @@ export class HomeComponent implements OnInit {
   }
 
   handleViewDetails(productId: string): void {
-    // Handled by router link usually
+    this.router.navigate(['/products', productId]);
+    this.closeQuickView();
   }
 }

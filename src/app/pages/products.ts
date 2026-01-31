@@ -12,11 +12,12 @@ import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
 import { APP_CATEGORIES } from '../core/constants';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: "app-products",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent, NgOptimizedImage],
+  imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
@@ -219,13 +220,6 @@ import { APP_CATEGORIES } from '../core/constants';
                 </p>
               </div>
               <div class="flex gap-2">
-                <!-- Visual Search Button -->
-                <button (click)="fileInput.click()" class="btn-outline flex items-center gap-2" title="Search by Image">
-                  <span class="text-xl">📷</span>
-                  <span class="hidden sm:inline">Visual Search</span>
-                </button>
-                <input #fileInput type="file" (change)="handleVisualSearch($event)" class="hidden" accept="image/*">
-
                 <select [(ngModel)]="sortBy" (change)="loadProducts()" class="input-field max-w-xs">
                   <option value="newest">Sort by: Newest</option>
                   <option value="price-low">Price: Low to High</option>
@@ -291,7 +285,7 @@ import { APP_CATEGORIES } from '../core/constants';
                   <!-- Price -->
                   <div class="mb-4">
                     <span class="text-2xl font-bold text-diamond-900">
-                      {{ formatPrice(product.price) }}
+                      {{ product.price | currencyConvert }}
                     </span>
                   </div>
 
@@ -591,18 +585,6 @@ export class ProductsComponent implements OnInit {
     this.router.navigate(['/products', productId]);
   }
 
-  handleVisualSearch(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      // Mock visual search
-      this.isLoading.set(true);
-      setTimeout(() => {
-        this.toastService.show(`Searching for products similar to ${input.files![0].name}... (Mock)`, 'info');
-        this.isLoading.set(false);
-      }, 1500);
-    }
-  }
-
   goToPage(page: number): void {
     if (page >= 1 && page <= this.pagination().totalPages) {
       this.pagination.update(p => ({ ...p, currentPage: page }));
@@ -657,10 +639,6 @@ export class ProductsComponent implements OnInit {
   shouldShowEllipsis(): boolean {
     const pages = this.visiblePages();
     return pages.length > 0 && pages[pages.length - 1] < this.pagination().totalPages;
-  }
-
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
   }
 
   getProductEmoji(category: string): string {

@@ -8,11 +8,12 @@ import { CurrencyService } from '../services/currency.service';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
 import { ToastService } from '../services/toast.service';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink],
+  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink, CurrencyConvertPipe],
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -173,7 +174,7 @@ import { ToastService } from '../services/toast.service';
                         <p class="text-gray-600 text-sm">Placed on {{ order.createdAt | date }}</p>
                       </div>
                       <div class="text-right">
-                        <p class="text-2xl font-bold text-diamond-900">{{ formatPrice(order.total) }}</p>
+                        <p class="text-2xl font-bold text-diamond-900">{{ order.total | currencyConvert }}</p>
                         <!-- <span class="inline-block mt-2 badge badge-emerald">{{ order.status }}</span> -->
                       </div>
                     </div>
@@ -301,7 +302,7 @@ import { ToastService } from '../services/toast.service';
                       <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ item.category }}</p>
                       <h3 class="font-semibold text-gray-900 mb-3">{{ item.name }}</h3>
                       <div class="flex justify-between items-center">
-                        <span class="text-2xl font-bold text-diamond-900">{{ formatPrice(item.price) }}</span>
+                        <span class="text-2xl font-bold text-diamond-900">{{ item.price | currencyConvert }}</span>
                       </div>
                       <!-- Add to Cart Logic would go here, maybe inject CartService too or just link to product -->
                       <a [routerLink]="['/products', item.id]" class="block w-full btn-primary mt-4 text-center">View Details</a>
@@ -500,10 +501,6 @@ export class AccountComponent implements OnInit {
         console.error('Error logging out:', error);
       },
     });
-  }
-
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
   }
 
   getItemName(item: any): string {

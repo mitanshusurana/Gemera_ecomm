@@ -22,6 +22,8 @@ export class CurrencyService {
     'INR': '₹'
   };
 
+  readonly availableCurrencies: CurrencyCode[] = ['USD', 'EUR', 'GBP', 'INR'];
+
   private getStoredCurrency(): CurrencyCode {
     if (typeof localStorage !== 'undefined') {
       const stored = localStorage.getItem('currency');
@@ -50,5 +52,10 @@ export class CurrencyService {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
+  }
+
+  convert(amount: number, toCurrency: CurrencyCode): number {
+    const rate = this.rates[toCurrency];
+    return amount * rate;
   }
 }

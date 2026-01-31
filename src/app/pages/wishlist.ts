@@ -9,11 +9,12 @@ import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
 import { Product, ProductDetail } from "../core/models";
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: "app-wishlist",
   standalone: true,
-  imports: [CommonModule, RouterLink, QuickViewModalComponent, NgOptimizedImage],
+  imports: [CommonModule, RouterLink, QuickViewModalComponent, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
@@ -76,7 +77,7 @@ import { Product, ProductDetail } from "../core/models";
               <!-- Price -->
               <div class="mb-4">
                 <span class="text-2xl font-bold text-diamond-900">
-                  {{ formatPrice(product.price) }}
+                  {{ product.price | currencyConvert }}
                 </span>
               </div>
 
@@ -148,10 +149,6 @@ export class WishlistComponent implements OnInit {
 
   handleViewDetails(productId: string): void {
     this.router.navigate(['/products', productId]);
-  }
-
-  formatPrice(price: number): string {
-    return this.currencyService.format(price);
   }
 
   getProductEmoji(category: string): string {

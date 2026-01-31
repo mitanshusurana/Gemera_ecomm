@@ -6,11 +6,12 @@ import { OrderService } from '../services/order.service';
 import { ToastService } from '../services/toast.service';
 import { Order } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
   selector: 'app-track-order',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CurrencyConvertPipe],
   template: `
     <div class="min-h-screen bg-white font-sans text-[#4f3267]">
       <div class="container mx-auto px-4 py-12 max-w-2xl">
@@ -58,7 +59,7 @@ import { CurrencyService } from '../services/currency.service';
                     <p class="text-xs text-gray-500">{{ item.selectedMetal?.name }} {{ item.selectedDiamond?.name }}</p>
                  </div>
                  <div class="text-right">
-                    <p class="font-bold text-[#4f3267]">{{ formatPrice(item.price) }}</p>
+                    <p class="font-bold text-[#4f3267]">{{ item.price | currencyConvert }}</p>
                     <p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
                  </div>
               </div>
@@ -140,6 +141,4 @@ export class TrackOrderComponent implements OnInit {
       }
     });
   }
-
-  formatPrice(p: number) { return this.currencyService.format(p); }
 }
