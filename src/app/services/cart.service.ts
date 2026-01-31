@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, from, forkJoin } from 'rxjs';
-import { tap, switchMap, map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of, forkJoin } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { Cart, CartItem } from '../core/models';
 import { AuthService } from './auth.service';
 import { ApiConfigService } from './api-config.service';

@@ -7,6 +7,7 @@ import { User, Order, Address } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
+import { ToastService } from '../services/toast.service';
 
 @Component({
   selector: 'app-account',
@@ -112,9 +113,9 @@ import { WishlistService } from '../services/wishlist.service';
                 <div>
                   <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Gemara Loyalty Points</p>
                   <h3 class="text-3xl font-bold font-display flex items-center gap-2">
-                    <span class="text-4xl">💎</span> 1,250
+                    <span class="text-4xl">💎</span> {{ loyalty().points | number }}
                   </h3>
-                  <p class="text-gray-400 text-xs mt-2">You are 750 points away from Platinum Tier</p>
+                  <p class="text-gray-400 text-xs mt-2">Current Tier: {{ loyalty().tier }}</p>
                 </div>
                 <div class="text-right">
                   <button class="bg-gold-500 hover:bg-gold-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors mb-2">
@@ -397,6 +398,7 @@ export class AccountComponent implements OnInit {
   activeTab = signal('profile');
   user = signal<User | null>(null);
   orders = signal<any>({ content: [] });
+  loyalty = signal<{ points: number, tier: string }>({ points: 0, tier: 'Silver' });
 
   // Address State
   isAddressModalOpen = signal(false);
@@ -407,6 +409,7 @@ export class AccountComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
+  private toastService = inject(ToastService);
   wishlistService = inject(WishlistService);
 
   constructor() {
@@ -424,6 +427,12 @@ export class AccountComponent implements OnInit {
       if (params['tab']) {
         this.activeTab.set(params['tab']);
       }
+    });
+
+    // Load Loyalty Points
+    this.authService.getLoyaltyPoints().subscribe({
+        next: (data) => this.loyalty.set(data),
+        error: () => this.loyalty.set({ points: 0, tier: 'Silver' }) // Graceful degradation
     });
   }
 
@@ -444,7 +453,6 @@ export class AccountComponent implements OnInit {
             }
             
             this.orders.set(ordersData);
-            console.log('Orders loaded:', ordersData);
         },
         error: (error) => console.error('Error loading orders:', error)
     });
@@ -453,10 +461,6 @@ export class AccountComponent implements OnInit {
   private loadUserProfile(): void {
     this.authService.user().subscribe({
       next: (user) => {
-        if (!user) {
-            // Check current user api if needed, or rely on authService
-            // Mock backend auto-logs in sometimes, but authService should be source of truth
-        }
         this.user.set(user);
       },
       error: (error) => {
@@ -473,9 +477,17 @@ export class AccountComponent implements OnInit {
   }
 
   updateProfile(): void {
-    // Mock update
-    if (this.user()) {
-        alert('Profile updated successfully (Mock)');
+    const currentUser = this.user();
+    if (currentUser) {
+        this.authService.updateProfile(currentUser).subscribe({
+            next: () => {
+                this.toastService.show('Profile updated successfully', 'success');
+            },
+            error: (err) => {
+                this.toastService.show('Failed to update profile', 'error');
+                console.error(err);
+            }
+        });
     }
   }
 

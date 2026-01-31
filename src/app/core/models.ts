@@ -187,6 +187,7 @@ export interface User {
   createdAt: string;
   token?: string;
   treasureChest?: TreasureChestAccount;
+  loyaltyPoints?: number;
 }
 
 export interface AuthResponse {

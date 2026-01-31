@@ -202,8 +202,8 @@ declare var Razorpay: any;
                   >
                   <input
                     type="text"
-                    [(ngModel)]="shippingData.address"
-                    name="address"
+                    [(ngModel)]="shippingData.street"
+                    name="street"
                     required
                     class="input-field"
                     placeholder="123 Main Street"
@@ -312,7 +312,7 @@ declare var Razorpay: any;
                       <p>
                         {{ shippingData.firstName }} {{ shippingData.lastName }}
                       </p>
-                      <p>{{ shippingData.address }}</p>
+                      <p>{{ shippingData.street }}</p>
                       <p>
                         {{ shippingData.city }}, {{ shippingData.state }}
                         {{ shippingData.zipCode }}
@@ -454,7 +454,7 @@ export class CheckoutComponent implements OnInit {
     lastName: "",
     email: "",
     phone: "",
-    address: "",
+    street: "",
     city: "",
     state: "",
     zipCode: "",
@@ -544,7 +544,7 @@ export class CheckoutComponent implements OnInit {
         lastName: address.lastName,
         email: this.shippingData.email,
         phone: address.phone,
-        address: address.street,
+        street: address.street,
         city: address.city,
         state: address.state,
         zipCode: address.zipCode,
@@ -561,7 +561,7 @@ export class CheckoutComponent implements OnInit {
                 lastName: user.lastName,
                 email: user.email,
                 phone: user.phone,
-                address: '',
+                street: '',
                 city: '',
                 state: '',
                 zipCode: '',

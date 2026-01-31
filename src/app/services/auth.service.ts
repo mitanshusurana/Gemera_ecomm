@@ -66,6 +66,16 @@ export class AuthService {
     );
   }
 
+  updateProfile(data: Partial<User>): Observable<User> {
+    return this.http.put<User>(`${this.usersUrl}/profile`, data).pipe(
+      tap(user => this.user$.next(user))
+    );
+  }
+
+  getLoyaltyPoints(): Observable<{ points: number, tier: string }> {
+    return this.http.get<{ points: number, tier: string }>(`${this.usersUrl}/loyalty`);
+  }
+
   // Helper to fetch user if token exists but user is null (page reload)
   private refreshUser() {
     this.http.get<User>(`${this.usersUrl}/me`).subscribe({
