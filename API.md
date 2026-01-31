@@ -5,7 +5,7 @@
 
 ---
 
-## Authentication
+## Authentication & User Profile
 
 | Method | Endpoint | Description | Request Body | Response |
 | :--- | :--- | :--- | :--- | :--- |
@@ -13,6 +13,11 @@
 | `POST` | `/auth/register` | Register new user | `RegisterRequest` | `User` |
 | `POST` | `/auth/refresh` | Refresh JWT token | `{ refreshToken: string }` | `AuthResponse` |
 | `POST` | `/auth/logout` | Logout user | - | `{ message: string }` |
+| `PUT` | `/users/profile` | Update user profile | `Partial<User>` | `User` |
+| `GET` | `/users/loyalty` | Get loyalty points | - | `{ points: number, tier: string }` |
+| `POST` | `/users/addresses` | Add address | `Address` (without ID) | `User` |
+| `PUT` | `/users/addresses/:id` | Update address | `Partial<Address>` | `User` |
+| `DELETE` | `/users/addresses/:id` | Delete address | - | `User` |
 
 ---
 
@@ -36,6 +41,7 @@
 | `PUT` | `/cart/items/:itemId` | Update item quantity | `UpdateCartItemRequest` | `Cart` |
 | `DELETE` | `/cart/items/:itemId` | Remove item | - | `Cart` |
 | `POST` | `/cart/apply-coupon` | Apply discount code | `ApplyCouponRequest` | `Cart` |
+| `POST` | `/cart/options` | Update cart options (e.g. Gift Wrap) | `{ giftWrap: boolean }` | `Cart` |
 
 ---
 
@@ -83,16 +89,48 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/rfq/requests` | Create RFQ | `RFQRequest` | `RFQRequest` |
 | `GET` | `/rfq/requests/:id` | Get RFQ details | - | `RFQRequest` |
+| `GET` | `/rfq/requests/number/:rfqNumber` | Get RFQ by Number | - | `RFQRequest` |
+| `GET` | `/rfq/requests/user/:userId` | Get User Requests | Query: `page`, `size`, `status` | `PaginatedResponse<RFQRequest>` |
+| `PUT` | `/rfq/requests/:id` | Update RFQ | `Partial<RFQRequest>` | `RFQRequest` |
+| `POST` | `/rfq/requests/:id/cancel` | Cancel RFQ | - | - |
+| `GET` | `/rfq/requests/:id/quote` | Get Quote | - | `RFQQuote` |
+| `GET` | `/rfq/requests/:id/quotes` | Get All Quotes for RFQ | Query: `page`, `size` | `PaginatedResponse<RFQQuote>` |
+| `GET` | `/rfq/requests/:id/quote/pdf` | Download Quote PDF | - | `Blob` |
+| `POST` | `/rfq/requests/:id/accept` | Accept Quote | - | - |
+| `POST` | `/rfq/requests/:id/reject` | Reject Quote | `{ reason: string }` | - |
+| `POST` | `/rfq/requests/:id/negotiate` | Request Negotiation | `NegotiationRequest` | - |
 
 ---
 
 ## Data Models (DTOs)
 
-### Authentication
+### Authentication & User
 ```typescript
 interface LoginRequest { email: string; password: string; }
 interface RegisterRequest { firstName: string; lastName: string; email: string; phone: string; password: string; }
 interface AuthResponse { token: string; refreshToken: string; user: User; }
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role?: 'ADMIN' | 'USER';
+  addresses?: Address[];
+  loyaltyPoints?: number;
+}
+interface Address {
+    id: string;
+    firstName: string;
+    lastName: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phone: string;
+    isDefault?: boolean;
+}
 ```
 
 ### Cart & Orders
@@ -136,5 +174,29 @@ interface Store {
   hours: string;
   lat: number;
   lng: number;
+}
+```
+
+### RFQ
+```typescript
+interface RFQRequest {
+  id?: string;
+  rfqNumber?: string;
+  userId: string;
+  email: string;
+  companyName: string;
+  items: RFQItem[];
+  estimatedBudget?: number;
+  deliveryTimeline?: string;
+  additionalNotes?: string;
+  status?: string;
+  createdAt?: string;
+  expiresAt?: string;
+}
+
+interface NegotiationRequest {
+    items?: Array<{ productId: string; quantity: number }>;
+    requestedPrice?: number;
+    notes: string;
 }
 ```

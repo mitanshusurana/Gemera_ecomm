@@ -212,23 +212,11 @@ export class BuilderComponent implements OnInit {
     // Load Settings
     this.productService.getProducts(0, 100, { category: 'Ring Setting' }).subscribe(res => {
         this.settings.set(res.content);
-        // Fallback if empty (mock issues)
-        if (res.content.length === 0) {
-            // Try fetching all and filtering manually for demo
-            this.productService.getProducts(0, 100).subscribe(all => {
-                this.settings.set(all.content.filter(p => p.category === 'Ring Setting' || p.name.includes('Setting')));
-            });
-        }
     });
 
     // Load Stones
     this.productService.getProducts(0, 100, { category: 'Loose Gemstone' }).subscribe(res => {
         this.stones.set(res.content);
-        if (res.content.length === 0) {
-             this.productService.getProducts(0, 100).subscribe(all => {
-                this.stones.set(all.content.filter(p => p.category === 'Loose Gemstone'));
-            });
-        }
     });
   }
 
@@ -245,16 +233,11 @@ export class BuilderComponent implements OnInit {
     const stone = this.builder.selectedStone();
 
     if (setting && stone) {
-        // Create a composite product or add both
-        // For mock simplification, we add the Setting with the Stone as a variant/option
-        // OR add both items.
-
-        // Let's add the Setting with metadata
         this.cartService.addToCart(setting.id, 1, {
             stoneId: stone.id,
             stoneName: stone.name,
             customization: 'Build Your Own Ring'
-        } as any).subscribe(() => {
+        }).subscribe(() => {
              this.toast.show("Custom Ring added to cart! 💍", "success");
              this.router.navigate(['/cart']);
         });
