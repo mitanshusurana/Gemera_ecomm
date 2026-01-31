@@ -8,6 +8,7 @@ import { OrderService } from "../services/order.service";
 import { PaymentService } from "../services/payment.service";
 import { EmailNotificationService } from "../services/email-notification.service";
 import { Address } from "../core/models";
+import { environment } from "../../environments/environment";
 
 declare var Razorpay: any;
 
@@ -609,7 +610,7 @@ export class CheckoutComponent implements OnInit {
 
   initiateRazorpayPayment(orderData: any) {
       const options = {
-          key: 'rzp_test_S5goGHXLEuP6hP',
+          key: environment.razorpayKey,
           amount: orderData.amount,
           currency: orderData.currency,
           name: 'LuxeGems',
