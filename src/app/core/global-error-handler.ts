@@ -7,14 +7,16 @@ export class GlobalErrorHandler implements ErrorHandler {
   constructor(private injector: Injector, private zone: NgZone) {}
 
   handleError(error: any): void {
+    // HttpErrorResponse is handled by ErrorInterceptor
+    if (error instanceof HttpErrorResponse) {
+        return;
+    }
+
     const toastService = this.injector.get(ToastService);
 
     let message = 'An unexpected error occurred';
 
-    if (error instanceof HttpErrorResponse) {
-        // Server Error
-        message = error.error?.message || error.statusText || 'Server Error';
-    } else if (error instanceof Error) {
+    if (error instanceof Error) {
         // Client Error
         message = error.message;
     } else if (error?.message) {

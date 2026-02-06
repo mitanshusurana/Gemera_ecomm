@@ -1,10 +1,11 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, forkJoin } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Cart, CartItem } from '../core/models';
 import { AuthService } from './auth.service';
 import { ApiConfigService } from './api-config.service';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +14,7 @@ export class CartService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private apiConfig = inject(ApiConfigService);
+  private platformId = inject(PLATFORM_ID);
   private baseUrl = this.apiConfig.getEndpoint('cart');
   private cart$ = new BehaviorSubject<Cart | null>(null);
   // Expose signal for modern reactive components
@@ -131,9 +133,11 @@ export class CartService {
   // --- Guest Cart Helpers ---
 
   private getGuestCart(): Cart {
-    const stored = localStorage.getItem(this.GUEST_CART_KEY);
-    if (stored) {
-      return JSON.parse(stored);
+    if (isPlatformBrowser(this.platformId)) {
+      const stored = localStorage.getItem(this.GUEST_CART_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
     }
     return {
       id: 'guest',
@@ -147,7 +151,9 @@ export class CartService {
   }
 
   private saveGuestCart(cart: Cart): void {
-    localStorage.setItem(this.GUEST_CART_KEY, JSON.stringify(cart));
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(this.GUEST_CART_KEY, JSON.stringify(cart));
+    }
   }
 
   private addToGuestCart(productId: string, quantity: number, options: any): Cart {
@@ -231,28 +237,33 @@ export class CartService {
   }
 
   private syncGuestCart(): Observable<any> {
-    const guestCart = this.getGuestCart();
-    if (guestCart.items.length > 0) {
-      const observables = guestCart.items.map(item => {
-        // Map guest item to API payload
-        const options = {
-            metal: item.selectedMetal,
-            diamond: item.selectedDiamond,
-            engraving: item.customization,
-            price: item.price
-        };
-        return this.http.post<Cart>(`${this.baseUrl}/items`, {
-            productId: item.productId,
-            quantity: item.quantity,
-            options
+    // Only attempt sync if we are in browser and have a guest cart
+    if (isPlatformBrowser(this.platformId)) {
+      const guestCart = this.getGuestCart();
+      if (guestCart.items.length > 0) {
+        const observables = guestCart.items.map(item => {
+          // Map guest item to API payload
+          const options = {
+              metal: item.selectedMetal,
+              diamond: item.selectedDiamond,
+              engraving: item.customization,
+              price: item.price
+          };
+          return this.http.post<Cart>(`${this.baseUrl}/items`, {
+              productId: item.productId,
+              quantity: item.quantity,
+              options
+          });
         });
-      });
 
-      return forkJoin(observables).pipe(
-        tap(() => {
-          localStorage.removeItem(this.GUEST_CART_KEY);
-        })
-      );
+        return forkJoin(observables).pipe(
+          tap(() => {
+            if (isPlatformBrowser(this.platformId)) {
+                localStorage.removeItem(this.GUEST_CART_KEY);
+            }
+          })
+        );
+      }
     }
     return of(null);
   }
