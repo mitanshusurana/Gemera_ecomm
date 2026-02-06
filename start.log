@@ -1,0 +1,47 @@
+
+> fusion-angular-tailwind-starter@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names              |  Raw size
+main.js             | main               | 104.71 kB |
+styles.css          | styles             |  96.68 kB |
+chunk-XCU54PUX.js   | -                  |  13.47 kB |
+chunk-ECZR54O2.js   | -                  |   8.43 kB |
+chunk-FL7AJUOV.js   | -                  |   3.89 kB |
+chunk-FKRLWEGG.js   | -                  |   3.33 kB |
+chunk-ILTCGE2K.js   | -                  |   2.47 kB |
+chunk-CSUT3BN3.js   | -                  |   1.91 kB |
+chunk-EKNBFEDP.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-5IUVJQOP.js   | -                  |   1.32 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 241.69 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-N2E4XPIX.js   | product-detail     | 100.01 kB |
+chunk-RZBILRW4.js   | account            |  76.97 kB |
+chunk-2AIIVOA6.js   | products           |  71.39 kB |
+chunk-CIQVPOKJ.js   | checkout           |  63.84 kB |
+chunk-TQUCWEUS.js   | rfq-request        |  48.95 kB |
+chunk-OF4TGIJK.js   | home               |  43.73 kB |
+chunk-QL3DQ6KQ.js   | builder            |  34.94 kB |
+chunk-L44EPSEK.js   | cart               |  32.00 kB |
+chunk-ZYGC46LW.js   | order-confirmation |  31.50 kB |
+chunk-U4FHJXKO.js   | compare            |  28.12 kB |
+chunk-KCJBNHEE.js   | login              |  27.32 kB |
+chunk-6IDZZM3J.js   | -                  |  25.80 kB |
+chunk-X37V2P4Y.js   | verify-certificate |  24.72 kB |
+chunk-FQWPEBCF.js   | treasure-chest     |  24.41 kB |
+chunk-VW4AAIJO.js   | wishlist           |  18.82 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [7.072 seconds]
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
