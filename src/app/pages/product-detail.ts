@@ -49,7 +49,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <!-- Main Image -->
                <div class="relative w-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group cursor-zoom-in h-[500px] flex items-center justify-center">
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                    <span *ngIf="product()?.stock! < 5 && product()?.stock! > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100">Only {{product()?.stock}} left</span>
+                    <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100">Only {{product()?.stock}} left</span>
                     <span *ngIf="product()?.stock === 0" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100">Out of Stock</span>
                     <span class="px-2 py-1 bg-white/90 backdrop-blur text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded border border-gray-200 shadow-sm">Best Seller</span>
                   </div>
@@ -344,8 +344,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   // Computed Prices
   currentPrice = computed(() => {
     let price = this.product()?.price || 0;
-    if (this.selectedMetal()) price += this.selectedMetal()!.priceModifier;
-    if (this.selectedDiamondQuality()) price += this.selectedDiamondQuality()!.priceModifier;
+    if (this.selectedMetal()) price += this.selectedMetal()?.priceModifier ?? 0;
+    if (this.selectedDiamondQuality()) price += this.selectedDiamondQuality()?.priceModifier ?? 0;
     return price;
   });
 
@@ -356,8 +356,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     let gemstonePrice = base.gemstone;
 
     // Adjust logic based on modifiers
-    if (this.selectedMetal()) metalPrice += this.selectedMetal()!.priceModifier;
-    if (this.selectedDiamondQuality()) gemstonePrice += this.selectedDiamondQuality()!.priceModifier;
+    if (this.selectedMetal()) metalPrice += this.selectedMetal()?.priceModifier ?? 0;
+    if (this.selectedDiamondQuality()) gemstonePrice += this.selectedDiamondQuality()?.priceModifier ?? 0;
 
     const subtotal = metalPrice + gemstonePrice + base.makingCharges;
     const tax = Math.round(subtotal * 0.03);
@@ -368,7 +368,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.route.params.subscribe(p => {
         if(p['id']) {
             this.loadProduct(p['id']);
-            window.scrollTo(0,0);
         }
     });
   }
@@ -430,11 +429,22 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   checkDelivery() {
     if (this.pincode().length < 6) return this.toastService.show('Please enter a valid 6-digit pincode', 'error');
     this.toastService.show('Checking availability...', 'info');
-    setTimeout(() => {
-       const date = new Date();
-       date.setDate(date.getDate() + 5);
-       this.deliveryDate.set(date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }));
-    }, 800);
+
+    this.productService.checkDeliveryAvailability(this.pincode()).subscribe({
+        next: (response) => {
+            if (response.available) {
+                this.deliveryDate.set(response.estimatedDate || 'Available');
+                this.toastService.show(response.message || 'Delivery available', 'success');
+            } else {
+                this.deliveryDate.set(null);
+                this.toastService.show(response.message || 'Delivery not available', 'error');
+            }
+        },
+        error: () => {
+             this.deliveryDate.set(null);
+             this.toastService.show('Could not check delivery', 'error');
+        }
+    });
   }
 
   isRingCategory(): boolean {

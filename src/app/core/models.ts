@@ -221,3 +221,9 @@ export interface CertificateDetail {
   shape: string;
   imageUrl?: string;
 }
+
+export interface DeliveryAvailability {
+  available: boolean;
+  estimatedDate?: string;
+  message?: string;
+}
