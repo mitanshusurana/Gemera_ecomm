@@ -207,3 +207,17 @@ export interface PaginatedResponse<T> {
   content: T[];
   pageable: Pageable;
 }
+
+export interface CertificateDetail {
+  id: string;
+  reportNumber: string;
+  lab: string;
+  dateIssued: string;
+  productName: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  shape: string;
+  imageUrl?: string;
+}

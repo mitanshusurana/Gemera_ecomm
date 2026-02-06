@@ -8,6 +8,7 @@ import { OrderService } from "../services/order.service";
 import { PaymentService } from "../services/payment.service";
 import { CurrencyService } from "../services/currency.service";
 import { EmailNotificationService } from "../services/email-notification.service";
+import { ToastService } from "../services/toast.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { Address } from "../core/models";
 import { environment } from "../../environments/environment";
@@ -507,6 +508,7 @@ export class CheckoutComponent implements OnInit {
 
   private paymentService = inject(PaymentService);
   private currencyService = inject(CurrencyService);
+  private toastService = inject(ToastService);
 
   constructor(
     private authService: AuthService,
@@ -635,7 +637,7 @@ export class CheckoutComponent implements OnInit {
                 error: (err) => {
                     console.error('Login failed after registration', err);
                     this.isProcessing.set(false);
-                    alert('Account created but login failed. Please sign in.');
+                    this.toastService.show('Account created but login failed. Please sign in.', 'error');
                     this.router.navigate(['/login']);
                 }
             });
@@ -643,7 +645,7 @@ export class CheckoutComponent implements OnInit {
         error: (err) => {
             console.error('Registration failed', err);
             this.isProcessing.set(false);
-            alert('Failed to create account. Please try again or sign in.');
+            this.toastService.show('Failed to create account. Please try again or sign in.', 'error');
         }
     });
   }
@@ -658,13 +660,14 @@ export class CheckoutComponent implements OnInit {
     // Check for out of stock items
     const outOfStockItems = this.cartItems().filter(item => item.product && item.product.stock === 0);
     if (outOfStockItems.length > 0) {
-        alert(`Some items are out of stock: ${outOfStockItems.map((i: any) => i.product.name).join(', ')}. Please remove them from cart.`);
+        const itemNames = outOfStockItems.map((i: any) => i.product.name).join(', ');
+        this.toastService.show(`Some items are out of stock: ${itemNames}. Please remove them from cart.`, 'error');
         this.router.navigate(['/cart']);
         return;
     }
 
     if (typeof Razorpay === 'undefined') {
-        alert('Payment gateway failed to load. Please check your internet connection or disable ad blockers.');
+        this.toastService.show('Payment gateway failed to load. Please check your internet connection or disable ad blockers.', 'error');
         return;
     }
     this.isProcessing.set(true);
@@ -683,7 +686,7 @@ export class CheckoutComponent implements OnInit {
         error: (error) => {
             console.error('Error creating Razorpay order', error);
             this.isProcessing.set(false);
-            alert('Failed to initiate payment. Please try again.');
+            this.toastService.show('Failed to initiate payment. Please try again.', 'error');
         }
     });
   }
@@ -731,7 +734,7 @@ export class CheckoutComponent implements OnInit {
               razorpay_order_id: response.error.metadata.order_id,
               razorpay_payment_id: response.error.metadata.payment_id
           }).subscribe();
-          alert('Payment Failed: ' + response.error.description);
+          this.toastService.show('Payment Failed: ' + response.error.description, 'error');
       });
       rzp.open();
   }
@@ -760,7 +763,7 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         console.error("Error creating order:", error);
         this.isProcessing.set(false);
-        alert("Payment successful but order placement failed. Please contact support.");
+        this.toastService.show("Payment successful but order placement failed. Please contact support.", 'error');
       },
     });
   }

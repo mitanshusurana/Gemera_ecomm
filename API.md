@@ -42,6 +42,8 @@
 | `DELETE` | `/cart/items/:itemId` | Remove item | - | `Cart` |
 | `POST` | `/cart/apply-coupon` | Apply discount code | `ApplyCouponRequest` | `Cart` |
 | `POST` | `/cart/options` | Update cart options (e.g. Gift Wrap) | `{ giftWrap: boolean }` | `Cart` |
+| `POST` | `/cart/wishlist` | Add item to wishlist | `{ productId: string }` | `Cart` |
+| `DELETE` | `/cart/wishlist/:productId` | Remove item from wishlist | - | `Cart` |
 
 ---
 
@@ -99,6 +101,29 @@
 | `POST` | `/rfq/requests/:id/accept` | Accept Quote | - | - |
 | `POST` | `/rfq/requests/:id/reject` | Reject Quote | `{ reason: string }` | - |
 | `POST` | `/rfq/requests/:id/negotiate` | Request Negotiation | `NegotiationRequest` | - |
+
+---
+
+## Certificate Verification
+
+| Method | Endpoint | Description | Request | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/certificates/:reportNumber` | Verify certificate | - | `CertificateDetail` |
+| `GET` | `/certificates/:reportNumber/download` | Download Certificate PDF | - | `Blob` |
+
+---
+
+## Email Notifications
+
+| Method | Endpoint | Description | Request Body | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/email/send` | Send email notification | `EmailNotification` | `EmailNotification` |
+| `GET` | `/email/notifications/:id` | Get notification by ID | - | `EmailNotification` |
+| `GET` | `/email/notifications` | Get user notifications | Query: `email`, `page`, `size` | `PaginatedResponse<EmailNotification>` |
+| `POST` | `/email/subscribe` | Subscribe to newsletter | `{ email: string }` | - |
+| `POST` | `/email/unsubscribe` | Unsubscribe from newsletter | `{ email: string }` | - |
+| `GET` | `/email/templates/:name` | Get email template | - | `EmailTemplate` |
+| `GET` | `/email/templates` | Get all templates | - | `EmailTemplate[]` |
 
 ---
 
@@ -198,5 +223,44 @@ interface NegotiationRequest {
     items?: Array<{ productId: string; quantity: number }>;
     requestedPrice?: number;
     notes: string;
+}
+```
+
+### Certificate
+```typescript
+interface CertificateDetail {
+  id: string;
+  reportNumber: string;
+  lab: string;
+  dateIssued: string;
+  productName: string;
+  carat: number;
+  color: string;
+  clarity: string;
+  cut: string;
+  shape: string;
+  imageUrl?: string;
+}
+```
+
+### Email
+```typescript
+interface EmailNotification {
+  id?: string;
+  type: "ORDER_CONFIRMATION" | "SHIPPING" | "DELIVERY" | "PROMOTIONAL";
+  email: string;
+  subject: string;
+  templateName: string;
+  data: Record<string, any>;
+  sentAt?: string;
+  status?: "PENDING" | "SENT" | "FAILED";
+}
+
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  placeholders: string[];
 }
 ```
