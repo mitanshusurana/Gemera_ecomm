@@ -27,9 +27,6 @@ export class GlobalErrorHandler implements ErrorHandler {
 
     // Run inside zone to ensure UI updates
     this.zone.run(() => {
-        // Only log to console in non-production, but here we keep it for debugging
-        console.error('Global Error Handler:', error);
-
         // Avoid showing "ExpressionChangedAfterItHasBeenCheckedError" to users
         if (!message.includes('ExpressionChangedAfterItHasBeenCheckedError')) {
              toastService.show(message, 'error');

@@ -1,4 +1,4 @@
-import { Component, signal, inject } from "@angular/core";
+import { Component, signal, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router, ActivatedRoute } from "@angular/router";
@@ -9,6 +9,7 @@ import { ToastService } from "../services/toast.service";
   selector: "app-login",
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-gradient-to-br from-diamond-50 to-gold-50">
       <!-- Breadcrumb -->
@@ -297,7 +298,6 @@ export class LoginComponent {
       error: (error) => {
         this.isLoading.set(false);
         this.errorMessage.set("Invalid email or password. Please try again.");
-        console.error("Login error:", error);
       },
     });
   }
@@ -329,7 +329,6 @@ export class LoginComponent {
         error: (error) => {
           this.isLoading.set(false);
           this.errorMessage.set("Failed to create account. Please try again.");
-          console.error("Register error:", error);
         },
       });
   }

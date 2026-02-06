@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, computed, inject, PLATFORM_ID } from "@angular/core";
+import { Component, signal, OnInit, computed, inject, PLATFORM_ID, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router } from "@angular/router";
@@ -10,13 +10,14 @@ import { CurrencyService } from "../services/currency.service";
 import { EmailNotificationService } from "../services/email-notification.service";
 import { ToastService } from "../services/toast.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
-import { Address } from "../core/models";
+import { Address, CartItem } from "../core/models";
 import { environment } from "../../environments/environment";
 
 @Component({
   selector: "app-checkout",
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, CurrencyConvertPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -473,7 +474,7 @@ import { environment } from "../../environments/environment";
 })
 export class CheckoutComponent implements OnInit {
   currentStep = signal(1);
-  cartItems = signal<any[]>([]);
+  cartItems = signal<CartItem[]>([]);
   cartTotal = signal(45000);
   isProcessing = signal(false);
 
@@ -567,7 +568,7 @@ export class CheckoutComponent implements OnInit {
         this.cartTotal.set(cart.total);
       },
       error: (error) => {
-        console.error("Error loading cart:", error);
+        // Error loading cart
       },
     });
   }
@@ -636,7 +637,6 @@ export class CheckoutComponent implements OnInit {
                     this.currentStep.set(this.currentStep() + 1);
                 },
                 error: (err) => {
-                    console.error('Login failed after registration', err);
                     this.isProcessing.set(false);
                     this.toastService.show('Account created but login failed. Please sign in.', 'error');
                     this.router.navigate(['/login']);
@@ -644,7 +644,6 @@ export class CheckoutComponent implements OnInit {
             });
         },
         error: (err) => {
-            console.error('Registration failed', err);
             this.isProcessing.set(false);
             this.toastService.show('Failed to create account. Please try again or sign in.', 'error');
         }
@@ -661,7 +660,7 @@ export class CheckoutComponent implements OnInit {
     // Check for out of stock items
     const outOfStockItems = this.cartItems().filter(item => item.product && item.product.stock === 0);
     if (outOfStockItems.length > 0) {
-        const itemNames = outOfStockItems.map((i: any) => i.product.name).join(', ');
+        const itemNames = outOfStockItems.map((i: CartItem) => i.product.name).join(', ');
         this.toastService.show(`Some items are out of stock: ${itemNames}. Please remove them from cart.`, 'error');
         this.router.navigate(['/cart']);
         return;
@@ -685,14 +684,13 @@ export class CheckoutComponent implements OnInit {
             this.initiateRazorpayPayment(response);
         },
         error: (error) => {
-            console.error('Error creating Razorpay order', error);
             this.isProcessing.set(false);
             this.toastService.show('Failed to initiate payment. Please try again.', 'error');
         }
     });
   }
 
-  initiateRazorpayPayment(orderData: any) {
+  initiateRazorpayPayment(orderData: { id: string, amount: number, currency: string }) {
       const options: Razorpay.Options = {
           key: environment.razorpayKey,
           amount: orderData.amount,
@@ -762,7 +760,6 @@ export class CheckoutComponent implements OnInit {
         this.router.navigate(["/order-confirmation"]);
       },
       error: (error) => {
-        console.error("Error creating order:", error);
         this.isProcessing.set(false);
         this.toastService.show("Payment successful but order placement failed. Please contact support.", 'error');
       },

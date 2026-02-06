@@ -499,7 +499,6 @@ export class ProductsComponent implements OnInit {
                 this.isLoading.set(false);
             },
             error: (err) => {
-                console.error(err);
                 this.isLoading.set(false);
             }
         });

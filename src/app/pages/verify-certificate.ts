@@ -150,7 +150,6 @@ export class VerifyCertificateComponent {
         this.toastService.show('Certificate verified successfully', 'success');
       },
       error: (err) => {
-        console.error(err);
         this.error.set(true);
         this.loading.set(false);
         this.toastService.show('Certificate not found', 'error');
@@ -175,7 +174,6 @@ export class VerifyCertificateComponent {
         this.toastService.show('Download started', 'success');
       },
       error: (err) => {
-        console.error(err);
         this.downloading.set(false);
         this.toastService.show('Failed to download certificate', 'error');
       }

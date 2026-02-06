@@ -1,9 +1,9 @@
-import { Component, OnInit, signal, inject, effect } from '@angular/core';
+import { Component, OnInit, signal, inject, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { User, Order, Address } from '../core/models';
+import { User, Order, Address, OrderItem } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
@@ -14,6 +14,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   selector: 'app-account',
   standalone: true,
   imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink, CurrencyConvertPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white">
       <!-- Breadcrumb -->
@@ -398,7 +399,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 export class AccountComponent implements OnInit {
   activeTab = signal('profile');
   user = signal<User | null>(null);
-  orders = signal<any>({ content: [] });
+  orders = signal<{ content: Order[] }>({ content: [] });
   loyalty = signal<{ points: number, tier: string }>({ points: 0, tier: 'Silver' });
 
   // Address State
@@ -447,7 +448,7 @@ export class AccountComponent implements OnInit {
             
             // Add orderNumber if missing
             if (ordersData.content) {
-              ordersData.content = ordersData.content.map((order: any, index: number) => ({
+              ordersData.content = ordersData.content.map((order: Order, index: number) => ({
                 ...order,
                 orderNumber: order.orderNumber || `ORD-${order.id?.substring(0, 8) || index + 1}`
               }));
@@ -455,7 +456,9 @@ export class AccountComponent implements OnInit {
             
             this.orders.set(ordersData);
         },
-        error: (error) => console.error('Error loading orders:', error)
+        error: (error) => {
+          // Error loading orders
+        }
     });
   }
 
@@ -465,7 +468,7 @@ export class AccountComponent implements OnInit {
         this.user.set(user);
       },
       error: (error) => {
-        console.error('Error loading user profile:', error);
+        // Error loading user profile
       },
     });
   }
@@ -486,7 +489,6 @@ export class AccountComponent implements OnInit {
             },
             error: (err) => {
                 this.toastService.show('Failed to update profile', 'error');
-                console.error(err);
             }
         });
     }
@@ -498,12 +500,12 @@ export class AccountComponent implements OnInit {
         this.router.navigate(['/login']);
       },
       error: (error) => {
-        console.error('Error logging out:', error);
+        // Error logging out
       },
     });
   }
 
-  getItemName(item: any): string {
+  getItemName(item: OrderItem): string {
     if (item?.product?.name) {
       return item.product.name;
     }
@@ -525,7 +527,6 @@ export class AccountComponent implements OnInit {
             this.isAddressModalOpen.set(false);
         },
         error: (err) => {
-            console.error(err);
             this.toastService.show('Failed to update address', 'error');
         }
       });
@@ -536,7 +537,6 @@ export class AccountComponent implements OnInit {
             this.isAddressModalOpen.set(false);
         },
         error: (err) => {
-            console.error(err);
             this.toastService.show('Failed to add address', 'error');
         }
       });
@@ -550,7 +550,6 @@ export class AccountComponent implements OnInit {
             this.toastService.show('Address deleted successfully', 'success');
         },
         error: (err) => {
-            console.error(err);
             this.toastService.show('Failed to delete address', 'error');
         }
       });
