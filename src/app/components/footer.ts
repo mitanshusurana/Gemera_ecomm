@@ -1,4 +1,4 @@
-import { Component, inject } from "@angular/core";
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -11,6 +11,7 @@ import { ToastService } from "../services/toast.service";
   selector: "app-footer",
   standalone: true,
   imports: [CommonModule, WhatsappButtonComponent, RouterLink, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <footer class="bg-primary-950 text-white w-full overflow-hidden border-t-4 border-secondary-500">
       <!-- Newsletter Section -->
@@ -132,6 +133,7 @@ export class FooterComponent {
 
   private emailService = inject(EmailNotificationService);
   private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
 
   subscribe() {
     if (!this.email || !this.email.includes('@')) {
@@ -145,10 +147,12 @@ export class FooterComponent {
             this.toastService.show('Successfully subscribed to newsletter!', 'success');
             this.email = '';
             this.isSubscribing = false;
+            this.cdr.markForCheck();
         },
         error: (err) => {
             this.toastService.show('Failed to subscribe. Please try again.', 'error');
             this.isSubscribing = false;
+            this.cdr.markForCheck();
         }
     });
   }

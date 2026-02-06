@@ -1,6 +1,7 @@
-import { Component, computed, signal, inject } from '@angular/core';
+import { Component, computed, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, NavigationEnd, RouterLinkActive } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../services/auth.service';
 import { CartService } from '../services/cart.service';
 import { ProductService } from '../services/product.service';
@@ -14,6 +15,7 @@ import { APP_CATEGORIES } from '../core/constants';
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="bg-white sticky top-0 z-50 shadow-sm font-sans">
       <!-- Top Bar (Purple) -->
@@ -219,6 +221,7 @@ export class HeaderComponent {
   private router = inject(Router);
   private wishlistService = inject(WishlistService);
   private currencyService = inject(CurrencyService);
+  private cdr = inject(ChangeDetectorRef);
 
   userSignal = signal<User | null>(null);
   user = this.userSignal;
@@ -230,22 +233,31 @@ export class HeaderComponent {
   currentCurrency = this.currencyService.currentCurrency;
 
   constructor() {
-    this.authService.user().subscribe(u => this.userSignal.set(u));
-    this.cartService.cart().subscribe(c => {
-      const count = c?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
-      this.cartCount.set(count);
-    });
+    this.authService.user()
+      .pipe(takeUntilDestroyed())
+      .subscribe(u => this.userSignal.set(u));
+
+    this.cartService.cart()
+      .pipe(takeUntilDestroyed())
+      .subscribe(c => {
+        const count = c?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
+        this.cartCount.set(count);
+      });
 
     // Close mobile menu on route change
-    this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd) {
-        this.isMobileMenuOpen = false;
-      }
-    });
+    this.router.events
+      .pipe(takeUntilDestroyed())
+      .subscribe(event => {
+        if (event instanceof NavigationEnd) {
+          this.isMobileMenuOpen = false;
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    this.cdr.markForCheck();
   }
 
   logout() {
@@ -258,6 +270,7 @@ export class HeaderComponent {
     if (this.searchQuery.length > 2) {
       this.productService.searchProducts(this.searchQuery).subscribe(res => {
         this.searchResults = res.results;
+        this.cdr.markForCheck();
       });
     } else {
       this.searchResults = [];
@@ -268,6 +281,7 @@ export class HeaderComponent {
     // Delay hiding so click on result works
     setTimeout(() => {
       this.isSearchFocused = false;
+      this.cdr.markForCheck();
     }, 200);
   }
 

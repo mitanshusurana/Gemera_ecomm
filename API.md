@@ -13,6 +13,7 @@
 | `POST` | `/auth/register` | Register new user | `RegisterRequest` | `User` |
 | `POST` | `/auth/refresh` | Refresh JWT token | `{ refreshToken: string }` | `AuthResponse` |
 | `POST` | `/auth/logout` | Logout user | - | `{ message: string }` |
+| `GET` | `/users/me` | Get current user details | - | `User` |
 | `PUT` | `/users/profile` | Update user profile | `Partial<User>` | `User` |
 | `GET` | `/users/loyalty` | Get loyalty points | - | `{ points: number, tier: string }` |
 | `POST` | `/users/addresses` | Add address | `Address` (without ID) | `User` |
@@ -25,7 +26,7 @@
 
 | Method | Endpoint | Description | Request | Response |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/products` | Get paginated products | Query: `page`, `size`, `category`, `priceMin`, `priceMax`, `sort`, `search` | `PaginatedResponse<Product>` |
+| `GET` | `/products` | Get paginated products | Query: `page`, `size`, `category`, `priceMin`, `priceMax`, `sortBy`, `order`, `search`, `occasions`, `styles` | `PaginatedResponse<Product>` |
 | `GET` | `/products/:id` | Get product details | - | `ProductDetail` |
 | `GET` | `/products/categories` | Get all categories | - | `{ categories: Category[] }` |
 | `GET` | `/products/search` | Search products | Query: `query`, `limit` | `{ results: Product[] }` |
@@ -60,11 +61,13 @@
 
 ---
 
-## Payments (Razorpay)
+## Payments
 
 | Method | Endpoint | Description | Request Body | Response |
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/payments/razorpay-order` | Create Razorpay Order ID | `CreateRazorpayOrderRequest` | `RazorpayOrderResponse` |
+| `POST` | `/payments/initialize` | Initialize Generic Payment | `InitializePaymentRequest` | `any` |
+| `POST` | `/payments/verify` | Verify Payment | `VerifyPaymentRequest` | `any` |
 | `POST` | `/transactions/failure` | Log failed transaction | `TransactionFailureRequest` | - |
 
 ---
@@ -81,7 +84,6 @@
 
 | Method | Endpoint | Description | Request Body | Response |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/treasure/account` | Get plan details | - | `TreasureChestAccount` |
 | `POST` | `/treasure/enroll` | Enroll in new plan | `{ planName: string, installmentAmount: number }` | `TreasureChestAccount` |
 
 ---
@@ -161,7 +163,17 @@ interface Address {
 
 ### Cart & Orders
 ```typescript
-interface AddToCartRequest { productId: string; quantity: number; options?: any; }
+interface AddToCartRequest {
+  productId: string;
+  quantity: number;
+  options?: {
+    metal?: string;
+    diamond?: string;
+    engraving?: string;
+    price?: number;
+    [key: string]: any;
+  };
+}
 interface UpdateCartItemRequest { quantity: number; }
 interface CreateOrderRequest {
   shippingAddress: Address;
@@ -187,6 +199,16 @@ interface TransactionFailureRequest {
   error_description: string;
   razorpay_order_id?: string;
   razorpay_payment_id?: string;
+}
+interface InitializePaymentRequest {
+    orderId: string;
+    amount: number;
+    currency: string;
+    paymentMethod: string;
+}
+interface VerifyPaymentRequest {
+    paymentId: string;
+    paymentToken: string;
 }
 ```
 

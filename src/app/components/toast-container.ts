@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService, Toast } from '../services/toast.service';
 
@@ -6,6 +6,7 @@ import { ToastService, Toast } from '../services/toast.service';
   selector: 'app-toast-container',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
       <div *ngFor="let toast of toastService.toasts()"
