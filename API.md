@@ -29,6 +29,7 @@
 | `GET` | `/products/:id` | Get product details | - | `ProductDetail` |
 | `GET` | `/products/categories` | Get all categories | - | `{ categories: Category[] }` |
 | `GET` | `/products/search` | Search products | Query: `query`, `limit` | `{ results: Product[] }` |
+| `GET` | `/products/delivery-availability` | Check delivery availability | Query: `pincode` | `DeliveryAvailability` |
 
 ---
 
@@ -240,6 +241,12 @@ interface CertificateDetail {
   cut: string;
   shape: string;
   imageUrl?: string;
+}
+
+interface DeliveryAvailability {
+    available: boolean;
+    estimatedDate?: string;
+    message?: string;
 }
 ```
 

@@ -1,5 +1,5 @@
-import { Component, signal, OnInit, computed, inject } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { Component, signal, OnInit, computed, inject, PLATFORM_ID } from "@angular/core";
+import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router } from "@angular/router";
 import { AuthService } from "../services/auth.service";
@@ -12,8 +12,6 @@ import { ToastService } from "../services/toast.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { Address } from "../core/models";
 import { environment } from "../../environments/environment";
-
-declare var Razorpay: any;
 
 @Component({
   selector: "app-checkout",
@@ -509,6 +507,7 @@ export class CheckoutComponent implements OnInit {
   private paymentService = inject(PaymentService);
   private currencyService = inject(CurrencyService);
   private toastService = inject(ToastService);
+  private platformId = inject(PLATFORM_ID);
 
   constructor(
     private authService: AuthService,
@@ -549,10 +548,12 @@ export class CheckoutComponent implements OnInit {
   }
 
   loadRazorpayScript() {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
+    if (isPlatformBrowser(this.platformId)) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
   }
 
   private checkAuth(): void {
@@ -666,7 +667,7 @@ export class CheckoutComponent implements OnInit {
         return;
     }
 
-    if (typeof Razorpay === 'undefined') {
+    if (!isPlatformBrowser(this.platformId) || typeof Razorpay === 'undefined') {
         this.toastService.show('Payment gateway failed to load. Please check your internet connection or disable ad blockers.', 'error');
         return;
     }
@@ -692,7 +693,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   initiateRazorpayPayment(orderData: any) {
-      const options = {
+      const options: Razorpay.Options = {
           key: environment.razorpayKey,
           amount: orderData.amount,
           currency: orderData.currency,
@@ -707,7 +708,7 @@ export class CheckoutComponent implements OnInit {
           theme: {
               color: '#D4AF37'
           },
-          handler: (response: any) => {
+          handler: (response: Razorpay.PaymentSuccessResponse) => {
               this.handlePaymentSuccess(response);
           },
           modal: {
@@ -723,7 +724,7 @@ export class CheckoutComponent implements OnInit {
       };
 
       const rzp = new Razorpay(options);
-      rzp.on('payment.failed', (response: any) => {
+      rzp.on('payment.failed', (response: Razorpay.PaymentFailedResponse) => {
           this.isProcessing.set(false);
           this.paymentService.logFailedTransaction({
               error_code: response.error.code,
@@ -739,7 +740,7 @@ export class CheckoutComponent implements OnInit {
       rzp.open();
   }
 
-  handlePaymentSuccess(response: any) {
+  handlePaymentSuccess(response: Razorpay.PaymentSuccessResponse) {
     const orderData = {
       shippingAddress: this.shippingData,
       billingAddress: this.billingSameAsShipping ? this.shippingData : {},
