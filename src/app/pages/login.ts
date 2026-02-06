@@ -3,6 +3,7 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router, ActivatedRoute } from "@angular/router";
 import { AuthService } from "../services/auth.service";
+import { ToastService } from "../services/toast.service";
 
 @Component({
   selector: "app-login",
@@ -275,6 +276,7 @@ export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private toastService = inject(ToastService);
 
   toggleMode(): void {
     this.isLogin.update((val) => !val);
@@ -290,6 +292,7 @@ export class LoginComponent {
         this.isLoading.set(false);
         const returnUrl = this.route.snapshot.queryParams["returnUrl"] || "/";
         this.router.navigateByUrl(returnUrl);
+        this.toastService.show('Logged in successfully', 'success');
       },
       error: (error) => {
         this.isLoading.set(false);
@@ -321,9 +324,7 @@ export class LoginComponent {
           this.isLoading.set(false);
           this.errorMessage.set("");
           this.isLogin.set(true);
-          alert(
-            "Account created successfully! You can now log in with your credentials.",
-          );
+          this.toastService.show("Account created successfully! You can now log in with your credentials.", 'success');
         },
         error: (error) => {
           this.isLoading.set(false);

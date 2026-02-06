@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from "@angular/core";
+import { Component, OnInit, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { RFQService, RFQRequest, RFQItem } from "../services/rfq.service";
+import { ToastService } from "../services/toast.service";
 
 @Component({
   selector: "app-rfq-request",
@@ -459,6 +460,8 @@ export class RFQRequestComponent {
   submissionSuccess = signal(false);
   rfqNumber = signal("");
 
+  private toastService = inject(ToastService);
+
   constructor(private rfqService: RFQService) {}
 
   addItem(): void {
@@ -470,6 +473,10 @@ export class RFQRequestComponent {
   }
 
   submitRequest(): void {
+    // Append contact info to notes if it exists, as backend might not have specific fields
+    const contactInfo = `Contact: ${this.rfqData.firstName} ${this.rfqData.lastName}, Phone: ${this.rfqData.phone}`;
+    const fullNotes = this.rfqData.notes ? `${this.rfqData.notes}\n\n${contactInfo}` : contactInfo;
+
     const request: RFQRequest = {
       userId: "current-user",
       email: this.rfqData.email,
@@ -477,17 +484,18 @@ export class RFQRequestComponent {
       items: this.rfqItems(),
       estimatedBudget: this.rfqData.estimatedBudget || undefined,
       deliveryTimeline: this.rfqData.deliveryTimeline || undefined,
-      additionalNotes: this.rfqData.notes || undefined,
+      additionalNotes: fullNotes,
     };
 
     this.rfqService.createRequest(request).subscribe({
       next: (response) => {
         this.rfqNumber.set(response.rfqNumber || "RFQ-" + new Date().getTime());
         this.submissionSuccess.set(true);
+        this.toastService.show('RFQ submitted successfully', 'success');
       },
       error: (error) => {
         console.error("Error submitting RFQ:", error);
-        alert("Error submitting RFQ. Please try again.");
+        this.toastService.show("Error submitting RFQ. Please try again.", 'error');
       },
     });
   }

@@ -1,6 +1,9 @@
 import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CertificateService } from '../services/certificate.service';
+import { ToastService } from '../services/toast.service';
+import { CertificateDetail } from '../core/models';
 
 @Component({
   selector: 'app-verify-certificate',
@@ -31,16 +34,13 @@ import { FormsModule } from '@angular/forms';
                 type="text"
                 [(ngModel)]="reportNumber"
                 (keyup.enter)="verify()"
-                placeholder="e.g. GIA-1234-5678 or SKU"
+                placeholder="e.g. GIA-1234-5678"
                 class="input-field flex-1 uppercase"
               >
               <button (click)="verify()" [disabled]="loading()" class="btn-primary px-6">
                 {{ loading() ? 'Checking...' : 'Verify' }}
               </button>
             </div>
-            <p class="text-xs text-gray-500">
-              Try entering a Product SKU (e.g., "DS-001") or "GIA123" for a demo.
-            </p>
 
             <!-- Error Message -->
             <div *ngIf="error()" class="mt-4 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 animate-fade-in-up">
@@ -51,7 +51,7 @@ import { FormsModule } from '@angular/forms';
         </div>
       </div>
 
-      <!-- Result Modal (Inline for demo) -->
+      <!-- Result Modal -->
       <div *ngIf="result()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
         <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden animate-fade-in-up">
           <div class="bg-gold-500 p-6 text-white flex justify-between items-center">
@@ -59,7 +59,7 @@ import { FormsModule } from '@angular/forms';
               <span class="text-4xl">✓</span>
               <div>
                 <h3 class="text-2xl font-bold font-display">Verified Authentic</h3>
-                <p class="text-gold-100 text-sm">Report #{{ result()?.id }}</p>
+                <p class="text-gold-100 text-sm">Report #{{ result()?.reportNumber }}</p>
               </div>
             </div>
             <button (click)="result.set(null)" class="text-white hover:bg-white/20 rounded-full p-2 transition">✕</button>
@@ -72,7 +72,7 @@ import { FormsModule } from '@angular/forms';
                 <dl class="space-y-3 text-sm">
                   <div class="flex justify-between">
                     <dt class="text-gray-500">Date Issued</dt>
-                    <dd class="font-medium">Jan 12, 2024</dd>
+                    <dd class="font-medium">{{ result()?.dateIssued | date:'mediumDate' }}</dd>
                   </div>
                   <div class="flex justify-between">
                     <dt class="text-gray-500">Laboratory</dt>
@@ -80,7 +80,7 @@ import { FormsModule } from '@angular/forms';
                   </div>
                   <div class="flex justify-between">
                     <dt class="text-gray-500">Shape</dt>
-                    <dd class="font-medium">Round Brilliant</dd>
+                    <dd class="font-medium">{{ result()?.shape }}</dd>
                   </div>
                   <div class="flex justify-between">
                     <dt class="text-gray-500">Carat Weight</dt>
@@ -94,16 +94,24 @@ import { FormsModule } from '@angular/forms';
                     <dt class="text-gray-500">Clarity Grade</dt>
                     <dd class="font-medium">{{ result()?.clarity }}</dd>
                   </div>
+                  <div class="flex justify-between">
+                    <dt class="text-gray-500">Cut Grade</dt>
+                    <dd class="font-medium">{{ result()?.cut }}</dd>
+                  </div>
                 </dl>
               </div>
 
               <div class="bg-gray-50 p-6 rounded-lg text-center flex flex-col items-center justify-center border border-dashed border-gray-300">
-                <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-                  <span class="text-4xl">💎</span>
+                <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 overflow-hidden">
+                  <img *ngIf="result()?.imageUrl" [src]="result()?.imageUrl" alt="Certificate" class="w-full h-full object-cover">
+                  <span *ngIf="!result()?.imageUrl" class="text-4xl">💎</span>
                 </div>
                 <p class="font-bold text-gray-900 mb-1">Digital Asset</p>
                 <p class="text-xs text-gray-500 mb-4">Secured on Blockchain</p>
-                <a href="#" class="text-gold-600 underline text-sm hover:text-gold-700">View Original PDF</a>
+                <button (click)="downloadPdf()" [disabled]="downloading()" class="text-gold-600 underline text-sm hover:text-gold-700 flex items-center justify-center gap-1">
+                   <span *ngIf="downloading()" class="animate-spin h-3 w-3 border-2 border-gold-600 border-t-transparent rounded-full"></span>
+                   {{ downloading() ? 'Downloading...' : 'Download Original PDF' }}
+                </button>
               </div>
             </div>
 
@@ -121,8 +129,12 @@ import { FormsModule } from '@angular/forms';
 export class VerifyCertificateComponent {
   reportNumber = '';
   loading = signal(false);
+  downloading = signal(false);
   error = signal(false);
-  result = signal<{id: string, lab: string, carat: number, color: string, clarity: string} | null>(null);
+  result = signal<CertificateDetail | null>(null);
+
+  private certificateService = inject(CertificateService);
+  private toastService = inject(ToastService);
 
   verify() {
     if (!this.reportNumber.trim()) return;
@@ -131,23 +143,42 @@ export class VerifyCertificateComponent {
     this.error.set(false);
     this.result.set(null);
 
-    // Mock Verification Logic
-    setTimeout(() => {
-      this.loading.set(false);
-      const input = this.reportNumber.trim().toUpperCase();
-
-      // Simple mock check
-      if (input === 'GIA123' || input.startsWith('DS-')) {
-        this.result.set({
-          id: input,
-          lab: input.includes('GIA') ? 'GIA' : 'Gemara Lab',
-          carat: 1.5,
-          color: 'F',
-          clarity: 'VS1'
-        });
-      } else {
+    this.certificateService.verifyCertificate(this.reportNumber.trim()).subscribe({
+      next: (data) => {
+        this.result.set(data);
+        this.loading.set(false);
+        this.toastService.show('Certificate verified successfully', 'success');
+      },
+      error: (err) => {
+        console.error(err);
         this.error.set(true);
+        this.loading.set(false);
+        this.toastService.show('Certificate not found', 'error');
       }
-    }, 1500);
+    });
+  }
+
+  downloadPdf() {
+    const reportNum = this.result()?.reportNumber;
+    if (!reportNum) return;
+
+    this.downloading.set(true);
+    this.certificateService.downloadCertificate(reportNum).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Certificate-${reportNum}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.downloading.set(false);
+        this.toastService.show('Download started', 'success');
+      },
+      error: (err) => {
+        console.error(err);
+        this.downloading.set(false);
+        this.toastService.show('Failed to download certificate', 'error');
+      }
+    });
   }
 }

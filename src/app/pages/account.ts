@@ -473,7 +473,7 @@ export class AccountComponent implements OnInit {
   createBoard(): void {
     const name = prompt("Enter new board name (e.g., 'Dream Ring'):");
     if (name) {
-      alert(`Created new wishlist board: ${name}`);
+      this.toastService.show(`Created new wishlist board: ${name}`, 'success');
     }
   }
 
@@ -519,19 +519,41 @@ export class AccountComponent implements OnInit {
   saveAddress() {
     const addr = this.currentAddress();
     if (addr.id) {
-      this.authService.updateAddress(addr.id, addr).subscribe(() => {
-        this.isAddressModalOpen.set(false);
+      this.authService.updateAddress(addr.id, addr).subscribe({
+        next: () => {
+            this.toastService.show('Address updated successfully', 'success');
+            this.isAddressModalOpen.set(false);
+        },
+        error: (err) => {
+            console.error(err);
+            this.toastService.show('Failed to update address', 'error');
+        }
       });
     } else {
-      this.authService.addAddress(addr as Address).subscribe(() => {
-        this.isAddressModalOpen.set(false);
+      this.authService.addAddress(addr as Address).subscribe({
+        next: () => {
+            this.toastService.show('Address added successfully', 'success');
+            this.isAddressModalOpen.set(false);
+        },
+        error: (err) => {
+            console.error(err);
+            this.toastService.show('Failed to add address', 'error');
+        }
       });
     }
   }
 
   deleteAddress(id: string) {
     if (confirm('Are you sure you want to delete this address?')) {
-      this.authService.deleteAddress(id).subscribe();
+      this.authService.deleteAddress(id).subscribe({
+        next: () => {
+            this.toastService.show('Address deleted successfully', 'success');
+        },
+        error: (err) => {
+            console.error(err);
+            this.toastService.show('Failed to delete address', 'error');
+        }
+      });
     }
   }
 }
