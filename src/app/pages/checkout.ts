@@ -185,6 +185,22 @@ declare var Razorpay: any;
                   />
                 </div>
 
+                <div *ngIf="!isAuthenticated()">
+                  <label class="block text-sm font-semibold text-gray-900 mb-2"
+                    >Create Password</label
+                  >
+                  <input
+                    type="password"
+                    [(ngModel)]="guestPassword"
+                    name="password"
+                    required
+                    minlength="6"
+                    class="input-field"
+                    placeholder="Create a password for your account"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">We'll create an account for you to track your order.</p>
+                </div>
+
                 <div>
                   <label class="block text-sm font-semibold text-gray-900 mb-2"
                     >Phone Number</label
@@ -289,12 +305,22 @@ declare var Razorpay: any;
 
                 <button
                   type="submit"
-                  [disabled]="!shippingForm.valid"
+                  [disabled]="!shippingForm.valid || isProcessing()"
+                  class="w-full btn-primary"
+                >
+                  {{ isProcessing() ? 'Creating Account...' : 'Continue to Pay' }}
+                </button>
+              </form>
+
+              <!-- Continue Button for Saved Address -->
+              <div *ngIf="selectedAddressId() !== 'new' && isAuthenticated()" class="mt-8 animate-fade-in-up">
+                <button
+                  (click)="nextStep()"
                   class="w-full btn-primary"
                 >
                   Continue to Pay
                 </button>
-              </form>
+              </div>
             </div>
 
             <!-- Step 2: Order Review & Pay -->
@@ -464,6 +490,8 @@ export class CheckoutComponent implements OnInit {
     country: "USA",
   };
 
+  guestPassword = '';
+
   billingSameAsShipping = true;
   isAuthenticated = signal(false);
 
@@ -577,8 +605,47 @@ export class CheckoutComponent implements OnInit {
 
   nextStep(): void {
     if (this.currentStep() < 2) {
-      this.currentStep.set(this.currentStep() + 1);
+      if (!this.isAuthenticated()) {
+        this.registerGuest();
+      } else {
+        this.currentStep.set(this.currentStep() + 1);
+      }
     }
+  }
+
+  private registerGuest() {
+    this.isProcessing.set(true);
+    const registerData = {
+        firstName: this.shippingData.firstName,
+        lastName: this.shippingData.lastName,
+        email: this.shippingData.email,
+        phone: this.shippingData.phone,
+        password: this.guestPassword
+    };
+
+    this.authService.register(registerData).subscribe({
+        next: () => {
+            // Register success, now login to get token
+            this.authService.login(registerData.email, registerData.password).subscribe({
+                next: () => {
+                    this.isProcessing.set(false);
+                    this.checkAuth(); // Update auth signal
+                    this.currentStep.set(this.currentStep() + 1);
+                },
+                error: (err) => {
+                    console.error('Login failed after registration', err);
+                    this.isProcessing.set(false);
+                    alert('Account created but login failed. Please sign in.');
+                    this.router.navigate(['/login']);
+                }
+            });
+        },
+        error: (err) => {
+            console.error('Registration failed', err);
+            this.isProcessing.set(false);
+            alert('Failed to create account. Please try again or sign in.');
+        }
+    });
   }
 
   previousStep(): void {
@@ -588,6 +655,14 @@ export class CheckoutComponent implements OnInit {
   }
 
   payNow() {
+    // Check for out of stock items
+    const outOfStockItems = this.cartItems().filter(item => item.product && item.product.stock === 0);
+    if (outOfStockItems.length > 0) {
+        alert(`Some items are out of stock: ${outOfStockItems.map((i: any) => i.product.name).join(', ')}. Please remove them from cart.`);
+        this.router.navigate(['/cart']);
+        return;
+    }
+
     if (typeof Razorpay === 'undefined') {
         alert('Payment gateway failed to load. Please check your internet connection or disable ad blockers.');
         return;
@@ -678,38 +753,9 @@ export class CheckoutComponent implements OnInit {
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
-        // Send email confirmation
-        const deliveryDate = new Date();
-        deliveryDate.setDate(deliveryDate.getDate() + 3);
-
-        this.emailService
-          .sendOrderConfirmation({
-            email: this.shippingData.email,
-            orderNumber: order.orderNumber || `ORD-${order.id?.substring(0, 8)}`,
-            orderTotal: order.total,
-            items: order.items.map((item) => ({
-              name: item.product.name,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-            shippingAddress: this.shippingData,
-            estimatedDelivery: deliveryDate.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            }),
-          })
-          .subscribe({
-            next: () => {
-              sessionStorage.setItem("lastOrderId", order.id);
-              this.router.navigate(["/order-confirmation"]);
-            },
-            error: (emailError) => {
-              console.error("Error sending email:", emailError);
-              sessionStorage.setItem("lastOrderId", order.id);
-              this.router.navigate(["/order-confirmation"]);
-            },
-          });
+        // Backend sends email confirmation automatically
+        sessionStorage.setItem("lastOrderId", order.id);
+        this.router.navigate(["/order-confirmation"]);
       },
       error: (error) => {
         console.error("Error creating order:", error);

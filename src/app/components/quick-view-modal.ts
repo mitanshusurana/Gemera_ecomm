@@ -169,8 +169,11 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 
               <!-- Actions -->
               <div class="flex gap-3">
-                <button (click)="onAddToCart()" class="flex-1 btn-primary py-3">
-                  Add to Cart
+                <button
+                  (click)="onAddToCart()"
+                  [disabled]="product?.stock === 0"
+                  class="flex-1 btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {{ product?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
                 </button>
               </div>
 
