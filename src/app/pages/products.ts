@@ -290,12 +290,30 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   </div>
 
                   <!-- Stock Status -->
-                  <div *ngIf="product.stock && product.stock <= 5" class="mb-3 px-2 py-1 bg-red-50 rounded text-xs font-semibold text-red-700">
+                  <div *ngIf="product.stock !== undefined && product.stock <= 5 && product.stock > 0" class="mb-3 px-2 py-1 bg-yellow-50 rounded text-xs font-semibold text-yellow-700">
                     ⚠️ Only {{ product.stock }} left
                   </div>
+                  <div *ngIf="product.stock === 0" class="mb-3 px-2 py-1 bg-red-50 rounded text-xs font-semibold text-red-700">
+                    Out of Stock
+                  </div>
 
-                  <!-- Add to Cart -->
-                  <button (click)="handleAddToCart($event, product.id)" class="w-full btn-primary">Add to Cart</button>
+                  <!-- Actions -->
+                  <div class="flex gap-2">
+                    <button
+                      (click)="handleAddToCart($event, product.id)"
+                      [disabled]="product.stock === 0"
+                      class="flex-1 btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+                    </button>
+                    <button
+                      (click)="handleBuyNow($event, product.id)"
+                      [disabled]="product.stock === 0"
+                      class="flex-1 btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
                 </div>
               </a>
             </div>
@@ -550,6 +568,16 @@ export class ProductsComponent implements OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.toastService.show('Added to cart', 'success');
+      });
+  }
+
+  handleBuyNow(event: Event, productId: string): void {
+      event.preventDefault();
+      event.stopPropagation();
+      this.cartService.addToCart(productId, 1)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          this.router.navigate(['/cart']);
       });
   }
 

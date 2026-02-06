@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
 import { CartService } from '../services/cart.service';
 import { ProductDetail, Product, CustomizationOption, PriceBreakup } from '../core/models';
@@ -49,7 +49,8 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <!-- Main Image -->
                <div class="relative w-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group cursor-zoom-in h-[500px] flex items-center justify-center">
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                    <span *ngIf="product()?.stock! < 5" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100">Only {{product()?.stock}} left</span>
+                    <span *ngIf="product()?.stock! < 5 && product()?.stock! > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100">Only {{product()?.stock}} left</span>
+                    <span *ngIf="product()?.stock === 0" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100">Out of Stock</span>
                     <span class="px-2 py-1 bg-white/90 backdrop-blur text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded border border-gray-200 shadow-sm">Best Seller</span>
                   </div>
 
@@ -258,10 +259,18 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
                 <!-- Actions -->
                 <div class="flex flex-col gap-3">
-                   <button (click)="handleAddToCart()"
-                           class="w-full bg-gradient-to-r from-[#4f3267] to-[#6d448e] text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm">
-                      Add to Cart
-                   </button>
+                   <div class="flex gap-3">
+                       <button (click)="handleAddToCart()"
+                               [disabled]="product()?.stock === 0"
+                               class="flex-1 bg-gradient-to-r from-[#4f3267] to-[#6d448e] text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                          {{ product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+                       </button>
+                       <button (click)="handleBuyNow()"
+                               [disabled]="product()?.stock === 0"
+                               class="flex-1 bg-white border-2 border-[#4f3267] text-[#4f3267] font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                          Buy Now
+                       </button>
+                   </div>
                    <button (click)="openTryAtHome()"
                            class="w-full border border-[#deaa6f] text-[#4f3267] font-bold py-3 rounded-lg hover:bg-[#fff9f0] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2">
                       <span>🏠</span> Book Try at Home
@@ -308,6 +317,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private productService = inject(ProductService);
   private cartService = inject(CartService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private toastService = inject(ToastService);
   private historyService = inject(HistoryService);
   private currencyService = inject(CurrencyService);
@@ -392,6 +402,20 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         };
         this.cartService.addToCart(this.product()!.id, 1, options).subscribe(() => {
             this.toastService.show('Added to Shopping Bag', 'success');
+        });
+    }
+  }
+
+  handleBuyNow(): void {
+    if (this.product()) {
+        const options = {
+          metal: this.selectedMetal()?.name,
+          diamond: this.selectedDiamondQuality()?.name,
+          price: this.currentPrice(),
+          product: this.product()
+        };
+        this.cartService.addToCart(this.product()!.id, 1, options).subscribe(() => {
+            this.router.navigate(['/cart']);
         });
     }
   }
