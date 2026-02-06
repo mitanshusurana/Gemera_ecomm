@@ -84,7 +84,6 @@ export class StoreLocatorComponent implements OnInit {
             this.isLoading.set(false);
         },
         error: (err) => {
-            console.error('Failed to load stores', err);
             this.error.set('Unable to load store locations. Please try again later.');
             this.isLoading.set(false);
         }

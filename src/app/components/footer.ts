@@ -147,7 +147,6 @@ export class FooterComponent {
             this.isSubscribing = false;
         },
         error: (err) => {
-            console.error('Subscription failed', err);
             this.toastService.show('Failed to subscribe. Please try again.', 'error');
             this.isSubscribing = false;
         }

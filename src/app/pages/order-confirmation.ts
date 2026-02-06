@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from "@angular/core";
+import { Component, OnInit, signal, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
@@ -8,6 +8,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
   selector: "app-order-confirmation",
   standalone: true,
   imports: [CommonModule, RouterLink, NgOptimizedImage, CurrencyConvertPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-gradient-to-b from-gold-50 to-white">
       <!-- Breadcrumb -->
@@ -370,7 +371,7 @@ export class OrderConfirmationComponent implements OnInit {
         );
       },
       error: (error) => {
-        console.error("Error loading order:", error);
+        // Error loading order
       },
     });
   }

@@ -494,7 +494,6 @@ export class RFQRequestComponent {
         this.toastService.show('RFQ submitted successfully', 'success');
       },
       error: (error) => {
-        console.error("Error submitting RFQ:", error);
         this.toastService.show("Error submitting RFQ. Please try again.", 'error');
       },
     });

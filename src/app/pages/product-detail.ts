@@ -35,8 +35,47 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
       </nav>
 
       <div class="container mx-auto px-4 lg:px-12 py-8">
-        <div *ngIf="loading()" class="h-96 flex items-center justify-center">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4f3267]"></div>
+        <div *ngIf="loading()" class="animate-pulse lg:flex lg:gap-12 relative">
+          <!-- Left Column Skeleton -->
+          <div class="lg:w-[58%] flex flex-col gap-12">
+            <div class="flex flex-col gap-4">
+              <!-- Main Image -->
+              <div class="w-full h-[500px] bg-gray-200 rounded-lg"></div>
+              <!-- Thumbnails -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="h-[300px] bg-gray-200 rounded-lg"></div>
+                <div class="h-[300px] bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+            <!-- Details -->
+            <div class="border-t border-gray-200 pt-8 space-y-4">
+              <div class="h-8 w-1/3 bg-gray-200 rounded"></div>
+              <div class="h-4 w-full bg-gray-200 rounded"></div>
+              <div class="h-4 w-full bg-gray-200 rounded"></div>
+              <div class="h-4 w-2/3 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+
+          <!-- Right Column Skeleton -->
+          <div class="lg:w-[42%] relative">
+            <div class="sticky top-24 p-6 rounded-2xl border border-gray-100">
+              <div class="h-4 w-1/4 bg-gray-200 rounded mb-4"></div> <!-- SKU -->
+              <div class="h-10 w-3/4 bg-gray-200 rounded mb-6"></div> <!-- Title -->
+              <div class="h-8 w-1/2 bg-gray-200 rounded mb-6"></div> <!-- Price -->
+
+              <!-- Configurator Skeleton -->
+              <div class="space-y-4 mb-8">
+                <div class="h-10 w-full bg-gray-200 rounded"></div>
+                <div class="h-10 w-full bg-gray-200 rounded"></div>
+              </div>
+
+              <!-- Buttons -->
+              <div class="flex gap-3 h-14">
+                <div class="flex-1 bg-gray-200 rounded-lg"></div>
+                <div class="flex-1 bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div *ngIf="!loading() && product()" class="lg:flex lg:gap-12 relative">

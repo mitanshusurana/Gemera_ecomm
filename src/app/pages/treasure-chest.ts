@@ -145,8 +145,8 @@ export class TreasureChestComponent {
     return this.treasureService.calculateMaturity(this.installment());
   });
 
-  updateInstallment(val: any) {
-    const num = parseInt(val, 10);
+  updateInstallment(val: string | number) {
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
     this.installment.set(isNaN(num) ? 1000 : num);
   }
 
