@@ -11,10 +11,10 @@ However, a few discrepancies exist between the API specification (`API.md`) and 
 
 | Method | Endpoint | Code Status | API.md Status | Action Needed |
 | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/auth/logout` | **Not Implemented** (Client-side only) | Defined | Implement API call in `AuthService.logout()` to invalidate server session. |
-| `POST` | `/auth/refresh` | **Not Implemented** | Defined | Implement token refresh logic in `AuthService` or `AuthInterceptor` to handle expired tokens gracefully. |
-| `GET` | `/orders/track/:id` | **Not Implemented** | Defined | Add `trackOrder(id)` method to `OrderService` to enable public order tracking. |
-| `GET` | `/treasure/config` | **Mocked Locally** | **Not Defined** | Consider defining an endpoint for dynamic Treasure Plan configuration instead of hardcoding values in `TreasureService`. |
+| `POST` | `/auth/logout` | **Implemented** | Defined | (Resolved) Implemented API call in `AuthService.logout()`. |
+| `POST` | `/auth/refresh` | **Implemented** | Defined | (Resolved) Implemented token refresh logic in `AuthService` and `AuthInterceptor`. |
+| `GET` | `/orders/track/:id` | **Implemented** | Defined | (Resolved) Added `trackOrder(id)` method to `OrderService`. |
+| `GET` | `/treasure/config` | **Implemented** | **Defined** | (Resolved) Defined endpoint in `API.md` and implemented in `TreasureService`. |
 
 ## Production Readiness & Reliability
 

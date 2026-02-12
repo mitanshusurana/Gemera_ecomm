@@ -102,42 +102,14 @@ export class TrackOrderComponent implements OnInit {
     // In a real app we'd have a specific track endpoint.
     // Here we will use getOrderById.
 
-    // For demo purposes, if they type any string, we might just fetch the mock order "order-1" or handle error
-    this.orderService.getOrderById(this.orderId).subscribe({
+    this.orderService.trackOrder(this.orderId).subscribe({
       next: (res) => {
         this.order.set(res);
         this.loading.set(false);
       },
       error: () => {
-         // Fallback for demo if ID match failed, try to mock a result for "ORD-12345"
-         if (this.orderId.startsWith('ORD-')) {
-            // Mock response
-            setTimeout(() => {
-                this.order.set({
-                    id: 'mock-track',
-                    orderNumber: this.orderId,
-                    userId: 'guest',
-                    status: 'SHIPPED',
-                    total: 55000,
-                    createdAt: new Date().toISOString(),
-                    estimatedDelivery: new Date(Date.now() + 86400000 * 3).toISOString(),
-                    items: [
-                        {
-                            id: 'i1',
-                            product: { name: '1.5 Carat Diamond Solitaire', price: 45000, imageUrl: 'https://images.unsplash.com/photo-1515562141207-6461823488d2?w=600&h=400&fit=crop' } as any,
-                            quantity: 1,
-                            price: 45000,
-                            selectedMetal: { name: '18K White Gold' },
-                            selectedDiamond: { name: 'VS1' }
-                        }
-                    ]
-                } as Order);
-                this.loading.set(false);
-            }, 1000);
-         } else {
-             this.toastService.show('Order not found', 'error');
-             this.loading.set(false);
-         }
+        this.toastService.show('Order not found', 'error');
+        this.loading.set(false);
       }
     });
   }

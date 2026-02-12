@@ -1,39 +1,78 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
-  HttpInterceptor
+  HttpInterceptor,
+  HttpErrorResponse
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { catchError, switchMap, filter, take } from 'rxjs/operators';
+import { AuthService } from '../services/auth.service';
 
-/**
- * HTTP Interceptor that automatically adds Bearer token to all requests
- * 
- * This interceptor:
- * 1. Retrieves the auth token from localStorage (avoiding circular dependency)
- * 2. Adds it to the Authorization header of every API request
- * 3. Skips non-API requests (e.g., static assets)
- */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
+  private injector = inject(Injector);
+  private isRefreshing = false;
+  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Get the auth token directly from localStorage to avoid circular dependency
-    // AuthService also stores the token here after login
-    const authToken = localStorage.getItem('authToken');
-
-    // Only add token to API requests (skip assets, etc.)
-    // Check if request is to our API by looking for /api/ in the URL
-    if (authToken && request.url.includes('/api/')) {
-      // Clone the request and add the Authorization header
-      request = request.clone({
-        setHeaders: {
-          Authorization: `Bearer ${authToken}`
-        }
-      });
+    // Skip auth logic for login/logout endpoints to avoid loops
+    if (request.url.includes('/auth/login') || request.url.includes('/auth/logout')) {
+      return next.handle(request);
     }
 
-    return next.handle(request);
+    const authService = this.injector.get(AuthService);
+    const token = authService.getAuthToken();
+    let authReq = request;
+
+    if (token && request.url.includes('/api/')) {
+      authReq = this.addToken(request, token);
+    }
+
+    return next.handle(authReq).pipe(
+      catchError(error => {
+        if (error instanceof HttpErrorResponse && error.status === 401 && request.url.includes('/api/')) {
+          return this.handle401Error(authReq, next, authService);
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  private addToken(request: HttpRequest<unknown>, token: string) {
+    return request.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  }
+
+  private handle401Error(request: HttpRequest<unknown>, next: HttpHandler, authService: AuthService) {
+    if (!this.isRefreshing) {
+      this.isRefreshing = true;
+      this.refreshTokenSubject.next(null);
+
+      return authService.refreshToken().pipe(
+        switchMap((token: any) => {
+          this.isRefreshing = false;
+          this.refreshTokenSubject.next(token.token);
+          return next.handle(this.addToken(request, token.token));
+        }),
+        catchError((err) => {
+          this.isRefreshing = false;
+          authService.logout();
+          return throwError(() => err);
+        })
+      );
+    } else {
+      return this.refreshTokenSubject.pipe(
+        filter(token => token != null),
+        take(1),
+        switchMap(jwt => {
+          return next.handle(this.addToken(request, jwt));
+        })
+      );
+    }
   }
 }

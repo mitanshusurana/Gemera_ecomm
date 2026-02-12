@@ -84,6 +84,7 @@
 
 | Method | Endpoint | Description | Request Body | Response |
 | :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/treasure/config` | Get plan configuration | - | `TreasurePlanConfig` |
 | `POST` | `/treasure/enroll` | Enroll in new plan | `{ planName: string, installmentAmount: number }` | `TreasureChestAccount` |
 
 ---
@@ -222,6 +223,27 @@ interface Store {
   hours: string;
   lat: number;
   lng: number;
+}
+```
+
+### Treasure
+```typescript
+interface TreasurePlanConfig {
+  minAmount: number;
+  maxAmount: number;
+  durationMonths: number;
+  bonusMonths: number;
+}
+interface TreasureChestAccount {
+  id: string;
+  planName: string;
+  installmentAmount: number;
+  installmentsPaid: number;
+  totalInstallments: number;
+  balance: number;
+  status: 'ACTIVE' | 'MATURED' | 'CLOSED';
+  startDate: string;
+  nextDueDate: string;
 }
 ```
 

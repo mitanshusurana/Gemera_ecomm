@@ -657,6 +657,8 @@ export class CheckoutComponent implements OnInit {
   }
 
   payNow() {
+    if (this.isProcessing()) return;
+
     // Check for out of stock items
     const outOfStockItems = this.cartItems().filter(item => item.product && item.product.stock === 0);
     if (outOfStockItems.length > 0) {

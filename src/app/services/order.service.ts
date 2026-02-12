@@ -21,6 +21,10 @@ export class OrderService {
     return this.http.get<Order>(`${this.baseUrl}/${orderId}`);
   }
 
+  trackOrder(orderId: string): Observable<Order> {
+    return this.http.get<Order>(`${this.baseUrl}/track/${orderId}`);
+  }
+
   getUserOrders(page: number = 0, size: number = 10): Observable<any> {
     const params = new HttpParams()
       .set('page', page.toString())
