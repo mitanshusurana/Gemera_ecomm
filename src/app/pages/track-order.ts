@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { OrderService } from '../services/order.service';
@@ -11,7 +11,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 @Component({
   selector: 'app-track-order',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyConvertPipe],
+  imports: [CommonModule, FormsModule, CurrencyConvertPipe, NgOptimizedImage],
   template: `
     <div class="min-h-screen bg-white font-sans text-[#4f3267]">
       <div class="container mx-auto px-4 py-12 max-w-2xl">
@@ -51,7 +51,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
            <div class="space-y-4">
               <div *ngFor="let item of order()?.items" class="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
                  <div class="w-16 h-16 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden">
-                    <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [src]="item.product.imageUrl || item.product.images?.[0]" class="w-full h-full object-cover">
+                    <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" width="64" height="64" class="w-full h-full object-cover">
                     <span *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="text-xl">💎</span>
                  </div>
                  <div class="flex-1">

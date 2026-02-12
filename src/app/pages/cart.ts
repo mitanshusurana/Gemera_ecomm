@@ -37,7 +37,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <div *ngFor="let item of cartItems()" class="card p-6 flex flex-col sm:flex-row gap-6">
                 <!-- Image -->
                 <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto sm:mx-0 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                   <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" fill class="absolute inset-0 object-cover">
+                   <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" fill sizes="(max-width: 640px) 96px, 128px" class="absolute inset-0 object-cover">
                    <span *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="text-3xl">💎</span>
                 </div>
 

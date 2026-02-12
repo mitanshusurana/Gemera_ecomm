@@ -95,6 +95,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
                   <img [ngSrc]="selectedImage() || product()?.images?.[0] || product()?.imageUrl || ''"
                        fill priority
+                       sizes="(max-width: 1024px) 100vw, 50vw"
                        class="object-contain p-8 transition-transform duration-500 hover:scale-110"
                        [alt]="product()?.name">
                </div>
@@ -104,7 +105,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <ng-container *ngFor="let img of product()?.images; let i = index">
                     <div *ngIf="i > 0" (click)="selectedImage.set(img)"
                          class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition-opacity relative h-[300px] flex items-center justify-center">
-                       <img [ngSrc]="img" fill class="object-contain p-4 hover:scale-105 transition-transform duration-500">
+                       <img [ngSrc]="img" fill sizes="(max-width: 1024px) 50vw, 30vw" class="object-contain p-4 hover:scale-105 transition-transform duration-500">
                     </div>
                   </ng-container>
                </div>
