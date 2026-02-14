@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { OrderService } from '../services/order.service';
@@ -11,7 +11,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 @Component({
   selector: 'app-track-order',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyConvertPipe],
+  imports: [CommonModule, FormsModule, CurrencyConvertPipe, NgOptimizedImage],
   template: `
     <div class="min-h-screen bg-white font-sans text-[#4f3267]">
       <div class="container mx-auto px-4 py-12 max-w-2xl">
@@ -51,7 +51,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
            <div class="space-y-4">
               <div *ngFor="let item of order()?.items" class="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
                  <div class="w-16 h-16 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden">
-                    <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [src]="item.product.imageUrl || item.product.images?.[0]" class="w-full h-full object-cover">
+                    <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" width="64" height="64" class="w-full h-full object-cover">
                     <span *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="text-xl">💎</span>
                  </div>
                  <div class="flex-1">
@@ -102,42 +102,14 @@ export class TrackOrderComponent implements OnInit {
     // In a real app we'd have a specific track endpoint.
     // Here we will use getOrderById.
 
-    // For demo purposes, if they type any string, we might just fetch the mock order "order-1" or handle error
-    this.orderService.getOrderById(this.orderId).subscribe({
+    this.orderService.trackOrder(this.orderId).subscribe({
       next: (res) => {
         this.order.set(res);
         this.loading.set(false);
       },
       error: () => {
-         // Fallback for demo if ID match failed, try to mock a result for "ORD-12345"
-         if (this.orderId.startsWith('ORD-')) {
-            // Mock response
-            setTimeout(() => {
-                this.order.set({
-                    id: 'mock-track',
-                    orderNumber: this.orderId,
-                    userId: 'guest',
-                    status: 'SHIPPED',
-                    total: 55000,
-                    createdAt: new Date().toISOString(),
-                    estimatedDelivery: new Date(Date.now() + 86400000 * 3).toISOString(),
-                    items: [
-                        {
-                            id: 'i1',
-                            product: { name: '1.5 Carat Diamond Solitaire', price: 45000, imageUrl: 'https://images.unsplash.com/photo-1515562141207-6461823488d2?w=600&h=400&fit=crop' } as any,
-                            quantity: 1,
-                            price: 45000,
-                            selectedMetal: { name: '18K White Gold' },
-                            selectedDiamond: { name: 'VS1' }
-                        }
-                    ]
-                } as Order);
-                this.loading.set(false);
-            }, 1000);
-         } else {
-             this.toastService.show('Order not found', 'error');
-             this.loading.set(false);
-         }
+        this.toastService.show('Order not found', 'error');
+        this.loading.set(false);
       }
     });
   }

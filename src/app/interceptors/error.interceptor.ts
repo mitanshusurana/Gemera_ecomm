@@ -6,8 +6,8 @@ import {
   HttpInterceptor,
   HttpErrorResponse
 } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable, throwError, TimeoutError } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
 import { ToastService } from '../services/toast.service';
 
 @Injectable()
@@ -16,12 +16,20 @@ export class ErrorInterceptor implements HttpInterceptor {
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     return next.handle(request).pipe(
-      catchError((error: HttpErrorResponse) => {
+      timeout(15000), // 15 seconds timeout
+      catchError((error: HttpErrorResponse | TimeoutError) => {
         let errorMessage = 'An unknown error occurred!';
-        if (error.error instanceof ErrorEvent) {
+
+        if (error instanceof TimeoutError) {
+          errorMessage = 'Request timed out. Please check your internet connection and try again.';
+          this.toastService.show(errorMessage, 'error');
+          return throwError(() => error);
+        }
+
+        if (error instanceof HttpErrorResponse && error.error instanceof ErrorEvent) {
           // Client-side error
           errorMessage = `Error: ${error.error.message}`;
-        } else {
+        } else if (error instanceof HttpErrorResponse) {
           // Server-side error
           if (error.status === 401) {
               errorMessage = 'Unauthorized access. Please login.';

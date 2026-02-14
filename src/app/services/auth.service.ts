@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpBackend } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { tap, catchError, finalize } from 'rxjs/operators';
 import { AuthResponse, User, Address } from '../core/models';
 import { LoginRequest, RegisterRequest } from '../core/dtos';
 import { ApiConfigService } from './api-config.service';
@@ -12,6 +12,7 @@ import { ApiConfigService } from './api-config.service';
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private httpBackend = inject(HttpBackend); // Bypass interceptors
   private router = inject(Router);
   private apiConfig = inject(ApiConfigService);
   private baseUrl = this.apiConfig.getEndpoint('auth');
@@ -33,18 +34,42 @@ export class AuthService {
     const body: LoginRequest = { email, password };
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, body).pipe(
       tap(response => {
-        this.setAuthToken(response.token);
+        this.setAuthToken(response.token, response.refreshToken);
         this.user$.next(response.user);
       })
     );
   }
 
   logout(): Observable<any> {
-    // No backend API for logout, just clear local state
-    this.clearAuthToken();
-    this.user$.next(null);
-    this.router.navigate(['/login']);
-    return of(null);
+    // Call backend to invalidate token
+    return this.http.post(`${this.baseUrl}/logout`, {}).pipe(
+      finalize(() => {
+        // Always clear local state, even if API fails
+        this.clearAuthToken();
+        this.user$.next(null);
+        this.router.navigate(['/login']);
+      })
+    );
+  }
+
+  refreshToken(): Observable<AuthResponse> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    // Use HttpBackend to bypass interceptors (avoid loop)
+    const http = new HttpClient(this.httpBackend);
+    return http.post<AuthResponse>(`${this.baseUrl}/refresh`, { refreshToken }).pipe(
+      tap(response => {
+        this.setAuthToken(response.token, response.refreshToken);
+        // Note: API might not return user object on refresh, depends on implementation
+        // If it does, update it. If not, keep existing.
+        if (response.user) {
+           this.user$.next(response.user);
+        }
+      })
+    );
   }
 
   // Address Management Methods
@@ -84,14 +109,22 @@ export class AuthService {
     });
   }
 
-  private setAuthToken(token: string): void {
+  private setAuthToken(token: string, refreshToken?: string): void {
     this.authToken$.next(token);
     localStorage.setItem('authToken', token);
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+    }
   }
 
   private clearAuthToken(): void {
     this.authToken$.next(null);
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken');
   }
 
   getAuthToken(): string | null {

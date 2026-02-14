@@ -155,7 +155,7 @@ interface CollectionUI {
             <div
               class="relative overflow-hidden aspect-[4/5] bg-gray-100"
             >
-              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" [alt]="product.name">
+              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" [alt]="product.name">
               <div
                 *ngIf="!product.imageUrl && !product.images?.[0]"
                 class="w-full h-full flex items-center justify-center text-5xl bg-gray-50"
