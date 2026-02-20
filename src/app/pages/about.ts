@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
     <div class="min-h-screen bg-white">
       <div class="bg-diamond-50 py-12 md:py-20">
         <div class="container-luxury text-center">
-          <h1 class="text-4xl md:text-6xl font-display font-bold text-diamond-900 mb-6">About Gemara</h1>
+          <h1 class="text-4xl md:text-6xl font-display font-bold text-diamond-900 mb-6">About Caratloop</h1>
           <p class="text-xl text-gray-600 max-w-2xl mx-auto">Crafting eternal beauty with ethically sourced gemstones and master artisanship.</p>
         </div>
       </div>
@@ -19,7 +19,7 @@ import { CommonModule } from '@angular/common';
           <div>
             <h2 class="text-3xl font-display font-bold text-diamond-900 mb-6">Our Story</h2>
             <p class="text-gray-700 leading-relaxed mb-4">
-              Founded in 1985, Gemara began with a singular vision: to bring the world's most exquisite gemstones to discerning collectors and jewelry lovers.
+              Founded in 1985, Caratloop began with a singular vision: to bring the world's most exquisite gemstones to discerning collectors and jewelry lovers.
               Our journey started in a small workshop where passion for precision and eye for beauty were the only tools we had.
             </p>
             <p class="text-gray-700 leading-relaxed">

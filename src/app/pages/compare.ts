@@ -148,7 +148,7 @@ export class CompareComponent implements OnInit {
   private currencyService = inject(CurrencyService);
 
   ngOnInit(): void {
-    this.titleService.setTitle('Compare Products | Gemara Fine Jewels');
+    this.titleService.setTitle('Compare Products | Caratloop Fine Jewels');
   }
 
   handleAddToCart(product: Product): void {

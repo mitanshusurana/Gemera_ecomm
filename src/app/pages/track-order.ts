@@ -13,9 +13,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   standalone: true,
   imports: [CommonModule, FormsModule, CurrencyConvertPipe, NgOptimizedImage],
   template: `
-    <div class="min-h-screen bg-white font-sans text-[#4f3267]">
+    <div class="min-h-screen bg-white font-sans text-[#115e59]">
       <div class="container mx-auto px-4 py-12 max-w-2xl">
-        <h1 class="text-3xl font-serif font-bold text-center mb-8 text-[#4f3267]">Track Your Order</h1>
+        <h1 class="text-3xl font-serif font-bold text-center mb-8 text-[#115e59]">Track Your Order</h1>
 
         <div class="bg-gray-50 p-8 rounded-2xl border border-gray-100 shadow-sm">
           <div class="space-y-6">
@@ -24,12 +24,12 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <input type="text"
                      [(ngModel)]="orderId"
                      placeholder="e.g. ORD-12345"
-                     class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#4f3267] focus:ring-1 focus:ring-[#4f3267]">
+                     class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#115e59] focus:ring-1 focus:ring-[#115e59]">
             </div>
 
             <button (click)="trackOrder()"
                     [disabled]="loading()"
-                    class="w-full bg-[#4f3267] text-white font-bold py-3 rounded-lg hover:bg-[#362247] transition-colors disabled:opacity-50">
+                    class="w-full bg-[#115e59] text-white font-bold py-3 rounded-lg hover:bg-[#042f2e] transition-colors disabled:opacity-50">
               {{ loading() ? 'Tracking...' : 'Track Order' }}
             </button>
           </div>
@@ -39,7 +39,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
         <div *ngIf="order()" class="mt-8 bg-white p-6 rounded-2xl border border-gray-100 shadow-lg animate-fade-in">
            <div class="flex justify-between items-start mb-6 pb-6 border-b border-gray-100">
               <div>
-                 <h2 class="text-xl font-bold text-[#4f3267]">Order Status: {{ order()?.status }}</h2>
+                 <h2 class="text-xl font-bold text-[#115e59]">Order Status: {{ order()?.status }}</h2>
                  <p class="text-sm text-gray-500 mt-1">Order #{{ order()?.orderNumber }}</p>
               </div>
               <div class="text-right">
@@ -59,7 +59,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                     <p class="text-xs text-gray-500">{{ item.selectedMetal?.name }} {{ item.selectedDiamond?.name }}</p>
                  </div>
                  <div class="text-right">
-                    <p class="font-bold text-[#4f3267]">{{ item.price | currencyConvert }}</p>
+                    <p class="font-bold text-[#115e59]">{{ item.price | currencyConvert }}</p>
                     <p class="text-xs text-gray-500">Qty: {{ item.quantity }}</p>
                  </div>
               </div>

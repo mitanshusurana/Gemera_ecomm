@@ -16,7 +16,7 @@ import { RouterLink } from '@angular/router';
       <section class="relative py-20 bg-primary-900 text-white overflow-hidden">
          <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/diamond-upholstery.png')]"></div>
          <div class="container-luxury relative z-10 text-center">
-            <h1 class="font-display font-bold text-4xl md:text-6xl mb-6">Gemara Treasure Plan</h1>
+            <h1 class="font-display font-bold text-4xl md:text-6xl mb-6">Caratloop Treasure Plan</h1>
             <p class="text-xl text-primary-200 max-w-2xl mx-auto mb-8">
               The smartest way to buy your dream jewellery. Pay for 9 months, and we'll pay the 10th installment for you!
             </p>
@@ -81,7 +81,7 @@ import { RouterLink } from '@angular/router';
                            <span class="font-bold text-gray-900">{{ currencyService.format(summary().youPay) }}</span>
                         </div>
                         <div class="flex justify-between items-center pb-4 border-b border-primary-100">
-                           <span class="text-secondary-600 font-bold">Gemara Adds (1 Month)</span>
+                           <span class="text-secondary-600 font-bold">Caratloop Adds (1 Month)</span>
                            <span class="font-bold text-secondary-600">+ {{ currencyService.format(summary().weAdd) }}</span>
                         </div>
                         <div class="flex justify-between items-center pt-2">

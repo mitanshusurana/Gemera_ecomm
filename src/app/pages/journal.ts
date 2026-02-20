@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
       <!-- Header -->
       <div class="bg-diamond-50 border-b border-diamond-200 section-padding">
         <div class="container-luxury text-center">
-          <p class="text-gold-600 uppercase tracking-widest font-bold text-sm mb-2">The Gemara Journal</p>
+          <p class="text-gold-600 uppercase tracking-widest font-bold text-sm mb-2">The Caratloop Journal</p>
           <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4">
             Stories & Style
           </h1>

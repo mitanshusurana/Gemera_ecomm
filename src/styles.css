@@ -6,9 +6,9 @@
 
 /* Root Variables */
 :root {
-  --color-primary: #4f3267; /* CaratLane Purple */
-  --color-primary-dark: #3d264d;
-  --color-secondary: #deaa6f; /* Gold Accent */
+  --color-primary: #115e59; /* Caratloop Emerald */
+  --color-primary-dark: #134e4a;
+  --color-secondary: #b45309; /* Bronze/Gold Accent */
   --color-text: #2c2c2c;
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

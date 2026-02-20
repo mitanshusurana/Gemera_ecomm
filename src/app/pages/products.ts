@@ -461,7 +461,7 @@ export class ProductsComponent implements OnInit {
   private router = inject(Router);
 
   ngOnInit(): void {
-    this.titleService.setTitle('Fine Jewellery Collections | Gemara');
+    this.titleService.setTitle('Fine Jewellery Collections | Caratloop');
 
     this.activatedRoute.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
