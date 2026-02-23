@@ -84,4 +84,11 @@ public class ProductController {
         Product created = productService.createProduct(product);
         return ResponseEntity.status(201).body(entityMapper.toProductDTO(created));
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete product (Admin)")
+    public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
 }

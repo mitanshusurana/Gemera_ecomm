@@ -104,6 +104,10 @@ public class OrderService {
         return orderRepository.findByUser(user, pageable);
     }
 
+    public Page<Order> getAllOrders(Pageable pageable) {
+        return orderRepository.findAll(pageable);
+    }
+
     public Order getOrder(UUID orderId) {
         return orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
     }

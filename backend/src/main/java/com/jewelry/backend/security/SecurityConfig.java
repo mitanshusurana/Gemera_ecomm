@@ -55,6 +55,7 @@ public class SecurityConfig {
     configuration.setAllowedOrigins(Arrays.asList(
       "http://localhost:4200",      // Angular frontend development
       "http://localhost:3000",      // Alternative frontend
+      "http://localhost:4300",      // Angular admin panel
       "https://yourdomain.com"      // Update with your production domain
     ));
 

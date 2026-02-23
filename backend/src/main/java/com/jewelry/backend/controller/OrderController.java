@@ -41,6 +41,11 @@ public class OrderController {
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "10") int size,
             Principal principal) {
+        // Simple check for admin email for now, better to use Roles from Principal/SecurityContext
+        if ("admin@gemara.com".equals(principal.getName())) {
+             Page<Order> orders = orderService.getAllOrders(PageRequest.of(page, size));
+             return ResponseEntity.ok(orders.map(entityMapper::toOrderDTO));
+        }
         Page<Order> orders = orderService.getUserOrders(principal.getName(), PageRequest.of(page, size));
         return ResponseEntity.ok(orders.map(entityMapper::toOrderDTO));
     }
