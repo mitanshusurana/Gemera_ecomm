@@ -1,0 +1,37 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-gray-900" *ngIf="order">Order #{{ order.id }}</h1>
+    <a routerLink="/orders" class="text-emerald-600 hover:text-emerald-900">Back to Orders</a>
+  </div>
+
+  <div *ngIf="order" class="bg-white shadow overflow-hidden sm:rounded-lg mt-6">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Order Information</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Details regarding the order.</p>
+    </div>
+    <div class="border-t border-gray-200">
+      <dl>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Customer</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ order.shippingAddress?.firstName }} {{ order.shippingAddress?.lastName }}</dd>
+        </div>
+        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Total Amount</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ order.total | currency }}</dd>
+        </div>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Status</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ order.status }}</dd>
+        </div>
+        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">Actions</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 space-x-2">
+            <button (click)="updateStatus('PENDING')" class="text-yellow-600 hover:text-yellow-900">Mark Pending</button>
+            <button (click)="updateStatus('COMPLETED')" class="text-green-600 hover:text-green-900">Mark Completed</button>
+            <button (click)="updateStatus('CANCELLED')" class="text-red-600 hover:text-red-900">Cancel</button>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>

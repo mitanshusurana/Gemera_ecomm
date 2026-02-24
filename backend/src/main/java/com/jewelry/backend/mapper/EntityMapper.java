@@ -1,0 +1,397 @@
+package com.jewelry.backend.mapper;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jewelry.backend.dto.*;
+import com.jewelry.backend.entity.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Component
+public class EntityMapper {
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    // --- User & Address ---
+    public UserDTO toUserDTO(User user) {
+        if (user == null) return null;
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setPhone(user.getPhone());
+        dto.setRole(user.getRole());
+        dto.setLoyaltyPoints(user.getLoyaltyPoints());
+        if (user.getAddresses() != null) {
+            dto.setAddresses(user.getAddresses().stream().map(this::toAddressDTO).collect(Collectors.toList()));
+        }
+        return dto;
+    }
+
+    public Product toProductEntity(ProductDTO dto) {
+        if (dto == null) return null;
+        Product product = new Product();
+        product.setId(dto.getId()); // Usually not set for create, but handled by service if needed
+        product.setName(dto.getName());
+        product.setDescription(dto.getDescription());
+        product.setPrice(dto.getPrice());
+        product.setCategory(dto.getCategory());
+        product.setStock(dto.getStock());
+        product.setImages(dto.getImages());
+        product.setSpecifications(dto.getSpecifications());
+        product.setOccasions(dto.getOccasions());
+        product.setStyles(dto.getStyles());
+
+        if (dto.getCustomizationOptions() != null) {
+            product.setCustomizationOptions(dto.getCustomizationOptions().stream().map(optDto -> {
+                Product.CustomizationOption opt = new Product.CustomizationOption();
+                opt.setType(optDto.getType());
+                opt.setName(optDto.getName());
+                opt.setPriceModifier(optDto.getPriceModifier());
+                return opt;
+            }).collect(Collectors.toList()));
+        }
+        return product;
+    }
+
+    public AddressDTO toAddressDTO(Address address) {
+        if (address == null) return null;
+        AddressDTO dto = new AddressDTO();
+        dto.setId(address.getId());
+        dto.setFirstName(address.getFirstName());
+        dto.setLastName(address.getLastName());
+        dto.setStreet(address.getStreet());
+        dto.setCity(address.getCity());
+        dto.setState(address.getState());
+        dto.setZipCode(address.getZipCode());
+        dto.setCountry(address.getCountry());
+        dto.setPhone(address.getPhone());
+        dto.setDefault(address.isDefault());
+        return dto;
+    }
+
+    public Address toAddressEntity(AddressDTO dto) {
+        if (dto == null) return null;
+        Address address = new Address();
+        address.setFirstName(dto.getFirstName());
+        address.setLastName(dto.getLastName());
+        address.setStreet(dto.getStreet());
+        address.setCity(dto.getCity());
+        address.setState(dto.getState());
+        address.setZipCode(dto.getZipCode());
+        address.setCountry(dto.getCountry());
+        address.setPhone(dto.getPhone());
+        address.setDefault(dto.isDefault());
+        return address;
+    }
+
+    // --- Product ---
+    public ProductDTO toProductDTO(Product product) {
+        if (product == null) return null;
+        ProductDTO dto = new ProductDTO();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setPrice(product.getPrice());
+        dto.setCategory(product.getCategory());
+        dto.setStock(product.getStock());
+        dto.setImages(product.getImages());
+        dto.setSpecifications(product.getSpecifications());
+        dto.setOccasions(product.getOccasions());
+        dto.setStyles(product.getStyles());
+
+        if (product.getCustomizationOptions() != null) {
+            dto.setCustomizationOptions(product.getCustomizationOptions().stream().map(opt -> {
+                ProductDTO.CustomizationOptionDTO optDto = new ProductDTO.CustomizationOptionDTO();
+                optDto.setType(opt.getType());
+                optDto.setName(opt.getName());
+                optDto.setPriceModifier(opt.getPriceModifier());
+                return optDto;
+            }).collect(Collectors.toList()));
+        }
+        return dto;
+    }
+
+    // --- Cart ---
+    public CartDTO toCartDTO(Cart cart) {
+        if (cart == null) return null;
+        CartDTO dto = new CartDTO();
+        dto.setId(cart.getId());
+        dto.setSubtotal(cart.getSubtotal());
+        dto.setTax(cart.getTax());
+        dto.setShipping(cart.getShipping());
+        dto.setTotal(cart.getTotal());
+        dto.setDiscount(cart.getDiscount());
+        dto.setAppliedCoupon(cart.getAppliedCoupon());
+        dto.setGiftWrap(cart.isGiftWrap());
+
+        if (cart.getItems() != null) {
+            dto.setItems(cart.getItems().stream().map(this::toCartItemDTO).collect(Collectors.toList()));
+        }
+        if (cart.getWishlist() != null) {
+             dto.setWishlist(cart.getWishlist().stream().map(this::toProductDTO).collect(Collectors.toList()));
+        }
+        return dto;
+    }
+
+    public CartItemDTO toCartItemDTO(CartItem item) {
+        if (item == null) return null;
+        CartItemDTO dto = new CartItemDTO();
+        dto.setId(item.getId());
+        dto.setProduct(toProductDTO(item.getProduct()));
+        dto.setQuantity(item.getQuantity());
+        // Price field in CartItemDTO? CartItem entity doesn't have price field explicitly in snippet I saw?
+        // Wait, CartItem snippet didn't show price. But CartItemDTO has it.
+        // Assuming price is calculated or product price.
+        // CartItem snippet has quantity. It doesn't have price.
+        // I will use product price * quantity or just product price.
+        // Usually CartItem has unit price at purchase time, but CartItem entity snippet didn't show it.
+        // Let's use product price.
+        if (item.getProduct() != null) {
+            dto.setPrice(item.getProduct().getPrice());
+        }
+
+        if (item.getOptions() != null) {
+             Map<String, Object> optionsMap = new HashMap<>();
+             optionsMap.put("metal", item.getOptions().getMetal());
+             optionsMap.put("diamond", item.getOptions().getDiamond());
+             optionsMap.put("stoneId", item.getOptions().getStoneId());
+             optionsMap.put("stoneName", item.getOptions().getStoneName());
+             optionsMap.put("customization", item.getOptions().getCustomization());
+             dto.setOptions(optionsMap);
+        }
+        return dto;
+    }
+
+    // --- Order ---
+    public OrderDTO toOrderDTO(Order order) {
+        if (order == null) return null;
+        OrderDTO dto = new OrderDTO();
+        dto.setId(order.getId());
+        dto.setTotal(order.getTotal());
+        dto.setStatus(order.getStatus());
+        dto.setEstimatedDelivery(order.getEstimatedDelivery());
+        dto.setTrackingNumber(order.getTrackingNumber());
+        dto.setPaymentMethod(order.getPaymentMethod());
+        dto.setShippingMethod(order.getShippingMethod());
+        dto.setRazorpayOrderId(order.getRazorpayOrderId());
+
+        if (order.getItems() != null) {
+            dto.setItems(order.getItems().stream().map(this::toOrderItemDTO).collect(Collectors.toList()));
+        }
+
+        try {
+            if (order.getShippingAddress() != null) {
+                dto.setShippingAddress(objectMapper.readValue(order.getShippingAddress(), AddressDTO.class));
+            }
+            if (order.getBillingAddress() != null) {
+                dto.setBillingAddress(objectMapper.readValue(order.getBillingAddress(), AddressDTO.class));
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        return dto;
+    }
+
+    public OrderItemDTO toOrderItemDTO(OrderItem item) {
+        if (item == null) return null;
+        OrderItemDTO dto = new OrderItemDTO();
+        dto.setId(item.getId());
+        dto.setProduct(toProductDTO(item.getProduct()));
+        dto.setQuantity(item.getQuantity());
+        dto.setPrice(item.getPrice());
+
+        // OrderItem also has embedded options.
+        // Need to check OrderItem entity again if it has same structure.
+        // Assuming it has getOptions() returning CartItem.CartItemOptions (as seen in snippet)
+        if (item.getOptions() != null) {
+             Map<String, Object> optionsMap = new HashMap<>();
+             optionsMap.put("metal", item.getOptions().getMetal());
+             optionsMap.put("diamond", item.getOptions().getDiamond());
+             optionsMap.put("stoneId", item.getOptions().getStoneId());
+             optionsMap.put("stoneName", item.getOptions().getStoneName());
+             optionsMap.put("customization", item.getOptions().getCustomization());
+             dto.setOptions(optionsMap);
+        }
+        return dto;
+    }
+
+    // --- Store ---
+    public StoreDTO toStoreDTO(Store store) {
+        if (store == null) return null;
+        StoreDTO dto = new StoreDTO();
+        dto.setId(store.getId());
+        dto.setName(store.getName());
+        dto.setAddress(store.getAddress());
+        dto.setPhone(store.getPhone());
+        dto.setHours(store.getHours());
+        dto.setLat(store.getLat());
+        dto.setLng(store.getLng());
+        return dto;
+    }
+
+    // --- RFQ ---
+    public RFQRequestDTO toRFQRequestDTO(RFQ rfq) {
+        if (rfq == null) return null;
+        RFQRequestDTO dto = new RFQRequestDTO();
+        dto.setId(rfq.getId());
+        dto.setRfqNumber(rfq.getRfqNumber());
+        dto.setUserId(rfq.getUserId() != null ? rfq.getUserId().toString() : null);
+        dto.setEmail(rfq.getEmail());
+        dto.setCompanyName(rfq.getCompanyName());
+        dto.setEstimatedBudget(rfq.getEstimatedBudget());
+        dto.setDeliveryTimeline(rfq.getDeliveryTimeline());
+        dto.setAdditionalNotes(rfq.getAdditionalNotes());
+        dto.setStatus(rfq.getStatus());
+        dto.setExpiresAt(rfq.getExpiresAt());
+
+        if (rfq.getItems() != null) {
+            dto.setItems(rfq.getItems().stream().map(item -> {
+                RFQItemDTO itemDto = new RFQItemDTO();
+                itemDto.setProductId(item.getProductId());
+                itemDto.setQuantity(item.getQuantity());
+                itemDto.setTargetPrice(item.getTargetPrice());
+                itemDto.setDescription(item.getDescription());
+                return itemDto;
+            }).collect(Collectors.toList()));
+        }
+
+        if (rfq.getQuotes() != null) {
+            dto.setQuotes(rfq.getQuotes().stream().map(this::toRFQQuoteDTO).collect(Collectors.toList()));
+        }
+        return dto;
+    }
+
+    public RFQQuoteDTO toRFQQuoteDTO(RFQQuote quote) {
+        if (quote == null) return null;
+        RFQQuoteDTO dto = new RFQQuoteDTO();
+        dto.setPrice(quote.getQuoteAmount());
+        dto.setValidUntil(quote.getValidUntil());
+        dto.setNotes(quote.getNotes());
+        dto.setStatus(quote.isAccepted() ? "ACCEPTED" : "QUOTED");
+        return dto;
+    }
+
+    public RFQ toRFQEntity(RFQRequestDTO dto) {
+        if (dto == null) return null;
+        RFQ rfq = new RFQ();
+        rfq.setId(dto.getId());
+        rfq.setRfqNumber(dto.getRfqNumber());
+        // User handled by service
+        rfq.setEmail(dto.getEmail());
+        rfq.setCompanyName(dto.getCompanyName());
+        rfq.setEstimatedBudget(dto.getEstimatedBudget());
+        rfq.setDeliveryTimeline(dto.getDeliveryTimeline());
+        rfq.setAdditionalNotes(dto.getAdditionalNotes());
+        rfq.setStatus(dto.getStatus());
+        rfq.setExpiresAt(dto.getExpiresAt());
+
+        if (dto.getItems() != null) {
+            rfq.setItems(dto.getItems().stream().map(itemDto -> {
+                RFQItem item = new RFQItem();
+                item.setProductId(itemDto.getProductId());
+                item.setQuantity(itemDto.getQuantity());
+                item.setTargetPrice(itemDto.getTargetPrice());
+                item.setDescription(itemDto.getDescription());
+                item.setRfq(rfq);
+                return item;
+            }).collect(Collectors.toList()));
+        }
+        return rfq;
+    }
+
+    // --- Treasure ---
+    public TreasureChestAccountDTO toTreasureChestAccountDTO(TreasureChestAccount account) {
+        if (account == null) return null;
+        TreasureChestAccountDTO dto = new TreasureChestAccountDTO();
+        dto.setId(account.getId());
+        dto.setPlanName(account.getPlanName());
+        dto.setInstallmentAmount(account.getInstallmentAmount());
+        dto.setInstallmentsPaid(account.getInstallmentsPaid());
+        dto.setTotalInstallments(account.getTotalInstallments());
+        dto.setBalance(account.getCurrentBalance());
+        dto.setStatus(account.getStatus());
+        dto.setStartDate(account.getStartDate());
+        dto.setNextDueDate(account.getNextDueDate());
+        return dto;
+    }
+
+    // --- Certificate ---
+    public CertificateDetailDTO toCertificateDetailDTO(Certificate cert) {
+        if (cert == null) return null;
+        CertificateDetailDTO dto = new CertificateDetailDTO();
+        dto.setId(cert.getId());
+        dto.setReportNumber(cert.getReportNumber());
+        dto.setLab(cert.getLab());
+        dto.setDateIssued(cert.getDateIssued());
+        dto.setProductName(cert.getProductName());
+        dto.setCarat(cert.getCarat());
+        dto.setColor(cert.getColor());
+        dto.setClarity(cert.getClarity());
+        dto.setCut(cert.getCut());
+        dto.setShape(cert.getShape());
+        dto.setImageUrl(cert.getImageUrl());
+        return dto;
+    }
+
+    // --- Email ---
+    public EmailNotificationDTO toEmailNotificationDTO(EmailNotification email) {
+        if (email == null) return null;
+        EmailNotificationDTO dto = new EmailNotificationDTO();
+        dto.setId(email.getId());
+        dto.setType(email.getType());
+        dto.setEmail(email.getEmail());
+        dto.setSubject(email.getSubject());
+        dto.setTemplateName(email.getTemplateName());
+        dto.setData(email.getData());
+        dto.setSentAt(email.getSentAt());
+        dto.setStatus(email.getStatus());
+        return dto;
+    }
+
+    public EmailNotification toEmailNotificationEntity(EmailNotificationDTO dto) {
+        if (dto == null) return null;
+        EmailNotification entity = new EmailNotification();
+        entity.setType(dto.getType());
+        entity.setEmail(dto.getEmail());
+        entity.setSubject(dto.getSubject());
+        entity.setTemplateName(dto.getTemplateName());
+        entity.setData(dto.getData());
+        return entity;
+    }
+
+    public EmailTemplateDTO toEmailTemplateDTO(EmailTemplate template) {
+        if (template == null) return null;
+        EmailTemplateDTO dto = new EmailTemplateDTO();
+        dto.setId(template.getId());
+        dto.setName(template.getName());
+        dto.setSubject(template.getSubject());
+        dto.setHtmlContent(template.getHtmlContent());
+        dto.setPlaceholders(template.getPlaceholders());
+        return dto;
+    }
+
+    // --- Category ---
+    public CategoryDTO toCategoryDTO(Category category) {
+        if (category == null) return null;
+        CategoryDTO dto = new CategoryDTO();
+        dto.setId(category.getId());
+        dto.setName(category.getName());
+        dto.setDisplayName(category.getDisplayName());
+        dto.setImage(category.getImage());
+        if (category.getSubcategories() != null) {
+            dto.setSubcategories(category.getSubcategories().stream()
+                    .map(this::toCategoryDTO)
+                    .collect(Collectors.toList()));
+        }
+        return dto;
+    }
+}
