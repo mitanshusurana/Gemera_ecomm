@@ -83,7 +83,7 @@ import { CommonModule } from "@angular/common";
   `,
 })
 export class WhatsappButtonComponent {
-  @Input() phoneNumber: string = "+91 7976091951";
+  @Input() phoneNumber: string = "917976091951";
   @Input() message: string =
     "Hello! I would like to inquire about your products.";
   @Input() showContactCard: boolean = false;

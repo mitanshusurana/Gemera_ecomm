@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
       <div class="container-luxury section-padding">
         <h1 class="text-4xl font-display font-bold text-diamond-900 mb-8">Terms & Conditions</h1>
         <div class="prose max-w-none text-gray-700">
-            <p>Welcome to Gemara. By accessing or using our website, you agree to be bound by these Terms and Conditions.</p>
+            <p>Welcome to Caratloop. By accessing or using our website, you agree to be bound by these Terms and Conditions.</p>
 
             <h3>1. General Conditions</h3>
             <p>We reserve the right to refuse service to anyone for any reason at any time. You understand that your content (not including credit card information), may be transferred unencrypted and involve transmissions over various networks.</p>

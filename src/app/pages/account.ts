@@ -73,27 +73,27 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             <div class="md:hidden mb-6 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
                <div class="flex gap-2">
                   <button (click)="activeTab.set('profile')"
-                          [class]="activeTab() === 'profile' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          [class]="activeTab() === 'profile' ? 'bg-[#115e59] text-white border-[#115e59]' : 'bg-white text-gray-600 border-gray-200'"
                           class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
                      Profile
                   </button>
                   <button (click)="activeTab.set('orders')"
-                          [class]="activeTab() === 'orders' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          [class]="activeTab() === 'orders' ? 'bg-[#115e59] text-white border-[#115e59]' : 'bg-white text-gray-600 border-gray-200'"
                           class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
                      Orders
                   </button>
                   <button (click)="activeTab.set('addresses')"
-                          [class]="activeTab() === 'addresses' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          [class]="activeTab() === 'addresses' ? 'bg-[#115e59] text-white border-[#115e59]' : 'bg-white text-gray-600 border-gray-200'"
                           class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
                      Addresses
                   </button>
                   <button (click)="activeTab.set('wishlist')"
-                          [class]="activeTab() === 'wishlist' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          [class]="activeTab() === 'wishlist' ? 'bg-[#115e59] text-white border-[#115e59]' : 'bg-white text-gray-600 border-gray-200'"
                           class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
                      Wishlist
                   </button>
                   <button (click)="activeTab.set('settings')"
-                          [class]="activeTab() === 'settings' ? 'bg-[#4f3267] text-white border-[#4f3267]' : 'bg-white text-gray-600 border-gray-200'"
+                          [class]="activeTab() === 'settings' ? 'bg-[#115e59] text-white border-[#115e59]' : 'bg-white text-gray-600 border-gray-200'"
                           class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
                      Settings
                   </button>
@@ -113,7 +113,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <!-- Loyalty Points Summary -->
               <div class="bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl p-6 mb-8 flex justify-between items-center shadow-lg">
                 <div>
-                  <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Gemara Loyalty Points</p>
+                  <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Caratloop Loyalty Points</p>
                   <h3 class="text-3xl font-bold font-display flex items-center gap-2">
                     <span class="text-4xl">💎</span> {{ loyalty().points | number }}
                   </h3>

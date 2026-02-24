@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
         <h1 class="text-4xl font-display font-bold text-diamond-900 mb-8">Privacy Policy</h1>
         <div class="prose max-w-none text-gray-700">
             <p>Last updated: October 26, 2023</p>
-            <p>At Gemara, we take your privacy seriously. This Privacy Policy describes how your personal information is collected, used, and shared when you visit or make a purchase from our website.</p>
+            <p>At Caratloop, we take your privacy seriously. This Privacy Policy describes how your personal information is collected, used, and shared when you visit or make a purchase from our website.</p>
 
             <h3>1. Personal Information We Collect</h3>
             <p>When you visit the Site, we automatically collect certain information about your device, including information about your web browser, IP address, time zone, and some of the cookies that are installed on your device.</p>

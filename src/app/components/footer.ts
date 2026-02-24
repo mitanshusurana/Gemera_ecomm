@@ -18,7 +18,7 @@ import { ToastService } from "../services/toast.service";
       <div class="bg-primary-900 border-b border-primary-800">
           <div class="container-luxury py-8 md:py-12 flex flex-col md:flex-row items-center justify-between gap-6">
              <div class="text-center md:text-left">
-                <h3 class="font-display font-bold text-2xl mb-1">Join the Gemara Family</h3>
+                <h3 class="font-display font-bold text-2xl mb-1">Join the Caratloop Family</h3>
                 <p class="text-primary-200 text-sm">Be the first to know about new collections & exclusive offers.</p>
              </div>
              <div class="flex w-full md:w-auto max-w-md gap-0">
@@ -47,12 +47,12 @@ import { ToastService } from "../services/toast.service";
           <div class="col-span-1">
             <div class="flex items-center gap-2 mb-6">
               <div class="flex flex-col">
-                <span class="font-bold text-2xl font-display tracking-wide">GEMARA</span>
-                <span class="text-[0.6rem] uppercase tracking-[0.2em] text-secondary-500 font-semibold">Fine Jewels</span>
+                <span class="font-bold text-2xl font-display tracking-wide">CARATLOOP</span>
+                <span class="text-[0.6rem] uppercase tracking-[0.2em] text-secondary-500 font-semibold">Modern Jewels</span>
               </div>
             </div>
             <p class="text-sm text-primary-200 mb-6 leading-relaxed">
-              Crafting stories in stone. We bring you ethically sourced, museum-quality gemstones and heritage jewelry designed for the modern connoisseur.
+              Elegance for the everyday. We craft lightweight, premium designer jewelry for the modern corporate lifestyle.
             </p>
             <div class="flex gap-4">
               <a href="#" class="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center hover:bg-secondary-500 transition-colors">
@@ -103,7 +103,7 @@ import { ToastService } from "../services/toast.service";
                </li>
                <li class="flex items-center gap-3 text-sm text-primary-200">
                  <span class="text-secondary-500">✉️</span>
-                 <a href="mailto:support@gemara.com" class="hover:text-white">support@gemara.com</a>
+                 <a href="mailto:support@caratloop.com" class="hover:text-white">support@caratloop.com</a>
                </li>
              </ul>
           </div>
@@ -113,7 +113,7 @@ import { ToastService } from "../services/toast.service";
         <div
           class="border-t border-primary-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-primary-300"
         >
-          <div class="text-center md:text-left">&copy; 2024 Gemara Fine Jewels. All rights reserved.</div>
+          <div class="text-center md:text-left">&copy; 2026 Caratloop Fine Jewels. All rights reserved.</div>
           <div class="flex flex-wrap justify-center gap-6">
             <a routerLink="/privacy" class="hover:text-white transition-colors">Privacy Policy</a>
             <a routerLink="/terms" class="hover:text-white transition-colors">Terms of Service</a>

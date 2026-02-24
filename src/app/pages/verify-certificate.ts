@@ -19,7 +19,7 @@ import { CertificateDetail } from '../core/models';
           </h1>
           <p class="text-gray-600 max-w-2xl mx-auto">
             Enter your report number to verify the authenticity of your gemstone or jewellery.
-            We verify reports from GIA, IGI, and our internal Gemara Authenticity Certificates.
+            We verify reports from GIA, IGI, and our internal Caratloop Authenticity Certificates.
           </p>
         </div>
       </div>
@@ -117,7 +117,7 @@ import { CertificateDetail } from '../core/models';
 
             <div class="mt-8 pt-6 border-t border-gray-100 text-center">
               <p class="text-sm text-gray-500">
-                This verification is provided by Gemara Fine Jewels in partnership with {{ result()?.lab }}.
+                This verification is provided by Caratloop Fine Jewels in partnership with {{ result()?.lab }}.
               </p>
             </div>
           </div>

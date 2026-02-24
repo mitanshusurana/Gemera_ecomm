@@ -4,31 +4,32 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // CaratLane-inspired Palette
+        // Caratloop Modern Corporate Palette (Emerald & Gold)
         primary: {
-            50: "#f5f3f9",
-            100: "#ebe4f1",
-            200: "#d9cbe3",
-            300: "#bfa4cc",
-            400: "#a378b0",
-            500: "#865394",
-            600: "#6d3e7a",
-            700: "#593063",
-            800: "#4f3267", // CaratLane Purple (Base)
-            900: "#3d264d",
-            950: "#271633",
+            50: "#f0fdf9",
+            100: "#ccfbf1",
+            200: "#99f6e4",
+            300: "#5eead4",
+            400: "#2dd4bf",
+            500: "#14b8a6",
+            600: "#0d9488",
+            700: "#0f766e",
+            800: "#115e59", // Emerald Base
+            900: "#134e4a",
+            950: "#042f2e",
         },
         secondary: {
-            50: "#fff9f0",
-            100: "#fff0db",
-            200: "#ffddb3",
-            300: "#ffc480",
-            400: "#ff9f4d",
-            500: "#ff7f1a",
-            600: "#e65c00",
-            700: "#b34700",
-            800: "#8c3800", // Darker accent
-            900: "#662900",
+            50: "#fffbeb",
+            100: "#fef3c7",
+            200: "#fde68a",
+            300: "#fcd34d",
+            400: "#fbbf24",
+            500: "#f59e0b",
+            600: "#d97706",
+            700: "#b45309", // Gold/Bronze Accent
+            800: "#92400e",
+            900: "#78350f",
+            950: "#451a03",
         },
         // Existing Luxury palette (Retained for compatibility)
         gold: {

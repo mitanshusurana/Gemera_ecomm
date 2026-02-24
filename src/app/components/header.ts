@@ -24,7 +24,7 @@ import { APP_CATEGORIES } from '../core/constants';
           <div class="flex gap-6 flex-shrink-0">
             <span class="flex items-center gap-1.5 font-medium">
               <svg class="w-3.5 h-3.5 text-secondary-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
-              Gemara Treasure Plan
+              Caratloop Treasure Plan
             </span>
             <span class="hidden sm:inline opacity-80">|</span>
             <span class="inline font-medium text-secondary-100">Free Shipping on Orders Over $500</span>
@@ -71,8 +71,8 @@ import { APP_CATEGORIES } from '../core/constants';
 
             <!-- Logo -->
             <a routerLink="/" class="flex flex-col items-center leading-none">
-              <span class="text-2xl font-display font-bold text-primary-800 tracking-wide">GEMARA</span>
-              <span class="text-[0.6rem] uppercase tracking-[0.2em] text-secondary-600 font-semibold">Fine Jewels</span>
+              <span class="text-2xl font-display font-bold text-primary-800 tracking-wide">CARATLOOP</span>
+              <span class="text-[0.6rem] uppercase tracking-[0.2em] text-secondary-600 font-semibold">Modern Jewels</span>
             </a>
           </div>
 

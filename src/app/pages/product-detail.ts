@@ -19,15 +19,15 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
-    <div class="min-h-screen bg-white font-sans text-[#4f3267]">
+    <div class="min-h-screen bg-white font-sans text-primary-900">
 
       <!-- Breadcrumb -->
       <nav class="bg-white border-b border-gray-100">
         <div class="container mx-auto px-4 lg:px-12 py-3">
           <div class="flex items-center gap-2 text-xs text-gray-500">
-            <a routerLink="/" class="hover:text-[#deaa6f] transition-colors">Home</a>
+            <a routerLink="/" class="hover:text-secondary-600 transition-colors">Home</a>
             <span>/</span>
-            <a routerLink="/products" class="hover:text-[#deaa6f] transition-colors">Products</a>
+            <a routerLink="/products" class="hover:text-secondary-600 transition-colors">Products</a>
             <span>/</span>
             <span class="text-gray-900 font-medium truncate max-w-[200px]">{{ product()?.name }}</span>
           </div>
@@ -113,7 +113,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
             <!-- PRODUCT DETAILS (Moved Below Images) -->
             <div class="border-t border-gray-200 pt-8">
-               <h3 class="text-xl font-bold text-[#4f3267] mb-6 font-serif">Product Details</h3>
+               <h3 class="text-xl font-bold text-primary-800 mb-6 font-serif">Product Details</h3>
 
                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
 
@@ -204,7 +204,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                       </div>
                       <span class="text-xs text-gray-400">SKU: {{ product()?.specifications?.productDetails?.sku || product()?.sku }}</span>
                    </div>
-                   <h1 class="text-2xl font-serif font-bold text-[#4f3267] leading-snug">{{ product()?.name }}</h1>
+                   <h1 class="text-2xl font-serif font-bold text-primary-900 leading-snug">{{ product()?.name }}</h1>
                 </div>
 
                 <!-- Price Section -->
@@ -216,7 +216,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                    <p class="text-xs text-green-700 font-medium mb-3">Inclusive of all taxes</p>
 
                    <!-- Price Breakup Toggle -->
-                   <button (click)="togglePriceBreakup()" class="text-xs font-bold text-[#deaa6f] hover:text-[#c59358] flex items-center gap-1 uppercase tracking-wide">
+                   <button (click)="togglePriceBreakup()" class="text-xs font-bold text-secondary-600 hover:text-secondary-800 flex items-center gap-1 uppercase tracking-wide">
                       View Price Breakup <span class="transition-transform" [class.rotate-180]="showPriceBreakup()">▼</span>
                    </button>
 
@@ -238,9 +238,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                          <button *ngFor="let opt of getOptions('metal')"
                                  (click)="selectedMetal.set(opt)"
                                  class="px-4 py-2 rounded-full border text-sm font-medium transition-all"
-                                 [class.bg-[#4f3267]]="selectedMetal()?.id === opt.id"
+                                 [class.bg-primary-800]="selectedMetal()?.id === opt.id"
                                  [class.text-white]="selectedMetal()?.id === opt.id"
-                                 [class.border-[#4f3267]]="selectedMetal()?.id === opt.id"
+                                 [class.border-primary-800]="selectedMetal()?.id === opt.id"
                                  [class.bg-white]="selectedMetal()?.id !== opt.id"
                                  [class.text-gray-700]="selectedMetal()?.id !== opt.id"
                                  [class.border-gray-200]="selectedMetal()?.id !== opt.id">
@@ -253,15 +253,15 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                    <div *ngIf="hasOption('diamond')">
                       <div class="flex justify-between mb-2">
                          <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Diamond Quality</span>
-                         <button class="text-xs text-[#deaa6f] underline">Guide</button>
+                         <button class="text-xs text-secondary-600 underline">Guide</button>
                       </div>
                       <div class="flex flex-wrap gap-2">
                          <button *ngFor="let opt of getOptions('diamond')"
                                  (click)="selectedDiamondQuality.set(opt)"
                                  class="flex-1 px-3 py-2 rounded border text-center text-xs font-medium transition-all"
-                                 [class.border-[#4f3267]]="selectedDiamondQuality()?.id === opt.id"
-                                 [class.text-[#4f3267]]="selectedDiamondQuality()?.id === opt.id"
-                                 [class.bg-[#fbf5ff]]="selectedDiamondQuality()?.id === opt.id"
+                                 [class.border-primary-800]="selectedDiamondQuality()?.id === opt.id"
+                                 [class.text-primary-800]="selectedDiamondQuality()?.id === opt.id"
+                                 [class.bg-primary-50]="selectedDiamondQuality()?.id === opt.id"
                                  [class.border-gray-200]="selectedDiamondQuality()?.id !== opt.id"
                                  [class.text-gray-600]="selectedDiamondQuality()?.id !== opt.id">
                             {{ opt.name }}
@@ -273,9 +273,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                    <div *ngIf="isRingCategory()">
                       <div class="flex justify-between mb-2">
                          <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Ring Size</span>
-                         <button (click)="sizeGuideOpen.set(true)" class="text-xs text-[#deaa6f] underline">Size Guide</button>
+                         <button (click)="sizeGuideOpen.set(true)" class="text-xs text-secondary-600 underline">Size Guide</button>
                       </div>
-                      <select [ngModel]="selectedSize()" (ngModelChange)="selectedSize.set($event)" class="w-full p-3 border border-gray-200 rounded-lg bg-white text-sm focus:border-[#4f3267] outline-none">
+                      <select [ngModel]="selectedSize()" (ngModelChange)="selectedSize.set($event)" class="w-full p-3 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-800 outline-none">
                          <option [ngValue]="null">Select Size</option>
                          <option *ngFor="let i of [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]" [ngValue]="i">Size {{ i }}</option>
                       </select>
@@ -287,8 +287,8 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                    <div class="relative">
                       <input type="text" [ngModel]="pincode()" (ngModelChange)="pincode.set($event)"
                              placeholder="Enter Pincode for Delivery"
-                             class="w-full pl-4 pr-20 py-3 border border-gray-200 rounded-lg text-sm focus:border-[#4f3267] outline-none">
-                      <button (click)="checkDelivery()" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[#4f3267] px-3 py-1.5 hover:bg-gray-50 rounded">
+                             class="w-full pl-4 pr-20 py-3 border border-gray-200 rounded-lg text-sm focus:border-primary-800 outline-none">
+                      <button (click)="checkDelivery()" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-primary-800 px-3 py-1.5 hover:bg-gray-50 rounded">
                          CHECK
                       </button>
                    </div>
@@ -302,25 +302,25 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                    <div class="flex gap-3">
                        <button (click)="handleAddToCart()"
                                [disabled]="product()?.stock === 0"
-                               class="flex-1 bg-gradient-to-r from-[#4f3267] to-[#6d448e] text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                               class="flex-1 bg-gradient-to-r from-primary-800 to-primary-600 text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                           {{ product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
                        </button>
                        <button (click)="handleBuyNow()"
                                [disabled]="product()?.stock === 0"
-                               class="flex-1 bg-white border-2 border-[#4f3267] text-[#4f3267] font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                               class="flex-1 bg-white border-2 border-primary-800 text-primary-800 font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                           Buy Now
                        </button>
                    </div>
                    <button (click)="openTryAtHome()"
-                           class="w-full border border-[#deaa6f] text-[#4f3267] font-bold py-3 rounded-lg hover:bg-[#fff9f0] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2">
+                           class="w-full border border-secondary-600 text-primary-800 font-bold py-3 rounded-lg hover:bg-secondary-50 transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2">
                       <span>🏠</span> Book Try at Home
                    </button>
                 </div>
 
                 <div class="mt-6 pt-4 border-t border-gray-100 flex justify-center gap-6 text-xs font-medium text-gray-500">
-                   <button class="hover:text-[#4f3267]">Contact Us</button>
+                   <a routerLink="/contact" class="hover:text-primary-800 transition-colors">Contact Us</a>
                    <span>|</span>
-                   <button class="hover:text-[#4f3267]">Chat on WhatsApp</button>
+                   <button (click)="openWhatsApp()" class="hover:text-primary-800 transition-colors">Chat on WhatsApp</button>
                 </div>
 
              </div>
@@ -332,17 +332,17 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
       <!-- Modals -->
       <app-size-guide-modal [isOpen]="sizeGuideOpen()" (close)="sizeGuideOpen.set(false)"></app-size-guide-modal>
 
-      <!-- Try At Home Modal (Same as before) -->
+      <!-- Try At Home Modal -->
       <div *ngIf="tryAtHomeOpen()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
          <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
             <button (click)="tryAtHomeOpen.set(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl z-10">&times;</button>
-            <div class="bg-gradient-to-r from-[#4f3267] to-[#362247] text-white p-6 text-center">
+            <div class="bg-gradient-to-r from-primary-800 to-primary-950 text-white p-6 text-center">
                <h3 class="font-serif font-bold text-xl">Book Try at Home</h3>
             </div>
             <div class="p-6 space-y-4">
                <p class="text-sm text-gray-600 text-center mb-4">Our consultant will bring this jewellery to your doorstep.</p>
                <input type="date" class="w-full p-2 border rounded">
-               <button (click)="confirmTryAtHome()" class="w-full bg-[#4f3267] text-white py-3 rounded font-bold">Confirm</button>
+               <button (click)="confirmTryAtHome()" class="w-full bg-primary-800 text-white py-3 rounded font-bold">Confirm</button>
             </div>
          </div>
       </div>
@@ -457,6 +457,14 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
             this.router.navigate(['/cart']);
         });
     }
+  }
+
+  openWhatsApp(): void {
+    const p = this.product();
+    if (!p) return;
+    const text = `Hi, I am interested in ${p.name} (SKU: ${p.specifications?.productDetails?.sku || p.sku}). Can you help me?`;
+    const url = `https://wa.me/917976091951?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   }
 
   togglePriceBreakup() { this.showPriceBreakup.set(!this.showPriceBreakup()); }

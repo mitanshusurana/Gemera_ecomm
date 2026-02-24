@@ -31,131 +31,140 @@ interface CollectionUI {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Hero Slider (Mocked) -->
-    <section class="relative w-full h-[500px] md:h-[600px] bg-gradient-to-b from-primary-50 to-white overflow-hidden flex items-center">
-       <div class="container-luxury grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full px-6 md:px-12 pt-20 md:pt-0">
-          <div class="z-10 animate-fade-in-up text-center md:text-left">
-            <h2 class="text-sm font-bold tracking-[0.2em] text-secondary-600 mb-4 uppercase">New Collection</h2>
-            <h1 class="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-primary-900 mb-6 leading-tight">
-              Radiance of <br/> <span class="text-primary-600">Rare Gemstones</span>
-            </h1>
-            <p class="text-gray-600 text-lg mb-8 max-w-md mx-auto md:mx-0 leading-relaxed">
-               Explore our latest arrival of certified Sapphires, Rubies and Emeralds set in 18K Gold.
-            </p>
-            <a routerLink="/products" class="inline-block btn-primary text-lg px-10 py-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-              Shop Now
-            </a>
-          </div>
-          <div class="relative h-full w-full flex items-center justify-center">
-             <!-- Placeholder for Hero Image -->
-             <div class="w-72 h-72 md:w-[450px] md:h-[450px] bg-gradient-to-br from-secondary-100 to-primary-50 rounded-full flex items-center justify-center relative animate-float shadow-2xl border-4 border-white">
-                <span class="text-8xl md:text-9xl filter drop-shadow-xl">💍</span>
+    <!-- Hero Slider (Modern Corporate) -->
+    <section class="relative w-full h-[550px] md:h-[650px] bg-gradient-to-br from-primary-950 to-primary-900 overflow-hidden flex items-center text-white">
+       <!-- Abstract Background Shapes -->
+       <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+       <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-secondary-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"></div>
 
-                <!-- Decorative Elements -->
-                <div class="absolute -top-8 -right-8 w-24 h-24 bg-secondary-200 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-blob"></div>
-                <div class="absolute -bottom-12 -left-8 w-32 h-32 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-60 animate-blob animation-delay-2000"></div>
+       <div class="container-luxury grid grid-cols-1 md:grid-cols-2 gap-12 items-center h-full px-6 md:px-12 relative z-10">
+          <div class="animate-fade-in-up text-center md:text-left">
+            <span class="inline-block py-1 px-3 border border-secondary-400 text-secondary-300 text-xs font-bold tracking-[0.2em] uppercase mb-6 rounded-full">New Season Collection</span>
+            <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
+              Elevate Your <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-secondary-200 to-secondary-500">Everyday</span>
+            </h1>
+            <p class="text-primary-100 text-lg mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed font-light">
+               Lightweight, premium designer jewelry crafted for the modern professional. Seamlessly transition from the boardroom to the ballroom.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+               <a routerLink="/products" class="btn-primary bg-secondary-500 hover:bg-secondary-600 border-none text-white px-8 py-4 text-lg">
+                 Shop Collection
+               </a>
+               <a routerLink="/treasure" class="px-8 py-4 rounded-lg border border-white/30 hover:bg-white/10 transition-colors font-semibold text-white text-lg">
+                 Start Treasure Plan
+               </a>
+            </div>
+          </div>
+          <div class="relative h-full w-full flex items-center justify-center hidden md:flex">
+             <!-- Hero Image Placeholder -->
+             <div class="w-[450px] h-[550px] bg-gray-200 rounded-t-[10rem] rounded-b-3xl relative overflow-hidden shadow-2xl border-4 border-white/10">
+                <img src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover" alt="Modern Corporate Jewelry">
+                <div class="absolute inset-0 bg-gradient-to-t from-primary-950/80 to-transparent"></div>
+                <div class="absolute bottom-8 left-8 text-white">
+                   <p class="text-sm uppercase tracking-widest mb-1 text-secondary-400">Featured</p>
+                   <p class="font-display text-2xl">The Executive Edit</p>
+                </div>
              </div>
           </div>
        </div>
     </section>
 
-    <!-- Shop By Category (Circular) -->
-    <section class="py-12 md:py-20 bg-white">
-      <div class="container-luxury px-4 md:px-6">
-        <h2 class="text-2xl md:text-4xl font-display font-bold text-primary-900 mb-8 md:mb-12 text-center">Shop by Category</h2>
+    <!-- Shop By Occasion (New Section) -->
+    <section class="py-20 bg-white">
+       <div class="container-luxury px-6">
+          <div class="text-center mb-16">
+             <h2 class="text-3xl md:text-4xl font-display font-bold text-primary-900 mb-4">Shop By Occasion</h2>
+             <p class="text-gray-500">Curated edits for every moment of your life</p>
+          </div>
 
-        <!-- Mobile: Horizontal Scroll | Desktop: Grid/Flex -->
-        <div class="flex overflow-x-auto md:flex-wrap md:justify-center gap-6 md:gap-16 pb-6 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar snap-x snap-mandatory">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+             <!-- Card 1 -->
+             <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1551854838-234955b23e6b?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                <div class="absolute bottom-6 left-6 text-white">
+                   <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
+                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                </div>
+             </a>
+             <!-- Card 2 -->
+             <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1617038224558-28759b177e40?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                <div class="absolute bottom-6 left-6 text-white">
+                   <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
+                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                </div>
+             </a>
+             <!-- Card 3 -->
+             <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1549411986-17b5f257a315?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                <div class="absolute bottom-6 left-6 text-white">
+                   <h3 class="text-xl font-bold font-display mb-1">Party Wear</h3>
+                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                </div>
+             </a>
+             <!-- Card 4 -->
+             <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
+                <img src="https://images.unsplash.com/photo-1512163143273-bde0e3cc5409?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                <div class="absolute bottom-6 left-6 text-white">
+                   <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>
+                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                </div>
+             </a>
+          </div>
+       </div>
+    </section>
+
+    <!-- Shop By Category (Modern Grid) -->
+    <section class="py-20 bg-gray-50">
+      <div class="container-luxury px-6">
+        <h2 class="text-3xl md:text-4xl font-display font-bold text-primary-900 mb-12 text-center">Shop by Category</h2>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
            <a *ngFor="let cat of collections()" routerLink="/products" [queryParams]="{category: cat.name}"
-              class="group flex flex-col items-center gap-3 md:gap-4 cursor-pointer flex-shrink-0 snap-center w-24 md:w-36">
-              <div class="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border border-gray-200 flex items-center justify-center text-3xl md:text-5xl group-hover:border-secondary-500 group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 relative overflow-hidden">
-                 <div class="absolute inset-0 bg-secondary-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                 <span class="relative z-10">{{ cat.icon }}</span>
+              class="group bg-white p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col items-center justify-center gap-4 text-center cursor-pointer hover:-translate-y-1">
+              <div class="w-16 h-16 rounded-full bg-primary-50 text-primary-800 flex items-center justify-center text-3xl group-hover:bg-primary-800 group-hover:text-white transition-colors duration-300">
+                 {{ cat.icon }}
               </div>
-              <span class="font-semibold text-gray-700 group-hover:text-primary-800 transition-colors text-center text-xs md:text-base whitespace-nowrap">{{ cat.title }}</span>
+              <span class="font-bold text-gray-800 group-hover:text-primary-800 text-sm md:text-base">{{ cat.title }}</span>
            </a>
         </div>
       </div>
     </section>
 
-    <!-- Treasure Plan Banner -->
-    <section class="py-16 bg-primary-900 text-white overflow-hidden relative">
-       <!-- Background Pattern -->
-       <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
-
-       <div class="container-luxury relative z-10 flex flex-col md:flex-row items-center justify-between gap-12 px-6">
-          <div class="flex-1 text-center md:text-left">
-             <div class="inline-block px-4 py-1.5 bg-secondary-500 text-white text-xs font-bold tracking-widest uppercase rounded-full mb-6">Smart Savings</div>
-             <h2 class="text-3xl md:text-5xl font-display font-bold mb-6 leading-tight">Gemara <span class="text-secondary-400">Treasure Plan</span></h2>
-             <p class="text-primary-100 text-lg mb-8 max-w-xl leading-relaxed">
-               Plan your jewellery purchase smartly. Pay for 9 months and get <span class="text-white font-bold">100% off</span> on the 10th month installment by us.
-             </p>
-             <a routerLink="/treasure" class="inline-block bg-white text-primary-900 font-bold px-8 py-4 rounded-full hover:bg-secondary-50 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-               Start Saving Now
-             </a>
-          </div>
-          <div class="flex-1 flex justify-center">
-             <div class="w-72 h-48 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 flex flex-col items-center justify-center p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500 shadow-2xl relative">
-                <div class="absolute -top-4 -right-4 bg-secondary-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">POPULAR</div>
-                <span class="text-6xl mb-4">💎</span>
-                <span class="font-display font-bold text-2xl">Get 1 Month FREE</span>
-             </div>
-          </div>
-       </div>
-    </section>
-
-    <!-- Try at Home Banner -->
-    <section class="py-16 bg-secondary-50">
-       <div class="container-luxury flex flex-col md:flex-row items-center justify-between gap-8 bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100">
-          <div class="flex-1">
-             <h2 class="font-display font-bold text-3xl text-gray-900 mb-4">Try at Home</h2>
-             <p class="text-gray-600 mb-6 text-lg">Don't just look, feel the sparkle. Book a free appointment and try our designs at your doorstep.</p>
-             <ul class="space-y-3 mb-8">
-                <li class="flex items-center gap-2 text-gray-700">
-                   <span class="text-green-500 text-xl">✓</span> No obligation to buy
-                </li>
-                <li class="flex items-center gap-2 text-gray-700">
-                   <span class="text-green-500 text-xl">✓</span> 100% Safe & Sanitized
-                </li>
-             </ul>
-             <a routerLink="/products" class="btn-primary">Browse Designs</a>
-          </div>
-          <div class="flex-1 flex justify-center">
-             <div class="text-9xl">🏠💍</div>
-          </div>
-       </div>
-    </section>
-
     <!-- Featured Collections -->
-    <section class="py-20 bg-gray-50">
+    <section class="py-20 bg-white">
       <div class="container-luxury">
-        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4 px-6">
             <div>
-                <h2 class="text-3xl md:text-5xl font-display font-bold text-primary-900 mb-4">
-                  Trending Now
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-primary-900 mb-2">
+                  Best Sellers
                 </h2>
-                <p class="text-lg text-gray-600">
-                  Discover exceptional pieces handpicked by our curators
+                <p class="text-gray-500">
+                  Pieces loved by our community
                 </p>
             </div>
-            <a routerLink="/products" class="text-primary-700 font-bold hover:text-primary-900 flex items-center gap-2 group">
-                View All
+            <a routerLink="/products" class="text-primary-800 font-bold hover:text-primary-600 flex items-center gap-2 group text-sm uppercase tracking-wider">
+                View All Products
                 <span class="group-hover:translate-x-1 transition-transform">→</span>
             </a>
         </div>
 
         <!-- Featured Items Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-6">
           <a
             *ngFor="let product of featuredProducts()"
             [routerLink]="['/products', product.id]"
-            class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 block cursor-pointer border border-gray-100"
+            class="group bg-white rounded-none overflow-hidden hover:shadow-luxury transition-all duration-300 block cursor-pointer"
           >
             <!-- Image Container -->
             <div
               class="relative overflow-hidden aspect-[4/5] bg-gray-100"
             >
-              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" [alt]="product.name">
+              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" [alt]="product.name">
               <div
                 *ngIf="!product.imageUrl && !product.images?.[0]"
                 class="w-full h-full flex items-center justify-center text-5xl bg-gray-50"
@@ -163,66 +172,24 @@ interface CollectionUI {
                 {{ getProductEmoji(product.category) }}
               </div>
 
-              <!-- Badge -->
-              <div *ngIf="getBadge(product)" class="absolute top-3 left-3">
-                <span
-                  class="inline-block px-2 py-1 bg-primary-900 text-white text-[10px] font-bold tracking-widest uppercase rounded"
-                >
-                  {{ getBadge(product) }}
-                </span>
-              </div>
-
-              <!-- Wishlist -->
-              <button
-                (click)="handleWishlist($event, product.id)"
-                class="absolute top-3 right-3 w-8 h-8 bg-white hover:bg-secondary-500 hover:text-white rounded-full flex items-center justify-center transition-all shadow-md opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  ></path>
-                </svg>
-              </button>
-
               <!-- Quick Add Overlay -->
               <button
                 (click)="handleAddToCart($event, product.id)"
-                class="absolute bottom-4 left-4 right-4 bg-white/90 hover:bg-primary-900 hover:text-white text-primary-900 font-bold py-3 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 text-sm backdrop-blur-sm"
+                class="absolute bottom-0 left-0 w-full bg-primary-900 text-white font-bold py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-sm uppercase tracking-widest"
               >
                 Add to Cart
               </button>
             </div>
 
             <!-- Product Info -->
-            <div class="p-5">
-              <div class="flex justify-between items-start mb-2">
-                 <p class="text-[10px] text-secondary-600 font-bold uppercase tracking-widest">
-                    {{ product.category }}
-                 </p>
-                 <div class="flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-100" *ngIf="product.rating">
-                    <span class="text-[10px] font-bold text-green-700">{{ product.rating }} ★</span>
-                 </div>
-              </div>
-
-              <h3 class="font-semibold text-gray-900 text-base mb-2 line-clamp-1 group-hover:text-primary-700 transition-colors">
+            <div class="pt-4 pb-2">
+              <h3 class="font-medium text-gray-900 text-sm mb-1 line-clamp-1 group-hover:text-primary-700 transition-colors">
                 {{ product.name }}
               </h3>
 
-              <div class="flex items-baseline gap-2">
-                <span class="text-xl font-bold text-gray-900">{{ product.price | currencyConvert }}</span>
-                <span
-                  *ngIf="product.originalPrice"
-                  class="text-xs text-gray-400 line-through"
-                  >{{ product.originalPrice | currencyConvert }}</span
-                >
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-primary-900">{{ product.price | currencyConvert }}</span>
+                <span *ngIf="product.originalPrice" class="text-xs text-gray-400 line-through">{{ product.originalPrice | currencyConvert }}</span>
               </div>
             </div>
           </a>
@@ -230,25 +197,103 @@ interface CollectionUI {
       </div>
     </section>
 
+    <!-- Client Diaries (Testimonials) -->
+    <section class="py-24 bg-primary-900 text-white overflow-hidden relative">
+      <!-- Decor -->
+      <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+         <div class="absolute top-10 left-10 text-9xl">❝</div>
+         <div class="absolute bottom-10 right-10 text-9xl rotate-180">❝</div>
+      </div>
+
+      <div class="container-luxury px-6 relative z-10">
+         <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-5xl font-display font-bold mb-4">Client Diaries</h2>
+            <p class="text-primary-200">Stories of sparkle from our cherished customers</p>
+         </div>
+
+         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Testimonial 1 -->
+            <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
+               <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
+               <p class="text-lg leading-relaxed mb-6 font-light">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
+               <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">S</div>
+                  <div>
+                     <h4 class="font-bold text-white">Sneha Kapoor</h4>
+                     <p class="text-xs text-primary-300 uppercase tracking-wider">Marketing Head</p>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Testimonial 2 -->
+            <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
+               <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
+               <p class="text-lg leading-relaxed mb-6 font-light">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
+               <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">A</div>
+                  <div>
+                     <h4 class="font-bold text-white">Ankit Sharma</h4>
+                     <p class="text-xs text-primary-300 uppercase tracking-wider">Entrepreneur</p>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Testimonial 3 -->
+            <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
+               <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
+               <p class="text-lg leading-relaxed mb-6 font-light">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
+               <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">P</div>
+                  <div>
+                     <h4 class="font-bold text-white">Priya Menon</h4>
+                     <p class="text-xs text-primary-300 uppercase tracking-wider">Doctor</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+    </section>
+
+    <!-- Treasure Plan Banner (Compact) -->
+    <section class="py-20 bg-secondary-50">
+       <div class="container-luxury flex flex-col md:flex-row items-center justify-between gap-12 px-6">
+          <div class="flex-1">
+             <span class="text-secondary-600 font-bold uppercase tracking-widest text-xs mb-2 block">Smart Investment</span>
+             <h2 class="text-3xl md:text-5xl font-display font-bold text-primary-900 mb-6">Caratloop <span class="text-secondary-600">Treasure Plan</span></h2>
+             <p class="text-gray-600 text-lg mb-8 max-w-xl">
+               The smartest way to buy jewellery. Pay for 10 months, and we pay the 11th installment for you.
+             </p>
+             <div class="flex gap-4">
+                <a routerLink="/treasure" class="btn-primary">Learn More</a>
+             </div>
+          </div>
+          <div class="flex-1 flex justify-center">
+             <div class="relative w-64 h-64 md:w-80 md:h-80 bg-white rounded-full flex items-center justify-center shadow-2xl border-8 border-white">
+                <span class="text-8xl">💎</span>
+                <div class="absolute bottom-4 bg-primary-900 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg">10 + 1 Plan</div>
+             </div>
+          </div>
+       </div>
+    </section>
+
     <!-- Instagram Feed (Re-styled) -->
-    <section class="py-20 bg-white">
-      <div class="container-luxury text-center">
-        <h2 class="text-3xl font-display font-bold text-primary-900 mb-2">@GemaraJewels</h2>
+    <section class="py-20 bg-white border-t border-gray-100">
+      <div class="container-luxury text-center px-6">
+        <h2 class="text-2xl font-display font-bold text-primary-900 mb-2">@CaratloopJewels</h2>
         <p class="text-gray-500 mb-10">Follow us on Instagram for daily inspiration</p>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-           <!-- ... (Keep existing simple placeholders but clean up if needed) -->
            <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-rose-50/50">💍</div>
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-rose-50/50 group-hover:scale-110 transition-transform duration-500">💍</div>
            </div>
            <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-blue-50/50">💎</div>
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-blue-50/50 group-hover:scale-110 transition-transform duration-500">💎</div>
            </div>
            <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-green-50/50">🕉️</div>
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-green-50/50 group-hover:scale-110 transition-transform duration-500">✨</div>
            </div>
            <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-yellow-50/50">👑</div>
+              <div class="w-full h-full flex items-center justify-center text-4xl bg-yellow-50/50 group-hover:scale-110 transition-transform duration-500">👑</div>
            </div>
         </div>
       </div>
@@ -283,8 +328,8 @@ export class HomeComponent implements OnInit {
 
   ngOnInit() {
     this.seoService.updateTags({
-      title: 'Gemara | Curated Heritage Gemstones & Jewelry',
-      description: 'Discover museum-quality loose stones, hand-carved idols, and heirloom jewelry collections. Certified authentic and ethically sourced.'
+      title: 'Caratloop | Modern Fine Jewelry for the Corporate Age',
+      description: 'Discover lightweight, premium designer jewelry crafted for the modern professional. Shop office wear, daily wear, and gifts. Certified Authenticity.'
     });
 
     this.productService.getProducts(0, 8).subscribe(res => {
@@ -323,6 +368,9 @@ export class HomeComponent implements OnInit {
     if (normalized.includes('gemstone')) return "🔮";
     if (normalized.includes('idol')) return "🕉️";
     if (normalized.includes('metal') || normalized.includes('gold')) return "🏆";
+    if (normalized.includes('earring')) return "👂";
+    if (normalized.includes('pendant')) return "📿";
+    if (normalized.includes('bracelet')) return "💫";
 
     return emojiMap[category] || "✦";
   }

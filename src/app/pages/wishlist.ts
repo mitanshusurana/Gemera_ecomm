@@ -113,7 +113,7 @@ export class WishlistComponent implements OnInit {
   quickViewProduct = signal<ProductDetail | null>(null);
 
   ngOnInit(): void {
-    this.titleService.setTitle('My Wishlist | Gemara');
+    this.titleService.setTitle('My Wishlist | Caratloop');
   }
 
   handleRemove(event: Event, productId: string): void {
