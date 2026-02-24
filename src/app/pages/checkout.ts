@@ -741,9 +741,13 @@ export class CheckoutComponent implements OnInit {
   }
 
   handlePaymentSuccess(response: Razorpay.PaymentSuccessResponse) {
+    // Sanitize address data to match Backend DTO (exclude email)
+    const { email, ...shippingAddr } = this.shippingData;
+    const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
+
     const orderData = {
-      shippingAddress: this.shippingData,
-      billingAddress: this.billingSameAsShipping ? this.shippingData : {},
+      shippingAddress: shippingAddr,
+      billingAddress: billingAddr,
       paymentMethod: "RAZORPAY",
       shippingMethod: "EXPRESS",
       items: this.cartItems(),
