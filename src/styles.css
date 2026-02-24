@@ -1,8 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
+@plugin "@tailwindcss/typography";
 
 /* Root Variables */
 :root {
@@ -98,10 +98,10 @@ p {
 .badge {
   @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
 }
-.badge-gold { @apply badge bg-gold-100 text-gold-800; }
-.badge-emerald { @apply badge bg-emerald-100 text-emerald-800; }
-.badge-sapphire { @apply badge bg-sapphire-100 text-sapphire-800; }
-.badge-rose { @apply badge bg-rose-100 text-rose-800; }
+.badge-gold { @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gold-100 text-gold-800; }
+.badge-emerald { @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800; }
+.badge-sapphire { @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-sapphire-100 text-sapphire-800; }
+.badge-rose { @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-rose-100 text-rose-800; }
 
 /* Loading & Animation */
 .skeleton {

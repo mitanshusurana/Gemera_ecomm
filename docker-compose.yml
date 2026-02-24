@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jewelry-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: jewelry_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jewelry-backend
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/jewelry_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    container_name: jewelry-frontend
+    restart: always
+    environment:
+      API_URL: http://localhost:8080/api/v1
+      RAZORPAY_KEY: rzp_test_S5goGHXLEuP6hP
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+  admin:
+    build:
+      context: .
+      dockerfile: admin.Dockerfile
+    container_name: jewelry-admin
+    restart: always
+    environment:
+      API_URL: http://localhost:8080/api/v1
+    ports:
+      - "4300:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

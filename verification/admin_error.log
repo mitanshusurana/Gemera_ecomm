@@ -1,3 +1,0 @@
-Verification failed: Page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4300/login
-Call log:
-  - navigating to "http://localhost:4300/login", waiting until "load"
