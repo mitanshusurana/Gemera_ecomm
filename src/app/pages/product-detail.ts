@@ -85,8 +85,13 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
             <!-- Image Gallery (Stacked/Grid) -->
             <div class="flex flex-col gap-4">
-              <!-- Main Image -->
-               <div class="relative w-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group cursor-zoom-in h-[500px] flex items-center justify-center">
+              <!-- Video Player -->
+              <div *ngIf="product()?.videoUrl" class="w-full bg-black rounded-lg overflow-hidden border border-gray-100 h-[500px]">
+                 <video [src]="product()?.videoUrl" controls class="w-full h-full object-contain"></video>
+              </div>
+
+              <!-- Main Image (if no video or as gallery) -->
+               <div *ngIf="!product()?.videoUrl || selectedImage()" class="relative w-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group cursor-zoom-in h-[500px] flex items-center justify-center">
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
                     <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100">Only {{product()?.stock}} left</span>
                     <span *ngIf="product()?.stock === 0" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100">Out of Stock</span>

@@ -21,7 +21,9 @@ export class ProductAddComponent {
     description: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(0)]],
     stock: [0, [Validators.required, Validators.min(0)]],
-    category: ['', Validators.required]
+    category: ['', Validators.required],
+    imageUrl: [''],
+    videoUrl: ['']
   });
 
   loading = false;
@@ -33,7 +35,11 @@ export class ProductAddComponent {
     this.loading = true;
     this.errorMessage = '';
 
-    const productData = this.productForm.value;
+    const { imageUrl, ...rest } = this.productForm.value;
+    const productData = {
+      ...rest,
+      images: imageUrl ? [imageUrl] : []
+    };
 
     this.productService.createProduct(productData).subscribe({
       next: () => {
