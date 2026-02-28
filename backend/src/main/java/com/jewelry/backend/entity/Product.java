@@ -20,6 +20,7 @@ public class Product extends BaseEntity {
     private BigDecimal price;
     private String category;
     private Integer stock;
+    private String videoUrl;
 
     @ElementCollection
     private List<String> images;

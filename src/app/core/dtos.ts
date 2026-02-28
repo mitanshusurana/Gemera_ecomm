@@ -43,7 +43,7 @@ export interface ApplyCouponRequest {
 export interface ShippingAddress {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   phone: string;
   street: string;
   city: string;
