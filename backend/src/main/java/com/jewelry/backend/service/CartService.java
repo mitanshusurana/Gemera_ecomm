@@ -18,6 +18,11 @@ import java.util.UUID;
 @Service
 public class CartService {
 
+    private static final BigDecimal TEN_PERCENT = new BigDecimal("0.10");
+    private static final BigDecimal SHIPPING_THRESHOLD = new BigDecimal("1000");
+    private static final BigDecimal STANDARD_SHIPPING_FEE = new BigDecimal("50");
+    private static final BigDecimal GIFT_WRAP_FEE = new BigDecimal("5");
+
     @Autowired
     CartRepository cartRepository;
 
@@ -160,26 +165,26 @@ public class CartService {
     private void recalculateCart(Cart cart) {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (CartItem item : cart.getItems()) {
-            BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
+            BigDecimal itemTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             subtotal = subtotal.add(itemTotal);
         }
         cart.setSubtotal(subtotal);
 
         BigDecimal discount = BigDecimal.ZERO;
         if ("DISCOUNT10".equalsIgnoreCase(cart.getAppliedCoupon())) {
-             discount = subtotal.multiply(new BigDecimal("0.10"));
+             discount = subtotal.multiply(TEN_PERCENT);
         }
         cart.setDiscount(discount);
 
         BigDecimal taxableAmount = subtotal.subtract(discount);
         if (taxableAmount.compareTo(BigDecimal.ZERO) < 0) taxableAmount = BigDecimal.ZERO;
-        cart.setTax(taxableAmount.multiply(new BigDecimal("0.10")));
+        cart.setTax(taxableAmount.multiply(TEN_PERCENT));
 
-        cart.setShipping(subtotal.compareTo(new BigDecimal("1000")) > 0 ? BigDecimal.ZERO : new BigDecimal("50"));
+        cart.setShipping(subtotal.compareTo(SHIPPING_THRESHOLD) > 0 ? BigDecimal.ZERO : STANDARD_SHIPPING_FEE);
 
         BigDecimal total = cart.getSubtotal().subtract(cart.getDiscount()).add(cart.getTax()).add(cart.getShipping());
         if (cart.isGiftWrap()) {
-            total = total.add(new BigDecimal("5"));
+            total = total.add(GIFT_WRAP_FEE);
         }
         cart.setTotal(total);
     }
