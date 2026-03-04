@@ -1,4 +1,5 @@
 import time
+import os
 from playwright.sync_api import sync_playwright
 
 def verify_admin_app():
@@ -17,8 +18,10 @@ def verify_admin_app():
             return
 
         print("Logging in...")
-        page.fill("input[formControlName='email']", "admin@gemara.com")
-        page.fill("input[formControlName='password']", "admin123")
+        admin_email = os.environ.get("ADMIN_EMAIL", "admin@gemara.com")
+        admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
+        page.fill("input[formControlName='email']", admin_email)
+        page.fill("input[formControlName='password']", admin_password)
         page.click("button[type='submit']")
 
         # Wait for navigation to dashboard
