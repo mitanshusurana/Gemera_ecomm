@@ -39,16 +39,19 @@ We deliver this solution not as a shared multi-tenant SaaS, but as **Isolated Ma
 
 ---
 
-## 4. Required Technical Improvements (Currently Implementing)
+## 4. Required Technical Improvements for Scaling
 
-To solidify the "Managed Deployment" model and optimize costs, the following updates are being applied:
+To further solidify the "Managed Deployment" model and scale the business efficiently, the following technical improvements are recommended:
 
-1.  **Cloudflare R2 Storage Integration:**
-    *   *Improvement:* Moving away from local/string-based image paths to a robust S3-compatible API utilizing Cloudflare R2.
-    *   *Benefit:* Global CDN delivery for heavy jewelry videos/images with $0 egress fees, allowing us to offer a "generous free tier" to clients that competitors can't match.
-2.  **Environment-Driven Configuration:**
-    *   *Improvement:* Extracting hardcoded values (WhatsApp numbers, Razorpay keys, Testimonial content, Admin credentials) into Docker environment variables.
-    *   *Benefit:* Enables instant, automated provisioning of new client VMs. We just change the `.env` file, spin up the Docker containers, and the new jeweler's tailored site is live.
+1.  **Infrastructure as Code (IaC) Provisioning:**
+    *   *Improvement:* Implement Terraform or Ansible scripts to fully automate the creation of new Virtual Machines, Docker container deployment, and SSL certificate generation.
+    *   *Benefit:* Reduces client onboarding time from hours to minutes. When a new jeweler signs up, their dedicated server spins up automatically.
+2.  **Centralized Monitoring & Automated Backups:**
+    *   *Improvement:* Deploy a central observability stack (e.g., Prometheus/Grafana) to monitor the health, CPU, and memory of all client VMs from a single dashboard. Implement automated daily cron jobs to backup each isolated PostgreSQL database to an off-site S3/R2 bucket.
+    *   *Benefit:* Ensures high availability and disaster recovery for enterprise clients, justifying the premium monthly price tag.
+3.  **Live Metal Market Integration:**
+    *   *Improvement:* Build a backend cron job or WebSocket service to fetch live gold, silver, and platinum prices from a global commodities API.
+    *   *Benefit:* Allows jewelry prices to dynamically fluctuate based on real-time market weight and purity formulas—a highly sought-after feature that generic platforms completely lack natively.
 
 ---
 
