@@ -11,6 +11,7 @@ import { HistoryService } from '../services/history.service';
 import { CurrencyService } from '../services/currency.service';
 import { RING_CATEGORIES } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-product-detail',
@@ -468,7 +469,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     const p = this.product();
     if (!p) return;
     const text = `Hi, I am interested in ${p.name} (SKU: ${p.specifications?.productDetails?.sku || p.sku}). Can you help me?`;
-    const url = `https://wa.me/917976091951?text=${encodeURIComponent(text)}`;
+    const url = `https://wa.me/${environment.whatsappNumber}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   }
 

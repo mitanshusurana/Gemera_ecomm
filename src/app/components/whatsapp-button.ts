@@ -1,5 +1,6 @@
 import { Component, Input, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { environment } from "../../environments/environment";
 
 @Component({
   selector: "app-whatsapp-button",
@@ -83,7 +84,7 @@ import { CommonModule } from "@angular/common";
   `,
 })
 export class WhatsappButtonComponent {
-  @Input() phoneNumber: string = "917976091951";
+  @Input() phoneNumber: string = environment.whatsappNumber;
   @Input() message: string =
     "Hello! I would like to inquire about your products.";
   @Input() showContactCard: boolean = false;

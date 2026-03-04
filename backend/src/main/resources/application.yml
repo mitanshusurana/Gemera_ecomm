@@ -27,3 +27,15 @@ spring:
     jwt:
       secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       expiration-ms: 86400000 # 24 hours
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+cloudflare:
+  r2:
+    access-key: ${R2_ACCESS_KEY:default-key}
+    secret-key: ${R2_SECRET_KEY:default-secret}
+    endpoint: ${R2_ENDPOINT:https://default.r2.cloudflarestorage.com}
+    bucket: ${R2_BUCKET_NAME:jewelry-assets}
+    public-url: ${R2_PUBLIC_URL:https://pub-default.r2.dev}

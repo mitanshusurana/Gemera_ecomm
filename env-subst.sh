@@ -10,3 +10,8 @@ if [ -n "$RAZORPAY_KEY" ]; then
     echo "Replacing PLACEHOLDER_RAZORPAY_KEY with $RAZORPAY_KEY"
     find /usr/share/nginx/html -type f -name "main*.js" -exec sed -i "s|PLACEHOLDER_RAZORPAY_KEY|$RAZORPAY_KEY|g" {} +
 fi
+
+if [ -n "$WHATSAPP_NUMBER" ]; then
+    echo "Replacing PLACEHOLDER_WHATSAPP_NUMBER with $WHATSAPP_NUMBER"
+    find /usr/share/nginx/html -type f -name "main*.js" -exec sed -i "s|PLACEHOLDER_WHATSAPP_NUMBER|$WHATSAPP_NUMBER|g" {} +
+fi
