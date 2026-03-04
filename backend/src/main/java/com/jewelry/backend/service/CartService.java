@@ -8,6 +8,7 @@ import com.jewelry.backend.entity.User;
 import com.jewelry.backend.repository.*;
 import com.jewelry.backend.entity.Wishlist;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +19,17 @@ import java.util.UUID;
 @Service
 public class CartService {
 
-    private static final BigDecimal TEN_PERCENT = new BigDecimal("0.10");
-    private static final BigDecimal SHIPPING_THRESHOLD = new BigDecimal("1000");
-    private static final BigDecimal STANDARD_SHIPPING_FEE = new BigDecimal("50");
-    private static final BigDecimal GIFT_WRAP_FEE = new BigDecimal("5");
+    @Value("${app.cart.tax-rate:0.10}")
+    private BigDecimal taxRate;
+
+    @Value("${app.cart.shipping-threshold:1000}")
+    private BigDecimal shippingThreshold;
+
+    @Value("${app.cart.standard-shipping-fee:50}")
+    private BigDecimal standardShippingFee;
+
+    @Value("${app.cart.gift-wrap-fee:5}")
+    private BigDecimal giftWrapFee;
 
     @Autowired
     CartRepository cartRepository;
@@ -172,19 +180,19 @@ public class CartService {
 
         BigDecimal discount = BigDecimal.ZERO;
         if ("DISCOUNT10".equalsIgnoreCase(cart.getAppliedCoupon())) {
-             discount = subtotal.multiply(TEN_PERCENT);
+             discount = subtotal.multiply(new BigDecimal("0.10"));
         }
         cart.setDiscount(discount);
 
         BigDecimal taxableAmount = subtotal.subtract(discount);
         if (taxableAmount.compareTo(BigDecimal.ZERO) < 0) taxableAmount = BigDecimal.ZERO;
-        cart.setTax(taxableAmount.multiply(TEN_PERCENT));
+        cart.setTax(taxableAmount.multiply(taxRate));
 
-        cart.setShipping(subtotal.compareTo(SHIPPING_THRESHOLD) > 0 ? BigDecimal.ZERO : STANDARD_SHIPPING_FEE);
+        cart.setShipping(subtotal.compareTo(shippingThreshold) > 0 ? BigDecimal.ZERO : standardShippingFee);
 
         BigDecimal total = cart.getSubtotal().subtract(cart.getDiscount()).add(cart.getTax()).add(cart.getShipping());
         if (cart.isGiftWrap()) {
-            total = total.add(GIFT_WRAP_FEE);
+            total = total.add(giftWrapFee);
         }
         cart.setTotal(total);
     }
