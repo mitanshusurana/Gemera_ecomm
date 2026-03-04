@@ -1,3 +1,8 @@
+app:
+  admin:
+    email: ${ADMIN_EMAIL:admin@gemara.com}
+    password: ${ADMIN_PASSWORD:}
+
 spring:
   application:
     name: jewelry-backend
