@@ -77,3 +77,49 @@ Because our platform offers a dedicated VM (high privacy/security) and native hi
 | **Enterprise / B2B**| High-Volume Jewelers / Wholesalers | **$599 - $899 / mo** | Premium VM Server, 200GB R2 Storage, **RFQ & Live Negotiation tools**, **Treasure Plan/Loyalty modules**, Custom API access, Priority Support. |
 
 **The Winning Pitch:** "For the price of a mid-tier Shopify plan *plus* the 8 apps you'd need to make it work for jewelry, we give you a private, dedicated server with everything built natively. No apps to update, no bloated code, just a blazing-fast, secure platform designed for selling diamonds."
+
+---
+
+## 6. Current User Flows & Screen Inventory (For UX/UI Designers)
+
+We are actively looking to modernize our UI/UX to ensure it matches the high-value, luxury nature of our product. Below is the current architecture of our screens and user journeys. **UX Designers should use this as a baseline to propose modern, conversion-optimized interfaces.**
+
+### A. Core Customer Shopping Journey
+1.  **Home Page:**
+    *   *Current Elements:* Hero banner (often showcasing a luxury video via Cloudflare R2 CDN), category grid (Rings, Necklaces, etc.), featured/trending products, and hardcoded testimonials.
+    *   *UX Focus:* Needs a highly visual, editorial "magazine" feel. Video backgrounds must load smoothly without breaking the layout.
+2.  **Product Listing Page (Catalog/Search):**
+    *   *Current Elements:* Grid layout, filters (Category, Price Min/Max, Style, Occasion), "Out of Stock" badges.
+    *   *UX Focus:* Better mobile filtering experience. Needs a luxury infinite scroll or elegant pagination.
+3.  **Product Detail Page (PDP):**
+    *   *Current Elements:* Main image gallery, Title, SKU, Multi-Currency pricing, 'Add to Cart', 'Try at Home' modal, 'Price Breakup' accordion (showing metal vs. diamond cost), Delivery Availability checker via Pincode, and complex nested specifications (metal purity, diamond clarity/carat).
+    *   *UX Focus:* This is the most critical screen. The complex data (metal weight, diamond certificates) needs to be presented elegantly without overwhelming the buyer.
+4.  **Cart & Checkout:**
+    *   *Current Elements:* Slide-out mini-cart, full Cart page with item removal/quantity edits. Checkout features a "Guest Flow" that automatically provisions an account in the background (asking for a password) to secure the Razorpay payment.
+    *   *UX Focus:* Reduce friction. The auto-account creation needs to feel invisible and secure. Make the Razorpay integration feel native.
+
+### B. Specialty SaaS Flows (The "Differentiators")
+These are the premium features that separate us from Shopify.
+
+1.  **Request for Quote (RFQ) & Negotiation (B2B/High-Ticket):**
+    *   *Current Elements:* A form where users input custom jewelry requirements (budget, timeline, reference images).
+    *   *UX Focus:* The "Live Negotiation" dashboard where a customer and the jeweler message back and forth on price is currently basic. It needs a modern, chat-like interface where the jeweler can push a "Formal PDF Quote" directly into the chat stream for one-click acceptance.
+2.  **Treasure Plan (Investment/Loyalty):**
+    *   *Current Elements:* A dashboard showing the user's active installment plans (e.g., "Pay $500/mo for 11 months, get month 12 free"), payment history, and "Next Due Date".
+    *   *UX Focus:* Gamification. Make the user feel like they are building wealth. Visual progress bars showing their journey toward unlocking their jewelry piece.
+3.  **Certificate Verification:**
+    *   *Current Elements:* A simple search bar where users enter a GIA/IGI report number to view/download the official PDF certificate.
+    *   *UX Focus:* Needs to feel incredibly secure and authoritative, perhaps integrating a 3D view of the diamond alongside the certificate data.
+
+### C. Business Operations (Admin Panel)
+*This is a completely separate application running on its own domain for the jeweler's staff.*
+
+1.  **Admin Dashboard:** High-level metrics (Sales, Active RFQs, Pending Shipments).
+2.  **Product Management:** Highly complex form supporting legacy fields, rich text descriptions, image uploads (direct to Cloudflare R2), and deeply nested jewelry specifications.
+    *   *UX Focus:* Data entry for jewelry is notoriously tedious. How can we make the form intuitive? Can we use stepper UI or split the metal/diamond/gemstone data logically?
+3.  **Order & RFQ Management:** Tables to view incoming orders, update shipping statuses (which trigger automated SMTP emails), and respond to custom B2B quotes.
+
+### D. Global UI Elements
+*   **Header:** Mega-menu for categories, global currency selector (USD, EUR, GBP, INR), Search bar, Account/Cart icons.
+*   **Floating WhatsApp Button:** A persistent, hardcoded widget allowing instant VIP communication.
+*   **Toast Notifications:** Non-intrusive success/error alerts.
