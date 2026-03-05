@@ -75,6 +75,7 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
+        List<OrderItem> orderItems = new java.util.ArrayList<>();
         for (CartItem cartItem : cart.getItems()) {
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
@@ -83,8 +84,9 @@ public class OrderService {
             orderItem.setPrice(cartItem.getProduct().getPrice());
             orderItem.setOptions(cartItem.getOptions());
 
-            orderItemRepository.save(orderItem);
+            orderItems.add(orderItem);
         }
+        orderItemRepository.saveAll(orderItems);
 
         // Clear cart
         cart.getItems().clear();
