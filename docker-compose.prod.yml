@@ -1,0 +1,76 @@
+version: '3.8'
+
+# PRODUCTION DEPLOYMENT FOR ORACLE VM (NO BUILD REQUIRED)
+# USAGE:
+# 1. Update the image paths below with your GitHub Username and Repository Name
+# 2. Run: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jewelry-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: jewelry_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    # Replace GH_USERNAME and REPO_NAME with your GitHub info
+    image: ghcr.io/GH_USERNAME/REPO_NAME-backend:latest
+    container_name: jewelry-backend
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/jewelry_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      R2_ACCESS_KEY: ${R2_ACCESS_KEY:-default-key}
+      R2_SECRET_KEY: ${R2_SECRET_KEY:-default-secret}
+      R2_ENDPOINT: ${R2_ENDPOINT:-https://default.r2.cloudflarestorage.com}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-jewelry-assets}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-https://pub-default.r2.dev}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@gemara.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    # Replace GH_USERNAME and REPO_NAME with your GitHub info
+    image: ghcr.io/GH_USERNAME/REPO_NAME-frontend:latest
+    container_name: jewelry-frontend
+    restart: always
+    environment:
+      # Change localhost to your Oracle VM Public IP or Domain
+      API_URL: ${FRONTEND_API_URL:-http://localhost:8080/api/v1}
+      RAZORPAY_KEY: ${RAZORPAY_KEY:-rzp_test_S5goGHXLEuP6hP}
+      WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-917976091951}
+    ports:
+      - "80:80"  # Mapping to default HTTP port for production
+    depends_on:
+      - backend
+
+  admin:
+    # Replace GH_USERNAME and REPO_NAME with your GitHub info
+    image: ghcr.io/GH_USERNAME/REPO_NAME-admin:latest
+    container_name: jewelry-admin
+    restart: always
+    environment:
+      # Change localhost to your Oracle VM Public IP or Domain
+      API_URL: ${ADMIN_API_URL:-http://localhost:8080/api/v1}
+    ports:
+      - "4300:80" # Consider mapping to 81 or setting up a reverse proxy later
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
