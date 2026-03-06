@@ -1,7 +1,12 @@
 app:
   admin:
     email: ${ADMIN_EMAIL:admin@gemara.com}
-    password: ${ADMIN_PASSWORD:}
+    password: ${ADMIN_PASSWORD:admin123}
+  cart:
+    tax-rate: ${CART_TAX_RATE:0.10}
+    shipping-threshold: ${CART_SHIPPING_THRESHOLD:1000}
+    standard-shipping-fee: ${CART_STANDARD_SHIPPING_FEE:50}
+    gift-wrap-fee: ${CART_GIFT_WRAP_FEE:5}
 
 spring:
   application:
@@ -32,10 +37,15 @@ spring:
     jwt:
       secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       expiration-ms: 86400000 # 24 hours
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
-app:
-  cart:
-    tax-rate: ${CART_TAX_RATE:0.10}
-    shipping-threshold: ${CART_SHIPPING_THRESHOLD:1000}
-    standard-shipping-fee: ${CART_STANDARD_SHIPPING_FEE:50}
-    gift-wrap-fee: ${CART_GIFT_WRAP_FEE:5}
+cloudflare:
+  r2:
+    access-key: ${R2_ACCESS_KEY:default-key}
+    secret-key: ${R2_SECRET_KEY:default-secret}
+    endpoint: ${R2_ENDPOINT:https://default.r2.cloudflarestorage.com}
+    bucket: ${R2_BUCKET_NAME:jewelry-assets}
+    public-url: ${R2_PUBLIC_URL:https://pub-default.r2.dev}
