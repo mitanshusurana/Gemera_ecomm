@@ -15,7 +15,7 @@ This guide walks you through the entire process of deploying the Gemara/Caratloo
 5. **Placement:** Leave the default Availability Domain.
 6. **Image and Shape:**
    * Click **Edit**.
-   * Click **Change Image** -> Select **Ubuntu** (Version 22.04 or latest LTS) -> Click **Select Image**.
+   * Click **Change Image** -> Select **Oracle Linux** -> Click **Select Image**.
    * Click **Change Shape** -> Select **Virtual Machine** -> Choose a shape. The **VM.Standard.E2.1.Micro** (Always Free eligible) is the standard free tier AMD64 shape. *(Note: Our current Docker images are built for standard AMD64 architectures. If you choose the ARM-based Ampere A1 shape, you will need to enable multi-architecture builds in your GitHub Actions workflow).*
 7. **Networking:**
    * Ensure it creates a new Virtual Cloud Network (VCN) and a Public Subnet (or select existing ones).
@@ -25,7 +25,7 @@ This guide walks you through the entire process of deploying the Gemara/Caratloo
    * **CRITICAL:** Click **Save private key** to download the `.key` file to your computer. You will need this to log in to the server. Do not lose it!
 9. **Boot volume:** Leave defaults (typically 47 GB or 50 GB is fine).
 10. Click **Create** at the bottom. Wait a few minutes for the status to change from "Provisioning" to "Running".
-11. Note down the **Public IP Address** displayed on the instance details page.
+11. Note down the **Public IP Address** (`129.159.18.63`) displayed on the instance details page.
 
 ### Step 2: Open Ports in the Cloud Provider Firewall (Oracle Cloud)
 
@@ -58,35 +58,28 @@ You will use the private key you downloaded in Step 1 to connect to your server.
    ```bash
    chmod 400 path/to/your-private-key.key
    ```
-3. Connect to the server using the default Ubuntu username (`ubuntu`) and your VM's Public IP:
+3. Connect to the server using the default Oracle Linux username (`opc`) and your VM's Public IP (`129.159.18.63`):
    ```bash
-   ssh -i path/to/your-private-key.key ubuntu@<YOUR_VM_PUBLIC_IP>
+   ssh -i path/to/your-private-key.key opc@129.159.18.63
    ```
 *(Type `yes` if prompted about the authenticity of the host).*
 
-### Step 4: Open Ports in the VM Operating System (iptables)
+### Step 4: Open Ports in the VM Operating System (firewalld)
 
-By default, Ubuntu images on Oracle Cloud have a strict local firewall (`iptables`). You need to configure it to allow the traffic you just allowed in the Cloud Console.
+Oracle Linux uses `firewalld` by default instead of `iptables`. You need to configure it to allow the traffic you just allowed in the Cloud Console.
 
-1. Run the following commands to open ports 80, 4300, and 8080:
+1. Run the following commands to open ports 80, 4300, and 8080 permanently:
 
 ```bash
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 4300 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8080 -j ACCEPT
+sudo firewall-cmd --permanent --zone=public --add-port=80/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=4300/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=8080/tcp
 ```
 
-2. Save the iptables rules so they persist after a reboot. First, install `netfilter-persistent`:
+2. Reload the firewall rules for the changes to take effect:
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y iptables-persistent netfilter-persistent
-```
-*(If prompted to save current rules during installation, select **Yes** for both IPv4 and IPv6).*
-
-3. Save the current rules:
-```bash
-sudo netfilter-persistent save
+sudo firewall-cmd --reload
 ```
 
 ---
@@ -130,7 +123,7 @@ The setup script creates a `~/gemara-deploy` directory containing a `.env.templa
     *   Set strong passwords for `POSTGRES_PASSWORD` and `ADMIN_PASSWORD`.
     *   Set a long, random string for `JWT_SECRET`.
     *   Fill in your Cloudflare R2 credentials.
-    *   **CRITICAL:** Replace `<YOUR_VM_PUBLIC_IP_OR_DOMAIN>` in `FRONTEND_API_URL` and `ADMIN_API_URL` with your VM's actual public IP address (e.g., `http://1.2.3.4:8080/api/v1`). Do **not** use `localhost` here.
+    *   **Note:** The script has automatically populated `FRONTEND_API_URL` and `ADMIN_API_URL` with your IP `129.159.18.63`.
 
 ### Step 7: Start the Application
 
@@ -163,6 +156,6 @@ docker-compose -f docker-compose.prod.yml logs -f backend
 
 Once all services are running and the backend has successfully connected to the database, you can access your applications via a web browser:
 
-*   **Frontend Application:** `http://<YOUR_VM_PUBLIC_IP>`
-*   **Admin Dashboard:** `http://<YOUR_VM_PUBLIC_IP>:4300`
-*   **Backend API:** `http://<YOUR_VM_PUBLIC_IP>:8080/api/v1/...`
+*   **Frontend Application:** `http://129.159.18.63`
+*   **Admin Dashboard:** `http://129.159.18.63:4300`
+*   **Backend API:** `http://129.159.18.63:8080/api/v1/...`

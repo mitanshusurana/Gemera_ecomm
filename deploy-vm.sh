@@ -25,14 +25,10 @@ fi
 # 2. Install Docker and Docker Compose
 echo "[2/4] Installing Docker and Docker Compose..."
 if ! command -v docker &> /dev/null; then
-    sudo apt-get update
-    sudo apt-get install -y ca-certificates curl gnupg
-    sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    sudo chmod a+r /etc/apt/keyrings/docker.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt-get update
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    # Oracle Linux uses dnf and is compatible with CentOS packages
+    sudo dnf install -y dnf-utils zip unzip
+    sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+    sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
     # Enable docker service
     sudo systemctl enable docker
@@ -47,7 +43,9 @@ fi
 
 # Install standalone docker-compose if needed
 if ! command -v docker-compose &> /dev/null; then
-    sudo apt-get install -y docker-compose
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose || true
 fi
 
 # 3. Create Deployment Directory
@@ -149,9 +147,9 @@ ADMIN_PASSWORD=your_secure_admin_password
 JWT_SECRET=super_secret_long_random_string_here_1234567890
 
 # 4. Networking / API Routing
-# Replace <YOUR_VM_PUBLIC_IP_OR_DOMAIN> with the actual IP address or domain of this VM
-FRONTEND_API_URL=http://<YOUR_VM_PUBLIC_IP_OR_DOMAIN>:8080/api/v1
-ADMIN_API_URL=http://<YOUR_VM_PUBLIC_IP_OR_DOMAIN>:8080/api/v1
+# Using the provided public IP address
+FRONTEND_API_URL=http://129.159.18.63:8080/api/v1
+ADMIN_API_URL=http://129.159.18.63:8080/api/v1
 
 # 5. Third Party Integrations
 RAZORPAY_KEY=your_razorpay_key_here
