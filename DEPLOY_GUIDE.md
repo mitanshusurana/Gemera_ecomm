@@ -12,7 +12,10 @@ This guide walks you through the process of deploying the Gemara/Caratloop appli
 The `deploy-vm.sh` script automates the initial setup. It configures 4GB of Virtual RAM (Swap), installs Docker & Docker Compose, and sets up your deployment directory with necessary templates.
 
 1.  Connect to your VM via SSH.
-2.  Copy the `deploy-vm.sh` file to the VM, or create it directly by pasting its contents.
+2.  Download the deployment script directly from your GitHub repository:
+    ```bash
+    wget https://raw.githubusercontent.com/mitanshusurana/Gemera_ecomm/main/deploy-vm.sh
+    ```
 3.  Make the script executable:
     ```bash
     chmod +x deploy-vm.sh
