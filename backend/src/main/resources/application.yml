@@ -1,3 +1,13 @@
+app:
+  admin:
+    email: ${ADMIN_EMAIL:admin@gemara.com}
+    password: ${ADMIN_PASSWORD:admin123}
+  cart:
+    tax-rate: ${CART_TAX_RATE:0.10}
+    shipping-threshold: ${CART_SHIPPING_THRESHOLD:1000}
+    standard-shipping-fee: ${CART_STANDARD_SHIPPING_FEE:50}
+    gift-wrap-fee: ${CART_GIFT_WRAP_FEE:5}
+
 spring:
   application:
     name: jewelry-backend

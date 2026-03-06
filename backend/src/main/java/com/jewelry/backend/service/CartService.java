@@ -8,6 +8,7 @@ import com.jewelry.backend.entity.User;
 import com.jewelry.backend.repository.*;
 import com.jewelry.backend.entity.Wishlist;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,18 @@ import java.util.UUID;
 
 @Service
 public class CartService {
+
+    @Value("${app.cart.tax-rate:0.10}")
+    private BigDecimal taxRate;
+
+    @Value("${app.cart.shipping-threshold:1000}")
+    private BigDecimal shippingThreshold;
+
+    @Value("${app.cart.standard-shipping-fee:50}")
+    private BigDecimal standardShippingFee;
+
+    @Value("${app.cart.gift-wrap-fee:5}")
+    private BigDecimal giftWrapFee;
 
     @Autowired
     CartRepository cartRepository;
@@ -160,7 +173,7 @@ public class CartService {
     private void recalculateCart(Cart cart) {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (CartItem item : cart.getItems()) {
-            BigDecimal itemTotal = item.getProduct().getPrice().multiply(new BigDecimal(item.getQuantity()));
+            BigDecimal itemTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             subtotal = subtotal.add(itemTotal);
         }
         cart.setSubtotal(subtotal);
@@ -173,13 +186,13 @@ public class CartService {
 
         BigDecimal taxableAmount = subtotal.subtract(discount);
         if (taxableAmount.compareTo(BigDecimal.ZERO) < 0) taxableAmount = BigDecimal.ZERO;
-        cart.setTax(taxableAmount.multiply(new BigDecimal("0.10")));
+        cart.setTax(taxableAmount.multiply(taxRate));
 
-        cart.setShipping(subtotal.compareTo(new BigDecimal("1000")) > 0 ? BigDecimal.ZERO : new BigDecimal("50"));
+        cart.setShipping(subtotal.compareTo(shippingThreshold) > 0 ? BigDecimal.ZERO : standardShippingFee);
 
         BigDecimal total = cart.getSubtotal().subtract(cart.getDiscount()).add(cart.getTax()).add(cart.getShipping());
         if (cart.isGiftWrap()) {
-            total = total.add(new BigDecimal("5"));
+            total = total.add(giftWrapFee);
         }
         cart.setTotal(total);
     }
