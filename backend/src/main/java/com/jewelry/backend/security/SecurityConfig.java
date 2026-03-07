@@ -56,6 +56,8 @@ public class SecurityConfig {
       "http://localhost:4200",      // Angular frontend development
       "http://localhost:3000",      // Alternative frontend
       "http://localhost:4300",      // Angular admin panel
+      "http://129.159.18.63",       // Deployed frontend
+      "http://129.159.18.63:4300",  // Deployed admin panel
       "https://yourdomain.com"      // Update with your production domain
     ));
 
