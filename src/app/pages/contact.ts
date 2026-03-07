@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-contact',
@@ -46,14 +47,14 @@ import { CommonModule } from '@angular/common';
                         <div class="text-gold-500 text-xl">📍</div>
                         <div>
                             <h3 class="font-bold text-gray-900">Visit Our Showroom</h3>
-                            <p class="text-gray-600">123 Luxury Lane, Jewelry District<br>New York, NY 10001</p>
+                            <p class="text-gray-600" [innerHTML]="env.companyAddress"></p>
                         </div>
                     </div>
                     <div class="flex items-start gap-4">
                         <div class="text-gold-500 text-xl">📞</div>
                         <div>
                             <h3 class="font-bold text-gray-900">Phone</h3>
-                            <p class="text-gray-600">+1 (800) 123-4567</p>
+                            <p class="text-gray-600">{{ env.companyPhone }}</p>
                             <p class="text-sm text-gray-500">Mon-Fri, 9am - 6pm EST</p>
                         </div>
                     </div>
@@ -61,7 +62,7 @@ import { CommonModule } from '@angular/common';
                         <div class="text-gold-500 text-xl">✉️</div>
                         <div>
                             <h3 class="font-bold text-gray-900">Email</h3>
-                            <p class="text-gray-600">concierge@gemara.com</p>
+                            <p class="text-gray-600">{{ env.companyEmail }}</p>
                         </div>
                     </div>
                 </div>
@@ -71,4 +72,6 @@ import { CommonModule } from '@angular/common';
     </div>
   `,
 })
-export class ContactComponent {}
+export class ContactComponent {
+  env = environment;
+}
