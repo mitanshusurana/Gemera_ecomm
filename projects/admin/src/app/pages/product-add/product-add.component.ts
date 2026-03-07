@@ -21,13 +21,25 @@ export class ProductAddComponent {
     description: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(0)]],
     stock: [0, [Validators.required, Validators.min(0)]],
-    category: ['', Validators.required],
-    imageUrl: [''],
-    videoUrl: ['']
+    category: ['', Validators.required]
   });
 
   loading = false;
   errorMessage = '';
+  selectedFile: File | null = null;
+  selectedVideoFile: File | null = null;
+
+  onFileChange(event: any) {
+    if (event.target.files.length > 0) {
+      this.selectedFile = event.target.files[0];
+    }
+  }
+
+  onVideoFileChange(event: any) {
+    if (event.target.files.length > 0) {
+      this.selectedVideoFile = event.target.files[0];
+    }
+  }
 
   onSubmit() {
     if (this.productForm.invalid) return;
@@ -35,10 +47,54 @@ export class ProductAddComponent {
     this.loading = true;
     this.errorMessage = '';
 
-    const { imageUrl, ...rest } = this.productForm.value;
+    let uploadedImageUrl: string | undefined = undefined;
+    let uploadedVideoUrl: string | undefined = undefined;
+
+    const finalizeCreation = () => {
+      this.createProductRecord(uploadedImageUrl, uploadedVideoUrl);
+    };
+
+    const uploadVideo = () => {
+      if (this.selectedVideoFile) {
+        this.productService.uploadImage(this.selectedVideoFile).subscribe({
+          next: (res) => {
+            uploadedVideoUrl = res.url;
+            finalizeCreation();
+          },
+          error: (err) => {
+            console.error('Failed to upload video', err);
+            this.errorMessage = 'Failed to upload video.';
+            this.loading = false;
+          }
+        });
+      } else {
+        finalizeCreation();
+      }
+    };
+
+    if (this.selectedFile) {
+      this.productService.uploadImage(this.selectedFile).subscribe({
+        next: (res) => {
+          uploadedImageUrl = res.url;
+          uploadVideo();
+        },
+        error: (err) => {
+          console.error('Failed to upload image', err);
+          this.errorMessage = 'Failed to upload image. Check your Cloudflare R2 configuration.';
+          this.loading = false;
+        }
+      });
+    } else {
+      uploadVideo();
+    }
+  }
+
+  private createProductRecord(uploadedImageUrl?: string, uploadedVideoUrl?: string) {
+    const formValue = this.productForm.value;
     const productData = {
-      ...rest,
-      images: imageUrl ? [imageUrl] : []
+      ...formValue,
+      images: uploadedImageUrl ? [uploadedImageUrl] : [],
+      videoUrl: uploadedVideoUrl || ''
     };
 
     this.productService.createProduct(productData).subscribe({
