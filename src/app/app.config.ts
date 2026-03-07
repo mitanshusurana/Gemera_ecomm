@@ -4,7 +4,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
-import { provideImgixLoader } from '@angular/common';
+import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 
 import { routes } from './app.routes';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -20,7 +20,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' }), withPreloading(PreloadAllModules)),
     provideClientHydration(),
     provideHttpClient(withInterceptorsFromDi()),
-    provideImgixLoader('https://placehold.co/'), // Base URL for image optimization
+    {
+      provide: IMAGE_LOADER,
+      useValue: (config: ImageLoaderConfig) => {
+        return config.src; // Return the absolute URL directly
+      }
+    },
     provideServiceWorker('ngsw-worker.js', {
         enabled: !isDevMode(),
         registrationStrategy: 'registerWhenStable:30000'

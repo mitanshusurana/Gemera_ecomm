@@ -103,6 +103,9 @@ services:
       API_URL: ${FRONTEND_API_URL:-http://localhost:8080/api/v1}
       RAZORPAY_KEY: ${RAZORPAY_KEY:-rzp_test_S5goGHXLEuP6hP}
       WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-917976091951}
+      COMPANY_ADDRESS: ${COMPANY_ADDRESS:-S149 mahaveer nagar jaipur}
+      COMPANY_PHONE: ${COMPANY_PHONE:-+91 7976091951}
+      COMPANY_EMAIL: ${COMPANY_EMAIL:-support@caratloop.com}
     ports:
       - "80:80"
     depends_on:
@@ -154,6 +157,11 @@ ADMIN_API_URL=http://129.159.18.63:8080/api/v1
 # 5. Third Party Integrations
 RAZORPAY_KEY=your_razorpay_key_here
 WHATSAPP_NUMBER=919876543210
+
+# 6. Company Contact Info
+COMPANY_ADDRESS="S149 mahaveer nagar jaipur"
+COMPANY_PHONE="+91 7976091951"
+COMPANY_EMAIL="support@caratloop.com"
 ENV_EOF
 
 # 4. Final Instructions

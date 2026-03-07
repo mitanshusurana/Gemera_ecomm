@@ -79,8 +79,8 @@ interface CollectionUI {
 
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
              <!-- Card 1 -->
-             <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1551854838-234955b23e6b?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
+             <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
@@ -88,8 +88,8 @@ interface CollectionUI {
                 </div>
              </a>
              <!-- Card 2 -->
-             <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1617038224558-28759b177e40?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
+             <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/2735970/pexels-photo-2735970.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
@@ -97,8 +97,8 @@ interface CollectionUI {
                 </div>
              </a>
              <!-- Card 3 -->
-             <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1549411986-17b5f257a315?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
+             <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/177332/pexels-photo-177332.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Party Wear</h3>
@@ -106,8 +106,8 @@ interface CollectionUI {
                 </div>
              </a>
              <!-- Card 4 -->
-             <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1512163143273-bde0e3cc5409?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
+             <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/872838/pexels-photo-872838.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>

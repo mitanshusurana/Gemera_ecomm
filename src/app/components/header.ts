@@ -20,7 +20,7 @@ import { APP_CATEGORIES } from '../core/constants';
     <header class="bg-white sticky top-0 z-50 shadow-sm font-sans">
       <!-- Top Bar (Purple) -->
       <div class="bg-primary-800 text-white py-1.5 text-xs tracking-wide">
-        <div class="container mx-auto px-4 flex justify-between items-center overflow-x-auto whitespace-nowrap gap-8 md:gap-4 no-scrollbar mask-fade">
+        <div class="container mx-auto px-4 flex justify-between items-center whitespace-nowrap gap-8 md:gap-4 no-scrollbar">
           <div class="flex gap-6 flex-shrink-0">
             <span class="flex items-center gap-1.5 font-medium">
               <svg class="w-3.5 h-3.5 text-secondary-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>

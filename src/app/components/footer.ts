@@ -6,6 +6,7 @@ import { WhatsappButtonComponent } from "./whatsapp-button";
 import { APP_CATEGORIES } from "../core/constants";
 import { EmailNotificationService } from "../services/email-notification.service";
 import { ToastService } from "../services/toast.service";
+import { environment } from "../../environments/environment";
 
 @Component({
   selector: "app-footer",
@@ -95,15 +96,15 @@ import { ToastService } from "../services/toast.service";
              <ul class="space-y-4">
                <li class="flex items-start gap-3 text-sm text-primary-200">
                  <span class="text-secondary-500 mt-1">📍</span>
-                 <span>123 Jewel Street, Luxury Tower,<br>New York, NY 10001</span>
+                 <span [innerHTML]="env.companyAddress | uppercase"></span>
                </li>
                <li class="flex items-center gap-3 text-sm text-primary-200">
                  <span class="text-secondary-500">📞</span>
-                 <a href="tel:+1234567890" class="hover:text-white">+1 (234) 567-890</a>
+                 <a [href]="'tel:' + env.companyPhone" class="hover:text-white">{{ env.companyPhone }}</a>
                </li>
                <li class="flex items-center gap-3 text-sm text-primary-200">
                  <span class="text-secondary-500">✉️</span>
-                 <a href="mailto:support@caratloop.com" class="hover:text-white">support@caratloop.com</a>
+                 <a [href]="'mailto:' + env.companyEmail" class="hover:text-white">{{ env.companyEmail }}</a>
                </li>
              </ul>
           </div>
@@ -127,6 +128,7 @@ import { ToastService } from "../services/toast.service";
   `,
 })
 export class FooterComponent {
+  env = environment;
   categories = APP_CATEGORIES;
   email = '';
   isSubscribing = false;

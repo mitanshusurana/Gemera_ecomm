@@ -15,3 +15,18 @@ if [ -n "$WHATSAPP_NUMBER" ]; then
     echo "Replacing PLACEHOLDER_WHATSAPP_NUMBER with $WHATSAPP_NUMBER"
     find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|PLACEHOLDER_WHATSAPP_NUMBER|$WHATSAPP_NUMBER|g" {} +
 fi
+
+if [ -n "$COMPANY_ADDRESS" ]; then
+    echo "Replacing PLACEHOLDER_COMPANY_ADDRESS with $COMPANY_ADDRESS"
+    find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|PLACEHOLDER_COMPANY_ADDRESS|$COMPANY_ADDRESS|g" {} +
+fi
+
+if [ -n "$COMPANY_PHONE" ]; then
+    echo "Replacing PLACEHOLDER_COMPANY_PHONE with $COMPANY_PHONE"
+    find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|PLACEHOLDER_COMPANY_PHONE|$COMPANY_PHONE|g" {} +
+fi
+
+if [ -n "$COMPANY_EMAIL" ]; then
+    echo "Replacing PLACEHOLDER_COMPANY_EMAIL with $COMPANY_EMAIL"
+    find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|PLACEHOLDER_COMPANY_EMAIL|$COMPANY_EMAIL|g" {} +
+fi
