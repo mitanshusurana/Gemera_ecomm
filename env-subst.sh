@@ -30,3 +30,13 @@ if [ -n "$COMPANY_EMAIL" ]; then
     echo "Replacing PLACEHOLDER_COMPANY_EMAIL with $COMPANY_EMAIL"
     find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|PLACEHOLDER_COMPANY_EMAIL|$COMPANY_EMAIL|g" {} +
 fi
+
+if [ -n "$COMPANY_INSTAGRAM" ]; then
+    echo "Replacing PLACEHOLDER_COMPANY_INSTAGRAM with $COMPANY_INSTAGRAM"
+    find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|PLACEHOLDER_COMPANY_INSTAGRAM|$COMPANY_INSTAGRAM|g" {} +
+fi
+
+if [ -n "$COMPANY_FACEBOOK" ]; then
+    echo "Replacing PLACEHOLDER_COMPANY_FACEBOOK with $COMPANY_FACEBOOK"
+    find /usr/share/nginx/html -type f -name "*.js" -exec sed -i "s|PLACEHOLDER_COMPANY_FACEBOOK|$COMPANY_FACEBOOK|g" {} +
+fi

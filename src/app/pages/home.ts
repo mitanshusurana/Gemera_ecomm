@@ -215,12 +215,12 @@ interface CollectionUI {
             <!-- Testimonial 1 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light" style="color: var(--color-text-muted-light, #d1fae5);">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">S</div>
                   <div>
                      <h4 class="font-bold text-white">Sneha Kapoor</h4>
-                     <p class="text-xs text-primary-300 uppercase tracking-wider">Marketing Head</p>
+                     <p class="text-xs uppercase tracking-wider" style="color: var(--color-text-muted-light, #d1fae5);">Marketing Head</p>
                   </div>
                </div>
             </div>
@@ -228,12 +228,12 @@ interface CollectionUI {
             <!-- Testimonial 2 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
+               <p class="text-lg leading-relaxed mb-6 font-light" style="color: var(--color-text-muted-light, #d1fae5);">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">A</div>
                   <div>
                      <h4 class="font-bold text-white">Ankit Sharma</h4>
-                     <p class="text-xs text-primary-300 uppercase tracking-wider">Entrepreneur</p>
+                     <p class="text-xs uppercase tracking-wider" style="color: var(--color-text-muted-light, #d1fae5);">Entrepreneur</p>
                   </div>
                </div>
             </div>
@@ -241,12 +241,12 @@ interface CollectionUI {
             <!-- Testimonial 3 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light" style="color: var(--color-text-muted-light, #d1fae5);">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">P</div>
                   <div>
                      <h4 class="font-bold text-white">Priya Menon</h4>
-                     <p class="text-xs text-primary-300 uppercase tracking-wider">Doctor</p>
+                     <p class="text-xs uppercase tracking-wider" style="color: var(--color-text-muted-light, #d1fae5);">Doctor</p>
                   </div>
                </div>
             </div>
