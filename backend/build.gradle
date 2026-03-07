@@ -51,6 +51,10 @@ dependencies {
 	// AWS S3 for Cloudflare R2
 	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.555'
 
+	// JAXB for Java 9+ compatibility
+	implementation 'javax.xml.bind:jaxb-api:2.3.1'
+	implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'org.postgresql:postgresql'
