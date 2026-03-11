@@ -158,7 +158,7 @@ export class CartService {
 
   private addToGuestCart(productId: string, quantity: number, options: any): Cart {
     const cart = this.getGuestCart();
-    const price = options?.price || 1000;
+    const price = options?.price || options?.product?.price || 1000;
 
     // Check if item exists
     const existing = cart.items.find(i => i.productId === productId && JSON.stringify(i.selectedMetal) === JSON.stringify(options?.metal));

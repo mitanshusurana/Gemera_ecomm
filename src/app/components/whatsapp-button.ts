@@ -13,7 +13,7 @@ import { environment } from "../../environments/environment";
       [href]="whatsappLink"
       target="_blank"
       rel="noopener noreferrer"
-      class="fixed bottom-6 right-6 md:bottom-24 z-40 group"
+      class="fixed bottom-20 right-4 md:right-6 md:bottom-24 z-40 group"
       [attr.aria-label]="'Contact us on WhatsApp'"
     >
       <!-- Main Button -->

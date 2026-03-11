@@ -70,14 +70,26 @@ public class CartService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        CartItem newItem = new CartItem();
-        newItem.setCart(cart);
-        newItem.setProduct(product);
-        newItem.setQuantity(request.getQuantity());
-        newItem.setOptions(request.getOptions());
+        CartItem existingItem = cart.getItems().stream()
+                .filter(item -> item.getProduct().getId().equals(product.getId()) &&
+                                ((item.getOptions() == null && request.getOptions() == null) ||
+                                 (item.getOptions() != null && item.getOptions().equals(request.getOptions()))))
+                .findFirst()
+                .orElse(null);
 
-        cart.getItems().add(newItem);
-        cartItemRepository.save(newItem);
+        if (existingItem != null) {
+            existingItem.setQuantity(existingItem.getQuantity() + request.getQuantity());
+            cartItemRepository.save(existingItem);
+        } else {
+            CartItem newItem = new CartItem();
+            newItem.setCart(cart);
+            newItem.setProduct(product);
+            newItem.setQuantity(request.getQuantity());
+            newItem.setOptions(request.getOptions());
+
+            cart.getItems().add(newItem);
+            cartItemRepository.save(newItem);
+        }
 
         recalculateCart(cart);
         return cartRepository.save(cart);
