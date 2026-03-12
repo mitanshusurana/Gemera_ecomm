@@ -1,0 +1,175 @@
+<div class="relative flex min-h-screen flex-col">
+  <!-- Header -->
+  <header class="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 dark:bg-background-dark/80 px-4 py-3 backdrop-blur-md">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
+        <span class="material-symbols-outlined">settings_suggest</span>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold leading-tight">System Maintenance</h1>
+        <p class="text-xs text-slate-500">Jewelry Inventory & ERP Node</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+    <!-- Server Health Section -->
+    <section class="mb-8">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-xl font-bold tracking-tight">Server Health</h2>
+        <span class="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          Operational
+        </span>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-slate-500">CPU Usage</span>
+            <span class="material-symbols-outlined text-primary">memory</span>
+          </div>
+          <div class="flex items-end gap-2">
+            <span class="text-3xl font-bold">24.8%</span>
+            <span class="mb-1 text-sm font-medium text-emerald-600 flex items-center">
+              <span class="material-symbols-outlined text-sm">trending_down</span>
+              2.1%
+            </span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full bg-primary" style="width: 24.8%"></div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-slate-500">RAM Usage</span>
+            <span class="material-symbols-outlined text-primary">memory_alt</span>
+          </div>
+          <div class="flex items-end gap-2">
+            <span class="text-3xl font-bold">6.2 <span class="text-lg font-normal text-slate-400">/ 16GB</span></span>
+            <span class="mb-1 text-sm font-medium text-amber-600 flex items-center">
+              <span class="material-symbols-outlined text-sm">trending_up</span>
+              0.4%
+            </span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full bg-amber-500" style="width: 38.7%"></div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-slate-500">VM Status</span>
+            <span class="material-symbols-outlined text-primary">dns</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-3xl font-bold">Healthy</span>
+            <span class="text-sm text-slate-500">Uptime: 14d 6h 22m</span>
+          </div>
+          <div class="flex gap-1">
+            <div class="h-1.5 flex-1 rounded-full bg-emerald-500"></div>
+            <div class="h-1.5 flex-1 rounded-full bg-emerald-500"></div>
+            <div class="h-1.5 flex-1 rounded-full bg-emerald-500"></div>
+            <div class="h-1.5 flex-1 rounded-full bg-emerald-500"></div>
+            <div class="h-1.5 flex-1 rounded-full bg-emerald-500/30"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Performance Graph (Mock) -->
+    <section class="mb-8">
+      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="mb-6 flex flex-col gap-1">
+          <h3 class="font-bold text-slate-800">Server Performance History</h3>
+          <p class="text-sm text-slate-500">Average response time over the last 24 hours</p>
+        </div>
+        <div class="relative h-48 w-full">
+          <svg class="h-full w-full" preserveaspectratio="none" viewbox="0 0 400 100">
+            <defs>
+              <lineargradient id="gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+                <stop offset="0%" stop-color="#115e59" stop-opacity="0.2"></stop>
+                <stop offset="100%" stop-color="#115e59" stop-opacity="0"></stop>
+              </lineargradient>
+            </defs>
+            <path d="M0,80 Q50,20 100,50 T200,30 T300,70 T400,10 L400,100 L0,100 Z" fill="url(#gradient)"></path>
+            <path d="M0,80 Q50,20 100,50 T200,30 T300,70 T400,10" fill="none" stroke="#115e59" stroke-width="2"></path>
+          </svg>
+        </div>
+        <div class="mt-4 flex justify-between text-[10px] font-bold text-slate-400">
+          <span>00:00</span>
+          <span>06:00</span>
+          <span>12:00</span>
+          <span>18:00</span>
+          <span>23:59</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Cloudflare R2 Storage -->
+      <section class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold tracking-tight">Cloudflare R2 Storage</h2>
+          <button class="text-sm font-semibold text-primary hover:underline">Manage Buckets</button>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-50 border border-slate-100">
+                <span class="material-symbols-outlined text-slate-600">cloud_queue</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-500">Asset Storage Usage</p>
+                <h4 class="text-2xl font-bold text-slate-800">42.8 GB <span class="text-base font-normal text-slate-400">of 100 GB</span></h4>
+              </div>
+            </div>
+          </div>
+          <div class="mb-2 h-3 w-full overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full bg-primary" style="width: 42.8%"></div>
+          </div>
+          <div class="flex justify-between text-xs font-medium text-slate-500">
+            <span>Used: 42.8%</span>
+            <span>Remaining: 57.2 GB</span>
+          </div>
+          <div class="mt-6 space-y-3">
+            <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+              <span class="text-sm text-slate-600">High-res Product Images</span>
+              <span class="text-sm font-bold">38.2 GB</span>
+            </div>
+            <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+              <span class="text-sm text-slate-600">Invoice PDF Archives</span>
+              <span class="text-sm font-bold">4.6 GB</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Backups Section -->
+      <section class="flex flex-col gap-4">
+        <h2 class="text-xl font-bold tracking-tight">Database Backups</h2>
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col h-full">
+          <div class="mb-6 flex flex-1 flex-col justify-center text-center">
+            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <span class="material-symbols-outlined text-3xl">history</span>
+            </div>
+            <h4 class="text-sm font-medium text-slate-500 uppercase tracking-widest mb-1">Last Backup Completed</h4>
+            <p class="text-xl font-bold text-slate-800">Oct 24, 2023 - 03:00 AM</p>
+            <p class="text-xs text-slate-400 mt-2 flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-xs">verified</span>
+              Automatic daily backup verified
+            </p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <button class="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-all">
+              <span class="material-symbols-outlined text-sm">backup</span>
+              Run Backup
+            </button>
+            <button class="flex items-center justify-center gap-2 rounded-lg bg-slate-100 py-3 px-4 text-sm font-bold text-slate-700 hover:bg-slate-200 transition-all">
+              <span class="material-symbols-outlined text-sm">download</span>
+              Download Last
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
