@@ -83,6 +83,15 @@ public class RFQController {
         return ResponseEntity.ok(entityMapper.toRFQQuoteDTO(rfqService.getLatestQuote(id)));
     }
 
+    @PostMapping("/requests/{id}/quote")
+    @Operation(summary = "Push Formal Quote")
+    public ResponseEntity<RFQQuoteDTO> createQuote(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        java.math.BigDecimal proposedPrice = new java.math.BigDecimal(body.get("proposedPrice").toString());
+        String notes = body.containsKey("notes") ? body.get("notes").toString() : null;
+        RFQQuote created = rfqService.createQuote(id, proposedPrice, notes);
+        return ResponseEntity.status(201).body(entityMapper.toRFQQuoteDTO(created));
+    }
+
     @GetMapping("/requests/{id}/quotes")
     @Operation(summary = "Get All Quotes for RFQ")
     public ResponseEntity<Page<RFQQuoteDTO>> getAllQuotes(

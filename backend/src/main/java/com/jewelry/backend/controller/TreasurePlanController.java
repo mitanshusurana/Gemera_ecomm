@@ -43,4 +43,30 @@ public class TreasurePlanController {
     public ResponseEntity<TreasureChestAccountDTO> enroll(@RequestBody TreasureEnrollRequest request, Principal principal) {
         return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.enroll(principal.getName(), request)));
     }
+
+    @GetMapping("/accounts")
+    @Operation(summary = "Get all plans (Admin)")
+    public ResponseEntity<Iterable<TreasureChestAccountDTO>> getAllAccounts() {
+        java.util.List<TreasureChestAccountDTO> dtoList = new java.util.ArrayList<>();
+        treasurePlanService.getAllAccounts().forEach(account -> dtoList.add(entityMapper.toTreasureChestAccountDTO(account)));
+        return ResponseEntity.ok(dtoList);
+    }
+
+    @PostMapping("/accounts/{id}/payment")
+    @Operation(summary = "Record Payment (Admin)")
+    public ResponseEntity<TreasureChestAccountDTO> recordPayment(@PathVariable java.util.UUID id) {
+        return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.recordPayment(id)));
+    }
+
+    @PostMapping("/accounts/{id}/skip")
+    @Operation(summary = "Skip Month (Admin)")
+    public ResponseEntity<TreasureChestAccountDTO> skipMonth(@PathVariable java.util.UUID id) {
+        return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.skipMonth(id)));
+    }
+
+    @PostMapping("/accounts/{id}/close")
+    @Operation(summary = "Close Plan (Admin)")
+    public ResponseEntity<TreasureChestAccountDTO> closePlan(@PathVariable java.util.UUID id) {
+        return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.closePlan(id)));
+    }
 }
