@@ -32,6 +32,8 @@ public class EntityMapper {
         if (user.getAddresses() != null) {
             dto.setAddresses(user.getAddresses().stream().map(this::toAddressDTO).collect(Collectors.toList()));
         }
+        dto.setTotalSpend(java.math.BigDecimal.ZERO);
+        dto.setTier("Gold");
         return dto;
     }
 
