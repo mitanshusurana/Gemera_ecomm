@@ -8,10 +8,10 @@ import { Router } from '@angular/router';
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
+    <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
 
       <!-- Chat Window -->
-      <div *ngIf="isOpen()" class="bg-white rounded-2xl shadow-2xl w-80 overflow-hidden border border-gray-100 pointer-events-auto animate-fade-in-up">
+      <div *ngIf="isOpen()" class="bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-80 overflow-hidden border border-gray-100 pointer-events-auto animate-fade-in-up">
         <div class="bg-primary-900 p-4 text-white flex justify-between items-center">
           <div class="flex items-center gap-2">
             <span class="text-2xl">🤖</span>

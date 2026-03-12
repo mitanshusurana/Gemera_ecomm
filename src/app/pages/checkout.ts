@@ -728,12 +728,18 @@ export class CheckoutComponent implements OnInit {
     const { email, ...shippingAddr } = this.shippingData;
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
 
+    // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
+    const sanitizedItems = this.cartItems().map(item => {
+      const { id, ...itemWithoutId } = item;
+      return itemWithoutId;
+    });
+
     const orderData: any = {
       shippingAddress: shippingAddr,
       billingAddress: billingAddr,
       paymentMethod: "COD",
       shippingMethod: "EXPRESS",
-      items: this.cartItems(),
+      items: sanitizedItems,
       total: this.cartTotal(),
       paymentDetails: {} // Empty for COD
     };
@@ -828,12 +834,18 @@ export class CheckoutComponent implements OnInit {
     const { email, ...shippingAddr } = this.shippingData;
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
 
-    const orderData = {
+    // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
+    const sanitizedItems = this.cartItems().map(item => {
+      const { id, ...itemWithoutId } = item;
+      return itemWithoutId;
+    });
+
+    const orderData: any = {
       shippingAddress: shippingAddr,
       billingAddress: billingAddr,
       paymentMethod: "RAZORPAY",
       shippingMethod: "EXPRESS",
-      items: this.cartItems(),
+      items: sanitizedItems,
       total: this.cartTotal(),
       paymentDetails: {
           razorpay_payment_id: response.razorpay_payment_id,

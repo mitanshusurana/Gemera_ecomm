@@ -41,10 +41,11 @@ export class CurrencyService {
     }
   }
 
-  format(amount: number): string {
+  format(amount: number | string): string {
     const code = this.currentCurrency();
     const rate = this.rates[code];
-    const value = amount * rate;
+    const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const value = (parsedAmount || 0) * rate;
 
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -54,8 +55,9 @@ export class CurrencyService {
     }).format(value);
   }
 
-  convert(amount: number, toCurrency: CurrencyCode): number {
+  convert(amount: number | string, toCurrency: CurrencyCode): number {
     const rate = this.rates[toCurrency];
-    return amount * rate;
+    const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return (parsedAmount || 0) * rate;
   }
 }

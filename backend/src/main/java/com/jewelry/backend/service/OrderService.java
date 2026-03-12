@@ -71,6 +71,9 @@ public class OrderService {
             order.setRazorpaySignature(request.getPaymentDetails().getRazorpay_signature());
             // Assume payment is successful if details are provided (for now)
             order.setStatus("PAID");
+        } else if ("COD".equalsIgnoreCase(request.getPaymentMethod()) || "CASH_ON_DELIVERY".equalsIgnoreCase(request.getPaymentMethod())) {
+            // Cash on delivery is considered placed/paid immediately for order creation purposes
+            order.setStatus("COMPLETED");
         }
 
         Order savedOrder = orderRepository.save(order);
