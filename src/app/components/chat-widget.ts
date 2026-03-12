@@ -11,7 +11,7 @@ import { Router } from '@angular/router';
     <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
 
       <!-- Chat Window -->
-      <div *ngIf="isOpen()" class="bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-80 overflow-hidden border border-gray-100 pointer-events-auto animate-fade-in-up">
+      <div *ngIf="isOpen()" class="bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] max-w-80 sm:max-w-sm overflow-hidden border border-gray-100 pointer-events-auto animate-fade-in-up">
         <div class="bg-primary-900 p-4 text-white flex justify-between items-center">
           <div class="flex items-center gap-2">
             <span class="text-2xl">🤖</span>
@@ -74,7 +74,7 @@ import { Router } from '@angular/router';
       <!-- Chat Bubble -->
       <button (click)="toggleChat()"
               [class.scale-0]="isOpen()"
-              class="pointer-events-auto w-14 h-14 bg-primary-900 hover:bg-primary-800 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl transition-all hover:scale-110 mb-20 md:mb-0">
+              class="pointer-events-auto w-12 h-12 md:w-14 md:h-14 bg-primary-900 hover:bg-primary-800 text-white rounded-full shadow-2xl flex items-center justify-center text-xl md:text-2xl transition-all hover:scale-110 mb-14 md:mb-0">
         💬
       </button>
     </div>
