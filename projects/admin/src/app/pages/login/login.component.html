@@ -1,44 +1,65 @@
-<div class="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-  <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-      Sign in to Admin Dashboard
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+  <!-- Header / Logo Section -->
+  <div class="flex items-center bg-background-light dark:bg-background-dark p-6 pb-2 justify-between border-b border-primary/10">
+    <h2 class="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
+      AURELIUS ADMIN
     </h2>
   </div>
 
-  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">
-            Email address
-          </label>
-          <div class="mt-1">
-            <input id="email" formControlName="email" type="email" autocomplete="email" required
-              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-          </div>
-        </div>
-
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <div class="mt-1">
-            <input id="password" formControlName="password" type="password" autocomplete="current-password" required
-              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-          </div>
-        </div>
-
-        <div *ngIf="errorMessage" class="text-red-600 text-sm">
-          {{ errorMessage }}
-        </div>
-
-        <div>
-          <button type="submit" [disabled]="loading"
-            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50">
-            {{ loading ? 'Signing in...' : 'Sign in' }}
-          </button>
-        </div>
-      </form>
+  <div class="@container">
+    <div class="@[480px]:px-4 @[480px]:py-3">
+      <div class="w-full bg-center bg-no-repeat bg-cover flex flex-col justify-end overflow-hidden bg-primary/5 @[480px]:rounded-lg min-h-[260px] relative" data-alt="Close up of luxury diamond ring on velvet" style='background-image: url("https://images.pexels.com/photos/265906/pexels-photo-265906.jpeg");'>
+        <div class="absolute inset-0 bg-gradient-to-t from-background-light dark:from-background-dark to-transparent opacity-60"></div>
+      </div>
     </div>
   </div>
+
+  <!-- Welcome Text -->
+  <div class="px-6 pt-8">
+    <h2 class="text-slate-900 dark:text-slate-100 tracking-light text-[28px] font-bold leading-tight text-center">Welcome Back</h2>
+    <p class="text-slate-600 dark:text-slate-400 text-base font-normal leading-normal pb-6 pt-2 text-center">Admin Secure Portal</p>
+  </div>
+
+  <!-- Form Section -->
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4 px-6 py-3 max-w-[480px] mx-auto w-full">
+    <!-- Email Input -->
+    <label class="flex flex-col w-full">
+      <p class="text-slate-900 dark:text-slate-100 text-sm font-semibold leading-normal pb-2 px-1">Email Address</p>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
+        <input formControlName="email" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-14 placeholder:text-slate-400 pl-12 pr-4 text-base font-normal leading-normal" placeholder="admin@aurelia.com" type="email"/>
+      </div>
+    </label>
+
+    <!-- Password Input -->
+    <label class="flex flex-col w-full">
+      <div class="flex justify-between items-center pb-2 px-1">
+        <p class="text-slate-900 dark:text-slate-100 text-sm font-semibold leading-normal">Password</p>
+      </div>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+        <input formControlName="password" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-14 placeholder:text-slate-400 pl-12 pr-12 text-base font-normal leading-normal" placeholder="••••••••" type="password"/>
+      </div>
+    </label>
+
+    <div *ngIf="errorMessage" class="text-red-600 text-sm px-1">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Login Button -->
+    <div class="pt-4">
+      <button type="submit" [disabled]="loading" class="w-full h-14 bg-primary text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+        <span>{{ loading ? 'Signing In...' : 'Sign In' }}</span>
+        <span class="material-symbols-outlined text-xl">login</span>
+      </button>
+    </div>
+
+    <!-- Security Footer -->
+    <div class="flex items-center justify-center gap-2 pt-10 pb-6 opacity-60">
+      <span class="material-symbols-outlined text-sm">verified_user</span>
+      <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-widest">Secure Admin Access Only</p>
+    </div>
+  </form>
+
+  <div class="h-10 bg-background-light dark:bg-background-dark"></div>
 </div>

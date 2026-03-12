@@ -1,0 +1,120 @@
+<div class="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark max-w-7xl mx-auto shadow-sm">
+  <header class="sticky top-0 z-10 flex items-center bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 p-4 justify-between">
+    <div class="flex items-center gap-4">
+      <button class="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <div>
+        <h1 class="text-lg font-bold leading-tight tracking-tight">RFQ Negotiation Detail</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400">RFQ #88291 • Customer: Sarah Jenkins</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-semibold hover:bg-primary/20 transition-colors">
+        <span class="material-symbols-outlined text-[20px]">archive</span>
+        Archive
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden h-[calc(100vh-140px)]">
+    <!-- Sidebar: Item Summary & Specs -->
+    <aside class="w-full md:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark overflow-y-auto p-4 flex flex-col gap-6">
+      <div>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Request Summary</h3>
+        <div class="rounded-xl overflow-hidden aspect-square mb-4 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div class="w-full h-full bg-cover bg-center" data-alt="Detailed photo of an engagement ring with oval diamond" style='background-image: url("https://images.pexels.com/photos/265906/pexels-photo-265906.jpeg");'></div>
+        </div>
+        <h2 class="text-lg font-bold">Custom Diamond Engagement Ring</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">18k White Gold, 2ct Oval Center</p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-400">Metal Type</span>
+          <p class="text-sm font-semibold">18k White Gold</p>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-400">Stone Specification</span>
+          <p class="text-sm font-semibold">2.0ct Oval Brilliant, VS1, D-Color</p>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-400">Estimated Budget</span>
+          <p class="text-sm font-semibold text-primary">$5,000 - $7,000</p>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-slate-400">Target Delivery</span>
+          <p class="text-sm font-semibold">Sept 15, 2024</p>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-auto">
+        <button class="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/25 hover:brightness-110 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[20px]">description</span>
+          Push Formal Quote
+        </button>
+        <p class="text-[10px] text-center text-slate-400 mt-3 leading-tight uppercase tracking-widest">Formalizing will lock specifications</p>
+      </div>
+    </aside>
+
+    <!-- Chat Interface -->
+    <section class="flex-1 flex flex-col bg-white dark:bg-background-dark relative">
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Negotiation Thread</span>
+        <span class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider">
+          <span class="size-1.5 rounded-full bg-green-500"></span> Online
+        </span>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-6">
+        <!-- Message from Customer -->
+        <div class="flex items-end gap-3 max-w-[85%]">
+          <div class="size-8 rounded-full bg-cover bg-center shrink-0 border border-slate-200" data-alt="Customer avatar profile photo" style='background-image: url("https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg");'></div>
+          <div class="flex flex-col gap-1">
+            <span class="text-[11px] font-bold text-slate-500 ml-1">Sarah Jenkins • 10:24 AM</span>
+            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-bl-none text-sm text-slate-800 dark:text-slate-200 leading-relaxed shadow-sm">
+              Hi! I love the initial design you sent. The oval cut is perfect. However, could we try a slightly thinner band? Maybe 1.5mm instead of 2mm?
+            </div>
+          </div>
+        </div>
+
+        <!-- Message from Admin -->
+        <div class="flex items-end gap-3 max-w-[85%] ml-auto flex-row-reverse">
+          <div class="size-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-white">
+            <span class="material-symbols-outlined text-sm">diamond</span>
+          </div>
+          <div class="flex flex-col gap-1 items-end">
+            <span class="text-[11px] font-bold text-slate-500 mr-1">You • 11:05 AM</span>
+            <div class="p-3 bg-primary text-white rounded-2xl rounded-br-none text-sm leading-relaxed shadow-lg shadow-primary/10">
+              Absolutely, Sarah. A 1.5mm band will give it a very delicate, dainty look which really makes the center stone pop. Just a note that it requires extra care with white gold. I've updated the 3D render preview below!
+            </div>
+          </div>
+        </div>
+
+        <!-- Message from Customer -->
+        <div class="flex items-end gap-3 max-w-[85%]">
+          <div class="size-8 rounded-full bg-cover bg-center shrink-0 border border-slate-200" data-alt="Customer avatar profile photo" style='background-image: url("https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg");'></div>
+          <div class="flex flex-col gap-1">
+            <span class="text-[11px] font-bold text-slate-500 ml-1">Sarah Jenkins • 2:15 PM</span>
+            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-bl-none text-sm text-slate-800 dark:text-slate-200 leading-relaxed shadow-sm">
+              That looks incredible. Does changing the band thickness affect the quote much? I'm hoping to stay closer to the $5,500 mark if possible.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Area -->
+      <div class="p-4 bg-white dark:bg-background-dark border-t border-slate-200 dark:border-slate-800">
+        <div class="flex items-end gap-3 bg-slate-100 dark:bg-slate-900 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <button class="size-10 flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">attach_file</span>
+          </button>
+          <textarea class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 px-1 resize-none placeholder:text-slate-500 outline-none" placeholder="Type your response to Sarah..." rows="1"></textarea>
+          <button class="size-10 bg-primary text-white rounded-xl flex items-center justify-center hover:brightness-110 active:scale-95 transition-all">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
