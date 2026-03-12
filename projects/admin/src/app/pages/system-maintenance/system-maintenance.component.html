@@ -14,12 +14,16 @@
 
   <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
     <!-- Server Health Section -->
-    <section class="mb-8">
+    <section class="mb-8 relative">
+      <div *ngIf="loadingHealth" class="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+        <span class="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
+      </div>
       <div class="mb-4 flex items-center justify-between">
         <h2 class="text-xl font-bold tracking-tight">Server Health</h2>
-        <span class="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-          Operational
+        <span class="flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
+              [ngClass]="health.status === 'UP' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'">
+          <span class="h-1.5 w-1.5 rounded-full" [ngClass]="health.status === 'UP' ? 'bg-emerald-500' : 'bg-red-500'"></span>
+          {{ health.status }}
         </span>
       </div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -29,14 +33,13 @@
             <span class="material-symbols-outlined text-primary">memory</span>
           </div>
           <div class="flex items-end gap-2">
-            <span class="text-3xl font-bold">24.8%</span>
-            <span class="mb-1 text-sm font-medium text-emerald-600 flex items-center">
-              <span class="material-symbols-outlined text-sm">trending_down</span>
-              2.1%
+            <span class="text-3xl font-bold">{{ health.cpuUsagePercent | number:'1.1-1' }}%</span>
+            <span class="mb-1 text-sm font-medium text-slate-400 flex items-center">
+              Live avg
             </span>
           </div>
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div class="h-full bg-primary" style="width: 24.8%"></div>
+            <div class="h-full bg-primary transition-all duration-500" [style.width.%]="health.cpuUsagePercent"></div>
           </div>
         </div>
         <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -45,14 +48,13 @@
             <span class="material-symbols-outlined text-primary">memory_alt</span>
           </div>
           <div class="flex items-end gap-2">
-            <span class="text-3xl font-bold">6.2 <span class="text-lg font-normal text-slate-400">/ 16GB</span></span>
-            <span class="mb-1 text-sm font-medium text-amber-600 flex items-center">
-              <span class="material-symbols-outlined text-sm">trending_up</span>
-              0.4%
+            <span class="text-3xl font-bold">{{ health.memoryUsagePercent | number:'1.1-1' }}%</span>
+            <span class="mb-1 text-sm font-medium text-slate-400 flex items-center">
+              Allocated
             </span>
           </div>
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div class="h-full bg-amber-500" style="width: 38.7%"></div>
+            <div class="h-full bg-amber-500 transition-all duration-500" [style.width.%]="health.memoryUsagePercent"></div>
           </div>
         </div>
         <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -61,8 +63,8 @@
             <span class="material-symbols-outlined text-primary">dns</span>
           </div>
           <div class="flex flex-col">
-            <span class="text-3xl font-bold">Healthy</span>
-            <span class="text-sm text-slate-500">Uptime: 14d 6h 22m</span>
+            <span class="text-3xl font-bold">{{ health.status === 'UP' ? 'Healthy' : 'Degraded' }}</span>
+            <span class="text-sm text-slate-500">Uptime: {{ health.uptimeHours | number:'1.1-1' }}h</span>
           </div>
           <div class="flex gap-1">
             <div class="h-1.5 flex-1 rounded-full bg-emerald-500"></div>
@@ -151,19 +153,32 @@
             <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
               <span class="material-symbols-outlined text-3xl">history</span>
             </div>
-            <h4 class="text-sm font-medium text-slate-500 uppercase tracking-widest mb-1">Last Backup Completed</h4>
-            <p class="text-xl font-bold text-slate-800">Oct 24, 2023 - 03:00 AM</p>
-            <p class="text-xs text-slate-400 mt-2 flex items-center justify-center gap-1">
-              <span class="material-symbols-outlined text-xs">verified</span>
-              Automatic daily backup verified
-            </p>
+
+            <ng-container *ngIf="!backupResult">
+              <h4 class="text-sm font-medium text-slate-500 uppercase tracking-widest mb-1">Last Backup Completed</h4>
+              <p class="text-xl font-bold text-slate-800">Automatic Schedule</p>
+              <p class="text-xs text-slate-400 mt-2 flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-xs">verified</span>
+                System is running normally
+              </p>
+            </ng-container>
+
+            <ng-container *ngIf="backupResult">
+              <h4 class="text-sm font-medium text-emerald-600 uppercase tracking-widest mb-1">Backup Success</h4>
+              <p class="text-lg font-bold text-slate-800 truncate px-4">{{ backupResult.message }}</p>
+              <a [href]="backupResult.fileUrl" class="text-xs text-primary font-bold mt-2 hover:underline flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-xs">download</span> Download File
+              </a>
+            </ng-container>
           </div>
+
           <div class="grid grid-cols-2 gap-3">
-            <button class="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-all">
-              <span class="material-symbols-outlined text-sm">backup</span>
+            <button (click)="triggerBackup()" [disabled]="triggeringBackup" class="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-all disabled:opacity-50">
+              <span *ngIf="triggeringBackup" class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+              <span *ngIf="!triggeringBackup" class="material-symbols-outlined text-sm">backup</span>
               Run Backup
             </button>
-            <button class="flex items-center justify-center gap-2 rounded-lg bg-slate-100 py-3 px-4 text-sm font-bold text-slate-700 hover:bg-slate-200 transition-all">
+            <button class="flex items-center justify-center gap-2 rounded-lg bg-slate-100 py-3 px-4 text-sm font-bold text-slate-700 hover:bg-slate-200 transition-all" [disabled]="!backupResult">
               <span class="material-symbols-outlined text-sm">download</span>
               Download Last
             </button>
