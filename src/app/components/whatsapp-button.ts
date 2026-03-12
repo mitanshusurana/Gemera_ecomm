@@ -18,9 +18,9 @@ import { environment } from "../../environments/environment";
     >
       <!-- Main Button -->
       <button
-        class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
+        class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
       >
-        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+        <svg class="w-7 h-7 md:w-10 md:h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
           <path
             d="M12.031 0C5.385 0 .002 5.38.002 12.025c0 2.124.553 4.195 1.604 6.014L.012 24l6.113-1.603c1.748.966 3.738 1.477 5.904 1.477h.005c6.643 0 12.028-5.38 12.028-12.023C24.062 5.222 18.679 0 12.031 0zm0 21.85c-1.802 0-3.564-.484-5.11-1.401l-.367-.217-3.793.996.993-3.696-.237-.378c-.999-1.583-1.527-3.414-1.527-5.312 0-5.525 4.5-10.024 10.038-10.024 5.524 0 10.022 4.498 10.022 10.024 0 5.527-4.498 10.025-10.022 10.025l.003-.017zm5.504-7.519c-.302-.152-1.785-.88-2.062-.981-.277-.101-.48-.152-.682.152-.202.302-.782.981-.958 1.183-.176.202-.353.227-.655.076-1.554-.783-2.668-1.503-3.673-3.235-.177-.303.176-.282.474-.877.102-.202.051-.379-.025-.53-.076-.152-.682-1.643-.933-2.249-.245-.591-.493-.51-.682-.519-.176-.008-.378-.01-.58-.01-.202 0-.528.076-.805.379-.277.303-1.057 1.034-1.057 2.519s1.082 2.915 1.233 3.117c.152.202 2.127 3.243 5.153 4.544 2.039.878 2.809.845 3.328.71.581-.151 1.785-.731 2.037-1.439.252-.708.252-1.314.177-1.442-.075-.126-.277-.202-.58-.353z"
           />

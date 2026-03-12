@@ -106,6 +106,8 @@ services:
       COMPANY_ADDRESS: ${COMPANY_ADDRESS:-S149 mahaveer nagar jaipur}
       COMPANY_PHONE: ${COMPANY_PHONE:-+91 7976091951}
       COMPANY_EMAIL: ${COMPANY_EMAIL:-support@caratloop.com}
+      COMPANY_INSTAGRAM: ${COMPANY_INSTAGRAM:-https://instagram.com/caratloop}
+      COMPANY_FACEBOOK: ${COMPANY_FACEBOOK:-https://facebook.com/caratloop}
     ports:
       - "80:80"
     depends_on:
@@ -162,6 +164,8 @@ WHATSAPP_NUMBER=919876543210
 COMPANY_ADDRESS="S149 mahaveer nagar jaipur"
 COMPANY_PHONE="+91 7976091951"
 COMPANY_EMAIL="support@caratloop.com"
+COMPANY_INSTAGRAM="https://instagram.com/caratloop"
+COMPANY_FACEBOOK="https://facebook.com/caratloop"
 ENV_EOF
 
 # 4. Final Instructions
