@@ -13,7 +13,7 @@ import { environment } from "../../environments/environment";
       [href]="whatsappLink"
       target="_blank"
       rel="noopener noreferrer"
-      class="fixed bottom-20 right-4 md:right-6 md:bottom-24 z-40 group"
+      class="fixed bottom-36 right-4 md:right-6 md:bottom-28 z-40 group"
       [attr.aria-label]="'Contact us on WhatsApp'"
     >
       <!-- Main Button -->
@@ -29,7 +29,7 @@ import { environment } from "../../environments/environment";
 
       <!-- Tooltip -->
       <div
-        class="absolute right-0 bottom-20 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg whitespace-normal max-w-[200px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+        class="absolute right-0 bottom-16 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg whitespace-normal max-w-[200px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
       >
         <p class="text-sm font-semibold">Chat with us!</p>
         <p class="text-xs text-green-100">{{ phoneNumber }}</p>
@@ -83,14 +83,30 @@ import { environment } from "../../environments/environment";
     </div>
   `,
 })
-export class WhatsappButtonComponent {
+import { OnInit, ChangeDetectorRef } from '@angular/core';
+import { SettingService } from '../services/setting.service';
+
+export class WhatsappButtonComponent implements OnInit {
   @Input() phoneNumber: string = environment.whatsappNumber;
   @Input() message: string =
     "Hello! I would like to inquire about your products.";
   @Input() showContactCard: boolean = false;
 
+  constructor(private settingService: SettingService, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    this.settingService.getSettings().subscribe({
+      next: (data) => {
+        if (data && data.whatsappNumber) {
+          this.phoneNumber = data.whatsappNumber;
+          this.cdr.markForCheck();
+        }
+      }
+    });
+  }
+
   get whatsappLink(): string {
-    const cleanNumber = this.phoneNumber.replace(/\D/g, "");
+    const cleanNumber = this.phoneNumber ? this.phoneNumber.replace(/\D/g, "") : '';
     const encodedMessage = encodeURIComponent(this.message);
     return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
   }

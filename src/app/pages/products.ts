@@ -449,8 +449,9 @@ export class ProductsComponent implements OnInit {
   paginationInfo = computed(() => {
     const pag = this.pagination();
     const total = pag.totalItems;
-    const start = (pag.currentPage - 1) * pag.pageSize + 1;
-    const end = Math.min(pag.currentPage * pag.pageSize, total);
+    const pageSize = parseInt(pag.pageSize.toString(), 10) || 12;
+    const start = (pag.currentPage - 1) * pageSize + 1;
+    const end = Math.min(pag.currentPage * pageSize, total);
     
     return {
       start: total === 0 ? 0 : start,

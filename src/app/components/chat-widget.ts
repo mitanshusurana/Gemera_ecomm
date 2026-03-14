@@ -74,7 +74,7 @@ import { Router } from '@angular/router';
       <!-- Chat Bubble -->
       <button (click)="toggleChat()"
               [class.scale-0]="isOpen()"
-              class="pointer-events-auto w-12 h-12 md:w-14 md:h-14 bg-primary-900 hover:bg-primary-800 text-white rounded-full shadow-2xl flex items-center justify-center text-xl md:text-2xl transition-all hover:scale-110 mb-14 md:mb-0">
+              class="pointer-events-auto w-12 h-12 md:w-14 md:h-14 bg-primary-900 hover:bg-primary-800 text-white rounded-full shadow-2xl flex items-center justify-center text-xl md:text-2xl transition-all hover:scale-110 mb-16 md:mb-0">
         💬
       </button>
     </div>

@@ -17,6 +17,9 @@ export class AuthService {
   login(credentials: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/login`, credentials).pipe(
       tap((response: any) => {
+        if (response.user && response.user.role !== 'ADMIN') {
+          throw new Error('Unauthorized: User is not an admin.');
+        }
         if (response.token) {
           localStorage.setItem('admin_token', response.token);
           localStorage.setItem('admin_user', JSON.stringify(response.user));
@@ -34,7 +37,10 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('admin_token');
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('admin_token');
+    }
+    return null;
   }
 
   isAuthenticated(): boolean {
