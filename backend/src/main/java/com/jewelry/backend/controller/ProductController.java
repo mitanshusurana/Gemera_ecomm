@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -84,6 +85,7 @@ public class ProductController {
 
     // Helper to seed data
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Create product (Admin)")
     public ResponseEntity<ProductDTO> createProduct(@RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
@@ -92,6 +94,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Delete product (Admin)")
     public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
@@ -99,6 +102,7 @@ public class ProductController {
     }
 
     @PostMapping("/upload-image")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Upload image to Cloudflare R2")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
