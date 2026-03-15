@@ -19,11 +19,11 @@ export class ProductAddComponent {
   private router = inject(Router);
 
   categories = [
-    { id: '1', name: 'engagement-rings', displayName: 'Engagement Rings', value: 'Engagement Ring' },
+    { id: '1', name: 'finished-jewelry', displayName: 'Finished Jewelry', value: 'Finished Jewelry' },
     { id: '2', name: 'loose-gemstones', displayName: 'Loose Gemstones', value: 'Loose Gemstone' },
-    { id: '3', name: 'spiritual-idols', displayName: 'Spiritual Idols', value: 'Spiritual Idol' },
-    { id: '4', name: 'gemstone-jewelry', displayName: 'Gemstone Jewelry', value: 'Gemstone Jewelry' },
-    { id: '5', name: 'precious-metals', displayName: 'Precious Metals', value: 'Precious Metal' },
+    { id: '3', name: 'religious-idols', displayName: 'Religious Idols & Carvings', value: 'Spiritual Idol' },
+    { id: '4', name: 'manufacturing-rough', displayName: 'Manufacturing & Rough Materials', value: 'Rough Material' },
+    { id: '5', name: 'components-materials', displayName: 'Components & Materials', value: 'Component' },
     { id: '6', name: 'bespoke-custom', displayName: 'Bespoke Custom', value: 'Custom' },
     { id: '7', name: 'ring-settings', displayName: 'Ring Settings', value: 'Ring Setting' }
   ];
@@ -37,9 +37,95 @@ export class ProductAddComponent {
     price: [0, [Validators.required, Validators.min(0)]],
     stock: [0, [Validators.required, Validators.min(0)]],
     category: ['', Validators.required],
+    subCategory: [''],
+    sku: [''], // Auto-generated if empty
+
+    // Global e-commerce / inventory ownership
+    inventoryOwnership: ['Owned Stock'],
+    seoQualifiersStr: [''], // Comma separated, we will parse before submit
+    occasionKeywordsStr: [''], // Comma separated, we will parse before submit
+
     occasions: this.fb.array([]),
     styles: this.fb.array([]),
-    customizationOptions: this.fb.array([])
+    customizationOptions: this.fb.array([]),
+
+    // 1. Finished Jewelry
+    metalType: [''],
+    metalPurity: [''],
+    grossWeight: [0],
+    netWeight: [0],
+    totalCaratWeight: [0],
+    dimensions: [''],
+    currentLocation: [''],
+    huid: [''],
+    bisHallmark: [false],
+    hallmarkingDate: [''],
+    designStyle: [''],
+    metalColor: [''],
+    manufacturingTerminology: [''],
+
+    // 2. Loose Gemstones
+    stoneSku: [''],
+    variety: [''],
+    shapeCut: [''],
+    caratWeight: [0],
+    colorHue: [''],
+    colorTone: [''],
+    colorSaturation: [''],
+    clarity: [''],
+    measurements: [''],
+    treatmentStatus: [''],
+    labReportNumber: [''],
+    certificateImage: [''],
+    polish: [''],
+    symmetry: [''],
+    fluorescence: [''],
+    girdle: [''],
+    culet: [''],
+    tablePercentage: [0],
+    depthPercentage: [0],
+    originProvenance: [''],
+    stockStatus: ['Real'],
+
+    // 3. Religious Idols & Gemstone Carvings
+    subjectDeityName: [''],
+    gemstoneMaterial: [''],
+    carvingStyle: [''],
+    qualityDescription: [''],
+    asana: [''],
+    mudra: [''],
+    ayudha: [''],
+    vahana: [''],
+    artistName: [''],
+    historicalContext: [''],
+    carvingTechnique: [''],
+
+    // 4. Manufacturing & Rough Materials
+    lotNumber: [''],
+    mineOrigin: [''],
+    roughMaterial: [''],
+    roughWeight: [0],
+    purchaseDate: [''],
+    supplierCode: [''],
+    acquisitionCost: [0],
+    matrixParentRock: [''],
+    crystalMorphology: [''],
+    yieldEstimate: [0],
+    wastageLog: [''],
+    manufacturingStage: [''],
+
+    // 5. Components & Materials
+    componentType: [''],
+    material: [''],
+    purity: [''],
+    quantityPcs: [0],
+    weightPerPiece: [0],
+    totalWeight: [0],
+    reorderPointAlert: [0],
+    beadStyle: [''],
+    layoutPattern: [''],
+    vendorInformation: [''],
+    minOrderQuantity: [0]
   });
 
   loading = false;
@@ -57,6 +143,10 @@ export class ProductAddComponent {
 
   get customizationOptions() {
     return this.productForm.get('customizationOptions') as FormArray;
+  }
+
+  get selectedCategory() {
+    return this.productForm.get('category')?.value;
   }
 
   onCheckboxChange(e: any, formArrayName: string) {
@@ -157,8 +247,15 @@ export class ProductAddComponent {
 
   private createProductRecord(uploadedImageUrls: string[], uploadedVideoUrl?: string) {
     const formValue = this.productForm.value;
+
+    // Parse comma separated strings to arrays
+    const seoQualifiers = formValue.seoQualifiersStr ? (formValue.seoQualifiersStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
+    const occasionKeywords = formValue.occasionKeywordsStr ? (formValue.occasionKeywordsStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
+
     const productData = {
       ...formValue,
+      seoQualifiers,
+      occasionKeywords,
       images: uploadedImageUrls,
       videoUrl: uploadedVideoUrl || null,
       specifications: null
