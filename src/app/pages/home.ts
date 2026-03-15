@@ -2,7 +2,6 @@ import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@ang
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink, Router } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
-import { WhatsappButtonComponent } from "../components/whatsapp-button";
 import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
 import { Product, ProductDetail, Category } from "../core/models";
@@ -26,7 +25,6 @@ interface CollectionUI {
     NgOptimizedImage,
     RouterLink,
     QuickViewModalComponent,
-    WhatsappButtonComponent,
     CurrencyConvertPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -308,8 +306,7 @@ interface CollectionUI {
       (viewDetails)="handleViewDetails($event)"
     ></app-quick-view-modal>
 
-    <!-- WhatsApp Button -->
-    <app-whatsapp-button></app-whatsapp-button>
+
   `,
 })
 export class HomeComponent implements OnInit {

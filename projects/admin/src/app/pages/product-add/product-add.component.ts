@@ -160,7 +160,8 @@ export class ProductAddComponent {
     const productData = {
       ...formValue,
       images: uploadedImageUrls,
-      videoUrl: uploadedVideoUrl || ''
+      videoUrl: uploadedVideoUrl || null,
+      specifications: null
     };
 
     this.productService.createProduct(productData).subscribe({
