@@ -1,4 +1,5 @@
-import { Component, Input, ChangeDetectionStrategy } from "@angular/core";
+import { Component, Input, ChangeDetectionStrategy, OnInit, ChangeDetectorRef } from "@angular/core";
+import { SettingService } from '../services/setting.service';
 import { CommonModule } from "@angular/common";
 import { environment } from "../../environments/environment";
 
@@ -83,9 +84,6 @@ import { environment } from "../../environments/environment";
     </div>
   `,
 })
-import { OnInit, ChangeDetectorRef } from '@angular/core';
-import { SettingService } from '../services/setting.service';
-
 export class WhatsappButtonComponent implements OnInit {
   @Input() phoneNumber: string = environment.whatsappNumber;
   @Input() message: string =
@@ -96,7 +94,7 @@ export class WhatsappButtonComponent implements OnInit {
 
   ngOnInit() {
     this.settingService.getSettings().subscribe({
-      next: (data) => {
+      next: (data: any) => {
         if (data && data.whatsappNumber) {
           this.phoneNumber = data.whatsappNumber;
           this.cdr.markForCheck();

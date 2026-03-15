@@ -1,8 +1,8 @@
-import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef } from "@angular/core";
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from "@angular/core";
+import { SettingService } from '../services/setting.service';
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
-import { WhatsappButtonComponent } from "./whatsapp-button";
 import { APP_CATEGORIES } from "../core/constants";
 import { EmailNotificationService } from "../services/email-notification.service";
 import { ToastService } from "../services/toast.service";
@@ -11,7 +11,7 @@ import { environment } from "../../environments/environment";
 @Component({
   selector: "app-footer",
   standalone: true,
-  imports: [CommonModule, WhatsappButtonComponent, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <footer *ngIf="settings" class="bg-primary-950 text-white w-full overflow-hidden border-t-4 border-secondary-500">
@@ -123,13 +123,9 @@ import { environment } from "../../environments/environment";
       </div>
     </footer>
 
-    <!-- WhatsApp Button -->
-    <app-whatsapp-button></app-whatsapp-button>
   `,
 })
-import { SettingService } from '../services/setting.service';
-
-export class FooterComponent {
+export class FooterComponent implements OnInit {
   env = environment;
   categories = APP_CATEGORIES;
   settings: any = null;
@@ -143,7 +139,7 @@ export class FooterComponent {
 
   ngOnInit() {
     this.settingService.getSettings().subscribe({
-      next: (data) => {
+      next: (data: any) => {
         this.settings = data;
         this.cdr.markForCheck();
       },

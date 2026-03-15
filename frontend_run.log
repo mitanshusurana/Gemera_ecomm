@@ -1,0 +1,326 @@
+❯ Building...
+✔ Building...
+Application bundle generation failed. [8.848 seconds] - 2026-03-15T08:59:06.895Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG2012: Component imports must be standalone components, directives, pipes, or must be NgModules.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:12:43:
+[37m      12 │ ...utlet, HeaderComponent, [32mFooterComponent[37m, ToastContainerComponen...
+         ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1206: Decorators are not valid here.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/footer.ts:11:0:
+[37m      11 │ [32m@[37mComponent({
+         ╵ [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG2007: Class is using Angular features but is not decorated. Please add an explicit Angular decorator.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/footer.ts:132:13:
+[37m      132 │ export class [32mFooterComponent[37m {
+          ╵              [32m~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'data' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/footer.ts:146:13:
+[37m      146 │       next: ([32mdata[37m) => {
+          ╵              [32m~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1206: Decorators are not valid here.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/whatsapp-button.ts:5:0:
+[37m      5 │ [32m@[37mComponent({
+        ╵ [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG2007: Class is using Angular features but is not decorated. Please add an explicit Angular decorator.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/whatsapp-button.ts:89:13:
+[37m      89 │ export class [32mWhatsappButtonComponent[37m implements OnInit {
+         ╵              [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'data' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/components/whatsapp-button.ts:99:13:
+[37m      99 │       next: ([32mdata[37m) => {
+         ╵              [32m~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1206: Decorators are not valid here.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/contact.ts:5:0:
+[37m      5 │ [32m@[37mComponent({
+        ╵ [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG2007: Class is using Angular features but is not decorated. Please add an explicit Angular decorator.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/contact.ts:78:13:
+[37m      78 │ export class [32mContactComponent[37m implements OnInit {
+         ╵              [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS7006: Parameter 'data' implicitly has an 'any' type.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/contact.ts:86:13:
+[37m      86 │       next: ([32mdata[37m) => {
+         ╵              [32m~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG2012: Component imports must be standalone components, directives, pipes, or must be NgModules.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/home.ts:29:4:
+[37m      29 │     [32mWhatsappButtonComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+Watch mode enabled. Watching for file changes...
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [4.774 seconds] - 2026-03-15T09:00:02.558Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG2012: Component imports must be standalone components, directives, pipes, or must be NgModules.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:12:43:
+[37m      12 │ ...utlet, HeaderComponent, [32mFooterComponent[37m, ToastContainerComponen...
+         ╵                            [32m~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names              |  Raw size
+styles.css          | styles             | 159.51 kB |
+main.js             | main               | 129.54 kB |
+chunk-5WA5XW6O.js   | -                  |   8.45 kB |
+chunk-C6QAKNMJ.js   | -                  |   4.20 kB |
+chunk-HTW43754.js   | -                  |   3.89 kB |
+chunk-QSNXJCWS.js   | -                  |   2.47 kB |
+chunk-D3KBLYWF.js   | -                  |   2.14 kB |
+chunk-6Y2CA2AJ.js   | -                  |   2.13 kB |
+chunk-Y2TJN7LJ.js   | -                  |   2.11 kB |
+chunk-3WXPN7TQ.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-LCGVFA3O.js   | -                  |   1.20 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+chunk-ZP26WZID.js   | -                  | 497 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 321.62 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-SPA35P2G.js   | product-detail     | 103.15 kB |
+chunk-VRFHE3RK.js   | account            |  77.01 kB |
+chunk-ZR64JTNB.js   | products           |  71.90 kB |
+chunk-473KO4M4.js   | checkout           |  70.54 kB |
+chunk-XFWXVPJU.js   | home               |  52.50 kB |
+chunk-4FSSKZJ2.js   | rfq-request        |  49.38 kB |
+chunk-ZA4UTNNC.js   | builder            |  34.97 kB |
+chunk-5CAP6WAX.js   | cart               |  32.16 kB |
+chunk-C23BN4EV.js   | order-confirmation |  31.69 kB |
+chunk-XC3H24WE.js   | compare            |  28.15 kB |
+chunk-AWPJKOA7.js   | login              |  27.35 kB |
+chunk-V54GOZWL.js   | -                  |  25.83 kB |
+chunk-4QYBDAWL.js   | verify-certificate |  24.76 kB |
+chunk-Y3LKALIK.js   | treasure-chest     |  22.68 kB |
+chunk-3QQ6LTVY.js   | wishlist           |  18.85 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [1.451 seconds] - 2026-03-15T09:01:08.815Z
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WhatsappButtonComponent is not used within the template of App[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:13:106:
+[37m      13 │ ...ContainerComponent, ChatWidgetComponent, [32mWhatsappButtonComponent[37m],
+         ╵                                             [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names              |  Raw size
+styles.css          | styles             | 159.51 kB |
+main.js             | main               | 129.54 kB |
+chunk-5WA5XW6O.js   | -                  |   8.45 kB |
+chunk-C6QAKNMJ.js   | -                  |   4.20 kB |
+chunk-HTW43754.js   | -                  |   3.89 kB |
+chunk-QSNXJCWS.js   | -                  |   2.47 kB |
+chunk-D3KBLYWF.js   | -                  |   2.14 kB |
+chunk-6Y2CA2AJ.js   | -                  |   2.13 kB |
+chunk-Y2TJN7LJ.js   | -                  |   2.11 kB |
+chunk-3WXPN7TQ.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-LCGVFA3O.js   | -                  |   1.20 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+chunk-ZP26WZID.js   | -                  | 497 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 321.62 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-SPA35P2G.js   | product-detail     | 103.15 kB |
+chunk-VRFHE3RK.js   | account            |  77.01 kB |
+chunk-ZR64JTNB.js   | products           |  71.90 kB |
+chunk-473KO4M4.js   | checkout           |  70.54 kB |
+chunk-XFWXVPJU.js   | home               |  52.50 kB |
+chunk-4FSSKZJ2.js   | rfq-request        |  49.38 kB |
+chunk-ZA4UTNNC.js   | builder            |  34.97 kB |
+chunk-5CAP6WAX.js   | cart               |  32.16 kB |
+chunk-C23BN4EV.js   | order-confirmation |  31.69 kB |
+chunk-XC3H24WE.js   | compare            |  28.15 kB |
+chunk-AWPJKOA7.js   | login              |  27.35 kB |
+chunk-V54GOZWL.js   | -                  |  25.83 kB |
+chunk-4QYBDAWL.js   | verify-certificate |  24.76 kB |
+chunk-Y3LKALIK.js   | treasure-chest     |  22.68 kB |
+chunk-3QQ6LTVY.js   | wishlist           |  18.85 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [0.582 seconds] - 2026-03-15T09:02:20.449Z
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: WhatsappButtonComponent is not used within the template of App[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:13:106:
+[37m      13 │ ...ContainerComponent, ChatWidgetComponent, [32mWhatsappButtonComponent[37m],
+         ╵                                             [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 129.62 kB |
+
+Application bundle generation complete. [0.532 seconds] - 2026-03-15T09:04:17.823Z
+
+Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names              |  Raw size
+styles.css          | styles             | 159.51 kB |
+main.js             | main               | 129.62 kB |
+chunk-5WA5XW6O.js   | -                  |   8.45 kB |
+chunk-C6QAKNMJ.js   | -                  |   4.20 kB |
+chunk-HTW43754.js   | -                  |   3.89 kB |
+chunk-QSNXJCWS.js   | -                  |   2.47 kB |
+chunk-D3KBLYWF.js   | -                  |   2.14 kB |
+chunk-6Y2CA2AJ.js   | -                  |   2.13 kB |
+chunk-Y2TJN7LJ.js   | -                  |   2.11 kB |
+chunk-3WXPN7TQ.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-LCGVFA3O.js   | -                  |   1.20 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+chunk-ZP26WZID.js   | -                  | 497 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 321.70 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-SPA35P2G.js   | product-detail     | 103.15 kB |
+chunk-VRFHE3RK.js   | account            |  77.01 kB |
+chunk-ZR64JTNB.js   | products           |  71.90 kB |
+chunk-473KO4M4.js   | checkout           |  70.54 kB |
+chunk-XFWXVPJU.js   | home               |  52.50 kB |
+chunk-4FSSKZJ2.js   | rfq-request        |  49.38 kB |
+chunk-ZA4UTNNC.js   | builder            |  34.97 kB |
+chunk-5CAP6WAX.js   | cart               |  32.16 kB |
+chunk-C23BN4EV.js   | order-confirmation |  31.69 kB |
+chunk-XC3H24WE.js   | compare            |  28.15 kB |
+chunk-AWPJKOA7.js   | login              |  27.35 kB |
+chunk-V54GOZWL.js   | -                  |  25.83 kB |
+chunk-4QYBDAWL.js   | verify-certificate |  24.76 kB |
+chunk-Y3LKALIK.js   | treasure-chest     |  22.68 kB |
+chunk-3QQ6LTVY.js   | wishlist           |  18.85 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [0.285 seconds] - 2026-03-15T09:06:21.184Z
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names              |  Raw size
+styles.css          | styles             | 159.51 kB |
+main.js             | main               | 129.62 kB |
+chunk-5WA5XW6O.js   | -                  |   8.45 kB |
+chunk-C6QAKNMJ.js   | -                  |   4.20 kB |
+chunk-HTW43754.js   | -                  |   3.89 kB |
+chunk-QSNXJCWS.js   | -                  |   2.47 kB |
+chunk-D3KBLYWF.js   | -                  |   2.14 kB |
+chunk-6Y2CA2AJ.js   | -                  |   2.13 kB |
+chunk-Y2TJN7LJ.js   | -                  |   2.11 kB |
+chunk-3WXPN7TQ.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-LCGVFA3O.js   | -                  |   1.20 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+chunk-ZP26WZID.js   | -                  | 497 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 321.70 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-SPA35P2G.js   | product-detail     | 103.15 kB |
+chunk-VRFHE3RK.js   | account            |  77.01 kB |
+chunk-ZR64JTNB.js   | products           |  71.90 kB |
+chunk-473KO4M4.js   | checkout           |  70.54 kB |
+chunk-XFWXVPJU.js   | home               |  52.50 kB |
+chunk-4FSSKZJ2.js   | rfq-request        |  49.38 kB |
+chunk-ZA4UTNNC.js   | builder            |  34.97 kB |
+chunk-5CAP6WAX.js   | cart               |  32.16 kB |
+chunk-C23BN4EV.js   | order-confirmation |  31.69 kB |
+chunk-XC3H24WE.js   | compare            |  28.15 kB |
+chunk-AWPJKOA7.js   | login              |  27.35 kB |
+chunk-V54GOZWL.js   | -                  |  25.83 kB |
+chunk-4QYBDAWL.js   | verify-certificate |  24.76 kB |
+chunk-Y3LKALIK.js   | treasure-chest     |  22.68 kB |
+chunk-3QQ6LTVY.js   | wishlist           |  18.85 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [0.181 seconds] - 2026-03-15T09:08:36.933Z
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names              |  Raw size
+styles.css          | styles             | 159.51 kB |
+main.js             | main               | 129.62 kB |
+chunk-5WA5XW6O.js   | -                  |   8.45 kB |
+chunk-C6QAKNMJ.js   | -                  |   4.20 kB |
+chunk-HTW43754.js   | -                  |   3.89 kB |
+chunk-QSNXJCWS.js   | -                  |   2.47 kB |
+chunk-D3KBLYWF.js   | -                  |   2.14 kB |
+chunk-6Y2CA2AJ.js   | -                  |   2.13 kB |
+chunk-Y2TJN7LJ.js   | -                  |   2.11 kB |
+chunk-3WXPN7TQ.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-LCGVFA3O.js   | -                  |   1.20 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+chunk-ZP26WZID.js   | -                  | 497 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 321.70 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-SPA35P2G.js   | product-detail     | 103.15 kB |
+chunk-VRFHE3RK.js   | account            |  77.01 kB |
+chunk-ZR64JTNB.js   | products           |  71.90 kB |
+chunk-473KO4M4.js   | checkout           |  70.54 kB |
+chunk-XFWXVPJU.js   | home               |  52.50 kB |
+chunk-4FSSKZJ2.js   | rfq-request        |  49.38 kB |
+chunk-ZA4UTNNC.js   | builder            |  34.97 kB |
+chunk-5CAP6WAX.js   | cart               |  32.16 kB |
+chunk-C23BN4EV.js   | order-confirmation |  31.69 kB |
+chunk-XC3H24WE.js   | compare            |  28.15 kB |
+chunk-AWPJKOA7.js   | login              |  27.35 kB |
+chunk-V54GOZWL.js   | -                  |  25.83 kB |
+chunk-4QYBDAWL.js   | verify-certificate |  24.76 kB |
+chunk-Y3LKALIK.js   | treasure-chest     |  22.68 kB |
+chunk-3QQ6LTVY.js   | wishlist           |  18.85 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [0.174 seconds] - 2026-03-15T09:10:22.380Z

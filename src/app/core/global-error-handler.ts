@@ -26,7 +26,10 @@ export class GlobalErrorHandler implements ErrorHandler {
 
     // Ensure the toast UI updates by running inside NgZone
     this.zone.run(() => {
-      toastService.show(message, 'error');
+        // Avoid showing "ExpressionChangedAfterItHasBeenCheckedError" to users
+        if (!message.includes('ExpressionChangedAfterItHasBeenCheckedError')) {
+             toastService.show(message, 'error');
+        }
     });
   }
 }

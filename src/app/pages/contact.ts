@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { SettingService } from '../services/setting.service';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../environments/environment';
 
@@ -72,9 +73,6 @@ import { environment } from '../../environments/environment';
     </div>
   `,
 })
-import { OnInit } from '@angular/core';
-import { SettingService } from '../services/setting.service';
-
 export class ContactComponent implements OnInit {
   env = environment;
   settings: any = null;
@@ -83,7 +81,7 @@ export class ContactComponent implements OnInit {
 
   ngOnInit() {
     this.settingService.getSettings().subscribe({
-      next: (data) => {
+      next: (data: any) => {
         this.settings = data;
       },
       error: () => {
