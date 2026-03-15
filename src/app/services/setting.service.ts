@@ -38,7 +38,7 @@ export class SettingService {
     });
   }
 
-  getSettings(): any {
-    return this.settingsSubject.value;
+  getSettings(): Observable<any> {
+    return this.settings$;
   }
 }

@@ -86,35 +86,57 @@ import { environment } from '../../environments/environment';
 
             <!-- Image Gallery (Stacked/Grid) -->
             <div class="flex flex-col gap-4">
-              <!-- Video Player -->
-              <div *ngIf="product()?.videoUrl" class="w-full bg-black rounded-lg overflow-hidden border border-gray-100 h-[500px]">
-                 <video [src]="product()?.videoUrl" controls class="w-full h-full object-contain"></video>
-              </div>
+              <!-- Desktop / Mobile Media Gallery -->
+              <div class="flex flex-col md:flex-row gap-4 h-auto md:h-[600px]">
 
-              <!-- Main Image (if no video or as gallery) -->
-               <div *ngIf="!product()?.videoUrl || selectedImage()" class="relative w-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group cursor-zoom-in h-[500px] flex items-center justify-center">
+                <!-- Thumbnails (Left on Desktop, Bottom on Mobile) -->
+                <div class="order-2 md:order-1 flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 md:pr-2 hide-scrollbar shrink-0">
+
+                  <!-- Video Thumbnail -->
+                  <div *ngIf="product()?.videoUrl"
+                       (click)="selectMedia('video')"
+                       class="relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-gray-100 flex items-center justify-center"
+                       [class.border-primary-800]="showVideo()"
+                       [class.border-transparent]="!showVideo()">
+                     <div class="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
+                        <svg class="w-8 h-8 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                     </div>
+                     <video [src]="product()?.videoUrl" class="w-full h-full object-cover opacity-50"></video>
+                  </div>
+
+                  <!-- Image Thumbnails -->
+                  <div *ngFor="let img of product()?.images; let i = index"
+                       (click)="selectMedia(img)"
+                       class="relative w-20 h-20 md:w-full md:h-24 bg-gray-50 rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
+                       [class.border-primary-800]="!showVideo() && selectedImage() === img"
+                       [class.border-transparent]="showVideo() || selectedImage() !== img">
+                     <img [ngSrc]="img" fill sizes="(max-width: 1024px) 100vw, 50vw" class="object-cover hover:scale-105 transition-transform duration-500">
+                  </div>
+                </div>
+
+                <!-- Main Display Area -->
+                <div class="order-1 md:order-2 flex-1 relative bg-gray-50 rounded-lg overflow-hidden border border-gray-100 h-[400px] md:h-full flex items-center justify-center">
+
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                    <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100">Only {{product()?.stock}} left</span>
-                    <span *ngIf="product()?.stock === 0" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100">Out of Stock</span>
+                    <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100 shadow-sm">Only {{product()?.stock}} left</span>
+                    <span *ngIf="product()?.stock === 0" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100 shadow-sm">Out of Stock</span>
                     <span class="px-2 py-1 bg-white/90 backdrop-blur text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded border border-gray-200 shadow-sm">Best Seller</span>
                   </div>
 
-                  <img [ngSrc]="selectedImage() || product()?.images?.[0] || product()?.imageUrl || ''"
+                  <!-- Video View -->
+                  <div *ngIf="showVideo()" class="w-full h-full bg-black flex items-center justify-center">
+                     <video [src]="product()?.videoUrl" controls autoplay class="w-full h-full object-contain"></video>
+                  </div>
+
+                  <!-- Image View -->
+                  <img *ngIf="!showVideo()"
+                       [ngSrc]="selectedImage() || product()?.images?.[0] || product()?.imageUrl || ''"
                        fill priority
                        sizes="(max-width: 1024px) 100vw, 50vw"
-                       class="object-contain p-8 transition-transform duration-500 hover:scale-110"
+                       class="object-contain p-4 md:p-8 transition-transform duration-500 hover:scale-[1.02]"
                        [alt]="product()?.name">
-               </div>
-
-               <!-- Thumbnails / Secondary Images Grid -->
-               <div class="grid grid-cols-2 gap-4">
-                  <ng-container *ngFor="let img of product()?.images; let i = index">
-                    <div *ngIf="i > 0" (click)="selectedImage.set(img)"
-                         class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer hover:opacity-90 transition-opacity relative h-[300px] flex items-center justify-center">
-                       <img [ngSrc]="img" fill sizes="(max-width: 1024px) 50vw, 30vw" class="object-contain p-4 hover:scale-105 transition-transform duration-500">
-                    </div>
-                  </ng-container>
-               </div>
+                </div>
+              </div>
             </div>
 
             <!-- PRODUCT DETAILS (Moved Below Images) -->
@@ -511,4 +533,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   hasOption(t: string) { return !!this.product()?.customizationOptions?.some(o => o.type === t); }
   getOptions(t: string) { return this.product()?.customizationOptions?.filter(o => o.type === t) || []; }
   formatKey(k: string) { return k.replace(/([A-Z])/g, ' $1').trim(); }
+
+  selectMedia(mediaUrl: string) {
+     if (mediaUrl === 'video') {
+         this.showVideo.set(true);
+     } else {
+         this.showVideo.set(false);
+         this.selectedImage.set(mediaUrl);
+     }
+  }
 }
