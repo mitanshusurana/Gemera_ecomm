@@ -179,6 +179,7 @@ public class EntityMapper {
         if (order == null) return null;
         OrderDTO dto = new OrderDTO();
         dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
         dto.setTotal(order.getTotal());
         dto.setStatus(order.getStatus());
         dto.setEstimatedDelivery(order.getEstimatedDelivery());

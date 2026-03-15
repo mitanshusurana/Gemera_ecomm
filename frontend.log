@@ -1,0 +1,49 @@
+
+> fusion-angular-tailwind-starter@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names              |  Raw size
+styles.css          | styles             | 160.28 kB |
+main.js             | main               | 129.62 kB |
+chunk-5WA5XW6O.js   | -                  |   8.45 kB |
+chunk-C6QAKNMJ.js   | -                  |   4.20 kB |
+chunk-HTW43754.js   | -                  |   3.89 kB |
+chunk-QSNXJCWS.js   | -                  |   2.47 kB |
+chunk-6Y2CA2AJ.js   | -                  |   2.13 kB |
+chunk-ODITWSNP.js   | -                  |   2.13 kB |
+chunk-Y2TJN7LJ.js   | -                  |   2.11 kB |
+chunk-3WXPN7TQ.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-LCGVFA3O.js   | -                  |   1.20 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-LR6HG7N3.js   | -                  | 910 bytes |
+chunk-ZP26WZID.js   | -                  | 497 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 322.45 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-AVTSNZLT.js   | product-detail     | 106.60 kB |
+chunk-GVH6CE54.js   | account            |  77.01 kB |
+chunk-ZR64JTNB.js   | products           |  71.90 kB |
+chunk-2POX2C5J.js   | checkout           |  70.54 kB |
+chunk-XFWXVPJU.js   | home               |  52.50 kB |
+chunk-4FSSKZJ2.js   | rfq-request        |  49.38 kB |
+chunk-ZA4UTNNC.js   | builder            |  34.97 kB |
+chunk-5CAP6WAX.js   | cart               |  32.16 kB |
+chunk-BU4NUFHL.js   | order-confirmation |  31.69 kB |
+chunk-XC3H24WE.js   | compare            |  28.15 kB |
+chunk-AWPJKOA7.js   | login              |  27.35 kB |
+chunk-V54GOZWL.js   | -                  |  25.83 kB |
+chunk-4QYBDAWL.js   | verify-certificate |  24.76 kB |
+chunk-Y3LKALIK.js   | treasure-chest     |  22.68 kB |
+chunk-3QQ6LTVY.js   | wishlist           |  18.85 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [14.094 seconds] - 2026-03-15T11:58:46.955Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/

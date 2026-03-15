@@ -97,11 +97,6 @@ export class TrackOrderComponent implements OnInit {
     this.loading.set(true);
     this.order.set(null);
 
-    // Mock logic: try to get by ID, if fails, mock a not found or just show the mock logic
-    // Since our mock backend expects ID (guid) not Order Number (ORD-...), let's just try to call getById
-    // In a real app we'd have a specific track endpoint.
-    // Here we will use getOrderById.
-
     this.orderService.trackOrder(this.orderId).subscribe({
       next: (res) => {
         this.order.set(res);

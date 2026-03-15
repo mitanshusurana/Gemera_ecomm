@@ -53,6 +53,7 @@ public class OrderService {
         order.setUser(user);
         order.setTotal(cart.getTotal());
         order.setStatus("PENDING_PAYMENT");
+        order.setOrderNumber("ORD-" + (int)(Math.random() * 1000000));
 
         try {
             order.setShippingAddress(objectMapper.writeValueAsString(request.getShippingAddress()));
@@ -102,12 +103,18 @@ public class OrderService {
         return savedOrder;
     }
 
-    public Page<Order> getUserOrders(String userEmail, Pageable pageable) {
+    public Page<Order> getUserOrders(String userEmail, String status, Pageable pageable) {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
+        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
+            return orderRepository.findByUserAndStatus(user, status, pageable);
+        }
         return orderRepository.findByUser(user, pageable);
     }
 
-    public Page<Order> getAllOrders(Pageable pageable) {
+    public Page<Order> getAllOrders(String status, Pageable pageable) {
+        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
+            return orderRepository.findByStatus(status, pageable);
+        }
         return orderRepository.findAll(pageable);
     }
 
@@ -115,10 +122,22 @@ public class OrderService {
         return orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
-    public OrderTracking trackOrder(UUID orderId) {
-        Order order = getOrder(orderId);
+    public Order getOrderByIdentifier(String identifier) {
+        try {
+            UUID id = UUID.fromString(identifier);
+            return orderRepository.findById(id)
+                .orElseGet(() -> orderRepository.findByOrderNumber(identifier)
+                    .orElseThrow(() -> new RuntimeException("Order not found")));
+        } catch (IllegalArgumentException e) {
+            return orderRepository.findByOrderNumber(identifier).orElseThrow(() -> new RuntimeException("Order not found"));
+        }
+    }
+
+    public OrderTracking trackOrder(String identifier) {
+        Order order = getOrderByIdentifier(identifier);
         OrderTracking tracking = new OrderTracking();
         tracking.setOrderId(order.getId().toString());
+        tracking.setOrderNumber(order.getOrderNumber());
         tracking.setStatus(order.getStatus());
         tracking.setEstimatedDelivery(order.getEstimatedDelivery());
         tracking.setTrackingNumber(order.getTrackingNumber());

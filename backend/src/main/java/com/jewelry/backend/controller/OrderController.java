@@ -41,15 +41,16 @@ public class OrderController {
     @GetMapping
     @Operation(summary = "Get user orders")
     public ResponseEntity<Page<OrderDTO>> getOrders(
+            @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "10") int size,
             Principal principal) {
         com.jewelry.backend.entity.User user = userRepository.findByEmail(principal.getName()).orElse(null);
         if (user != null && "ADMIN".equals(user.getRole())) {
-             Page<Order> orders = orderService.getAllOrders(PageRequest.of(page, size));
+             Page<Order> orders = orderService.getAllOrders(status, PageRequest.of(page, size));
              return ResponseEntity.ok(orders.map(entityMapper::toOrderDTO));
         }
-        Page<Order> orders = orderService.getUserOrders(principal.getName(), PageRequest.of(page, size));
+        Page<Order> orders = orderService.getUserOrders(principal.getName(), status, PageRequest.of(page, size));
         return ResponseEntity.ok(orders.map(entityMapper::toOrderDTO));
     }
 
@@ -61,7 +62,7 @@ public class OrderController {
 
     @GetMapping("/track/{id}")
     @Operation(summary = "Track order (Public)")
-    public ResponseEntity<OrderTracking> trackOrder(@PathVariable UUID id) {
+    public ResponseEntity<OrderTracking> trackOrder(@PathVariable String id) {
         return ResponseEntity.ok(orderService.trackOrder(id));
     }
 

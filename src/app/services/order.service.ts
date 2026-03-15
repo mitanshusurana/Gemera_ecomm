@@ -25,10 +25,14 @@ export class OrderService {
     return this.http.get<Order>(`${this.baseUrl}/track/${orderId}`);
   }
 
-  getUserOrders(page: number = 0, size: number = 10): Observable<any> {
-    const params = new HttpParams()
+  getUserOrders(page: number = 0, size: number = 10, status: string = 'ALL'): Observable<any> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
+
+    if (status && status !== 'ALL') {
+      params = params.set('status', status);
+    }
 
     return this.http.get<any>(this.baseUrl, { params });
   }

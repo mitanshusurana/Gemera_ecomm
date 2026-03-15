@@ -38,6 +38,14 @@ export class OrderDetailComponent implements OnInit {
     });
   }
 
+  statusOptions = ['PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+
+  onStatusChange(event: any) {
+    if (!this.order) return;
+    const newStatus = event.target.value;
+    this.updateStatus(newStatus);
+  }
+
   updateStatus(status: string) {
     if (!this.order) return;
 
