@@ -43,13 +43,38 @@
 
               <div class="col-span-6 sm:col-span-3">
                 <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-                <input type="text" formControlName="category" id="category"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                <select id="category" formControlName="category"
+                  class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                  <option value="">Select a category</option>
+                  <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.displayName }}</option>
+                </select>
+              </div>
+
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Occasions</label>
+                <div class="space-y-2">
+                  <div *ngFor="let occasion of occasionsList; let i=index" class="flex items-center">
+                    <input type="checkbox" [id]="'occasion-' + i" [value]="occasion" (change)="onCheckboxChange($event, 'occasions')"
+                      class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
+                    <label [for]="'occasion-' + i" class="ml-2 block text-sm text-gray-900">{{ occasion }}</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Styles</label>
+                <div class="space-y-2">
+                  <div *ngFor="let style of stylesList; let i=index" class="flex items-center">
+                    <input type="checkbox" [id]="'style-' + i" [value]="style" (change)="onCheckboxChange($event, 'styles')"
+                      class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
+                    <label [for]="'style-' + i" class="ml-2 block text-sm text-gray-900">{{ style }}</label>
+                  </div>
+                </div>
               </div>
 
               <div class="col-span-6">
-                <label for="imageFile" class="block text-sm font-medium text-gray-700">Image File</label>
-                <input type="file" id="imageFile" (change)="onFileChange($event)" accept="image/*"
+                <label for="imageFile" class="block text-sm font-medium text-gray-700">Image Files</label>
+                <input type="file" id="imageFile" (change)="onFileChange($event)" accept="image/*" multiple
                   class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
               </div>
 
@@ -59,6 +84,44 @@
                   class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Customization Options</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              Add options like Metal, Size, etc.
+            </p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <div formArrayName="customizationOptions">
+              <div *ngFor="let option of customizationOptions.controls; let i=index" [formGroupName]="i" class="grid grid-cols-6 gap-4 mb-4 items-end border-b pb-4">
+                <div class="col-span-6 sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Type</label>
+                  <input type="text" formControlName="type" placeholder="e.g. METAL"
+                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div class="col-span-6 sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Name</label>
+                  <input type="text" formControlName="name" placeholder="e.g. 18k Gold"
+                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div class="col-span-6 sm:col-span-1">
+                  <label class="block text-sm font-medium text-gray-700">Price Modifier</label>
+                  <input type="number" formControlName="priceModifier"
+                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div class="col-span-6 sm:col-span-1 text-right">
+                  <button type="button" (click)="removeCustomizationOption(i)" class="text-red-600 hover:text-red-900 font-medium text-sm">Remove</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" (click)="addCustomizationOption()" class="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+              Add Option
+            </button>
           </div>
         </div>
       </div>

@@ -4,11 +4,17 @@
       <h1 class="text-xl font-bold tracking-tight">Global Settings</h1>
     </div>
     <div class="flex gap-3">
-      <button class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Save Changes</button>
+      <button (click)="onSubmit()" [disabled]="saving" class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
+        {{ saving ? 'Saving...' : 'Save Changes' }}
+      </button>
     </div>
   </header>
 
   <main class="p-6 space-y-8">
+
+    <div *ngIf="successMessage" class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4">
+      {{ successMessage }}
+    </div>
 
     <!-- Admin Profile Section -->
     <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -35,44 +41,43 @@
       </div>
     </section>
 
-    <!-- Brand Configuration Section -->
+    <!-- Global Information Section -->
     <section class="space-y-4">
       <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">palette</span>
-        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Brand Configuration</h2>
+        <span class="material-symbols-outlined text-primary">storefront</span>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Store Information</h2>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Brand Identity Card -->
-        <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-          <div class="p-6 flex flex-col md:flex-row gap-6">
-            <div class="w-full md:w-48">
-              <p class="text-sm font-semibold mb-3 text-slate-500 uppercase tracking-wider">Store Logo</p>
-              <div class="aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 group cursor-pointer hover:border-primary transition-colors">
-                <span class="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary mb-2">add_photo_alternate</span>
-                <span class="text-xs text-slate-500 font-medium">Upload Image</span>
-              </div>
-            </div>
-            <div class="flex-1 space-y-6">
+        <div class="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <div class="p-6">
+            <form [formGroup]="settingsForm" class="space-y-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Brand Name</label>
-                  <input class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" value="Aurelia Fine Jewelry"/>
+                  <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Company Email</label>
+                  <input formControlName="companyEmail" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Primary Theme Color</label>
-                  <div class="flex">
-                    <input class="flex-1 h-11 px-4 rounded-l-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" value="#115e59"/>
-                    <div class="h-11 w-12 flex items-center justify-center bg-slate-50 dark:bg-slate-950 border border-l-0 border-slate-200 dark:border-slate-800 rounded-r-lg">
-                      <div class="size-6 rounded bg-primary"></div>
-                    </div>
-                  </div>
+                  <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Company Phone</label>
+                  <input formControlName="companyPhone" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-slate-900 dark:text-slate-100">WhatsApp Number</label>
+                  <input formControlName="whatsappNumber" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Instagram URL</label>
+                  <input formControlName="companyInstagram" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Facebook URL</label>
+                  <input formControlName="companyFacebook" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
                 </div>
               </div>
               <div class="space-y-2">
-                <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Store Description</label>
-                <textarea class="w-full h-24 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none">Luxury gold and diamond ornaments curated for everyday elegance.</textarea>
+                <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Store Address</label>
+                <textarea formControlName="companyAddress" class="w-full h-24 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"></textarea>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

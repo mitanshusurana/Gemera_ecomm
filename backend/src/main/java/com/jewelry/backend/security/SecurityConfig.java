@@ -109,8 +109,14 @@ public class SecurityConfig {
       // Authorization rules
       .authorizeHttpRequests(auth ->
         auth.requestMatchers("/api/v1/auth/**").permitAll()
-          .requestMatchers("/api/v1/products/**").permitAll()
-          .requestMatchers("/api/v1/products").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/settings").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/stores/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/treasure/config").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/certificates/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/orders/track/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/email/subscribe").permitAll()
           .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
           .requestMatchers("/actuator/**").permitAll()
           .anyRequest().authenticated()

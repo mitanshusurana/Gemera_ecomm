@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-white">
+    <div *ngIf="settings" class="min-h-screen bg-white">
       <div class="bg-diamond-50 py-12 md:py-20">
         <div class="container-luxury text-center">
           <h1 class="text-4xl md:text-6xl font-display font-bold text-diamond-900 mb-6">Contact Us</h1>
@@ -47,14 +47,14 @@ import { environment } from '../../environments/environment';
                         <div class="text-gold-500 text-xl">📍</div>
                         <div>
                             <h3 class="font-bold text-gray-900">Visit Our Showroom</h3>
-                            <p class="text-gray-600" [innerHTML]="env.companyAddress"></p>
+                            <p class="text-gray-600" [innerHTML]="settings.address"></p>
                         </div>
                     </div>
                     <div class="flex items-start gap-4">
                         <div class="text-gold-500 text-xl">📞</div>
                         <div>
                             <h3 class="font-bold text-gray-900">Phone</h3>
-                            <p class="text-gray-600">{{ env.companyPhone }}</p>
+                            <p class="text-gray-600">{{ settings.phone }}</p>
                             <p class="text-sm text-gray-500">Mon-Fri, 9am - 6pm EST</p>
                         </div>
                     </div>
@@ -62,7 +62,7 @@ import { environment } from '../../environments/environment';
                         <div class="text-gold-500 text-xl">✉️</div>
                         <div>
                             <h3 class="font-bold text-gray-900">Email</h3>
-                            <p class="text-gray-600">{{ env.companyEmail }}</p>
+                            <p class="text-gray-600">{{ settings.email }}</p>
                         </div>
                     </div>
                 </div>
@@ -72,6 +72,28 @@ import { environment } from '../../environments/environment';
     </div>
   `,
 })
-export class ContactComponent {
+import { OnInit } from '@angular/core';
+import { SettingService } from '../services/setting.service';
+
+export class ContactComponent implements OnInit {
   env = environment;
+  settings: any = null;
+
+  constructor(private settingService: SettingService) {}
+
+  ngOnInit() {
+    this.settingService.getSettings().subscribe({
+      next: (data) => {
+        this.settings = data;
+      },
+      error: () => {
+        // Fallback to env
+        this.settings = {
+          email: this.env.companyEmail,
+          phone: this.env.companyPhone,
+          address: this.env.companyAddress
+        };
+      }
+    });
+  }
 }

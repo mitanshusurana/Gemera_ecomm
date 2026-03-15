@@ -35,14 +35,17 @@ public class OrderController {
         return ResponseEntity.status(201).body(entityMapper.toOrderDTO(order));
     }
 
+    @Autowired
+    com.jewelry.backend.repository.UserRepository userRepository;
+
     @GetMapping
     @Operation(summary = "Get user orders")
     public ResponseEntity<Page<OrderDTO>> getOrders(
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "10") int size,
             Principal principal) {
-        // Simple check for admin email for now, better to use Roles from Principal/SecurityContext
-        if ("admin@gemara.com".equals(principal.getName())) {
+        com.jewelry.backend.entity.User user = userRepository.findByEmail(principal.getName()).orElse(null);
+        if (user != null && "ADMIN".equals(user.getRole())) {
              Page<Order> orders = orderService.getAllOrders(PageRequest.of(page, size));
              return ResponseEntity.ok(orders.map(entityMapper::toOrderDTO));
         }

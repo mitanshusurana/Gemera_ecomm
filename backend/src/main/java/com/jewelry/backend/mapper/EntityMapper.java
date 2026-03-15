@@ -46,6 +46,7 @@ public class EntityMapper {
         product.setPrice(dto.getPrice());
         product.setCategory(dto.getCategory());
         product.setStock(dto.getStock());
+        product.setVideoUrl(dto.getVideoUrl());
         product.setImages(dto.getImages());
         product.setSpecifications(dto.getSpecifications());
         product.setOccasions(dto.getOccasions());
@@ -104,6 +105,7 @@ public class EntityMapper {
         dto.setPrice(product.getPrice());
         dto.setCategory(product.getCategory());
         dto.setStock(product.getStock());
+        dto.setVideoUrl(product.getVideoUrl());
         dto.setImages(product.getImages());
         dto.setSpecifications(product.getSpecifications());
         dto.setOccasions(product.getOccasions());
