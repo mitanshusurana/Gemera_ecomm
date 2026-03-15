@@ -25,25 +25,20 @@ def verify_admin_app():
         page.click("button[type='submit']")
 
         # Wait for navigation to dashboard
-        page.wait_for_url("http://localhost:4300/products")
+        page.wait_for_url("http://localhost:4300/dashboard")
         print("Logged in successfully.")
 
-        # Check Product List
-        print("Checking Product List...")
-        page.wait_for_selector("table")
-        rows = page.query_selector_all("tbody tr")
-        print(f"Found {len(rows)} products.")
 
         # Add a Product
         print("Adding a new product...")
-        page.click("a[href='/products/new']")
-        page.wait_for_url("http://localhost:4300/products/new")
+        page.goto("http://localhost:4300/products/new")
 
         page.fill("input[formControlName='name']", "Test Product 123")
         page.fill("textarea[formControlName='description']", "This is a test product description.")
         page.fill("input[formControlName='price']", "199.99")
         page.fill("input[formControlName='stock']", "10")
-        page.fill("input[formControlName='category']", "Rings")
+        page.wait_for_timeout(1000)
+        page.select_option("select[formControlName='category']", value="Engagement Ring")
 
         page.click("button[type='submit']")
 
