@@ -7,6 +7,7 @@ import java.util.List;
 @Data
 public class OrderTracking {
     private String orderId;
+    private String orderNumber;
     private String status;
     private LocalDate estimatedDelivery;
     private String trackingNumber;

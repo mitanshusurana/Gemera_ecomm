@@ -21,6 +21,9 @@ public class Order extends BaseEntity {
     @JsonManagedReference
     private List<OrderItem> items = new ArrayList<>();
 
+    @Column(unique = true)
+    private String orderNumber;
+
     private BigDecimal total;
     private String status; // PENDING_PAYMENT, PAID, SHIPPED, etc.
     private LocalDate estimatedDelivery;

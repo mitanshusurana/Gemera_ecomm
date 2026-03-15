@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class OrderDTO {
     private UUID id;
+    private String orderNumber;
     private List<OrderItemDTO> items;
     private BigDecimal total;
     private String status;

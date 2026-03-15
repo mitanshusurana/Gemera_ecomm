@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -11,8 +11,15 @@ export class OrderService {
 
   constructor(private http: HttpClient) {}
 
-  getOrders(): Observable<any> {
-    return this.http.get(this.apiUrl);
+  getOrders(page: number = 0, size: number = 50, status: string = 'ALL'): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (status && status !== 'ALL') {
+      params = params.set('status', status);
+    }
+    return this.http.get(this.apiUrl, { params });
   }
 
   getOrder(id: string): Observable<any> {

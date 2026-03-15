@@ -15,19 +15,26 @@ export class OrderListComponent implements OnInit {
 
   orders: any[] = [];
   loading = true;
+  currentStatus = 'ALL';
+  statusOptions = ['ALL', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
 
   ngOnInit() {
     this.loadOrders();
   }
 
+  onFilterChange(event: any) {
+    this.currentStatus = event.target.value;
+    this.loadOrders();
+  }
+
   loadOrders() {
     this.loading = true;
-    this.orderService.getOrders().subscribe({
-      next: (data) => {
+    this.orderService.getOrders(0, 50, this.currentStatus).subscribe({
+      next: (data: any) => {
         this.orders = data.content;
         this.loading = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Failed to load orders', err);
         this.loading = false;
       }
