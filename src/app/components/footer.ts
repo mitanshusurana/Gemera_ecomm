@@ -140,7 +140,14 @@ export class FooterComponent implements OnInit {
   ngOnInit() {
     this.settingService.getSettings().subscribe({
       next: (data: any) => {
-        this.settings = data;
+        this.settings = {
+          email: data?.companyEmail || this.env.companyEmail,
+          phone: data?.companyPhone || this.env.companyPhone,
+          address: data?.companyAddress || this.env.companyAddress,
+          facebookUrl: data?.companyFacebook || this.env.companyFacebook,
+          instagramUrl: data?.companyInstagram || this.env.companyInstagram,
+          whatsappNumber: data?.whatsappNumber || this.env.whatsappNumber
+        };
         this.cdr.markForCheck();
       },
       error: () => {

@@ -6,9 +6,8 @@ import com.jewelry.backend.dto.*;
 import com.jewelry.backend.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.util.Collections;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -18,7 +17,7 @@ public class EntityMapper {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // --- User & Address ---
+    // --- User ---
     public UserDTO toUserDTO(User user) {
         if (user == null) return null;
         UserDTO dto = new UserDTO();
@@ -77,7 +76,8 @@ public class EntityMapper {
         // 2. Loose Gemstones
         product.setStoneSku(dto.getStoneSku());
         product.setVariety(dto.getVariety());
-        product.setShapeCut(dto.getShapeCut());
+        product.setShape(dto.getShape());
+        product.setCut(dto.getCut());
         product.setCaratWeight(dto.getCaratWeight());
         product.setColorHue(dto.getColorHue());
         product.setColorTone(dto.getColorTone());
@@ -221,7 +221,8 @@ public class EntityMapper {
         // 2. Loose Gemstones
         dto.setStoneSku(product.getStoneSku());
         dto.setVariety(product.getVariety());
-        dto.setShapeCut(product.getShapeCut());
+        dto.setShape(product.getShape());
+        dto.setCut(product.getCut());
         dto.setCaratWeight(product.getCaratWeight());
         dto.setColorHue(product.getColorHue());
         dto.setColorTone(product.getColorTone());

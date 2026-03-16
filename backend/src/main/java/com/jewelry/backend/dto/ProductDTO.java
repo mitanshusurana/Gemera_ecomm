@@ -55,7 +55,8 @@ public class ProductDTO {
 
     private String stoneSku;
     private String variety;
-    private String shapeCut;
+    private String shape;
+    private String cut;
     private BigDecimal caratWeight;
     private String colorHue;
     private String colorTone;
