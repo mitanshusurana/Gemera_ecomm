@@ -1,7 +1,7 @@
 <div class="px-4 sm:px-6 lg:px-8">
   <div class="sm:flex sm:items-center">
     <div class="sm:flex-auto">
-      <h1 class="text-xl font-semibold text-gray-900">Add Product</h1>
+      <h1 class="text-xl font-semibold text-gray-900">{{ isEditMode ? 'Edit Product' : 'Add Product' }}</h1>
     </div>
   </div>
 
@@ -115,6 +115,53 @@
                 <input type="file" id="videoFile" (change)="onVideoFileChange($event)" accept="video/*"
                   class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Price Breakup -->
+      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+          <div class="md:col-span-1">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Price Breakup</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              Optional detailed cost breakdown. Used on the product detail page if provided.
+            </p>
+          </div>
+          <div class="mt-5 md:mt-0 md:col-span-2">
+            <div formGroupName="priceBreakup" class="grid grid-cols-6 gap-6">
+
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Metal Price</label>
+                <input type="number" formControlName="metal"
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+              </div>
+
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Gemstone Price</label>
+                <input type="number" formControlName="gemstone"
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+              </div>
+
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Making Charges</label>
+                <input type="number" formControlName="makingCharges"
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+              </div>
+
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Tax</label>
+                <input type="number" formControlName="tax"
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+              </div>
+
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Total / Subtotal</label>
+                <input type="number" formControlName="total"
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+              </div>
+
             </div>
           </div>
         </div>

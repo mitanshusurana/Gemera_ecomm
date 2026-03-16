@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, ViewEncapsulation, ViewChild, ElementRef, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
@@ -89,33 +89,34 @@ import { environment } from '../../environments/environment';
               <!-- Desktop / Mobile Media Gallery -->
               <div class="flex flex-col md:flex-row gap-4 h-auto md:h-[600px]">
 
-                <!-- Thumbnails (Left on Desktop, Bottom on Mobile) -->
-                <div class="order-2 md:order-1 flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 md:pr-2 hide-scrollbar shrink-0">
+                <!-- Thumbnails (Left on Desktop, Carousel Dots on Mobile) -->
+                <!-- Use 'snap-x snap-mandatory' for touch friendly sliding on mobile -->
+                <div class="order-2 md:order-1 flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 md:pr-2 hide-scrollbar snap-x snap-mandatory shrink-0">
 
                   <!-- Video Thumbnail -->
                   <div *ngIf="product()?.videoUrl"
                        (click)="selectMedia('video')"
-                       class="relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-gray-100 flex items-center justify-center"
+                       class="snap-start relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-gray-100 flex items-center justify-center"
                        [class.border-primary-800]="showVideo()"
                        [class.border-transparent]="!showVideo()">
                      <div class="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
                         <svg class="w-8 h-8 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                      </div>
-                     <video [src]="product()?.videoUrl" class="w-full h-full object-cover opacity-50"></video>
+                     <video [src]="product()?.videoUrl" autoplay loop muted playsinline class="w-full h-full object-cover opacity-50"></video>
                   </div>
 
                   <!-- Image Thumbnails -->
                   <div *ngFor="let img of product()?.images; let i = index"
-                       (click)="selectMedia(img)"
-                       class="relative w-20 h-20 md:w-full md:h-24 bg-gray-50 rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
-                       [class.border-primary-800]="!showVideo() && selectedImage() === img"
-                       [class.border-transparent]="showVideo() || selectedImage() !== img">
+                       (click)="selectMedia('image', i)"
+                       class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-gray-50 rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
+                       [class.border-primary-800]="selectedMediaIndex() === i && !showVideo()"
+                       [class.border-transparent]="selectedMediaIndex() !== i || showVideo()">
                      <img [ngSrc]="img" fill sizes="(max-width: 1024px) 100vw, 50vw" class="object-cover hover:scale-105 transition-transform duration-500">
                   </div>
                 </div>
 
-                <!-- Main Display Area -->
-                <div class="order-1 md:order-2 flex-1 relative bg-gray-50 rounded-lg overflow-hidden border border-gray-100 h-[400px] md:h-full flex items-center justify-center">
+                <!-- Main Display Area (Touch Swipe on Mobile) -->
+                <div id="main-media-scroll" class="scroll-smooth order-1 md:order-2 flex-1 relative bg-gray-50 rounded-lg overflow-hidden border border-gray-100 h-[400px] md:h-full flex items-center justify-start snap-x snap-mandatory overflow-x-auto hide-scrollbar">
 
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
                     <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100 shadow-sm">Only {{product()?.stock}} left</span>
@@ -124,17 +125,18 @@ import { environment } from '../../environments/environment';
                   </div>
 
                   <!-- Video View -->
-                  <div *ngIf="showVideo()" class="w-full h-full bg-black flex items-center justify-center">
-                     <video [src]="product()?.videoUrl" controls autoplay class="w-full h-full object-contain"></video>
+                  <div #mediaVideo *ngIf="product()?.videoUrl" class="w-full h-full shrink-0 snap-center flex items-center justify-center bg-gray-50 relative pointer-events-none">
+                     <video [src]="product()?.videoUrl" autoplay loop muted playsinline class="w-full h-full object-cover pointer-events-auto"></video>
                   </div>
 
-                  <!-- Image View -->
-                  <img *ngIf="!showVideo()"
-                       [ngSrc]="selectedImage() || product()?.images?.[0] || product()?.imageUrl || ''"
-                       fill priority
-                       sizes="(max-width: 1024px) 100vw, 50vw"
-                       class="object-contain p-4 md:p-8 transition-transform duration-500 hover:scale-[1.02]"
-                       [alt]="product()?.name">
+                  <!-- Images View (Loop all images as swipeable items) -->
+                  <div #mediaImage *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index" class="w-full h-full shrink-0 snap-center relative">
+                    <img [ngSrc]="img"
+                         fill priority
+                         sizes="(max-width: 1024px) 100vw, 50vw"
+                         class="object-contain p-4 md:p-8 transition-transform duration-500"
+                         [alt]="product()?.name">
+                  </div>
                 </div>
               </div>
             </div>
@@ -144,36 +146,55 @@ import { environment } from '../../environments/environment';
                <h3 class="text-xl font-bold text-primary-800 mb-6 font-serif">Product Details</h3>
 
                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                  <!-- Dynamic Category Rendering -->
+                  <ng-container [ngSwitch]="product()?.category">
+                     <!-- Finished Jewelry -->
+                     <ng-container *ngSwitchCase="'Finished Jewelry'">
+                        <div *ngIf="product()?.metalType || product()?.grossWeight">
+                           <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
+                           <div class="space-y-2 text-sm">
+                              <div class="flex justify-between" *ngIf="product()?.metalType"><span class="text-gray-500">Metal Type</span><span class="font-medium text-gray-900">{{ product()?.metalType }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.metalPurity"><span class="text-gray-500">Purity</span><span class="font-medium text-gray-900">{{ product()?.metalPurity }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.metalColor"><span class="text-gray-500">Metal Color</span><span class="font-medium text-gray-900">{{ product()?.metalColor }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.grossWeight"><span class="text-gray-500">Gross Weight</span><span class="font-medium text-gray-900">{{ product()?.grossWeight }} g</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.dimensions"><span class="text-gray-500">Dimensions</span><span class="font-medium text-gray-900">{{ product()?.dimensions }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.bisHallmark"><span class="text-gray-500">BIS Hallmark</span><span class="font-medium text-gray-900">Yes</span></div>
+                           </div>
+                        </div>
+                     </ng-container>
 
-                  <!-- Product Specs -->
-                  <div *ngIf="product()?.specifications?.productDetails as pd">
-                     <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
-                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between" *ngFor="let item of pd | keyvalue">
-                           <span class="text-gray-500 capitalize">{{ formatKey(item.key) }}</span>
-                           <span class="font-medium text-gray-900">{{ item.value }}</span>
+                     <!-- Loose Gemstones -->
+                     <ng-container *ngSwitchCase="'Loose Gemstones'">
+                        <div *ngIf="product()?.shape || product()?.caratWeight">
+                           <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Gemstone Details</h4>
+                           <div class="space-y-2 text-sm">
+                              <div class="flex justify-between" *ngIf="product()?.variety"><span class="text-gray-500">Variety</span><span class="font-medium text-gray-900">{{ product()?.variety }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.shape"><span class="text-gray-500">Shape</span><span class="font-medium text-gray-900">{{ product()?.shape }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.cut"><span class="text-gray-500">Cut</span><span class="font-medium text-gray-900">{{ product()?.cut }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.caratWeight"><span class="text-gray-500">Carat Weight</span><span class="font-medium text-gray-900">{{ product()?.caratWeight }} ct</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.colorHue"><span class="text-gray-500">Color Hue</span><span class="font-medium text-gray-900">{{ product()?.colorHue }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.clarity"><span class="text-gray-500">Clarity</span><span class="font-medium text-gray-900">{{ product()?.clarity }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.measurements"><span class="text-gray-500">Measurements</span><span class="font-medium text-gray-900">{{ product()?.measurements }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.treatmentStatus"><span class="text-gray-500">Treatment</span><span class="font-medium text-gray-900">{{ product()?.treatmentStatus }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.originProvenance"><span class="text-gray-500">Origin</span><span class="font-medium text-gray-900">{{ product()?.originProvenance }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.labReportNumber"><span class="text-gray-500">Lab Report</span><span class="font-medium text-gray-900">{{ product()?.labReportNumber }}</span></div>
+                           </div>
                         </div>
-                     </div>
-                  </div>
+                     </ng-container>
 
-                  <!-- Metal Specs -->
-                  <div *ngIf="product()?.specifications?.metalDetails as md">
-                     <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Metal Specifications</h4>
-                     <div *ngFor="let metal of md" class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                           <span class="text-gray-500">Type</span>
-                           <span class="font-medium text-gray-900">{{ metal.type }}</span>
+                     <!-- Fallback / Legacy Specs -->
+                     <ng-container *ngSwitchDefault>
+                        <div *ngIf="product()?.specifications?.productDetails as pd">
+                           <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
+                           <div class="space-y-2 text-sm">
+                              <div class="flex justify-between" *ngFor="let item of pd | keyvalue">
+                                 <span class="text-gray-500 capitalize">{{ formatKey(item.key) }}</span>
+                                 <span class="font-medium text-gray-900">{{ item.value }}</span>
+                              </div>
+                           </div>
                         </div>
-                        <div class="flex justify-between">
-                           <span class="text-gray-500">Purity</span>
-                           <span class="font-medium text-gray-900">{{ metal.purity }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                           <span class="text-gray-500">Weight</span>
-                           <span class="font-medium text-gray-900">{{ metal.weight }} g</span>
-                        </div>
-                     </div>
-                  </div>
+                     </ng-container>
+                  </ng-container>
                </div>
 
                <!-- Diamond Details Table -->
@@ -244,15 +265,15 @@ import { environment } from '../../environments/environment';
                    <p class="text-xs text-green-700 font-medium mb-3">Inclusive of all taxes</p>
 
                    <!-- Price Breakup Toggle -->
-                   <button (click)="togglePriceBreakup()" class="text-xs font-bold text-secondary-600 hover:text-secondary-800 flex items-center gap-1 uppercase tracking-wide">
+                   <button *ngIf="hasPriceBreakup()" (click)="togglePriceBreakup()" class="text-xs font-bold text-secondary-600 hover:text-secondary-800 flex items-center gap-1 uppercase tracking-wide">
                       View Price Breakup <span class="transition-transform" [class.rotate-180]="showPriceBreakup()">▼</span>
                    </button>
 
-                   <div *ngIf="showPriceBreakup() && currentPriceBreakup()" class="mt-3 bg-gray-50 p-3 rounded text-sm text-gray-600 animate-fade-in space-y-2">
+                   <div *ngIf="showPriceBreakup() && hasPriceBreakup()" class="mt-3 bg-gray-50 p-3 rounded text-sm text-gray-600 animate-fade-in space-y-2">
                       <div class="flex justify-between"><span>Metal</span> <span>{{ currentPriceBreakup()!.metal | currencyConvert }}</span></div>
                       <div class="flex justify-between"><span>Stone</span> <span>{{ currentPriceBreakup()!.gemstone | currencyConvert }}</span></div>
                       <div class="flex justify-between"><span>Making</span> <span>{{ currentPriceBreakup()!.makingCharges | currencyConvert }}</span></div>
-                      <div class="flex justify-between"><span>GST (3%)</span> <span>{{ currentPriceBreakup()!.tax | currencyConvert }}</span></div>
+                      <div class="flex justify-between"><span>Tax</span> <span>{{ currentPriceBreakup()!.tax | currencyConvert }}</span></div>
                       <div class="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200"><span>Grand Total</span> <span>{{ currentPriceBreakup()!.total | currencyConvert }}</span></div>
                    </div>
                 </div>
@@ -395,6 +416,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   // UI State
   selectedImage = signal<string | null>(null);
+  selectedMediaIndex = signal<number>(0);
   showVideo = signal(false);
   sizeGuideOpen = signal(false);
   showPriceBreakup = signal(false);
@@ -408,6 +430,9 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   // Delivery
   pincode = signal('');
   deliveryDate = signal<string | null>(null);
+
+  @ViewChild('mediaVideo') mediaVideoElement!: ElementRef;
+  @ViewChildren('mediaImage') mediaImageElements!: QueryList<ElementRef>;
 
   // Computed Prices
   currentPrice = computed(() => {
@@ -530,16 +555,31 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   // Helpers
+  hasPriceBreakup(): boolean {
+    const pb = this.product()?.priceBreakup;
+    if (!pb) return false;
+    // Check if there is valid numerical data beyond just 0
+    return (pb.metal > 0 || pb.gemstone > 0 || pb.makingCharges > 0 || pb.total > 0);
+  }
+
   hasOption(t: string) { return !!this.product()?.customizationOptions?.some(o => o.type === t); }
   getOptions(t: string) { return this.product()?.customizationOptions?.filter(o => o.type === t) || []; }
   formatKey(k: string) { return k.replace(/([A-Z])/g, ' $1').trim(); }
 
-  selectMedia(mediaUrl: string) {
-     if (mediaUrl === 'video') {
+  selectMedia(type: 'video' | 'image', index?: number) {
+     if (type === 'video') {
          this.showVideo.set(true);
-     } else {
+         this.selectedMediaIndex.set(-1);
+         if (this.mediaVideoElement) {
+             this.mediaVideoElement.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+         }
+     } else if (index !== undefined) {
          this.showVideo.set(false);
-         this.selectedImage.set(mediaUrl);
+         this.selectedMediaIndex.set(index);
+         const el = this.mediaImageElements.toArray()[index];
+         if (el) {
+             el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+         }
      }
   }
 }

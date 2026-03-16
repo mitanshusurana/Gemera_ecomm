@@ -25,6 +25,7 @@ export const routes: Routes = [
       { path: 'customers', component: CustomerListComponent },
       { path: 'products', component: ProductListComponent },
       { path: 'products/new', component: ProductAddComponent },
+      { path: 'products/edit/:id', component: ProductAddComponent },
       { path: 'orders', component: OrderListComponent },
       { path: 'orders/:id', component: OrderDetailComponent },
       { path: 'rfqs/:id', component: RfqDetailComponent },
