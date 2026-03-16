@@ -124,4 +124,17 @@ public class ProductDTO {
         private String name;
         private BigDecimal priceModifier;
     }
+
+    @Data
+    public static class PriceBreakupDTO {
+        private BigDecimal metal;
+        private BigDecimal gemstone;
+        private BigDecimal makingCharges;
+        private BigDecimal tax;
+        private BigDecimal total;
+        private BigDecimal discount;
+        private BigDecimal grandTotal;
+    }
+
+    private PriceBreakupDTO priceBreakup;
 }

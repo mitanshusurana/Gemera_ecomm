@@ -142,4 +142,19 @@ public class Product extends BaseEntity {
         private String name; // e.g. "Gold", "6"
         private BigDecimal priceModifier;
     }
+
+    @Embeddable
+    @Data
+    public static class PriceBreakup {
+        private BigDecimal metal;
+        private BigDecimal gemstone;
+        private BigDecimal makingCharges;
+        private BigDecimal tax;
+        private BigDecimal total;
+        private BigDecimal discount;
+        private BigDecimal grandTotal;
+    }
+
+    @jakarta.persistence.Embedded
+    private PriceBreakup priceBreakup;
 }
