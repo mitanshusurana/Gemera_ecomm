@@ -31,6 +31,29 @@ export class ProductAddComponent {
   occasionsList = ['Engagement', 'Wedding', 'Anniversary', 'Daily Wear'];
   stylesList = ['Modern', 'Vintage', 'Classic Solitaire', 'Halo'];
 
+  // --- Predefined Dropdown Options for Better UX ---
+  metalTypes = ['Gold', 'Silver', 'Platinum', 'Palladium', 'Titanium'];
+  metalPurities = ['24K', '22K', '18K', '14K', '10K', '925 Sterling', '950 Platinum'];
+  metalColors = ['Yellow', 'White', 'Rose', 'Two-Tone', 'PVD Plating', 'Black Antique'];
+  manufacturingTerms = ['Jadau', 'Kundan', 'Meenakari', 'Polki', 'Cast', 'Handmade'];
+
+  shapeCuts = ['Round Brilliant', 'Princess', 'Cushion', 'Emerald', 'Oval', 'Radiant', 'Pear', 'Marquise', 'Asscher', 'Heart', 'Cabochon'];
+  clarities = ['Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Clean', 'Slight Inclusions', 'Heavy Inclusions', 'Opaque'];
+  treatmentStatuses = ['None / Unheated', 'Heated', 'Beryllium Treated', 'Fracture Filled', 'Irradiated', 'Dyed'];
+  polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'Abr (Abrasion)', 'Brn (Burn mark)'];
+  symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'T/oc (Table Off-Center)', 'OR (Out-of-Round)'];
+  fluorescences = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
+  girdles = ['Extremely Thin', 'Very Thin', 'Thin', 'Medium', 'Slightly Thick', 'Thick', 'Very Thick', 'Extremely Thick'];
+  culets = ['None', 'Very Small', 'Small', 'Medium', 'Slightly Large', 'Large', 'Very Large'];
+
+  carvingStyles = ['Intaglio', 'Cameo', 'Relief Carving', 'Hardstone Carving', 'Freeform'];
+  carvingTechniques = ['Diamond-tipped', 'Laser engraving', 'Hand carved', 'Ultrasonic drilling'];
+
+  manufacturingStages = ['Planning', 'Sawing', 'Bruting', 'Faceting', 'Polishing', 'Grading'];
+
+  componentTypes = ['Findings', 'Clasps', 'Hooks', 'Jump Rings', 'Bails', 'Posts', 'Beads', 'Silver Wire'];
+  beadStyles = ['Faceted', 'Round', 'Rondelle', 'Briolette', 'Tube', 'Chip'];
+
   productForm = this.fb.group({
     name: ['', Validators.required],
     description: ['', Validators.required],
