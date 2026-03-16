@@ -19,11 +19,11 @@ export class ProductAddComponent {
   private router = inject(Router);
 
   categories = [
-    { id: '1', name: 'engagement-rings', displayName: 'Engagement Rings', value: 'Engagement Ring' },
+    { id: '1', name: 'finished-jewelry', displayName: 'Finished Jewelry', value: 'Finished Jewelry' },
     { id: '2', name: 'loose-gemstones', displayName: 'Loose Gemstones', value: 'Loose Gemstone' },
-    { id: '3', name: 'spiritual-idols', displayName: 'Spiritual Idols', value: 'Spiritual Idol' },
-    { id: '4', name: 'gemstone-jewelry', displayName: 'Gemstone Jewelry', value: 'Gemstone Jewelry' },
-    { id: '5', name: 'precious-metals', displayName: 'Precious Metals', value: 'Precious Metal' },
+    { id: '3', name: 'religious-idols', displayName: 'Religious Idols & Carvings', value: 'Spiritual Idol' },
+    { id: '4', name: 'manufacturing-rough', displayName: 'Manufacturing & Rough Materials', value: 'Rough Material' },
+    { id: '5', name: 'components-materials', displayName: 'Components & Materials', value: 'Component' },
     { id: '6', name: 'bespoke-custom', displayName: 'Bespoke Custom', value: 'Custom' },
     { id: '7', name: 'ring-settings', displayName: 'Ring Settings', value: 'Ring Setting' }
   ];
@@ -31,15 +31,123 @@ export class ProductAddComponent {
   occasionsList = ['Engagement', 'Wedding', 'Anniversary', 'Daily Wear'];
   stylesList = ['Modern', 'Vintage', 'Classic Solitaire', 'Halo'];
 
+  // --- Predefined Dropdown Options for Better UX ---
+  metalTypes = ['Gold', 'Silver', 'Platinum', 'Palladium', 'Titanium'];
+  metalPurities = ['24K', '22K', '18K', '14K', '10K', '925 Sterling', '950 Platinum'];
+  metalColors = ['Yellow', 'White', 'Rose', 'Two-Tone', 'PVD Plating', 'Black Antique'];
+  manufacturingTerms = ['Jadau', 'Kundan', 'Meenakari', 'Polki', 'Cast', 'Handmade'];
+
+  shapeCuts = ['Round Brilliant', 'Princess', 'Cushion', 'Emerald', 'Oval', 'Radiant', 'Pear', 'Marquise', 'Asscher', 'Heart', 'Cabochon'];
+  clarities = ['Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Clean', 'Slight Inclusions', 'Heavy Inclusions', 'Opaque'];
+  treatmentStatuses = ['None / Unheated', 'Heated', 'Beryllium Treated', 'Fracture Filled', 'Irradiated', 'Dyed'];
+  polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'Abr (Abrasion)', 'Brn (Burn mark)'];
+  symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'T/oc (Table Off-Center)', 'OR (Out-of-Round)'];
+  fluorescences = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
+  girdles = ['Extremely Thin', 'Very Thin', 'Thin', 'Medium', 'Slightly Thick', 'Thick', 'Very Thick', 'Extremely Thick'];
+  culets = ['None', 'Very Small', 'Small', 'Medium', 'Slightly Large', 'Large', 'Very Large'];
+
+  carvingStyles = ['Intaglio', 'Cameo', 'Relief Carving', 'Hardstone Carving', 'Freeform'];
+  carvingTechniques = ['Diamond-tipped', 'Laser engraving', 'Hand carved', 'Ultrasonic drilling'];
+
+  manufacturingStages = ['Planning', 'Sawing', 'Bruting', 'Faceting', 'Polishing', 'Grading'];
+
+  componentTypes = ['Findings', 'Clasps', 'Hooks', 'Jump Rings', 'Bails', 'Posts', 'Beads', 'Silver Wire'];
+  beadStyles = ['Faceted', 'Round', 'Rondelle', 'Briolette', 'Tube', 'Chip'];
+
   productForm = this.fb.group({
     name: ['', Validators.required],
     description: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(0)]],
     stock: [0, [Validators.required, Validators.min(0)]],
     category: ['', Validators.required],
+    subCategory: [''],
+    sku: [''], // Auto-generated if empty
+
+    inventoryOwnership: ['Owned Stock'],
+    seoQualifiersStr: [''], // Comma separated, we will parse before submit
+    occasionKeywordsStr: [''], // Comma separated, we will parse before submit
+
     occasions: this.fb.array([]),
     styles: this.fb.array([]),
-    customizationOptions: this.fb.array([])
+    customizationOptions: this.fb.array([]),
+
+    // 1. Finished Jewelry
+    metalType: [''],
+    metalPurity: [''],
+    grossWeight: [0],
+    netWeight: [0],
+    totalCaratWeight: [0],
+    dimensions: [''],
+    currentLocation: [''],
+    huid: [''],
+    bisHallmark: [false],
+    hallmarkingDate: [''],
+    designStyle: [''],
+    metalColor: [''],
+    manufacturingTerminology: [''],
+
+    // 2. Loose Gemstones
+    stoneSku: [''],
+    variety: [''],
+    shapeCut: [''],
+    caratWeight: [0],
+    colorHue: [''],
+    colorTone: [''],
+    colorSaturation: [''],
+    clarity: [''],
+    measurements: [''],
+    treatmentStatus: [''],
+    labReportNumber: [''],
+    certificateImage: [''],
+    polish: [''],
+    symmetry: [''],
+    fluorescence: [''],
+    girdle: [''],
+    culet: [''],
+    tablePercentage: [0],
+    depthPercentage: [0],
+    originProvenance: [''],
+    stockStatus: ['Real'],
+
+    // 3. Religious Idols & Gemstone Carvings
+    subjectDeityName: [''],
+    gemstoneMaterial: [''],
+    carvingStyle: [''],
+    qualityDescription: [''],
+    asana: [''],
+    mudra: [''],
+    ayudha: [''],
+    vahana: [''],
+    artistName: [''],
+    historicalContext: [''],
+    carvingTechnique: [''],
+
+    // 4. Manufacturing & Rough Materials
+    lotNumber: [''],
+    mineOrigin: [''],
+    roughMaterial: [''],
+    roughWeight: [0],
+    purchaseDate: [''],
+    supplierCode: [''],
+    acquisitionCost: [0],
+    matrixParentRock: [''],
+    crystalMorphology: [''],
+    yieldEstimate: [0],
+    wastageLog: [''],
+    manufacturingStage: [''],
+
+    // 5. Components & Materials
+    componentType: [''],
+    material: [''],
+    purity: [''],
+    quantityPcs: [0],
+    weightPerPiece: [0],
+    totalWeight: [0],
+    reorderPointAlert: [0],
+    beadStyle: [''],
+    layoutPattern: [''],
+    vendorInformation: [''],
+    minOrderQuantity: [0]
   });
 
   loading = false;
@@ -57,6 +165,10 @@ export class ProductAddComponent {
 
   get customizationOptions() {
     return this.productForm.get('customizationOptions') as FormArray;
+  }
+
+  get selectedCategory() {
+    return this.productForm.get('category')?.value;
   }
 
   onCheckboxChange(e: any, formArrayName: string) {
@@ -157,8 +269,15 @@ export class ProductAddComponent {
 
   private createProductRecord(uploadedImageUrls: string[], uploadedVideoUrl?: string) {
     const formValue = this.productForm.value;
+
+    // Parse comma separated strings to arrays
+    const seoQualifiers = formValue.seoQualifiersStr ? (formValue.seoQualifiersStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
+    const occasionKeywords = formValue.occasionKeywordsStr ? (formValue.occasionKeywordsStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
+
     const productData = {
       ...formValue,
+      seoQualifiers,
+      occasionKeywords,
       images: uploadedImageUrls,
       videoUrl: uploadedVideoUrl || null,
       specifications: null
