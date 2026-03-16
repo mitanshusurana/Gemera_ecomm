@@ -63,6 +63,7 @@ export class ProductAddComponent {
     subCategory: [''],
     sku: [''], // Auto-generated if empty
 
+    // Global e-commerce / inventory ownership
     inventoryOwnership: ['Owned Stock'],
     seoQualifiersStr: [''], // Comma separated, we will parse before submit
     occasionKeywordsStr: [''], // Comma separated, we will parse before submit
