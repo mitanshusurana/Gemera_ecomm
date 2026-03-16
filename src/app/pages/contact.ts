@@ -82,7 +82,11 @@ export class ContactComponent implements OnInit {
   ngOnInit() {
     this.settingService.getSettings().subscribe({
       next: (data: any) => {
-        this.settings = data;
+        this.settings = {
+          email: data?.companyEmail || this.env.companyEmail,
+          phone: data?.companyPhone || this.env.companyPhone,
+          address: data?.companyAddress || this.env.companyAddress
+        };
       },
       error: () => {
         // Fallback to env
