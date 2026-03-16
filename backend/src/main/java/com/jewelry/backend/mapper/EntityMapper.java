@@ -50,6 +50,9 @@ public class EntityMapper {
         product.setVideoUrl(dto.getVideoUrl());
 
         product.setInventoryOwnership(dto.getInventoryOwnership());
+        product.setSupplierName(dto.getSupplierName());
+        product.setReturnDueDate(dto.getReturnDueDate());
+        product.setCommissionPercentage(dto.getCommissionPercentage());
         product.setSeoQualifiers(dto.getSeoQualifiers());
         product.setOccasionKeywords(dto.getOccasionKeywords());
 
@@ -72,6 +75,7 @@ public class EntityMapper {
         product.setDesignStyle(dto.getDesignStyle());
         product.setMetalColor(dto.getMetalColor());
         product.setManufacturingTerminology(dto.getManufacturingTerminology());
+        product.setStoneDetailIds(dto.getStoneDetailIds());
 
         // 2. Loose Gemstones
         product.setStoneSku(dto.getStoneSku());
@@ -195,6 +199,9 @@ public class EntityMapper {
         dto.setVideoUrl(product.getVideoUrl());
 
         dto.setInventoryOwnership(product.getInventoryOwnership());
+        dto.setSupplierName(product.getSupplierName());
+        dto.setReturnDueDate(product.getReturnDueDate());
+        dto.setCommissionPercentage(product.getCommissionPercentage());
         dto.setSeoQualifiers(product.getSeoQualifiers());
         dto.setOccasionKeywords(product.getOccasionKeywords());
 
@@ -217,6 +224,7 @@ public class EntityMapper {
         dto.setDesignStyle(product.getDesignStyle());
         dto.setMetalColor(product.getMetalColor());
         dto.setManufacturingTerminology(product.getManufacturingTerminology());
+        dto.setStoneDetailIds(product.getStoneDetailIds());
 
         // 2. Loose Gemstones
         dto.setStoneSku(product.getStoneSku());

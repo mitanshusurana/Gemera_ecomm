@@ -16,10 +16,10 @@ export class ProductAddComponent implements OnInit {
 
   categoriesList = [
     { id: '1', name: 'finished-jewelry', displayName: 'Finished Jewelry', value: 'Finished Jewelry' },
-    { id: '2', name: 'loose-gemstones', displayName: 'Loose Gemstones', value: 'Loose Gemstone' },
-    { id: '3', name: 'spiritual-idols', displayName: 'Religious Idols & Gemstone Carvings', value: 'Spiritual Idol' },
-    { id: '4', name: 'rough-materials', displayName: 'Manufacturing & Rough Materials', value: 'Precious Metal' },
-    { id: '5', name: 'components-materials', displayName: 'Components & Materials', value: 'Component' },
+    { id: '2', name: 'loose-gemstones', displayName: 'Loose Gemstones', value: 'Loose Gemstones' },
+    { id: '3', name: 'spiritual-idols', displayName: 'Religious Idols & Gemstone Carvings', value: 'Religious Idols & Gemstone Carvings' },
+    { id: '4', name: 'rough-materials', displayName: 'Manufacturing & Rough Materials', value: 'Manufacturing & Rough Materials' },
+    { id: '5', name: 'components-materials', displayName: 'Components & Materials', value: 'Components & Materials' },
     { id: '6', name: 'bespoke-custom', displayName: 'Bespoke Custom', value: 'Custom' },
     { id: '7', name: 'ring-settings', displayName: 'Ring Settings', value: 'Ring Setting' }
   ];
@@ -32,19 +32,19 @@ export class ProductAddComponent implements OnInit {
       'Bracelets (Bangles, Cuffs, Tennis, Beaded, Bolo, Bajuband)',
       'Pendants/Other (Brooches, Watches)'
     ],
-    'Loose Gemstone': [
+    'Loose Gemstones': [
       'Diamonds',
       'Colored Gemstones',
       'Melee'
     ],
-    'Spiritual Idol': [
+    'Religious Idols & Gemstone Carvings': [
       'Murtis (Ganesh, Krishna, Shiva, Lakshmi)'
     ],
-    'Precious Metal': [
+    'Manufacturing & Rough Materials': [
       'Rough Parcels',
       'Single Rough Crystals'
     ],
-    'Component': [
+    'Components & Materials': [
       'Findings (Clasps, Hooks)',
       'Beads',
       'Silver Wire'
@@ -139,6 +139,7 @@ export class ProductAddComponent implements OnInit {
       designStyle: [''],
       metalColor: [''],
       manufacturingTerminology: [''],
+      stoneDetailIds: [''],
 
       // 2. Loose Gemstones
       stoneSku: [''],
@@ -313,11 +314,13 @@ export class ProductAddComponent implements OnInit {
     // Parse comma separated strings to arrays
     const seoQualifiers = formValue.seoQualifiersStr ? (formValue.seoQualifiersStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
     const occasionKeywords = formValue.occasionKeywordsStr ? (formValue.occasionKeywordsStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
+    const stoneDetailIds = formValue.stoneDetailIds ? (formValue.stoneDetailIds as string).split(',').map(s => s.trim()).filter(s => s) : [];
 
     const productData = {
       ...formValue,
       seoQualifiers,
       occasionKeywords,
+      stoneDetailIds,
       images: uploadedImageUrls,
       videoUrl: uploadedVideoUrl || null,
       specifications: null

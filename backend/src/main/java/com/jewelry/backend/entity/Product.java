@@ -26,6 +26,9 @@ public class Product extends BaseEntity {
 
     // Global e-commerce / inventory ownership
     private String inventoryOwnership; // "Owned Stock" vs "Consignment/Memo"
+    private String supplierName; // Consignment Supplier
+    private String returnDueDate; // Consignment Return Date
+    private BigDecimal commissionPercentage; // Consignment Commission
 
     @ElementCollection
     private List<String> seoQualifiers; // e.g., "Ethically Sourced", "Handmade"
@@ -64,6 +67,9 @@ public class Product extends BaseEntity {
     private String designStyle; // Modern/Vintage
     private String metalColor; // Yellow, White, Rose, etc.
     private String manufacturingTerminology; // Jadau, Kundan, Meenakari
+
+    @ElementCollection
+    private List<String> stoneDetailIds; // BOM linking to specific loose stones
 
     // 2. Loose Gemstones
     private String stoneSku;

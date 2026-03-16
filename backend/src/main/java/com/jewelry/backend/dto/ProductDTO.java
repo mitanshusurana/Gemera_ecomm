@@ -28,6 +28,10 @@ public class ProductDTO {
     private String videoUrl;
 
     private String inventoryOwnership;
+    private String supplierName;
+    private String returnDueDate;
+    private BigDecimal commissionPercentage;
+
     private List<String> seoQualifiers;
     private List<String> occasionKeywords;
 
@@ -52,6 +56,7 @@ public class ProductDTO {
     private String designStyle;
     private String metalColor;
     private String manufacturingTerminology;
+    private List<String> stoneDetailIds;
 
     private String stoneSku;
     private String variety;

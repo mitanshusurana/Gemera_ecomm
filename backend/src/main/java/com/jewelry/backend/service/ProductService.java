@@ -89,22 +89,25 @@ public class ProductService {
             String material = product.getMetalType() != null ? product.getMetalType().substring(0, Math.min(product.getMetalType().length(), 2)).toUpperCase() : "XX";
             String purity = product.getMetalPurity() != null ? product.getMetalPurity().replaceAll("[^0-9]", "") : "00";
             skuBuilder.append(material).append(purity).append("-");
-        } else if ("Loose Gemstone".equalsIgnoreCase(category)) {
-            String variety = product.getVariety() != null ? product.getVariety().substring(0, Math.min(product.getVariety().length(), 3)).toUpperCase() : "XXX";
+        } else if ("Loose Gemstones".equalsIgnoreCase(category)) {
+            String variety = product.getVariety() != null && !product.getVariety().isEmpty() ? product.getVariety().substring(0, Math.min(product.getVariety().length(), 3)).toUpperCase() : "XXX";
             skuBuilder.append(variety).append("-");
-        } else if ("Spiritual Idol".equalsIgnoreCase(category)) {
-            String material = product.getGemstoneMaterial() != null ? product.getGemstoneMaterial().substring(0, Math.min(product.getGemstoneMaterial().length(), 3)).toUpperCase() : "XXX";
+        } else if ("Religious Idols & Gemstone Carvings".equalsIgnoreCase(category)) {
+            String material = product.getGemstoneMaterial() != null && !product.getGemstoneMaterial().isEmpty() ? product.getGemstoneMaterial().substring(0, Math.min(product.getGemstoneMaterial().length(), 3)).toUpperCase() : "XXX";
             skuBuilder.append(material).append("-");
-        } else if ("Precious Metal".equalsIgnoreCase(category) || "Component".equalsIgnoreCase(category)) {
-             String material = product.getMaterial() != null ? product.getMaterial().substring(0, Math.min(product.getMaterial().length(), 2)).toUpperCase() : "XX";
-             String purity = product.getPurity() != null ? product.getPurity().replaceAll("[^0-9]", "") : "00";
+        } else if ("Manufacturing & Rough Materials".equalsIgnoreCase(category)) {
+             String material = product.getRoughMaterial() != null && !product.getRoughMaterial().isEmpty() ? product.getRoughMaterial().substring(0, Math.min(product.getRoughMaterial().length(), 2)).toUpperCase() : "XX";
+             skuBuilder.append(material).append("-");
+        } else if ("Components & Materials".equalsIgnoreCase(category)) {
+             String material = product.getMaterial() != null && !product.getMaterial().isEmpty() ? product.getMaterial().substring(0, Math.min(product.getMaterial().length(), 2)).toUpperCase() : "XX";
+             String purity = product.getPurity() != null && !product.getPurity().isEmpty() ? product.getPurity().replaceAll("[^0-9]", "") : "00";
              skuBuilder.append(material).append(purity).append("-");
         } else {
              skuBuilder.append("XX00-");
         }
 
         // 4. Unique ID
-        // Generate a random 4 digit hex or use database sequence (we use random hex for simplicity here since no sequence exists before save)
+        // Generate a random 4 digit hex
         String uniqueId = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
         skuBuilder.append(uniqueId);
 
