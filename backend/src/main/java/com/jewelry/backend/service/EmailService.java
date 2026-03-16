@@ -55,9 +55,7 @@ public class EmailService {
                    htmlContent = template.getHtmlContent();
                    // Replace placeholders
                    if (notification.getData() != null) {
-                       for (Map.Entry<String, String> entry : notification.getData().entrySet()) {
-                           htmlContent = htmlContent.replace("{{" + entry.getKey() + "}}", String.valueOf(entry.getValue()));
-                       }
+                       htmlContent = replacePlaceholders(htmlContent, notification.getData());
                    }
                 } else {
                    // Fallback
@@ -87,6 +85,36 @@ public class EmailService {
         }
 
         return notificationRepository.save(notification);
+    }
+
+    private String replacePlaceholders(String template, Map<String, String> data) {
+        if (template == null || template.isEmpty() || data == null || data.isEmpty()) {
+            return template;
+        }
+
+        StringBuilder sb = new StringBuilder(template.length());
+        int i = 0;
+        while (i < template.length()) {
+            int openIdx = template.indexOf("{{", i);
+            if (openIdx == -1) {
+                sb.append(template, i, template.length());
+                break;
+            }
+            sb.append(template, i, openIdx);
+            int closeIdx = template.indexOf("}}", openIdx + 2);
+            if (closeIdx == -1) {
+                sb.append(template, openIdx, template.length());
+                break;
+            }
+            String key = template.substring(openIdx + 2, closeIdx);
+            if (data.containsKey(key)) {
+                sb.append(data.get(key));
+            } else {
+                sb.append("{{").append(key).append("}}");
+            }
+            i = closeIdx + 2;
+        }
+        return sb.toString();
     }
 
     public Page<EmailNotification> getUserNotifications(String email, Pageable pageable) {
