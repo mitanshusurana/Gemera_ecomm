@@ -19,6 +19,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     "(:priceMin IS NULL OR p.price >= :priceMin) AND " +
     "(:priceMax IS NULL OR p.price <= :priceMax) AND " +
     "(:search IS NULL OR " +
+    "LOWER(CAST(p.sku AS text)) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')) OR " +
     "LOWER(CAST(p.name AS text)) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')) OR " +
     "LOWER(CAST(p.description AS text)) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%'))) AND " +
     "(:occasions IS NULL OR o IN :occasions) AND " +

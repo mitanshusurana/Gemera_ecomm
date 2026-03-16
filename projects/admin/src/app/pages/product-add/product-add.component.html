@@ -36,14 +36,33 @@
                 <select id="category" formControlName="category"
                   class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                   <option value="">Select a category</option>
-                  <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.displayName }}</option>
+                  <option *ngFor="let cat of categoriesList" [value]="cat.value">{{ cat.displayName }}</option>
                 </select>
               </div>
 
+              <!-- Show if Consignment/Memo -->
+              <ng-container *ngIf="productForm.get('inventoryOwnership')?.value === 'Consignment/Memo'">
+                <div class="col-span-6 sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Supplier Name</label>
+                  <input type="text" formControlName="supplierName" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div class="col-span-6 sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Return Due Date</label>
+                  <input type="date" formControlName="returnDueDate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div class="col-span-6 sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700">Commission %</label>
+                  <input type="number" formControlName="commissionPercentage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+              </ng-container>
+
               <div class="col-span-6 sm:col-span-3">
                 <label for="subCategory" class="block text-sm font-medium text-gray-700">Sub-Category</label>
-                <input type="text" formControlName="subCategory" id="subCategory" placeholder="e.g. Rings, Necklace..."
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                <select id="subCategory" formControlName="subCategory"
+                  class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                  <option value="">Select a sub-category</option>
+                  <option *ngFor="let sub of availableSubCategories" [value]="sub">{{ sub }}</option>
+                </select>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -104,7 +123,7 @@
       <!-- Specific Categories Section -->
 
       <!-- 1. Finished Jewelry -->
-      <div *ngIf="selectedCategory === 'Finished Jewelry' || selectedCategory === 'Ring Setting' || selectedCategory === 'Gemstone Jewelry'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div *ngIf="selectedCategory === 'Finished Jewelry' || selectedCategory === 'Ring Setting'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Finished Jewelry Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-2">
@@ -171,11 +190,18 @@
             <input type="checkbox" formControlName="bisHallmark" id="bisHallmark" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
             <label for="bisHallmark" class="ml-2 block text-sm text-gray-900">BIS Hallmark</label>
           </div>
+
+          <!-- Stone Linking for BOM -->
+          <div class="col-span-6">
+            <label class="block text-sm font-medium text-gray-700">Stone Detail IDs (Comma separated)</label>
+            <p class="text-xs text-gray-500 mb-1">Enter SKUs of loose stones used in this piece (e.g., L-DIA-1234, L-RUB-5678)</p>
+            <input type="text" formControlName="stoneDetailIds" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+          </div>
         </div>
       </div>
 
       <!-- 2. Loose Gemstones -->
-      <div *ngIf="selectedCategory === 'Loose Gemstone'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div *ngIf="selectedCategory === 'Loose Gemstones'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Loose Gemstone Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-2">
@@ -187,10 +213,17 @@
             <input type="text" formControlName="variety" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Shape / Cut</label>
-            <select formControlName="shapeCut" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-gray-700">Shape</label>
+            <select formControlName="shape" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Shape</option>
-              <option *ngFor="let s of shapeCuts" [value]="s">{{ s }}</option>
+              <option *ngFor="let s of shapes" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="col-span-6 sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Cut</label>
+            <select formControlName="cut" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+              <option value="">Select Cut</option>
+              <option *ngFor="let c of cuts" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
@@ -293,7 +326,7 @@
       </div>
 
       <!-- 3. Religious Idols -->
-      <div *ngIf="selectedCategory === 'Spiritual Idol'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div *ngIf="selectedCategory === 'Religious Idols & Gemstone Carvings'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Religious Idols & Carvings Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-3">
@@ -350,7 +383,7 @@
       </div>
 
       <!-- 4. Manufacturing & Rough Materials -->
-      <div *ngIf="selectedCategory === 'Rough Material'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div *ngIf="selectedCategory === 'Manufacturing & Rough Materials'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Rough Material Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-2">
@@ -408,7 +441,7 @@
       </div>
 
       <!-- 5. Components & Materials -->
-      <div *ngIf="selectedCategory === 'Component' || selectedCategory === 'Precious Metal'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div *ngIf="selectedCategory === 'Components & Materials'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Components & Materials Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-3">
