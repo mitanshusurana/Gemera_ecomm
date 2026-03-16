@@ -14,4 +14,6 @@ public class UserDTO {
     private String role;
     private Integer loyaltyPoints;
     private List<AddressDTO> addresses;
+    private java.math.BigDecimal totalSpend;
+    private String tier;
 }

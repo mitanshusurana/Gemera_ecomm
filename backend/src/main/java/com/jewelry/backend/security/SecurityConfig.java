@@ -56,6 +56,8 @@ public class SecurityConfig {
       "http://localhost:4200",      // Angular frontend development
       "http://localhost:3000",      // Alternative frontend
       "http://localhost:4300",      // Angular admin panel
+      "http://129.159.18.63",       // Deployed frontend
+      "http://129.159.18.63:4300",  // Deployed admin panel
       "https://yourdomain.com"      // Update with your production domain
     ));
 
@@ -107,9 +109,16 @@ public class SecurityConfig {
       // Authorization rules
       .authorizeHttpRequests(auth ->
         auth.requestMatchers("/api/v1/auth/**").permitAll()
-          .requestMatchers("/api/v1/products/**").permitAll()
-          .requestMatchers("/api/v1/products").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/settings").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/stores/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/treasure/config").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/certificates/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/orders/track/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/email/subscribe").permitAll()
           .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+          .requestMatchers("/actuator/**").permitAll()
           .anyRequest().authenticated()
       )
 

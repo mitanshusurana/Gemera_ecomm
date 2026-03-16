@@ -1,0 +1,191 @@
+<div class="relative flex min-h-screen flex-col bg-white dark:bg-background-dark max-w-5xl mx-auto shadow-sm pb-24">
+  <!-- Header -->
+  <header class="sticky top-0 z-10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="flex items-center p-4 justify-between">
+      <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold tracking-tight">Treasure Plan Management</h1>
+      </div>
+      <div class="flex gap-2">
+        <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+          <span class="material-symbols-outlined">search</span>
+        </button>
+      </div>
+    </div>
+    <!-- Tabs -->
+    <div class="px-4">
+      <div class="flex gap-8 overflow-x-auto no-scrollbar">
+        <a class="flex flex-col items-center justify-center border-b-2 border-primary text-primary pb-3 pt-4 font-semibold cursor-pointer">
+          <span class="text-sm whitespace-nowrap">Active Plans</span>
+        </a>
+        <a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 hover:text-slate-700 pb-3 pt-4 font-medium cursor-pointer">
+          <span class="text-sm whitespace-nowrap">Completed</span>
+        </a>
+        <a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 hover:text-slate-700 pb-3 pt-4 font-medium cursor-pointer">
+          <span class="text-sm whitespace-nowrap">Pending Approval</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-4 space-y-6">
+    <!-- Statistics Quick View -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-primary/5 p-4 rounded-xl border border-primary/10">
+        <p class="text-xs font-medium text-primary uppercase tracking-wider">Active Users</p>
+        <p class="text-2xl font-bold mt-1">1,284</p>
+      </div>
+      <div class="bg-green-500/5 p-4 rounded-xl border border-green-500/10">
+        <p class="text-xs font-medium text-green-600 uppercase tracking-wider">Collections</p>
+        <p class="text-2xl font-bold mt-1">$42.5k</p>
+      </div>
+      <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">New Today</p>
+        <p class="text-2xl font-bold mt-1">12</p>
+      </div>
+      <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl">
+        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Due Today</p>
+        <p class="text-2xl font-bold mt-1">45</p>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Active Customer Plans</h2>
+    </div>
+
+    <!-- Plan Cards List -->
+    <div class="space-y-4">
+      <!-- Plan Card 1 -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div class="p-4 md:flex gap-6 items-start">
+          <div class="w-full md:w-32 h-32 mb-4 md:mb-0 bg-cover bg-center rounded-lg border border-slate-100" style="background-image: url('https://images.pexels.com/photos/265906/pexels-photo-265906.jpeg')"></div>
+          <div class="flex-1 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">11+1 Monthly Gold Savings</h3>
+                <p class="text-sm text-slate-500">Customer: <span class="font-medium text-slate-700 dark:text-slate-300">Sarah Jenkins</span> • ID: <span class="font-mono">TP-8821</span></p>
+              </div>
+              <span class="px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full">ON TRACK</span>
+            </div>
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs font-medium">
+                <span class="text-slate-500">Progress (7 of 12 months)</span>
+                <span class="text-primary">$3,500 / $6,000</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-primary h-full rounded-full" style="width: 58%"></div>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-slate-400 text-lg">calendar_month</span>
+                  <div class="text-xs">
+                    <p class="text-slate-400">Next Payment</p>
+                    <p class="font-semibold text-slate-900 dark:text-slate-100">Oct 24, 2023</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-slate-400 text-lg">payments</span>
+                  <div class="text-xs">
+                    <p class="text-slate-400">Monthly Installment</p>
+                    <p class="font-semibold text-slate-900 dark:text-slate-100">$500.00</p>
+                  </div>
+                </div>
+              </div>
+              <button (click)="openModal()" class="bg-primary text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
+                Manage Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Overlay -->
+  <div *ngIf="isModalOpen" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div class="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <!-- BottomSheetHandle (for mobile) -->
+      <div class="flex h-5 w-full items-center justify-center sm:hidden">
+        <div class="h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700 mt-2"></div>
+      </div>
+
+      <!-- Header Section -->
+      <div class="px-6 pt-6 pb-2">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">Treasure Plan Details</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Review and manage the active investment plan.</p>
+          </div>
+          <button (click)="closeModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-6 py-4">
+        <!-- Profile Section -->
+        <div class="flex items-center gap-5 mb-8 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+          <div class="h-20 w-20 rounded-2xl bg-primary/20 bg-center bg-cover border-2 border-white dark:border-slate-800" style="background-image: url('https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg');"></div>
+          <div class="flex flex-col">
+            <p class="text-slate-900 dark:text-white text-xl font-bold leading-none">Sarah Jenkins</p>
+            <p class="text-primary text-sm font-semibold mt-1">Plan ID: <span class="uppercase">tp-882910</span></p>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full uppercase tracking-wider">Premium Investment</span>
+              <span class="px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-wider">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Stats -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <div class="flex flex-col gap-1 rounded-2xl p-5 border border-primary/10 bg-white dark:bg-slate-800 shadow-sm">
+            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Maturity Value</p>
+            <p class="text-slate-900 dark:text-white text-3xl font-bold leading-tight">$6,000.00</p>
+          </div>
+          <div class="flex flex-col gap-1 rounded-2xl p-5 border border-primary/10 bg-white dark:bg-slate-800 shadow-sm">
+            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Amount Paid</p>
+            <p class="text-primary text-3xl font-bold leading-tight">$3,500.00</p>
+          </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="flex flex-col gap-3 mb-8 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
+          <div class="flex justify-between items-end">
+            <p class="text-slate-700 dark:text-slate-300 text-sm font-semibold uppercase tracking-wide">Investment Progress</p>
+            <p class="text-primary text-2xl font-black">58%</p>
+          </div>
+          <div class="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+            <div class="h-full bg-primary" style="width: 58%;"></div>
+          </div>
+          <div class="flex justify-between text-xs font-medium">
+            <p class="text-slate-500">$2,500.00 remaining</p>
+            <p class="text-slate-500">14 of 24 months</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons Grid -->
+        <div class="grid grid-cols-2 gap-3 mb-8">
+          <button class="flex items-center justify-center gap-2 bg-primary text-white py-3.5 px-4 rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined text-[20px]">add_card</span>
+            Record Payment
+          </button>
+          <button class="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 py-3.5 px-4 rounded-xl font-bold text-sm transition-all hover:border-primary/30 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+            <span class="material-symbols-outlined text-[20px]">event_busy</span>
+            Skip Month
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+        <p class="text-xs text-slate-400 font-medium italic">Last updated: 5 minutes ago by Admin</p>
+        <button (click)="closeModal()" class="px-6 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold text-sm hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

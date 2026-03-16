@@ -2,7 +2,6 @@ import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@ang
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink, Router } from "@angular/router";
 import { QuickViewModalComponent } from "../components/quick-view-modal";
-import { WhatsappButtonComponent } from "../components/whatsapp-button";
 import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
 import { Product, ProductDetail, Category } from "../core/models";
@@ -26,7 +25,6 @@ interface CollectionUI {
     NgOptimizedImage,
     RouterLink,
     QuickViewModalComponent,
-    WhatsappButtonComponent,
     CurrencyConvertPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,7 +56,7 @@ interface CollectionUI {
           <div class="relative h-full w-full flex items-center justify-center hidden md:flex">
              <!-- Hero Image Placeholder -->
              <div class="w-[450px] h-[550px] bg-gray-200 rounded-t-[10rem] rounded-b-3xl relative overflow-hidden shadow-2xl border-4 border-white/10">
-                <img src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover" alt="Modern Corporate Jewelry">
+                <img src="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover" alt="Modern Corporate Jewelry">
                 <div class="absolute inset-0 bg-gradient-to-t from-primary-950/80 to-transparent"></div>
                 <div class="absolute bottom-8 left-8 text-white">
                    <p class="text-sm uppercase tracking-widest mb-1 text-secondary-400">Featured</p>
@@ -79,8 +77,8 @@ interface CollectionUI {
 
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
              <!-- Card 1 -->
-             <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1551854838-234955b23e6b?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
+             <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
@@ -88,8 +86,8 @@ interface CollectionUI {
                 </div>
              </a>
              <!-- Card 2 -->
-             <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1617038224558-28759b177e40?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
+             <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/2735970/pexels-photo-2735970.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
@@ -97,8 +95,8 @@ interface CollectionUI {
                 </div>
              </a>
              <!-- Card 3 -->
-             <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1549411986-17b5f257a315?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
+             <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/177332/pexels-photo-177332.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Party Wear</h3>
@@ -106,8 +104,8 @@ interface CollectionUI {
                 </div>
              </a>
              <!-- Card 4 -->
-             <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1512163143273-bde0e3cc5409?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
+             <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
+                <img src="https://images.pexels.com/photos/872838/pexels-photo-872838.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>
@@ -174,7 +172,7 @@ interface CollectionUI {
 
               <!-- Quick Add Overlay -->
               <button
-                (click)="handleAddToCart($event, product.id)"
+                (click)="handleAddToCart($event, product)"
                 class="absolute bottom-0 left-0 w-full bg-primary-900 text-white font-bold py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-sm uppercase tracking-widest"
               >
                 Add to Cart
@@ -215,12 +213,12 @@ interface CollectionUI {
             <!-- Testimonial 1 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light" style="color: var(--color-text-muted-light, #d1fae5);">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">S</div>
                   <div>
                      <h4 class="font-bold text-white">Sneha Kapoor</h4>
-                     <p class="text-xs text-primary-300 uppercase tracking-wider">Marketing Head</p>
+                     <p class="text-xs uppercase tracking-wider" style="color: var(--color-text-muted-light, #d1fae5);">Marketing Head</p>
                   </div>
                </div>
             </div>
@@ -228,12 +226,12 @@ interface CollectionUI {
             <!-- Testimonial 2 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
+               <p class="text-lg leading-relaxed mb-6 font-light" style="color: var(--color-text-muted-light, #d1fae5);">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">A</div>
                   <div>
                      <h4 class="font-bold text-white">Ankit Sharma</h4>
-                     <p class="text-xs text-primary-300 uppercase tracking-wider">Entrepreneur</p>
+                     <p class="text-xs uppercase tracking-wider" style="color: var(--color-text-muted-light, #d1fae5);">Entrepreneur</p>
                   </div>
                </div>
             </div>
@@ -241,12 +239,12 @@ interface CollectionUI {
             <!-- Testimonial 3 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light" style="color: var(--color-text-muted-light, #d1fae5);">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl">P</div>
                   <div>
                      <h4 class="font-bold text-white">Priya Menon</h4>
-                     <p class="text-xs text-primary-300 uppercase tracking-wider">Doctor</p>
+                     <p class="text-xs uppercase tracking-wider" style="color: var(--color-text-muted-light, #d1fae5);">Doctor</p>
                   </div>
                </div>
             </div>
@@ -308,8 +306,7 @@ interface CollectionUI {
       (viewDetails)="handleViewDetails($event)"
     ></app-quick-view-modal>
 
-    <!-- WhatsApp Button -->
-    <app-whatsapp-button></app-whatsapp-button>
+
   `,
 })
 export class HomeComponent implements OnInit {
@@ -393,10 +390,11 @@ export class HomeComponent implements OnInit {
     this.selectedProduct.set(null);
   }
 
-  handleAddToCart(event: Event, productId: string): void {
+  handleAddToCart(event: Event, product: any): void {
     event.preventDefault();
     event.stopPropagation();
-    this.cartService.addToCart(productId, 1).subscribe(() => {
+    const options = { product, price: product.price };
+    this.cartService.addToCart(product.id, 1, options).subscribe(() => {
         this.toastService.show('Added to cart!', 'success');
     });
   }
@@ -407,8 +405,9 @@ export class HomeComponent implements OnInit {
       this.toastService.show('Added to Wishlist', 'success');
   }
 
-  handleAddToCartFromModal(event: { productId: string; quantity: number }): void {
-    this.cartService.addToCart(event.productId, event.quantity).subscribe(() => {
+  handleAddToCartFromModal(event: { productId: string; quantity: number; product?: any }): void {
+    const options = event.product ? { product: event.product, price: event.product.price } : {};
+    this.cartService.addToCart(event.productId, event.quantity, options).subscribe(() => {
         this.toastService.show(`Added ${event.quantity} item(s) to cart`, 'success');
         this.closeQuickView();
     });

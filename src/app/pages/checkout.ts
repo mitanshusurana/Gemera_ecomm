@@ -374,6 +374,50 @@ import { environment } from "../../environments/environment";
                       </label>
                     </div>
                   </div>
+
+                  <div class="border-t border-diamond-200 pt-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">
+                      Payment Method
+                    </h3>
+                    <div class="space-y-3">
+                      <label
+                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors"
+                        [ngClass]="selectedPaymentMethod === 'RAZORPAY' ? 'border-gold-500 bg-gold-50' : 'border-gray-200 hover:border-gold-300'"
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="RAZORPAY"
+                          [(ngModel)]="selectedPaymentMethod"
+                          class="w-4 h-4 text-gold-600"
+                        />
+                        <div>
+                          <p class="font-semibold text-gray-900">
+                            Pay Online (Cards, UPI, NetBanking)
+                          </p>
+                          <p class="text-sm text-gray-600">Secure payment via Razorpay</p>
+                        </div>
+                      </label>
+                      <label
+                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors"
+                        [ngClass]="selectedPaymentMethod === 'COD' ? 'border-gold-500 bg-gold-50' : 'border-gray-200 hover:border-gold-300'"
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="COD"
+                          [(ngModel)]="selectedPaymentMethod"
+                          class="w-4 h-4 text-gold-600"
+                        />
+                        <div>
+                          <p class="font-semibold text-gray-900">
+                            Cash on Delivery (COD)
+                          </p>
+                          <p class="text-sm text-gray-600">Pay when your order is delivered</p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -387,11 +431,11 @@ import { environment } from "../../environments/environment";
                   Back
                 </button>
                 <button
-                  (click)="payNow()"
+                  (click)="placeOrder()"
                   class="flex-1 btn-primary"
                   [disabled]="isProcessing()"
                 >
-                  {{ isProcessing() ? "Processing..." : "Pay Now" }}
+                  {{ isProcessing() ? "Processing..." : (selectedPaymentMethod === 'COD' ? 'Place Order' : 'Pay Now') }}
                 </button>
               </div>
             </div>
@@ -494,6 +538,8 @@ export class CheckoutComponent implements OnInit {
 
   billingSameAsShipping = true;
   isAuthenticated = signal(false);
+
+  selectedPaymentMethod: 'RAZORPAY' | 'COD' = 'RAZORPAY';
 
   // Address Selection
   savedAddresses = computed(() => {
@@ -656,7 +702,7 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  payNow() {
+  placeOrder() {
     if (this.isProcessing()) return;
 
     // Check for out of stock items
@@ -668,11 +714,54 @@ export class CheckoutComponent implements OnInit {
         return;
     }
 
+    this.isProcessing.set(true);
+
+    if (this.selectedPaymentMethod === 'COD') {
+      this.handleCODPayment();
+    } else {
+      this.initiateRazorpay();
+    }
+  }
+
+  private handleCODPayment() {
+    // Sanitize address data to match Backend DTO (exclude email)
+    const { email, ...shippingAddr } = this.shippingData;
+    const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
+
+    // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
+    const sanitizedItems = this.cartItems().map(item => {
+      const { id, ...itemWithoutId } = item;
+      return itemWithoutId;
+    });
+
+    const orderData: any = {
+      shippingAddress: shippingAddr,
+      billingAddress: billingAddr,
+      paymentMethod: "COD",
+      shippingMethod: "EXPRESS",
+      items: sanitizedItems,
+      total: this.cartTotal(),
+      paymentDetails: {} // Empty for COD
+    };
+
+    this.orderService.createOrder(orderData).subscribe({
+      next: (order) => {
+        sessionStorage.setItem("lastOrderId", order.id);
+        this.router.navigate(["/order-confirmation"]);
+      },
+      error: (error) => {
+        this.isProcessing.set(false);
+        this.toastService.show("Order placement failed. Please contact support.", 'error');
+      },
+    });
+  }
+
+  private initiateRazorpay() {
     if (!isPlatformBrowser(this.platformId) || typeof Razorpay === 'undefined') {
+        this.isProcessing.set(false);
         this.toastService.show('Payment gateway failed to load. Please check your internet connection or disable ad blockers.', 'error');
         return;
     }
-    this.isProcessing.set(true);
 
     // Convert base amount (USD) to INR
     // Razorpay integration is currently configured for INR payments only.
@@ -683,7 +772,7 @@ export class CheckoutComponent implements OnInit {
     // Create Razorpay Order
     this.paymentService.createRazorpayOrder(amountInPaise, 'INR').subscribe({
         next: (response) => {
-            this.initiateRazorpayPayment(response);
+            this.openRazorpayModal(response);
         },
         error: (error) => {
             this.isProcessing.set(false);
@@ -692,7 +781,7 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  initiateRazorpayPayment(orderData: { id: string, amount: number, currency: string }) {
+  openRazorpayModal(orderData: { id: string, amount: number, currency: string }) {
       const options: Razorpay.Options = {
           key: environment.razorpayKey,
           amount: orderData.amount,
@@ -745,12 +834,18 @@ export class CheckoutComponent implements OnInit {
     const { email, ...shippingAddr } = this.shippingData;
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
 
-    const orderData = {
+    // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
+    const sanitizedItems = this.cartItems().map(item => {
+      const { id, ...itemWithoutId } = item;
+      return itemWithoutId;
+    });
+
+    const orderData: any = {
       shippingAddress: shippingAddr,
       billingAddress: billingAddr,
       paymentMethod: "RAZORPAY",
       shippingMethod: "EXPRESS",
-      items: this.cartItems(),
+      items: sanitizedItems,
       total: this.cartTotal(),
       paymentDetails: {
           razorpay_payment_id: response.razorpay_payment_id,

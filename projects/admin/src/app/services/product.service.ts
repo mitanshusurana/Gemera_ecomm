@@ -11,8 +11,12 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  getProducts(): Observable<any> {
-    return this.http.get(this.apiUrl);
+  getProducts(search?: string): Observable<any> {
+    let url = this.apiUrl;
+    if (search) {
+      url += `?search=${encodeURIComponent(search)}`;
+    }
+    return this.http.get(url);
   }
 
   getProduct(id: string): Observable<any> {
@@ -29,5 +33,35 @@ export class ProductService {
 
   deleteProduct(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  uploadImage(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/upload-image`, formData);
+  }
+
+  // --- Bulk Print Queue ---
+  // Store the full product object to preserve sku, name, and price even if navigated away
+  private printQueue = new Map<string, any>();
+
+  getPrintQueue(): any[] {
+    return Array.from(this.printQueue.values());
+  }
+
+  addToPrintQueue(product: any) {
+    this.printQueue.set(product.id, product);
+  }
+
+  removeFromPrintQueue(id: string) {
+    this.printQueue.delete(id);
+  }
+
+  isInPrintQueue(id: string): boolean {
+    return this.printQueue.has(id);
+  }
+
+  clearPrintQueue() {
+    this.printQueue.clear();
   }
 }

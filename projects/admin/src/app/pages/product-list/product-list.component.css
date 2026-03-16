@@ -1,0 +1,106 @@
+.print-only {
+  display: none;
+}
+
+@media print {
+  /* Hide everything else when printing */
+  body * {
+    visibility: hidden;
+  }
+
+  .no-print, .no-print * {
+    display: none !important;
+  }
+
+  /* Only show our print container */
+  .print-only, .print-only * {
+    visibility: visible;
+  }
+
+  .print-only {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* A4 page grid layout */
+  .print-grid {
+    display: grid;
+    /* Typically A4 can fit around 5-6 QR codes horizontally and 8-10 vertically for small tags. We'll use 5 columns. */
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 10mm 5mm; /* Gap between labels */
+    padding: 10mm; /* Margin for the whole sheet */
+    width: 210mm; /* A4 width */
+    margin: auto;
+  }
+
+  /* Individual tag cell */
+  .print-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #ccc; /* Helper border to cut */
+    padding: 5mm;
+    page-break-inside: avoid;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .qr-container {
+    width: 25mm; /* Size of QR code */
+    height: 25mm;
+    margin-bottom: 2mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+  }
+
+  .qr-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .no-sku {
+    font-size: 8pt;
+    color: #999;
+  }
+
+  .print-details {
+    text-align: center;
+    font-family: monospace, sans-serif;
+  }
+
+  .print-sku {
+    font-size: 7pt;
+    font-weight: bold;
+    margin-bottom: 1mm;
+  }
+
+  .print-name {
+    font-size: 6pt;
+    line-height: 1.2;
+    margin-bottom: 1mm;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 30mm;
+  }
+
+  .print-price {
+    font-size: 7pt;
+    font-weight: bold;
+  }
+
+  /* Ensure background colors and images are printed */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

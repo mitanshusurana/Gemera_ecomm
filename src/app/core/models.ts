@@ -57,6 +57,27 @@ export interface Product {
   updatedAt: string;
   images?: string[];
   specifications?: ProductSpecifications;
+
+  // Specific Category fields
+  metalType?: string;
+  metalPurity?: string;
+  metalColor?: string;
+  grossWeight?: number;
+  dimensions?: string;
+  bisHallmark?: boolean;
+
+  variety?: string;
+  shape?: string;
+  cut?: string;
+  caratWeight?: number;
+  colorHue?: string;
+  clarity?: string;
+  measurements?: string;
+  treatmentStatus?: string;
+  originProvenance?: string;
+  labReportNumber?: string;
+
+  priceBreakup?: PriceBreakup;
 }
 
 export interface CustomizationOption {

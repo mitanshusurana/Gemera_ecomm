@@ -6,6 +6,7 @@ import com.jewelry.backend.dto.ProductDTO;
 import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.service.ProductService;
+import com.jewelry.backend.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,7 +16,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +37,9 @@ public class ProductController {
 
     @Autowired
     EntityMapper entityMapper;
+
+    @Autowired
+    StorageService storageService;
 
     @GetMapping
     @Operation(summary = "Get paginated products")
@@ -78,6 +85,7 @@ public class ProductController {
 
     // Helper to seed data
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Create product (Admin)")
     public ResponseEntity<ProductDTO> createProduct(@RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
@@ -86,9 +94,22 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Delete product (Admin)")
     public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/upload-image")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Upload image to Cloudflare R2")
+    public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String fileUrl = storageService.uploadFile(file);
+            return ResponseEntity.ok(Map.of("url", fileUrl));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to upload file"));
+        }
     }
 }

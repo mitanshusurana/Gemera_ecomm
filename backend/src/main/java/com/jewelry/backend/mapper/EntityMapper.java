@@ -6,9 +6,8 @@ import com.jewelry.backend.dto.*;
 import com.jewelry.backend.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.util.Collections;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -18,7 +17,7 @@ public class EntityMapper {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // --- User & Address ---
+    // --- User ---
     public UserDTO toUserDTO(User user) {
         if (user == null) return null;
         UserDTO dto = new UserDTO();
@@ -32,6 +31,8 @@ public class EntityMapper {
         if (user.getAddresses() != null) {
             dto.setAddresses(user.getAddresses().stream().map(this::toAddressDTO).collect(Collectors.toList()));
         }
+        dto.setTotalSpend(java.math.BigDecimal.ZERO);
+        dto.setTier("Gold");
         return dto;
     }
 
@@ -43,11 +44,102 @@ public class EntityMapper {
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
         product.setCategory(dto.getCategory());
+        product.setSubCategory(dto.getSubCategory());
+        product.setSku(dto.getSku());
         product.setStock(dto.getStock());
+        product.setVideoUrl(dto.getVideoUrl());
+
+        product.setInventoryOwnership(dto.getInventoryOwnership());
+        product.setSupplierName(dto.getSupplierName());
+        product.setReturnDueDate(dto.getReturnDueDate());
+        product.setCommissionPercentage(dto.getCommissionPercentage());
+        product.setSeoQualifiers(dto.getSeoQualifiers());
+        product.setOccasionKeywords(dto.getOccasionKeywords());
+
         product.setImages(dto.getImages());
         product.setSpecifications(dto.getSpecifications());
         product.setOccasions(dto.getOccasions());
         product.setStyles(dto.getStyles());
+
+        // 1. Finished Jewelry
+        product.setMetalType(dto.getMetalType());
+        product.setMetalPurity(dto.getMetalPurity());
+        product.setGrossWeight(dto.getGrossWeight());
+        product.setNetWeight(dto.getNetWeight());
+        product.setTotalCaratWeight(dto.getTotalCaratWeight());
+        product.setDimensions(dto.getDimensions());
+        product.setCurrentLocation(dto.getCurrentLocation());
+        product.setHuid(dto.getHuid());
+        product.setBisHallmark(dto.getBisHallmark());
+        product.setHallmarkingDate(dto.getHallmarkingDate());
+        product.setDesignStyle(dto.getDesignStyle());
+        product.setMetalColor(dto.getMetalColor());
+        product.setManufacturingTerminology(dto.getManufacturingTerminology());
+        product.setStoneDetailIds(dto.getStoneDetailIds());
+
+        // 2. Loose Gemstones
+        product.setStoneSku(dto.getStoneSku());
+        product.setVariety(dto.getVariety());
+        product.setShape(dto.getShape());
+        product.setCut(dto.getCut());
+        product.setCaratWeight(dto.getCaratWeight());
+        product.setColorHue(dto.getColorHue());
+        product.setColorTone(dto.getColorTone());
+        product.setColorSaturation(dto.getColorSaturation());
+        product.setClarity(dto.getClarity());
+        product.setMeasurements(dto.getMeasurements());
+        product.setTreatmentStatus(dto.getTreatmentStatus());
+        product.setLabReportNumber(dto.getLabReportNumber());
+        product.setCertificateImage(dto.getCertificateImage());
+        product.setPolish(dto.getPolish());
+        product.setSymmetry(dto.getSymmetry());
+        product.setFluorescence(dto.getFluorescence());
+        product.setGirdle(dto.getGirdle());
+        product.setCulet(dto.getCulet());
+        product.setTablePercentage(dto.getTablePercentage());
+        product.setDepthPercentage(dto.getDepthPercentage());
+        product.setOriginProvenance(dto.getOriginProvenance());
+        product.setStockStatus(dto.getStockStatus());
+
+        // 3. Religious Idols & Gemstone Carvings
+        product.setSubjectDeityName(dto.getSubjectDeityName());
+        product.setGemstoneMaterial(dto.getGemstoneMaterial());
+        product.setCarvingStyle(dto.getCarvingStyle());
+        product.setQualityDescription(dto.getQualityDescription());
+        product.setAsana(dto.getAsana());
+        product.setMudra(dto.getMudra());
+        product.setAyudha(dto.getAyudha());
+        product.setVahana(dto.getVahana());
+        product.setArtistName(dto.getArtistName());
+        product.setHistoricalContext(dto.getHistoricalContext());
+        product.setCarvingTechnique(dto.getCarvingTechnique());
+
+        // 4. Manufacturing & Rough Materials
+        product.setLotNumber(dto.getLotNumber());
+        product.setMineOrigin(dto.getMineOrigin());
+        product.setRoughMaterial(dto.getRoughMaterial());
+        product.setRoughWeight(dto.getRoughWeight());
+        product.setPurchaseDate(dto.getPurchaseDate());
+        product.setSupplierCode(dto.getSupplierCode());
+        product.setAcquisitionCost(dto.getAcquisitionCost());
+        product.setMatrixParentRock(dto.getMatrixParentRock());
+        product.setCrystalMorphology(dto.getCrystalMorphology());
+        product.setYieldEstimate(dto.getYieldEstimate());
+        product.setWastageLog(dto.getWastageLog());
+        product.setManufacturingStage(dto.getManufacturingStage());
+
+        // 5. Components & Materials
+        product.setComponentType(dto.getComponentType());
+        product.setMaterial(dto.getMaterial());
+        product.setPurity(dto.getPurity());
+        product.setQuantityPcs(dto.getQuantityPcs());
+        product.setWeightPerPiece(dto.getWeightPerPiece());
+        product.setTotalWeight(dto.getTotalWeight());
+        product.setReorderPointAlert(dto.getReorderPointAlert());
+        product.setBeadStyle(dto.getBeadStyle());
+        product.setLayoutPattern(dto.getLayoutPattern());
+        product.setVendorInformation(dto.getVendorInformation());
+        product.setMinOrderQuantity(dto.getMinOrderQuantity());
 
         if (dto.getCustomizationOptions() != null) {
             product.setCustomizationOptions(dto.getCustomizationOptions().stream().map(optDto -> {
@@ -101,11 +193,102 @@ public class EntityMapper {
         dto.setDescription(product.getDescription());
         dto.setPrice(product.getPrice());
         dto.setCategory(product.getCategory());
+        dto.setSubCategory(product.getSubCategory());
+        dto.setSku(product.getSku());
         dto.setStock(product.getStock());
+        dto.setVideoUrl(product.getVideoUrl());
+
+        dto.setInventoryOwnership(product.getInventoryOwnership());
+        dto.setSupplierName(product.getSupplierName());
+        dto.setReturnDueDate(product.getReturnDueDate());
+        dto.setCommissionPercentage(product.getCommissionPercentage());
+        dto.setSeoQualifiers(product.getSeoQualifiers());
+        dto.setOccasionKeywords(product.getOccasionKeywords());
+
         dto.setImages(product.getImages());
         dto.setSpecifications(product.getSpecifications());
         dto.setOccasions(product.getOccasions());
         dto.setStyles(product.getStyles());
+
+        // 1. Finished Jewelry
+        dto.setMetalType(product.getMetalType());
+        dto.setMetalPurity(product.getMetalPurity());
+        dto.setGrossWeight(product.getGrossWeight());
+        dto.setNetWeight(product.getNetWeight());
+        dto.setTotalCaratWeight(product.getTotalCaratWeight());
+        dto.setDimensions(product.getDimensions());
+        dto.setCurrentLocation(product.getCurrentLocation());
+        dto.setHuid(product.getHuid());
+        dto.setBisHallmark(product.getBisHallmark());
+        dto.setHallmarkingDate(product.getHallmarkingDate());
+        dto.setDesignStyle(product.getDesignStyle());
+        dto.setMetalColor(product.getMetalColor());
+        dto.setManufacturingTerminology(product.getManufacturingTerminology());
+        dto.setStoneDetailIds(product.getStoneDetailIds());
+
+        // 2. Loose Gemstones
+        dto.setStoneSku(product.getStoneSku());
+        dto.setVariety(product.getVariety());
+        dto.setShape(product.getShape());
+        dto.setCut(product.getCut());
+        dto.setCaratWeight(product.getCaratWeight());
+        dto.setColorHue(product.getColorHue());
+        dto.setColorTone(product.getColorTone());
+        dto.setColorSaturation(product.getColorSaturation());
+        dto.setClarity(product.getClarity());
+        dto.setMeasurements(product.getMeasurements());
+        dto.setTreatmentStatus(product.getTreatmentStatus());
+        dto.setLabReportNumber(product.getLabReportNumber());
+        dto.setCertificateImage(product.getCertificateImage());
+        dto.setPolish(product.getPolish());
+        dto.setSymmetry(product.getSymmetry());
+        dto.setFluorescence(product.getFluorescence());
+        dto.setGirdle(product.getGirdle());
+        dto.setCulet(product.getCulet());
+        dto.setTablePercentage(product.getTablePercentage());
+        dto.setDepthPercentage(product.getDepthPercentage());
+        dto.setOriginProvenance(product.getOriginProvenance());
+        dto.setStockStatus(product.getStockStatus());
+
+        // 3. Religious Idols & Gemstone Carvings
+        dto.setSubjectDeityName(product.getSubjectDeityName());
+        dto.setGemstoneMaterial(product.getGemstoneMaterial());
+        dto.setCarvingStyle(product.getCarvingStyle());
+        dto.setQualityDescription(product.getQualityDescription());
+        dto.setAsana(product.getAsana());
+        dto.setMudra(product.getMudra());
+        dto.setAyudha(product.getAyudha());
+        dto.setVahana(product.getVahana());
+        dto.setArtistName(product.getArtistName());
+        dto.setHistoricalContext(product.getHistoricalContext());
+        dto.setCarvingTechnique(product.getCarvingTechnique());
+
+        // 4. Manufacturing & Rough Materials
+        dto.setLotNumber(product.getLotNumber());
+        dto.setMineOrigin(product.getMineOrigin());
+        dto.setRoughMaterial(product.getRoughMaterial());
+        dto.setRoughWeight(product.getRoughWeight());
+        dto.setPurchaseDate(product.getPurchaseDate());
+        dto.setSupplierCode(product.getSupplierCode());
+        dto.setAcquisitionCost(product.getAcquisitionCost());
+        dto.setMatrixParentRock(product.getMatrixParentRock());
+        dto.setCrystalMorphology(product.getCrystalMorphology());
+        dto.setYieldEstimate(product.getYieldEstimate());
+        dto.setWastageLog(product.getWastageLog());
+        dto.setManufacturingStage(product.getManufacturingStage());
+
+        // 5. Components & Materials
+        dto.setComponentType(product.getComponentType());
+        dto.setMaterial(product.getMaterial());
+        dto.setPurity(product.getPurity());
+        dto.setQuantityPcs(product.getQuantityPcs());
+        dto.setWeightPerPiece(product.getWeightPerPiece());
+        dto.setTotalWeight(product.getTotalWeight());
+        dto.setReorderPointAlert(product.getReorderPointAlert());
+        dto.setBeadStyle(product.getBeadStyle());
+        dto.setLayoutPattern(product.getLayoutPattern());
+        dto.setVendorInformation(product.getVendorInformation());
+        dto.setMinOrderQuantity(product.getMinOrderQuantity());
 
         if (product.getCustomizationOptions() != null) {
             dto.setCustomizationOptions(product.getCustomizationOptions().stream().map(opt -> {
@@ -175,6 +358,7 @@ public class EntityMapper {
         if (order == null) return null;
         OrderDTO dto = new OrderDTO();
         dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
         dto.setTotal(order.getTotal());
         dto.setStatus(order.getStatus());
         dto.setEstimatedDelivery(order.getEstimatedDelivery());

@@ -4,7 +4,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
-import { provideImgixLoader } from '@angular/common';
+import { IMAGE_LOADER, ImageLoaderConfig, provideImgixLoader } from '@angular/common';
 
 import { routes } from './app.routes';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -20,7 +20,19 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' }), withPreloading(PreloadAllModules)),
     provideClientHydration(),
     provideHttpClient(withInterceptorsFromDi()),
-    provideImgixLoader('https://placehold.co/'), // Base URL for image optimization
+    {
+      provide: IMAGE_LOADER,
+      useValue: (config: ImageLoaderConfig) => {
+        // Since we are using an external R2 bucket, we can just return the absolute URL.
+        // If config.src is already absolute, return it.
+        // Some users mention images don't load. If it's returning empty, handle it.
+        if (!config.src) return '';
+        if (config.src.startsWith('http://') || config.src.startsWith('https://')) {
+          return config.src;
+        }
+        return `https://pub-edd8f524b4784df1b5961ce0d431f767.r2.dev/${config.src}`;
+      }
+    },
     provideServiceWorker('ngsw-worker.js', {
         enabled: !isDevMode(),
         registrationStrategy: 'registerWhenStable:30000'

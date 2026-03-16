@@ -198,6 +198,7 @@ export class QuickViewModalComponent {
   @Output() addToCart = new EventEmitter<{
     productId: string;
     quantity: number;
+    product: any;
   }>();
   @Output() viewDetails = new EventEmitter<string>();
 
@@ -212,6 +213,7 @@ export class QuickViewModalComponent {
       this.addToCart.emit({
         productId: this.product.id,
         quantity: 1,
+        product: this.product,
       });
       this.close.emit();
     }

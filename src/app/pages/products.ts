@@ -300,14 +300,14 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <!-- Actions -->
                   <div class="flex gap-2">
                     <button
-                      (click)="handleAddToCart($event, product.id)"
+                      (click)="handleAddToCart($event, product)"
                       [disabled]="product.stock === 0"
                       class="flex-1 btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
                     </button>
                     <button
-                      (click)="handleBuyNow($event, product.id)"
+                      (click)="handleBuyNow($event, product)"
                       [disabled]="product.stock === 0"
                       class="flex-1 btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -449,8 +449,9 @@ export class ProductsComponent implements OnInit {
   paginationInfo = computed(() => {
     const pag = this.pagination();
     const total = pag.totalItems;
-    const start = (pag.currentPage - 1) * pag.pageSize + 1;
-    const end = Math.min(pag.currentPage * pag.pageSize, total);
+    const pageSize = parseInt(pag.pageSize.toString(), 10) || 12;
+    const start = (pag.currentPage - 1) * pageSize + 1;
+    const end = Math.min(pag.currentPage * pageSize, total);
     
     return {
       start: total === 0 ? 0 : start,
@@ -560,20 +561,22 @@ export class ProductsComponent implements OnInit {
     this.loadProducts();
   }
 
-  handleAddToCart(event: Event, productId: string): void {
+  handleAddToCart(event: Event, product: Product): void {
       event.preventDefault();
       event.stopPropagation();
-      this.cartService.addToCart(productId, 1)
+      const options = { product, price: product.price };
+      this.cartService.addToCart(product.id, 1, options)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.toastService.show('Added to cart', 'success');
       });
   }
 
-  handleBuyNow(event: Event, productId: string): void {
+  handleBuyNow(event: Event, product: Product): void {
       event.preventDefault();
       event.stopPropagation();
-      this.cartService.addToCart(productId, 1)
+      const options = { product, price: product.price };
+      this.cartService.addToCart(product.id, 1, options)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.router.navigate(['/cart']);
@@ -600,8 +603,9 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  handleQuickViewAddToCart(event: { productId: string, quantity: number }): void {
-    this.cartService.addToCart(event.productId, event.quantity)
+  handleQuickViewAddToCart(event: { productId: string, quantity: number, product?: any }): void {
+    const options = event.product ? { product: event.product, price: event.product.price } : {};
+    this.cartService.addToCart(event.productId, event.quantity, options)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
         this.toastService.show('Added to cart', 'success');

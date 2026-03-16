@@ -37,6 +37,33 @@ public class TreasurePlanService {
                 .orElseThrow(() -> new RuntimeException("Account not found"));
     }
 
+    public Iterable<TreasureChestAccount> getAllAccounts() {
+        return treasureChestAccountRepository.findAll();
+    }
+
+    @Transactional
+    public TreasureChestAccount recordPayment(java.util.UUID id) {
+        TreasureChestAccount account = treasureChestAccountRepository.findById(id).orElseThrow();
+        account.setInstallmentsPaid(account.getInstallmentsPaid() + 1);
+        account.setCurrentBalance(account.getCurrentBalance().add(account.getInstallmentAmount()));
+        account.setNextDueDate(account.getNextDueDate().plusMonths(1));
+        return treasureChestAccountRepository.save(account);
+    }
+
+    @Transactional
+    public TreasureChestAccount skipMonth(java.util.UUID id) {
+        TreasureChestAccount account = treasureChestAccountRepository.findById(id).orElseThrow();
+        account.setNextDueDate(account.getNextDueDate().plusMonths(1));
+        return treasureChestAccountRepository.save(account);
+    }
+
+    @Transactional
+    public TreasureChestAccount closePlan(java.util.UUID id) {
+        TreasureChestAccount account = treasureChestAccountRepository.findById(id).orElseThrow();
+        account.setStatus("CLOSED");
+        return treasureChestAccountRepository.save(account);
+    }
+
     @Transactional
     public TreasureChestAccount enroll(String userEmail, TreasureEnrollRequest request) {
         User user = userRepository.findByEmail(userEmail).orElseThrow();

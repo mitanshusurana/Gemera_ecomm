@@ -9,7 +9,7 @@ import { CurrencyService } from '../services/currency.service';
 export class CurrencyConvertPipe implements PipeTransform {
   currencyService = inject(CurrencyService);
 
-  transform(value: number): string {
+  transform(value: number | string): string {
     return this.currencyService.format(value);
   }
 }

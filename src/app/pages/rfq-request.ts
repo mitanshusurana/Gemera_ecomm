@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { RFQService, RFQRequest, RFQItem } from "../services/rfq.service";
 import { ToastService } from "../services/toast.service";
+import { environment } from "../../environments/environment";
 
 @Component({
   selector: "app-rfq-request",
@@ -392,10 +393,10 @@ import { ToastService } from "../services/toast.service";
                 <div>
                   <p class="text-sm text-gray-600 mb-2">Phone</p>
                   <a
-                    href="tel:+917976091951"
+                    [href]="'tel:+' + env.whatsappNumber"
                     class="text-gold-600 hover:text-gold-700 font-semibold"
                   >
-                    +91 7976091951
+                    +{{env.whatsappNumber}}
                   </a>
                 </div>
                 <div>
@@ -410,7 +411,7 @@ import { ToastService } from "../services/toast.service";
                 <div>
                   <p class="text-sm text-gray-600 mb-2">WhatsApp</p>
                   <a
-                    href="https://wa.me/917976091951"
+                    [href]="'https://wa.me/' + env.whatsappNumber"
                     target="_blank"
                     rel="noopener"
                     class="text-gold-600 hover:text-gold-700 font-semibold"
@@ -445,6 +446,7 @@ import { ToastService } from "../services/toast.service";
   ],
 })
 export class RFQRequestComponent {
+  env = environment;
   rfqData = {
     firstName: "",
     lastName: "",

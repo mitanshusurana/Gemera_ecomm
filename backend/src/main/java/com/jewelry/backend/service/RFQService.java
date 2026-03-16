@@ -103,6 +103,24 @@ public class RFQService {
     }
 
     @Transactional
+    public RFQQuote createQuote(UUID id, java.math.BigDecimal proposedPrice, String notes) {
+        RFQ rfq = getRequest(id);
+
+        RFQQuote quote = new RFQQuote();
+        quote.setRfq(rfq);
+        quote.setQuoteAmount(proposedPrice);
+        quote.setNotes(notes);
+        quote.setAccepted(false);
+
+        rfq.setStatus("QUOTED");
+
+        RFQQuote savedQuote = rfqQuoteRepository.save(quote);
+        rfqRepository.save(rfq);
+
+        return savedQuote;
+    }
+
+    @Transactional
     public void acceptQuote(UUID id) {
         RFQ rfq = getRequest(id);
         RFQQuote quote = getLatestQuote(id);

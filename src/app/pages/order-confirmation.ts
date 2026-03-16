@@ -3,6 +3,7 @@ import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
+import { environment } from "../../environments/environment";
 
 @Component({
   selector: "app-order-confirmation",
@@ -279,7 +280,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
           <div class="flex gap-4 justify-center flex-wrap">
             <a routerLink="/contact" class="btn-primary">Contact Us</a>
             <a
-              href="https://wa.me/917976091951"
+              [href]="whatsappUrl"
               target="_blank"
               rel="noopener"
               class="btn-ghost border border-diamond-300"
@@ -311,6 +312,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
   ],
 })
 export class OrderConfirmationComponent implements OnInit {
+  whatsappUrl = `https://wa.me/${environment.whatsappNumber}`;
   orderNumber = signal("");
   estimatedDelivery = signal("");
   orderItems = signal<any[]>([]);

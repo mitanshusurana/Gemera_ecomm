@@ -1,46 +1,81 @@
-<div class="h-screen flex overflow-hidden bg-gray-100">
-  <!-- Sidebar -->
-  <div class="hidden md:flex md:flex-shrink-0">
-    <div class="flex flex-col w-64">
-      <div class="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
-        <div class="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-          <div class="flex items-center flex-shrink-0 px-4">
-            <h1 class="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-          </div>
-          <nav class="mt-5 flex-1 px-2 bg-white space-y-1">
-            <a routerLink="/products" routerLinkActive="bg-gray-100 text-gray-900"
-              class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-              Products
-            </a>
-            <a routerLink="/orders" routerLinkActive="bg-gray-100 text-gray-900"
-              class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-              Orders
-            </a>
-          </nav>
-        </div>
-        <div class="flex-shrink-0 flex border-t border-gray-200 p-4">
-          <button (click)="logout()" class="flex-shrink-0 w-full group block">
-            <div class="flex items-center">
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                  Logout
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-24">
+  <!-- Header -->
+  <header class="flex items-center bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-50">
+    <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+      <span class="material-symbols-outlined text-primary">diamond</span>
+    </div>
+    <h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight flex-1 px-4 tracking-tight">AURELIUS ADMIN</h2>
+
+    <div class="flex gap-2 items-center">
+      <button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+        <span class="material-symbols-outlined">search</span>
+      </button>
+      <button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 relative">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500"></span>
+      </button>
+      <button (click)="logout()" class="flex items-center justify-center rounded-lg h-10 w-10 hover:bg-red-50 hover:text-red-600 text-slate-600 dark:text-slate-400 transition-colors" title="Logout">
+        <span class="material-symbols-outlined">logout</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Live Metal Prices Ticker (Mock) -->
+  <div class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 overflow-hidden hidden sm:block">
+    <div class="flex gap-3 p-3 overflow-x-auto no-scrollbar justify-center">
+      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-3">
+        <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
+        <p class="text-emerald-700 dark:text-emerald-400 text-xs font-semibold whitespace-nowrap">Gold: $2,045.20 (+0.5%)</p>
+      </div>
+      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 px-3">
+        <span class="material-symbols-outlined text-rose-600 text-sm">trending_down</span>
+        <p class="text-rose-700 dark:text-rose-400 text-xs font-semibold whitespace-nowrap">Silver: $23.15 (-0.2%)</p>
+      </div>
+      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-3">
+        <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
+        <p class="text-emerald-700 dark:text-emerald-400 text-xs font-semibold whitespace-nowrap">Platinum: $910.40 (+0.1%)</p>
+      </div>
+      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3">
+        <span class="material-symbols-outlined text-slate-600 text-sm">schedule</span>
+        <p class="text-slate-700 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">Updated: 2m ago</p>
       </div>
     </div>
   </div>
 
-  <!-- Main content -->
-  <div class="flex flex-col w-0 flex-1 overflow-hidden">
-    <main class="flex-1 relative overflow-y-auto focus:outline-none">
-      <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-          <router-outlet></router-outlet>
-        </div>
+  <!-- Dashboard Content -->
+  <main class="flex-1 w-full max-w-7xl mx-auto">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 flex items-center bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-3 pb-6 md:pb-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] justify-center">
+    <div class="flex w-full max-w-lg gap-2">
+      <a routerLink="/dashboard" routerLinkActive="text-primary" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">dashboard</span>
+        <p class="text-[10px] font-bold leading-none">Dashboard</p>
+      </a>
+
+      <a routerLink="/products" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">inventory_2</span>
+        <p class="text-[10px] font-bold leading-none">Products</p>
+      </a>
+
+      <div class="relative -top-6">
+        <a routerLink="/products/new" class="bg-primary text-white size-14 rounded-full shadow-lg shadow-primary/40 flex items-center justify-center border-4 border-background-light dark:border-background-dark hover:scale-105 transition-transform">
+          <span class="material-symbols-outlined text-2xl">add</span>
+        </a>
       </div>
-    </main>
-  </div>
+
+      <a routerLink="/orders" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">shopping_bag</span>
+        <p class="text-[10px] font-bold leading-none">Orders</p>
+      </a>
+
+      <!-- Adding placeholder links for the other tabs -->
+      <a routerLink="/settings" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">settings</span>
+        <p class="text-[10px] font-bold leading-none">Settings</p>
+      </a>
+    </div>
+  </nav>
 </div>

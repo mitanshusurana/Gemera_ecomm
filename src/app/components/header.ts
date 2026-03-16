@@ -20,29 +20,32 @@ import { APP_CATEGORIES } from '../core/constants';
     <header class="bg-white sticky top-0 z-50 shadow-sm font-sans">
       <!-- Top Bar (Purple) -->
       <div class="bg-primary-800 text-white py-1.5 text-xs tracking-wide">
-        <div class="container mx-auto px-4 flex justify-between items-center overflow-x-auto whitespace-nowrap gap-8 md:gap-4 no-scrollbar mask-fade">
-          <div class="flex gap-6 flex-shrink-0">
+        <div class="container mx-auto px-4 flex justify-between items-center gap-2 md:gap-4 relative overflow-visible">
+          <div class="hidden sm:flex gap-6 flex-shrink-0 whitespace-nowrap">
             <span class="flex items-center gap-1.5 font-medium">
               <svg class="w-3.5 h-3.5 text-secondary-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
               Caratloop Treasure Plan
             </span>
-            <span class="hidden sm:inline opacity-80">|</span>
+            <span class="hidden md:inline opacity-80">|</span>
             <span class="inline font-medium text-secondary-100">Free Shipping on Orders Over $500</span>
           </div>
-          <div class="flex gap-6 flex-shrink-0 text-primary-100 items-center">
-            <a routerLink="/rfq" class="hover:text-white transition-colors font-bold text-secondary-200">Bulk Orders</a>
-            <a routerLink="/stores" class="hover:text-white transition-colors">Find a Store</a>
+          <div class="flex gap-4 md:gap-6 text-primary-100 items-center whitespace-nowrap w-full sm:w-auto justify-between sm:justify-end">
+            <a routerLink="/rfq" class="hidden md:inline hover:text-white transition-colors font-bold text-secondary-200">Bulk Orders</a>
+            <a routerLink="/stores" class="hidden lg:inline hover:text-white transition-colors">Find a Store</a>
             <a href="#" class="hover:text-white transition-colors">Help</a>
             <a routerLink="/track-order" class="hover:text-white transition-colors">Track Order</a>
 
             <!-- Currency Selector -->
-            <div class="relative group ml-2">
-              <button class="flex items-center gap-1 hover:text-white transition-colors font-bold text-secondary-200 uppercase">
+            <div class="relative group ml-2" (mouseenter)="isCurrencyDropdownOpen = true" (mouseleave)="isCurrencyDropdownOpen = false">
+              <button class="flex items-center gap-1 hover:text-white transition-colors font-bold text-secondary-200 uppercase cursor-pointer"
+                      (click)="isCurrencyDropdownOpen = !isCurrencyDropdownOpen"
+                      (focus)="isCurrencyDropdownOpen = true"
+                      (blur)="closeCurrencyDropdownWithDelay()">
                 {{ currentCurrency() }}
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-3 h-3 transition-transform" [class.rotate-180]="isCurrencyDropdownOpen" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
               </button>
-              <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
-                <div class="bg-white text-gray-800 rounded shadow-lg py-1 border border-gray-100 min-w-[80px]">
+              <div class="absolute right-0 top-full pt-2 z-[100]" [class.hidden]="!isCurrencyDropdownOpen" [class.block]="isCurrencyDropdownOpen">
+                <div class="bg-white text-gray-800 rounded-md shadow-xl py-1 border border-gray-200 min-w-[100px] transform origin-top-right transition-all">
                   <button *ngFor="let code of availableCurrencies"
                           (click)="setCurrency(code)"
                           class="block w-full text-left px-4 py-1.5 text-xs hover:bg-primary-50 hover:text-primary-700 font-medium"
@@ -210,6 +213,7 @@ import { APP_CATEGORIES } from '../core/constants';
 })
 export class HeaderComponent {
   isMobileMenuOpen = false;
+  isCurrencyDropdownOpen = false;
   searchQuery = '';
   searchResults: Product[] = [];
   isSearchFocused = false;
@@ -285,7 +289,15 @@ export class HeaderComponent {
     }, 200);
   }
 
+  closeCurrencyDropdownWithDelay() {
+    setTimeout(() => {
+      this.isCurrencyDropdownOpen = false;
+      this.cdr.markForCheck();
+    }, 200);
+  }
+
   setCurrency(code: any) {
     this.currencyService.setCurrency(code);
+    this.isCurrencyDropdownOpen = false;
   }
 }

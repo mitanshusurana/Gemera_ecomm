@@ -1,8 +1,14 @@
 <div class="px-4 sm:px-6 lg:px-8">
-  <div class="sm:flex sm:items-center">
+  <div class="sm:flex sm:items-center justify-between">
     <div class="sm:flex-auto">
       <h1 class="text-xl font-semibold text-gray-900">Orders</h1>
       <p class="mt-2 text-sm text-gray-700">A list of all the orders in your store including their status and total.</p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+       <label for="statusFilter" class="sr-only">Filter by Status</label>
+       <select id="statusFilter" [value]="currentStatus" (change)="onFilterChange($event)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md">
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+       </select>
     </div>
   </div>
   <div class="mt-8 flex flex-col">
@@ -23,7 +29,7 @@
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
               <tr *ngFor="let order of orders">
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ order.id }}</td>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ order.orderNumber || order.id }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ order.shippingAddress?.firstName }} {{ order.shippingAddress?.lastName }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ order.total | currency }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">

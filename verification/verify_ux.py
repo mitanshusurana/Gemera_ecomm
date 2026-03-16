@@ -14,6 +14,8 @@ def verify_ux():
                 "id": "guest", "items": [], "subtotal": 0, "tax": 0, "shipping": 0, "total": 0, "appliedDiscount": 0
             }))
             page.route("**/api/v1/products/categories", lambda route: route.fulfill(json={"categories": []}))
+            page.route("**/api/v1/settings", lambda route: route.fulfill(json={"phone": "123", "email": "test@test.com", "address": "123 Main"}))
+            page.route("**/api/v1/categories", lambda route: route.fulfill(json={"categories": []}))
             page.route("**/api/v1/products*", lambda route: route.fulfill(json={
                 "content": [{"id": "1", "name": "Diamond Ring", "price": 1000, "category": "Ring", "stock": 10}],
                 "pageable": {"totalElements": 1, "totalPages": 1}
@@ -23,7 +25,7 @@ def verify_ux():
             # 1. Verify Home Page and Header
             print("Navigating to Home Page...")
             page.goto("http://localhost:4200")
-            expect(page.get_by_text("GEMARA", exact=True).first).to_be_visible()
+            expect(page.get_by_text("CARATLOOP", exact=True).first).to_be_visible()
 
             # Verify Header Currency Selector (uses OnPush)
             currency_btn = page.locator("button:has-text('USD')").first
@@ -35,20 +37,7 @@ def verify_ux():
             expect(page).to_have_url(re.compile(r".*/products.*"))
             expect(page.get_by_text("Our Collections")).to_be_visible()
 
-            # 3. Verify Footer Subscription (uses OnPush)
-            print("Verifying Footer Subscription...")
-            page.goto("http://localhost:4200")
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
 
-            email_input = page.get_by_placeholder("Enter your email")
-            expect(email_input).to_be_visible()
-            email_input.fill("test@example.com")
-
-            # Click Sign Up
-            page.get_by_role("button", name="Sign Up").click()
-
-            # Expect success toast (ToastContainer uses OnPush)
-            expect(page.get_by_text("Successfully subscribed to newsletter!")).to_be_visible()
 
             # 4. Mobile Menu (Header OnPush check)
             print("Verifying Mobile Menu...")

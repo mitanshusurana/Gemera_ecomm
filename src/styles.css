@@ -10,6 +10,7 @@
   --color-primary-dark: #134e4a;
   --color-secondary: #b45309; /* Bronze/Gold Accent */
   --color-text: #2c2c2c;
+  --color-text-muted-light: #d1fae5; /* Emerald 100 or similar visible light text */
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

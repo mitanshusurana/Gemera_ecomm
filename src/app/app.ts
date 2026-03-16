@@ -4,12 +4,13 @@ import { HeaderComponent } from './components/header';
 import { FooterComponent } from './components/footer';
 import { ToastContainerComponent } from './components/toast-container';
 import { ChatWidgetComponent } from './components/chat-widget';
+import { WhatsappButtonComponent } from './components/whatsapp-button';
 import { routeAnimations } from './app.animations';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, FooterComponent, ToastContainerComponent, ChatWidgetComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, ToastContainerComponent, ChatWidgetComponent, WhatsappButtonComponent],
   animations: [routeAnimations],
   template: `
     <div class="fixed top-4 left-4 z-[100] md:hidden">
@@ -24,6 +25,7 @@ import { routeAnimations } from './app.animations';
     <app-footer></app-footer>
     <app-toast-container></app-toast-container>
     <app-chat-widget></app-chat-widget>
+    <app-whatsapp-button></app-whatsapp-button>
   `,
 })
 export class App {}
