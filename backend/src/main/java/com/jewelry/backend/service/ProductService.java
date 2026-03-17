@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +29,8 @@ public class ProductService {
 
     @Autowired
     EntityMapper entityMapper;
+
+    private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
 
     public Page<Product> getAllProducts(
             String category,
@@ -87,7 +90,7 @@ public class ProductService {
         // 2. Material & 3. Purity
         if ("Finished Jewelry".equalsIgnoreCase(category) || "Ring Setting".equalsIgnoreCase(category)) {
             String material = product.getMetalType() != null ? product.getMetalType().substring(0, Math.min(product.getMetalType().length(), 2)).toUpperCase() : "XX";
-            String purity = product.getMetalPurity() != null ? product.getMetalPurity().replaceAll("[^0-9]", "") : "00";
+            String purity = product.getMetalPurity() != null ? NON_DIGIT_PATTERN.matcher(product.getMetalPurity()).replaceAll("") : "00";
             skuBuilder.append(material).append(purity).append("-");
         } else if ("Loose Gemstones".equalsIgnoreCase(category)) {
             String variety = product.getVariety() != null && !product.getVariety().isEmpty() ? product.getVariety().substring(0, Math.min(product.getVariety().length(), 3)).toUpperCase() : "XXX";
@@ -100,7 +103,7 @@ public class ProductService {
              skuBuilder.append(material).append("-");
         } else if ("Components & Materials".equalsIgnoreCase(category)) {
              String material = product.getMaterial() != null && !product.getMaterial().isEmpty() ? product.getMaterial().substring(0, Math.min(product.getMaterial().length(), 2)).toUpperCase() : "XX";
-             String purity = product.getPurity() != null && !product.getPurity().isEmpty() ? product.getPurity().replaceAll("[^0-9]", "") : "00";
+             String purity = product.getPurity() != null && !product.getPurity().isEmpty() ? NON_DIGIT_PATTERN.matcher(product.getPurity()).replaceAll("") : "00";
              skuBuilder.append(material).append(purity).append("-");
         } else {
              skuBuilder.append("XX00-");
