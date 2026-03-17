@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { ProductService } from '../../services/product.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
+import { APP_CATEGORIES, SUB_CATEGORIES_MAP, OCCASIONS_LIST, STYLES_LIST, ProductCategory } from '../../core/constants';
 
 @Component({
   selector: 'app-product-add',
@@ -22,45 +23,10 @@ export class ProductAddComponent implements OnInit {
     private route: ActivatedRoute
   ) {}
 
-  categoriesList = [
-    { id: '1', name: 'finished-jewelry', displayName: 'Finished Jewelry', value: 'Finished Jewelry' },
-    { id: '2', name: 'loose-gemstones', displayName: 'Loose Gemstones', value: 'Loose Gemstones' },
-    { id: '3', name: 'spiritual-idols', displayName: 'Religious Idols & Gemstone Carvings', value: 'Religious Idols & Gemstone Carvings' },
-    { id: '4', name: 'rough-materials', displayName: 'Manufacturing & Rough Materials', value: 'Manufacturing & Rough Materials' },
-    { id: '5', name: 'components-materials', displayName: 'Components & Materials', value: 'Components & Materials' },
-    { id: '6', name: 'bespoke-custom', displayName: 'Bespoke Custom', value: 'Custom' },
-    { id: '7', name: 'ring-settings', displayName: 'Ring Settings', value: 'Ring Setting' }
-  ];
-
-  subCategoriesMap: { [key: string]: string[] } = {
-    'Finished Jewelry': [
-      'Rings (Engagement, Wedding, Cocktail, Signet, Eternity, Birthstone)',
-      'Necklaces (Choker, Pendant, Statement, Chain, Lariat, Bar Necklace)',
-      'Earrings (Studs, Hoops, Drops, Dangles, Jackets, Bali, Ear Cuffs)',
-      'Bracelets (Bangles, Cuffs, Tennis, Beaded, Bolo, Bajuband)',
-      'Pendants/Other (Brooches, Watches)'
-    ],
-    'Loose Gemstones': [
-      'Diamonds',
-      'Colored Gemstones',
-      'Melee'
-    ],
-    'Religious Idols & Gemstone Carvings': [
-      'Murtis (Ganesh, Krishna, Shiva, Lakshmi)'
-    ],
-    'Manufacturing & Rough Materials': [
-      'Rough Parcels',
-      'Single Rough Crystals'
-    ],
-    'Components & Materials': [
-      'Findings (Clasps, Hooks)',
-      'Beads',
-      'Silver Wire'
-    ]
-  };
-
-  occasionsList = ['Engagement', 'Wedding', 'Anniversary', 'Daily Wear'];
-  stylesList = ['Modern', 'Vintage', 'Classic Solitaire', 'Halo'];
+  categoriesList = APP_CATEGORIES;
+  subCategoriesMap = SUB_CATEGORIES_MAP;
+  occasionsList = OCCASIONS_LIST;
+  stylesList = STYLES_LIST;
 
   // --- Predefined Dropdown Options for Better UX ---
   metalTypes = ['Gold', 'Silver', 'Platinum', 'Palladium', 'Titanium'];

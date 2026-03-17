@@ -1,0 +1,48 @@
+Warning: Running a server with --disable-host-check is a security risk. See https://medium.com/webpack/webpack-dev-server-middleware-security-issues-1489d950874a for more information.
+The "disableHostCheck" option will not be used because it is not supported by the "@angular-devkit/build-angular:application" builder.
+❯ Building...
+✔ Building...
+Initial chunk files | Names              |  Raw size
+styles.css          | styles             | 162.11 kB |
+main.js             | main               | 130.04 kB |
+chunk-5WA5XW6O.js   | -                  |   8.45 kB |
+chunk-C6QAKNMJ.js   | -                  |   4.20 kB |
+chunk-HTW43754.js   | -                  |   3.89 kB |
+chunk-FJMI3LCA.js   | -                  |   3.26 kB |
+chunk-QSNXJCWS.js   | -                  |   2.47 kB |
+chunk-6Y2CA2AJ.js   | -                  |   2.13 kB |
+chunk-ODITWSNP.js   | -                  |   2.13 kB |
+chunk-Y2TJN7LJ.js   | -                  |   2.11 kB |
+chunk-3WXPN7TQ.js   | -                  |   1.75 kB |
+chunk-653SOEEV.js   | -                  |   1.51 kB |
+chunk-LCGVFA3O.js   | -                  |   1.20 kB |
+chunk-4S3FCL3R.js   | -                  |   1.19 kB |
+chunk-ZP26WZID.js   | -                  | 497 bytes |
+polyfills.js        | polyfills          |  95 bytes |
+
+                    | Initial total      | 327.05 kB
+
+Lazy chunk files    | Names              |  Raw size
+chunk-FEYOX447.js   | product-detail     | 127.76 kB |
+chunk-GVH6CE54.js   | account            |  77.01 kB |
+chunk-A2APM4IE.js   | products           |  71.48 kB |
+chunk-2POX2C5J.js   | checkout           |  70.54 kB |
+chunk-XFWXVPJU.js   | home               |  52.50 kB |
+chunk-4FSSKZJ2.js   | rfq-request        |  49.38 kB |
+chunk-ZA4UTNNC.js   | builder            |  34.97 kB |
+chunk-5CAP6WAX.js   | cart               |  32.16 kB |
+chunk-BU4NUFHL.js   | order-confirmation |  31.69 kB |
+chunk-XC3H24WE.js   | compare            |  28.15 kB |
+chunk-AWPJKOA7.js   | login              |  27.35 kB |
+chunk-V54GOZWL.js   | -                  |  25.83 kB |
+chunk-4QYBDAWL.js   | verify-certificate |  24.76 kB |
+chunk-Y3LKALIK.js   | treasure-chest     |  22.68 kB |
+chunk-3QQ6LTVY.js   | wishlist           |  18.85 kB |
+...and 10 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [7.434 seconds] - 2026-03-17T05:28:28.344Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://192.168.0.2:3000/

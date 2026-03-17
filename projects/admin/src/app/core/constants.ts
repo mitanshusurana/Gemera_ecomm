@@ -79,10 +79,3 @@ export const STYLES_LIST = [
   Style.CLASSIC_SOLITAIRE,
   Style.HALO
 ];
-
-export const RING_CATEGORIES = [
-  'Engagement Ring',
-  'Gemstone Ring',
-  'Ring Setting',
-  'Ring'
-];
