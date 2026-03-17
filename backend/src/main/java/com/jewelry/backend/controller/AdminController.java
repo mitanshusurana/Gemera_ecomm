@@ -70,19 +70,11 @@ public class AdminController {
     @GetMapping("/analytics/kpis")
     @Operation(summary = "Get Dashboard KPIs")
     public ResponseEntity<Map<String, Object>> getKpis() {
-        List<Order> allOrders = orderRepository.findAll();
-        BigDecimal totalSales = allOrders.stream()
-                .filter(o -> "COMPLETED".equals(o.getStatus()) || "DELIVERED".equals(o.getStatus()))
-                .map(Order::getTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalSales = orderRepository.sumTotalByStatusIn(List.of("COMPLETED", "DELIVERED"));
 
-        long activeRfqs = rfqRepository.findAll().stream()
-                .filter(rfq -> "PENDING".equals(rfq.getStatus()) || "NEGOTIATING".equals(rfq.getStatus()))
-                .count();
+        long activeRfqs = rfqRepository.countByStatusIn(List.of("PENDING", "NEGOTIATING"));
 
-        long newCustomers = userRepository.findAll().stream()
-                .filter(u -> !"ADMIN".equals(u.getRole()))
-                .count();
+        long newCustomers = userRepository.countByRoleNot("ADMIN");
 
         return ResponseEntity.ok(Map.of(
                 "totalSales", totalSales,
