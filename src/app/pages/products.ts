@@ -11,7 +11,7 @@ import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
-import { APP_CATEGORIES } from '../core/constants';
+import { APP_CATEGORIES, SUB_CATEGORIES_MAP, ProductCategory, OCCASIONS_LIST, STYLES_LIST } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
@@ -155,25 +155,24 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   </div>
                 </div>
 
+                <!-- Gemstone Filter -->
+                <div class="card p-6" *ngIf="isGemstoneCategorySelected() || selectedCategories().length === 0">
+                  <h3 class="font-semibold text-gray-900 mb-4">Gemstone Type</h3>
+                  <div class="space-y-3">
+                    <label *ngFor="let gemstone of gemstoneTypes" class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedGemstones().includes(gemstone)" (change)="toggleFilter('gemstone', gemstone)" />
+                      <span class="text-sm text-gray-700">{{ gemstone }}</span>
+                    </label>
+                  </div>
+                </div>
+
                 <!-- Occasion Filter (New) -->
                 <div class="card p-6">
                   <h3 class="font-semibold text-gray-900 mb-4">Occasion</h3>
                   <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Engagement')" (change)="toggleFilter('occasion', 'Engagement')" />
-                      <span class="text-sm text-gray-700">Engagement</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Wedding')" (change)="toggleFilter('occasion', 'Wedding')" />
-                      <span class="text-sm text-gray-700">Wedding</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Anniversary')" (change)="toggleFilter('occasion', 'Anniversary')" />
-                      <span class="text-sm text-gray-700">Anniversary</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes('Daily Wear')" (change)="toggleFilter('occasion', 'Daily Wear')" />
-                      <span class="text-sm text-gray-700">Daily Wear</span>
+                    <label *ngFor="let occasion of occasionsList" class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes(occasion)" (change)="toggleFilter('occasion', occasion)" />
+                      <span class="text-sm text-gray-700">{{ occasion }}</span>
                     </label>
                   </div>
                 </div>
@@ -182,21 +181,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 <div class="card p-6">
                   <h3 class="font-semibold text-gray-900 mb-4">Shop by Look</h3>
                   <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Modern')" (change)="toggleFilter('style', 'Modern')" />
-                      <span class="text-sm text-gray-700">Modern</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Vintage')" (change)="toggleFilter('style', 'Vintage')" />
-                      <span class="text-sm text-gray-700">Vintage</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Classic Solitaire')" (change)="toggleFilter('style', 'Classic Solitaire')" />
-                      <span class="text-sm text-gray-700">Classic Solitaire</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes('Halo')" (change)="toggleFilter('style', 'Halo')" />
-                      <span class="text-sm text-gray-700">Halo</span>
+                    <label *ngFor="let style of stylesList" class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes(style)" (change)="toggleFilter('style', style)" />
+                      <span class="text-sm text-gray-700">{{ style }}</span>
                     </label>
                   </div>
                 </div>
@@ -407,6 +394,10 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 })
 export class ProductsComponent implements OnInit {
   appCategories = APP_CATEGORIES;
+  occasionsList = OCCASIONS_LIST;
+  stylesList = STYLES_LIST;
+  gemstoneTypes = SUB_CATEGORIES_MAP[ProductCategory.LOOSE_GEMSTONES];
+
   private productService = inject(ProductService);
   private cartService = inject(CartService);
   private activatedRoute = inject(ActivatedRoute);
@@ -422,6 +413,7 @@ export class ProductsComponent implements OnInit {
   selectedCategories = signal<string[]>([]);
   selectedOccasions = signal<string[]>([]);
   selectedStyles = signal<string[]>([]);
+  selectedGemstones = signal<string[]>([]);
   selectedPriceRanges = signal<string[]>([]);
   products = signal<Product[]>([]);
   sortBy = "newest";
@@ -475,6 +467,10 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  isGemstoneCategorySelected(): boolean {
+    return this.selectedCategories().includes(ProductCategory.LOOSE_GEMSTONES);
+  }
+
   loadProducts(): void {
     this.isLoading.set(true);
     const filters = {
@@ -483,7 +479,8 @@ export class ProductsComponent implements OnInit {
         order: this.sortBy === "price-high" ? "desc" : "asc",
         // Pass custom filters to API (mock service will likely ignore but good for structure)
         occasions: this.selectedOccasions().join(','),
-        styles: this.selectedStyles().join(',')
+        styles: this.selectedStyles().join(','),
+        subCategory: this.selectedGemstones().length > 0 ? this.selectedGemstones().join(',') : undefined
     };
 
     // API uses 0-indexed pages
@@ -520,7 +517,7 @@ export class ProductsComponent implements OnInit {
     this.loadProducts();
   }
 
-  toggleFilter(type: 'occasion' | 'style', value: string): void {
+  toggleFilter(type: 'occasion' | 'style' | 'gemstone', value: string): void {
       if (type === 'occasion') {
           const current = this.selectedOccasions();
           if (current.includes(value)) {
@@ -528,12 +525,19 @@ export class ProductsComponent implements OnInit {
           } else {
               this.selectedOccasions.set([...current, value]);
           }
-      } else {
+      } else if (type === 'style') {
           const current = this.selectedStyles();
           if (current.includes(value)) {
               this.selectedStyles.set(current.filter(v => v !== value));
           } else {
               this.selectedStyles.set([...current, value]);
+          }
+      } else if (type === 'gemstone') {
+          const current = this.selectedGemstones();
+          if (current.includes(value)) {
+              this.selectedGemstones.set(current.filter(v => v !== value));
+          } else {
+              this.selectedGemstones.set([...current, value]);
           }
       }
       this.pagination.update(p => ({ ...p, currentPage: 1 }));
@@ -555,6 +559,7 @@ export class ProductsComponent implements OnInit {
     this.selectedCategories.set([]);
     this.selectedOccasions.set([]);
     this.selectedStyles.set([]);
+    this.selectedGemstones.set([]);
     this.selectedPriceRanges.set([]);
     this.sortBy = "newest";
     this.pagination.update(p => ({ ...p, currentPage: 1 }));
