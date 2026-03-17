@@ -104,12 +104,25 @@ public class AdminController {
     @PutMapping("/settings")
     @Operation(summary = "Update Global Settings")
     public ResponseEntity<Void> updateSettings(@RequestBody Map<String, String> newSettings) {
+        if (newSettings == null || newSettings.isEmpty()) {
+            return ResponseEntity.ok().build();
+        }
+
+        List<GlobalSetting> existingSettings = globalSettingRepository.findBySettingKeyIn(newSettings.keySet());
+        Map<String, GlobalSetting> settingsMap = new java.util.HashMap<>();
+        for (GlobalSetting setting : existingSettings) {
+            settingsMap.put(setting.getSettingKey(), setting);
+        }
+
+        List<GlobalSetting> settingsToSave = new java.util.ArrayList<>();
         newSettings.forEach((key, value) -> {
-            GlobalSetting setting = globalSettingRepository.findBySettingKey(key).orElse(new GlobalSetting());
+            GlobalSetting setting = settingsMap.getOrDefault(key, new GlobalSetting());
             setting.setSettingKey(key);
             setting.setSettingValue(value);
-            globalSettingRepository.save(setting);
+            settingsToSave.add(setting);
         });
+
+        globalSettingRepository.saveAll(settingsToSave);
 
         AuditLog log = new AuditLog();
         log.setEventType("SETTINGS_UPDATE");
