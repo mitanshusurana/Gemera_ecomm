@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class PaymentService {
@@ -24,6 +25,9 @@ public class PaymentService {
     private String razorpayKeySecret;
 
     private RazorpayClient razorpayClient;
+
+    // Fast random string generator
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
     @PostConstruct
     public void init() {
@@ -69,7 +73,11 @@ public class PaymentService {
         }
 
         // Mock fallback
-        String mockId = "order_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+        char[] randChars = new char[14];
+        for (int i = 0; i < 14; i++) {
+            randChars[i] = HEX_ARRAY[ThreadLocalRandom.current().nextInt(16)];
+        }
+        String mockId = "order_" + new String(randChars);
         return new RazorpayOrderResponse(mockId, request.getAmount(), request.getCurrency(), "created");
     }
 
