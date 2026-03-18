@@ -227,6 +227,8 @@ export interface Pageable {
 export interface PaginatedResponse<T> {
   content: T[];
   pageable: Pageable;
+  totalElements: number;
+  totalPages: number;
 }
 
 export interface CertificateDetail {
