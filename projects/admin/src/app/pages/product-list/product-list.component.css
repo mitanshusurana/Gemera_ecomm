@@ -8,6 +8,11 @@
     visibility: hidden;
   }
 
+  /* Hide main layout elements explicitly */
+  header, nav, .bg-white.dark\:bg-slate-900.border-b {
+    display: none !important;
+  }
+
   .no-print, .no-print * {
     display: none !important;
   }

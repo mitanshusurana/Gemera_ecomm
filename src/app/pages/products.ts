@@ -491,8 +491,8 @@ export class ProductsComponent implements OnInit {
                 this.products.set(res.content);
                 this.pagination.update(p => ({
                     ...p,
-                    totalItems: res.pageable.totalElements,
-                    totalPages: res.pageable.totalPages
+                    totalItems: res.totalElements,
+                    totalPages: res.totalPages
                 }));
                 this.isLoading.set(false);
             },

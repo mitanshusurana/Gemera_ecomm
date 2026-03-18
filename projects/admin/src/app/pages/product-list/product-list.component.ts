@@ -57,17 +57,39 @@ export class ProductListComponent implements OnInit, AfterViewInit {
 
   startScanner() {
     setTimeout(() => {
-        if (this.scannerVideo && this.scannerVideo.nativeElement) {
-            this.codeReader.decodeFromVideoDevice(null, this.scannerVideo.nativeElement, (result, err) => {
-              if (result) {
-                // We got a successful scan
-                this.searchQuery = result.getText();
-                this.stopScanner();
-                this.isScannerOpen = false;
-                this.loadProducts(this.searchQuery);
+      if (this.scannerVideo && this.scannerVideo.nativeElement) {
+        this.codeReader.listVideoInputDevices()
+          .then((videoInputDevices) => {
+            if (videoInputDevices.length > 0) {
+              // Try to find the back camera, fallback to the first one available
+              let selectedDeviceId = videoInputDevices[0].deviceId;
+              const backCamera = videoInputDevices.find((device) =>
+                device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')
+              );
+              if (backCamera) {
+                selectedDeviceId = backCamera.deviceId;
               }
-            }).catch(console.error);
-        }
+
+              this.codeReader.decodeFromVideoDevice(selectedDeviceId, this.scannerVideo.nativeElement, (result, err) => {
+                if (result) {
+                  // We got a successful scan
+                  this.searchQuery = result.getText();
+                  this.stopScanner();
+                  this.isScannerOpen = false;
+                  this.loadProducts(this.searchQuery);
+                }
+              }).catch(console.error);
+            } else {
+              alert('No camera devices found.');
+              this.isScannerOpen = false;
+            }
+          })
+          .catch((err) => {
+            console.error('Error accessing camera devices:', err);
+            alert('Could not access the camera. Please ensure permissions are granted.');
+            this.isScannerOpen = false;
+          });
+      }
     }, 100);
   }
 
