@@ -21,6 +21,7 @@ public class Product extends BaseEntity {
     private String category;
     private String subCategory; // Added for new hierarchy
     private String sku; // Added for Intelligent SKU Generation
+    private Boolean isVerified; // Added for Admin Verification Step
     private Integer stock;
     private String videoUrl;
 

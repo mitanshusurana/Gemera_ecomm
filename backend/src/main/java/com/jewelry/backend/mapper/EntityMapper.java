@@ -46,6 +46,7 @@ public class EntityMapper {
         product.setCategory(dto.getCategory());
         product.setSubCategory(dto.getSubCategory());
         product.setSku(dto.getSku());
+        product.setIsVerified(dto.getIsVerified());
         product.setStock(dto.getStock());
         product.setVideoUrl(dto.getVideoUrl());
 
@@ -195,6 +196,7 @@ public class EntityMapper {
         dto.setCategory(product.getCategory());
         dto.setSubCategory(product.getSubCategory());
         dto.setSku(product.getSku());
+        dto.setIsVerified(product.getIsVerified());
         dto.setStock(product.getStock());
         dto.setVideoUrl(product.getVideoUrl());
 

@@ -34,10 +34,12 @@ export class ProductAddComponent implements OnInit {
   metalColors = ['Yellow', 'White', 'Rose', 'Two-Tone', 'PVD Plating', 'Black Antique'];
   manufacturingTerms = ['Jadau', 'Kundan', 'Meenakari', 'Polki', 'Cast', 'Handmade'];
 
-  shapes = ['Round', 'Princess', 'Cushion', 'Emerald', 'Oval', 'Radiant', 'Pear', 'Marquise', 'Asscher', 'Heart'];
+  shapes = ['Emerald Cut', 'Oval', 'Cushion', 'Pear', 'Round', 'Radiant', 'Princess', 'Asscher', 'Heart', 'Marquise'];
   cuts = ['Faceted', 'Cabochon', 'Brilliant', 'Step Cut', 'Mixed Cut', 'Rose Cut'];
-  clarities = ['Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Clean', 'Slight Inclusions', 'Heavy Inclusions', 'Opaque'];
-  treatmentStatuses = ['None / Unheated', 'Heated', 'Beryllium Treated', 'Fracture Filled', 'Irradiated', 'Dyed'];
+  colorIntensities = ['Vivid', 'Intense', 'Medium', 'Light'];
+  origins = ['Zambia', 'Colombia', 'Brazil', 'Ethiopia', 'Ceylon (Sri Lanka)', 'Burma (Myanmar)', 'Madagascar', 'Tanzania', 'Mozambique', 'Unknown'];
+  clarities = ['Eye Clean', 'VVS', 'VS', 'SI', 'Included', 'Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Opaque'];
+  treatmentStatuses = ['None / Unheated', 'Standard Heat', 'Oil (Minor)', 'Oil (Moderate)', 'Oil (Significant)', 'Fracture Filled', 'Irradiated', 'Dyed'];
   polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'Abr (Abrasion)', 'Brn (Burn mark)'];
   symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'T/oc (Table Off-Center)', 'OR (Out-of-Round)'];
   fluorescences = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
@@ -92,6 +94,7 @@ export class ProductAddComponent implements OnInit {
       category: ['', Validators.required],
       subCategory: [''],
       sku: [''], // Auto-generated if empty
+      isVerified: [false], // Admin verification step
 
       // Global e-commerce / inventory ownership
       inventoryOwnership: ['Owned Stock'],
@@ -224,6 +227,7 @@ export class ProductAddComponent implements OnInit {
       category: product.category || '',
       subCategory: product.subCategory || '',
       sku: product.sku || '',
+      isVerified: product.isVerified || false,
       inventoryOwnership: product.inventoryOwnership || 'Owned Stock',
       seoQualifiersStr: product.seoQualifiers ? product.seoQualifiers.join(', ') : '',
       occasionKeywordsStr: product.occasionKeywords ? product.occasionKeywords.join(', ') : '',
