@@ -22,6 +22,7 @@ public class ProductDTO {
     private String category;
     private String subCategory;
     private String sku;
+    private Boolean isVerified;
 
     @Min(value = 0, message = "Stock cannot be negative")
     private Integer stock;
