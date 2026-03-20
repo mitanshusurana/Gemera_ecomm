@@ -74,13 +74,15 @@ public class Product extends BaseEntity {
 
     // 2. Loose Gemstones
     private String stoneSku;
-    private String variety; // Species
+    private String species;
+    private String variety;
     private String shape;
     private String cut;
     private BigDecimal caratWeight;
-    private String colorHue; // Hue
-    private String colorTone; // Tone
-    private String colorSaturation; // Saturation
+    private String colorHue;
+    private String colorTone;
+    private String colorSaturation;
+    private String colorTradeTerm;
     private String clarity;
     private String measurements; // LxWxD
     private String treatmentStatus;

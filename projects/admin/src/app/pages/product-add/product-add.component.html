@@ -267,8 +267,18 @@
             <input type="text" formControlName="stoneSku" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Variety / Species</label>
-            <input type="text" formControlName="variety" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-gray-700">Species</label>
+            <select formControlName="species" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+              <option value="">Select Species</option>
+              <option *ngFor="let s of species" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="col-span-6 sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Variety</label>
+            <select formControlName="variety" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+              <option value="">Select Variety</option>
+              <option *ngFor="let v of varieties" [value]="v">{{ v }}</option>
+            </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700">Shape</label>
@@ -302,6 +312,13 @@
           <div class="col-span-6 sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700">Color Tone</label>
             <input type="text" formControlName="colorTone" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+          </div>
+          <div class="col-span-6 sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Trade Color Term</label>
+            <select formControlName="colorTradeTerm" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+              <option value="">Select Trade Term</option>
+              <option *ngFor="let t of colorTradeTerms" [value]="t">{{ t }}</option>
+            </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700">Clarity</label>

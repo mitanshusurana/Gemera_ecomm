@@ -80,6 +80,7 @@ public class EntityMapper {
 
         // 2. Loose Gemstones
         product.setStoneSku(dto.getStoneSku());
+        product.setSpecies(dto.getSpecies());
         product.setVariety(dto.getVariety());
         product.setShape(dto.getShape());
         product.setCut(dto.getCut());
@@ -87,6 +88,7 @@ public class EntityMapper {
         product.setColorHue(dto.getColorHue());
         product.setColorTone(dto.getColorTone());
         product.setColorSaturation(dto.getColorSaturation());
+        product.setColorTradeTerm(dto.getColorTradeTerm());
         product.setClarity(dto.getClarity());
         product.setMeasurements(dto.getMeasurements());
         product.setTreatmentStatus(dto.getTreatmentStatus());
@@ -230,6 +232,7 @@ public class EntityMapper {
 
         // 2. Loose Gemstones
         dto.setStoneSku(product.getStoneSku());
+        dto.setSpecies(product.getSpecies());
         dto.setVariety(product.getVariety());
         dto.setShape(product.getShape());
         dto.setCut(product.getCut());
@@ -237,6 +240,7 @@ public class EntityMapper {
         dto.setColorHue(product.getColorHue());
         dto.setColorTone(product.getColorTone());
         dto.setColorSaturation(product.getColorSaturation());
+        dto.setColorTradeTerm(product.getColorTradeTerm());
         dto.setClarity(product.getClarity());
         dto.setMeasurements(product.getMeasurements());
         dto.setTreatmentStatus(product.getTreatmentStatus());

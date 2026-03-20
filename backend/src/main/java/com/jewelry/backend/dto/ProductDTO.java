@@ -60,6 +60,7 @@ public class ProductDTO {
     private List<String> stoneDetailIds;
 
     private String stoneSku;
+    private String species;
     private String variety;
     private String shape;
     private String cut;
@@ -67,6 +68,7 @@ public class ProductDTO {
     private String colorHue;
     private String colorTone;
     private String colorSaturation;
+    private String colorTradeTerm;
     private String clarity;
     private String measurements;
     private String treatmentStatus;
