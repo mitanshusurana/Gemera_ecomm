@@ -131,7 +131,7 @@ import { environment } from '../../environments/environment';
 
                   <!-- Images View (Loop all images as swipeable items) -->
                   <div #mediaImage *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index" class="w-full h-full shrink-0 snap-center relative">
-                    <img [ngSrc]="img"
+                    <img *ngIf="img" [ngSrc]="img"
                          fill priority
                          sizes="(max-width: 1024px) 100vw, 50vw"
                          class="object-contain p-4 md:p-8 transition-transform duration-500"
@@ -572,16 +572,19 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
      if (type === 'video') {
          this.showVideo.set(true);
          this.selectedMediaIndex.set(-1);
-         if (this.mediaVideoElement) {
+         if (this.mediaVideoElement?.nativeElement) {
              this.mediaVideoElement.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
          }
      } else if (index !== undefined) {
          this.showVideo.set(false);
          this.selectedMediaIndex.set(index);
-         const el = this.mediaImageElements.toArray()[index];
-         if (el) {
-             el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-         }
+         // Timeout ensures view is updated before scrolling
+         setTimeout(() => {
+             const el = this.mediaImageElements.toArray()[index];
+             if (el?.nativeElement) {
+                 el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+             }
+         }, 0);
      }
   }
 }
