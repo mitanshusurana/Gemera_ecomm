@@ -78,6 +78,19 @@ export class ProductAddComponent implements OnInit {
   selectedFiles: File[] = [];
   selectedVideoFile: File | null = null;
 
+  existingImages: string[] = [];
+  existingVideoUrl: string | null = null;
+
+  // Background Upload States
+  uploadingMedia = false;
+  uploadProgressMessage = '';
+  uploadedImageUrls: string[] = [];
+  uploadedVideoUrl: string | null = null;
+
+  // Auto-generation flags
+  isNameManuallyEdited = false;
+  isDescriptionManuallyEdited = false;
+
   get occasions() {
     return this.productForm.get('occasions') as FormArray;
   }
@@ -220,6 +233,23 @@ export class ProductAddComponent implements OnInit {
       this.productForm.get('subCategory')?.setValue('');
     });
 
+    // Auto-select variety based on subCategory for Loose Gemstones
+    this.productForm.get('subCategory')?.valueChanges.subscribe((subCategoryVal) => {
+      if (this.selectedCategory === 'Loose Gemstones' && subCategoryVal) {
+        if (this.varieties.includes(subCategoryVal)) {
+          this.productForm.get('variety')?.setValue(subCategoryVal);
+        }
+      }
+      this.generateNameAndDescription();
+    });
+
+    // Auto-generate triggers
+    ['caratWeight', 'cut', 'colorHue', 'colorTradeTerm', 'variety'].forEach(field => {
+      this.productForm.get(field)?.valueChanges.subscribe(() => {
+        this.generateNameAndDescription();
+      });
+    });
+
     if (this.isEditMode && this.productId) {
       this.loading = true;
       this.productService.getProduct(this.productId).subscribe({
@@ -237,6 +267,10 @@ export class ProductAddComponent implements OnInit {
   }
 
   patchProductForm(product: any) {
+    // Media
+    this.existingImages = product.images || [];
+    this.existingVideoUrl = product.videoUrl || null;
+
     // Basic fields
     this.productForm.patchValue({
       name: product.name || '',
@@ -387,72 +421,124 @@ export class ProductAddComponent implements OnInit {
     this.customizationOptions.removeAt(index);
   }
 
+  markNameAsEdited() {
+    this.isNameManuallyEdited = true;
+  }
+
+  markDescriptionAsEdited() {
+    this.isDescriptionManuallyEdited = true;
+  }
+
+  generateNameAndDescription() {
+    if (this.selectedCategory !== 'Loose Gemstones') return;
+
+    const v = this.productForm.value;
+    const carat = v.caratWeight ? `${v.caratWeight} ct` : '';
+    const cut = v.cut || '';
+    const color = v.colorTradeTerm && v.colorTradeTerm !== 'None' ? v.colorTradeTerm : v.colorHue || '';
+    const variety = v.variety || v.subCategory || '';
+
+    // E.g. "1.5 ct Brilliant Cut Royal Blue Sapphire"
+    const parts = [carat, cut, color, variety].filter(p => p.trim() !== '');
+    const generatedName = parts.join(' ');
+
+    const generatedDesc = `This is a beautiful ${generatedName}. Perfect for custom jewelry designs or as an investment piece.`;
+
+    if (!this.isNameManuallyEdited && generatedName) {
+      this.productForm.get('name')?.setValue(generatedName, { emitEvent: false });
+    }
+
+    if (!this.isDescriptionManuallyEdited && generatedName) {
+      this.productForm.get('description')?.setValue(generatedDesc, { emitEvent: false });
+    }
+  }
+
   onFileChange(event: any) {
     if (event.target.files.length > 0) {
       this.selectedFiles = Array.from(event.target.files);
+      this.triggerBackgroundUploads();
     }
   }
 
   onVideoFileChange(event: any) {
     if (event.target.files.length > 0) {
       this.selectedVideoFile = event.target.files[0];
+      this.triggerBackgroundUploads();
     }
   }
 
-  onSubmit() {
-    if (this.productForm.invalid) return;
+  triggerBackgroundUploads() {
+    const uploadRequests = [];
 
-    this.loading = true;
+    this.uploadingMedia = true;
+    this.uploadProgressMessage = 'Uploading media...';
     this.errorMessage = '';
 
-    let uploadedImageUrls: string[] = [];
-    let uploadedVideoUrl: string | undefined = undefined;
-
-    const finalizeCreation = () => {
-      this.createProductRecord(uploadedImageUrls, uploadedVideoUrl);
-    };
-
-    const uploadVideo = () => {
-      if (this.selectedVideoFile) {
-        this.productService.uploadImage(this.selectedVideoFile).subscribe({
-          next: (res) => {
-            uploadedVideoUrl = res.url;
-            finalizeCreation();
-          },
-          error: (err) => {
-            console.error('Failed to upload video', err);
-            this.errorMessage = 'Failed to upload video.';
-            this.loading = false;
-          }
-        });
-      } else {
-        finalizeCreation();
-      }
-    };
-
+    // Images
     if (this.selectedFiles.length > 0) {
-      const uploadRequests = this.selectedFiles.map(file =>
+      uploadRequests.push(...this.selectedFiles.map(file =>
         this.productService.uploadImage(file).pipe(
           catchError(err => {
             console.error('Failed to upload image', err);
             throw err;
           })
         )
-      );
+      ));
+    }
 
+    // Video
+    if (this.selectedVideoFile) {
+      uploadRequests.push(
+        this.productService.uploadImage(this.selectedVideoFile).pipe(
+          catchError(err => {
+            console.error('Failed to upload video', err);
+            throw err;
+          })
+        )
+      );
+    }
+
+    if (uploadRequests.length > 0) {
       forkJoin(uploadRequests).subscribe({
         next: (responses) => {
-          uploadedImageUrls = responses.map(res => res.url);
-          uploadVideo();
+          let imageResponses = responses.slice(0, this.selectedFiles.length);
+          let videoResponse = this.selectedVideoFile ? responses[responses.length - 1] : null;
+
+          this.uploadedImageUrls = imageResponses.map(res => res.url);
+          if (videoResponse) {
+            this.uploadedVideoUrl = videoResponse.url;
+          }
+
+          this.uploadingMedia = false;
+          this.uploadProgressMessage = 'Media upload complete.';
         },
         error: (err) => {
-           this.errorMessage = 'Failed to upload images. Check your Cloudflare R2 configuration.';
-           this.loading = false;
+          this.errorMessage = 'Failed to upload one or more media files.';
+          this.uploadingMedia = false;
+          this.uploadProgressMessage = '';
         }
       });
     } else {
-      uploadVideo();
+      this.uploadingMedia = false;
+      this.uploadProgressMessage = '';
     }
+  }
+
+  removeExistingImage(index: number) {
+    this.existingImages.splice(index, 1);
+  }
+
+  removeExistingVideo() {
+    this.existingVideoUrl = null;
+  }
+
+  onSubmit() {
+    if (this.productForm.invalid || this.uploadingMedia) return;
+
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.createProductRecord(this.uploadedImageUrls, this.uploadedVideoUrl || undefined);
   }
 
   private createProductRecord(uploadedImageUrls: string[], uploadedVideoUrl?: string) {
@@ -463,14 +549,16 @@ export class ProductAddComponent implements OnInit {
     const occasionKeywords = formValue.occasionKeywordsStr ? (formValue.occasionKeywordsStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
     const stoneDetailIds = formValue.stoneDetailIds ? (formValue.stoneDetailIds as string).split(',').map(s => s.trim()).filter(s => s) : [];
 
+    const finalImages = [...this.existingImages, ...uploadedImageUrls];
+    const finalVideoUrl = uploadedVideoUrl || this.existingVideoUrl;
+
     const productData = {
       ...formValue,
       seoQualifiers,
       occasionKeywords,
       stoneDetailIds,
-      // Only attach these if we uploaded new ones, else we might wipe existing in edit (simplification for this PR)
-      ...(uploadedImageUrls.length > 0 && { images: uploadedImageUrls }),
-      ...(uploadedVideoUrl && { videoUrl: uploadedVideoUrl }),
+      images: finalImages,
+      videoUrl: finalVideoUrl,
       specifications: null
     };
 
