@@ -66,11 +66,13 @@ export interface Product {
   dimensions?: string;
   bisHallmark?: boolean;
 
+  species?: string;
   variety?: string;
   shape?: string;
   cut?: string;
   caratWeight?: number;
   colorHue?: string;
+  colorTradeTerm?: string;
   clarity?: string;
   measurements?: string;
   treatmentStatus?: string;

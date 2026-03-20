@@ -168,11 +168,13 @@ import { environment } from '../../environments/environment';
                         <div *ngIf="product()?.shape || product()?.caratWeight">
                            <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Gemstone Details</h4>
                            <div class="space-y-2 text-sm">
+                              <div class="flex justify-between" *ngIf="product()?.species"><span class="text-gray-500">Species</span><span class="font-medium text-gray-900">{{ product()?.species }}</span></div>
                               <div class="flex justify-between" *ngIf="product()?.variety"><span class="text-gray-500">Variety</span><span class="font-medium text-gray-900">{{ product()?.variety }}</span></div>
                               <div class="flex justify-between" *ngIf="product()?.shape"><span class="text-gray-500">Shape</span><span class="font-medium text-gray-900">{{ product()?.shape }}</span></div>
                               <div class="flex justify-between" *ngIf="product()?.cut"><span class="text-gray-500">Cut</span><span class="font-medium text-gray-900">{{ product()?.cut }}</span></div>
                               <div class="flex justify-between" *ngIf="product()?.caratWeight"><span class="text-gray-500">Carat Weight</span><span class="font-medium text-gray-900">{{ product()?.caratWeight }} ct</span></div>
                               <div class="flex justify-between" *ngIf="product()?.colorHue"><span class="text-gray-500">Color Hue</span><span class="font-medium text-gray-900">{{ product()?.colorHue }}</span></div>
+                              <div class="flex justify-between" *ngIf="product()?.colorTradeTerm"><span class="text-gray-500">Trade Color</span><span class="font-medium text-gray-900">{{ product()?.colorTradeTerm }}</span></div>
                               <div class="flex justify-between" *ngIf="product()?.clarity"><span class="text-gray-500">Clarity</span><span class="font-medium text-gray-900">{{ product()?.clarity }}</span></div>
                               <div class="flex justify-between" *ngIf="product()?.measurements"><span class="text-gray-500">Measurements</span><span class="font-medium text-gray-900">{{ product()?.measurements }}</span></div>
                               <div class="flex justify-between" *ngIf="product()?.treatmentStatus"><span class="text-gray-500">Treatment</span><span class="font-medium text-gray-900">{{ product()?.treatmentStatus }}</span></div>
