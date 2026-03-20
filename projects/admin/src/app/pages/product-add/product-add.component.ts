@@ -34,12 +34,29 @@ export class ProductAddComponent implements OnInit {
   metalColors = ['Yellow', 'White', 'Rose', 'Two-Tone', 'PVD Plating', 'Black Antique'];
   manufacturingTerms = ['Jadau', 'Kundan', 'Meenakari', 'Polki', 'Cast', 'Handmade'];
 
-  shapes = ['Emerald Cut', 'Oval', 'Cushion', 'Pear', 'Round', 'Radiant', 'Princess', 'Asscher', 'Heart', 'Marquise'];
-  cuts = ['Faceted', 'Cabochon', 'Brilliant', 'Step Cut', 'Mixed Cut', 'Rose Cut'];
-  colorIntensities = ['Vivid', 'Intense', 'Medium', 'Light'];
-  origins = ['Zambia', 'Colombia', 'Brazil', 'Ethiopia', 'Ceylon (Sri Lanka)', 'Burma (Myanmar)', 'Madagascar', 'Tanzania', 'Mozambique', 'Unknown'];
-  clarities = ['Eye Clean', 'VVS', 'VS', 'SI', 'Included', 'Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Opaque'];
-  treatmentStatuses = ['None / Unheated', 'Standard Heat', 'Oil (Minor)', 'Oil (Moderate)', 'Oil (Significant)', 'Fracture Filled', 'Irradiated', 'Dyed'];
+  species = ['Beryl', 'Corundum', 'Diamond', 'Tourmaline', 'Garnet', 'Spinel', 'Quartz', 'Topaz', 'Zircon', 'Chrysoberyl', 'Opal', 'Jadeite'];
+  varieties = ['Emerald', 'Ruby', 'Sapphire', 'Aquamarine', 'Morganite', 'Padparadscha', 'Tsavorite', 'Demantoid', 'Paraiba Tourmaline', 'Rubellite', 'Amethyst', 'Citrine', 'Tanzanite', 'Alexandrite'];
+  shapes = ['Round', 'Oval', 'Cushion', 'Pear', 'Emerald Shape', 'Radiant', 'Princess', 'Asscher', 'Marquise', 'Heart', 'Trillion', 'Baguette', 'Kite', 'Hexagon', 'Freeform'];
+  cuts = ['Brilliant Cut', 'Step Cut', 'Mixed Cut', 'Cabochon', 'Sugarloaf', 'Rose Cut', 'Briolette', 'Fantasy Cut', 'Buff Top'];
+  colorIntensities = ['Vivid', 'Intense', 'Deep', 'Medium', 'Light', 'Faint'];
+  colorTradeTerms = ['Pigeon’s Blood', 'Royal Blue', 'Cornflower Blue', 'Muzo Green', 'Jedi Spinel', 'Padparadscha', 'Canary Yellow', 'None'];
+  origins = ['Zambia', 'Colombia', 'Brazil', 'Ethiopia', 'Ceylon (Sri Lanka)', 'Burma (Myanmar)', 'Madagascar', 'Tanzania', 'Mozambique', 'Afghanistan', 'Pakistan', 'Kenya', 'Nigeria', 'Tajikistan', 'Russia', 'Australia', 'Unknown'];
+  clarities = ['Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Eye Clean', 'Included', 'Opaque'];
+  treatmentStatuses = [
+    'None (No Indications of Enhancement)',
+    'F1 (Minor Clarity Enhancement)',
+    'F2 (Moderate Clarity Enhancement)',
+    'F3 (Significant Clarity Enhancement)',
+    'CE(O) (Clarity Enhanced with Oil)',
+    'H (Heated)',
+    'H(a) (Heated - Minor Residue)',
+    'H(b) (Heated - Moderate Residue)',
+    'H(c) (Heated - Significant Residue)',
+    'TE (Thermal Enhancement)',
+    'Irradiated',
+    'Dyed',
+    'Diffusion Treated'
+  ];
   polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'Abr (Abrasion)', 'Brn (Burn mark)'];
   symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'T/oc (Table Off-Center)', 'OR (Out-of-Round)'];
   fluorescences = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
@@ -123,6 +140,7 @@ export class ProductAddComponent implements OnInit {
 
       // 2. Loose Gemstones
       stoneSku: [''],
+      species: [''],
       variety: [''],
       shape: [''],
       cut: [''],
@@ -130,6 +148,7 @@ export class ProductAddComponent implements OnInit {
       colorHue: [''],
       colorTone: [''],
       colorSaturation: [''],
+      colorTradeTerm: [''],
       clarity: [''],
       measurements: [''],
       treatmentStatus: [''],
@@ -249,6 +268,7 @@ export class ProductAddComponent implements OnInit {
       stoneDetailIds: product.stoneDetailIds ? product.stoneDetailIds.join(', ') : '',
 
       stoneSku: product.stoneSku || '',
+      species: product.species || '',
       variety: product.variety || '',
       shape: product.shape || '',
       cut: product.cut || '',
@@ -256,6 +276,7 @@ export class ProductAddComponent implements OnInit {
       colorHue: product.colorHue || '',
       colorTone: product.colorTone || '',
       colorSaturation: product.colorSaturation || '',
+      colorTradeTerm: product.colorTradeTerm || '',
       clarity: product.clarity || '',
       measurements: product.measurements || '',
       treatmentStatus: product.treatmentStatus || '',
