@@ -143,105 +143,111 @@ import { environment } from '../../environments/environment';
               </div>
             </div>
 
-            <!-- PRODUCT DETAILS (Moved Below Images) -->
-            <div class="border-t border-gray-200 pt-8">
-               <h3 class="text-xl font-bold text-primary-800 mb-6 font-serif">Product Details</h3>
+            <ng-template #productDetailsTpl>
+               <!-- PRODUCT DETAILS (Moved Below Images) -->
+               <div class="border-t border-gray-200 pt-8 mt-8 lg:mt-0">
+                  <h3 class="text-xl font-bold text-primary-800 mb-6 font-serif">Product Details</h3>
 
-               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                  <!-- Dynamic Category Rendering -->
-                  <ng-container [ngSwitch]="product()?.category">
-                     <!-- Finished Jewelry -->
-                     <ng-container *ngSwitchCase="'Finished Jewelry'">
-                        <div *ngIf="product()?.metalType || product()?.grossWeight">
-                           <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
-                           <div class="space-y-2 text-sm">
-                              <div class="flex justify-between" *ngIf="product()?.metalType"><span class="text-gray-500">Metal Type</span><span class="font-medium text-gray-900">{{ product()?.metalType }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.metalPurity"><span class="text-gray-500">Purity</span><span class="font-medium text-gray-900">{{ product()?.metalPurity }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.metalColor"><span class="text-gray-500">Metal Color</span><span class="font-medium text-gray-900">{{ product()?.metalColor }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.grossWeight"><span class="text-gray-500">Gross Weight</span><span class="font-medium text-gray-900">{{ product()?.grossWeight }} g</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.dimensions"><span class="text-gray-500">Dimensions</span><span class="font-medium text-gray-900">{{ product()?.dimensions }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.bisHallmark"><span class="text-gray-500">BIS Hallmark</span><span class="font-medium text-gray-900">Yes</span></div>
-                           </div>
-                        </div>
-                     </ng-container>
-
-                     <!-- Loose Gemstones -->
-                     <ng-container *ngSwitchCase="'Loose Gemstones'">
-                        <div *ngIf="product()?.shape || product()?.caratWeight">
-                           <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Gemstone Details</h4>
-                           <div class="space-y-2 text-sm">
-                              <div class="flex justify-between" *ngIf="product()?.species"><span class="text-gray-500">Species</span><span class="font-medium text-gray-900">{{ product()?.species }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.variety"><span class="text-gray-500">Variety</span><span class="font-medium text-gray-900">{{ product()?.variety }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.shape"><span class="text-gray-500">Shape</span><span class="font-medium text-gray-900">{{ product()?.shape }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.cut"><span class="text-gray-500">Cut</span><span class="font-medium text-gray-900">{{ product()?.cut }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.caratWeight"><span class="text-gray-500">Carat Weight</span><span class="font-medium text-gray-900">{{ product()?.caratWeight }} ct</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.colorHue"><span class="text-gray-500">Color Hue</span><span class="font-medium text-gray-900">{{ product()?.colorHue }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.colorTradeTerm"><span class="text-gray-500">Trade Color</span><span class="font-medium text-gray-900">{{ product()?.colorTradeTerm }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.clarity"><span class="text-gray-500">Clarity</span><span class="font-medium text-gray-900">{{ product()?.clarity }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.measurements"><span class="text-gray-500">Measurements</span><span class="font-medium text-gray-900">{{ product()?.measurements }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.treatmentStatus"><span class="text-gray-500">Treatment</span><span class="font-medium text-gray-900">{{ product()?.treatmentStatus }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.originProvenance"><span class="text-gray-500">Origin</span><span class="font-medium text-gray-900">{{ product()?.originProvenance }}</span></div>
-                              <div class="flex justify-between" *ngIf="product()?.labReportNumber"><span class="text-gray-500">Lab Report</span><span class="font-medium text-gray-900">{{ product()?.labReportNumber }}</span></div>
-                           </div>
-                        </div>
-                     </ng-container>
-
-                     <!-- Fallback / Legacy Specs -->
-                     <ng-container *ngSwitchDefault>
-                        <div *ngIf="product()?.specifications?.productDetails as pd">
-                           <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
-                           <div class="space-y-2 text-sm">
-                              <div class="flex justify-between" *ngFor="let item of pd | keyvalue">
-                                 <span class="text-gray-500 capitalize">{{ formatKey(item.key) }}</span>
-                                 <span class="font-medium text-gray-900">{{ item.value }}</span>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                     <!-- Dynamic Category Rendering -->
+                     <ng-container [ngSwitch]="product()?.category">
+                        <!-- Finished Jewelry -->
+                        <ng-container *ngSwitchCase="'Finished Jewelry'">
+                           <div *ngIf="product()?.metalType || product()?.grossWeight">
+                              <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
+                              <div class="space-y-2 text-sm">
+                                 <div class="flex justify-between" *ngIf="product()?.metalType"><span class="text-gray-500">Metal Type</span><span class="font-medium text-gray-900">{{ product()?.metalType }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.metalPurity"><span class="text-gray-500">Purity</span><span class="font-medium text-gray-900">{{ product()?.metalPurity }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.metalColor"><span class="text-gray-500">Metal Color</span><span class="font-medium text-gray-900">{{ product()?.metalColor }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.grossWeight"><span class="text-gray-500">Gross Weight</span><span class="font-medium text-gray-900">{{ product()?.grossWeight }} g</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.dimensions"><span class="text-gray-500">Dimensions</span><span class="font-medium text-gray-900">{{ product()?.dimensions }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.bisHallmark"><span class="text-gray-500">BIS Hallmark</span><span class="font-medium text-gray-900">Yes</span></div>
                               </div>
                            </div>
-                        </div>
-                     </ng-container>
-                  </ng-container>
-               </div>
+                        </ng-container>
 
-               <!-- Diamond Details Table -->
-               <div *ngIf="product()?.specifications?.diamondDetails as dd" class="mt-8">
-                  <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4">Diamond Specifications</h4>
-                  <div class="overflow-hidden border border-gray-200 rounded-lg">
-                     <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50 text-gray-600 font-medium">
-                           <tr>
-                              <th class="px-4 py-3">Type</th>
-                              <th class="px-4 py-3">Shape</th>
-                              <th class="px-4 py-3">Weight</th>
-                              <th class="px-4 py-3">Color/Clarity</th>
-                              <th class="px-4 py-3">Setting</th>
-                           </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                           <tr *ngFor="let d of dd">
-                              <td class="px-4 py-3 font-medium text-gray-900">{{ d.type }}</td>
-                              <td class="px-4 py-3 text-gray-600">{{ d.shape }}</td>
-                              <td class="px-4 py-3 text-gray-600">{{ d.carat }} ct</td>
-                              <td class="px-4 py-3 text-gray-600">{{ d.color }} / {{ d.clarity }}</td>
-                              <td class="px-4 py-3 text-gray-600">{{ d.settingType }}</td>
-                           </tr>
-                        </tbody>
-                     </table>
+                        <!-- Loose Gemstones -->
+                        <ng-container *ngSwitchCase="'Loose Gemstones'">
+                           <div *ngIf="product()?.shape || product()?.caratWeight">
+                              <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Gemstone Details</h4>
+                              <div class="space-y-2 text-sm">
+                                 <div class="flex justify-between" *ngIf="product()?.species"><span class="text-gray-500">Species</span><span class="font-medium text-gray-900">{{ product()?.species }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.variety"><span class="text-gray-500">Variety</span><span class="font-medium text-gray-900">{{ product()?.variety }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.shape"><span class="text-gray-500">Shape</span><span class="font-medium text-gray-900">{{ product()?.shape }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.cut"><span class="text-gray-500">Cut</span><span class="font-medium text-gray-900">{{ product()?.cut }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.caratWeight"><span class="text-gray-500">Carat Weight</span><span class="font-medium text-gray-900">{{ product()?.caratWeight }} ct</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.colorHue"><span class="text-gray-500">Color Hue</span><span class="font-medium text-gray-900">{{ product()?.colorHue }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.colorTradeTerm"><span class="text-gray-500">Trade Color</span><span class="font-medium text-gray-900">{{ product()?.colorTradeTerm }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.clarity"><span class="text-gray-500">Clarity</span><span class="font-medium text-gray-900">{{ product()?.clarity }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.measurements"><span class="text-gray-500">Measurements</span><span class="font-medium text-gray-900">{{ product()?.measurements }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.treatmentStatus"><span class="text-gray-500">Treatment</span><span class="font-medium text-gray-900">{{ product()?.treatmentStatus }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.originProvenance"><span class="text-gray-500">Origin</span><span class="font-medium text-gray-900">{{ product()?.originProvenance }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.labReportNumber"><span class="text-gray-500">Lab Report</span><span class="font-medium text-gray-900">{{ product()?.labReportNumber }}</span></div>
+                              </div>
+                           </div>
+                        </ng-container>
+
+                        <!-- Fallback / Legacy Specs -->
+                        <ng-container *ngSwitchDefault>
+                           <div *ngIf="product()?.specifications?.productDetails as pd">
+                              <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
+                              <div class="space-y-2 text-sm">
+                                 <div class="flex justify-between" *ngFor="let item of pd | keyvalue">
+                                    <span class="text-gray-500 capitalize">{{ formatKey(item.key) }}</span>
+                                    <span class="font-medium text-gray-900">{{ item.value }}</span>
+                                 </div>
+                              </div>
+                           </div>
+                        </ng-container>
+                     </ng-container>
+                  </div>
+
+                  <!-- Diamond Details Table -->
+                  <div *ngIf="product()?.specifications?.diamondDetails as dd" class="mt-8">
+                     <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4">Diamond Specifications</h4>
+                     <div class="overflow-hidden border border-gray-200 rounded-lg">
+                        <table class="w-full text-sm text-left">
+                           <thead class="bg-gray-50 text-gray-600 font-medium">
+                              <tr>
+                                 <th class="px-4 py-3">Type</th>
+                                 <th class="px-4 py-3">Shape</th>
+                                 <th class="px-4 py-3">Weight</th>
+                                 <th class="px-4 py-3">Color/Clarity</th>
+                                 <th class="px-4 py-3">Setting</th>
+                              </tr>
+                           </thead>
+                           <tbody class="divide-y divide-gray-100">
+                              <tr *ngFor="let d of dd">
+                                 <td class="px-4 py-3 font-medium text-gray-900">{{ d.type }}</td>
+                                 <td class="px-4 py-3 text-gray-600">{{ d.shape }}</td>
+                                 <td class="px-4 py-3 text-gray-600">{{ d.carat }} ct</td>
+                                 <td class="px-4 py-3 text-gray-600">{{ d.color }} / {{ d.clarity }}</td>
+                                 <td class="px-4 py-3 text-gray-600">{{ d.settingType }}</td>
+                              </tr>
+                           </tbody>
+                        </table>
+                     </div>
                   </div>
                </div>
-            </div>
 
-            <!-- Tags/Footer of Left Column -->
-            <div class="flex gap-4 mt-4">
-              <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full">
-                <span class="text-xl">🛡️</span> 15-Day Money Back
-              </div>
-              <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full">
-                 <span class="text-xl">💎</span> Lifetime Exchange
-              </div>
-              <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full">
-                 <span class="text-xl">📜</span> BIS Hallmarked
-              </div>
-            </div>
+               <!-- Tags/Footer of Left Column -->
+               <div class="flex gap-4 mt-4 overflow-x-auto pb-2 hide-scrollbar">
+                 <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full whitespace-nowrap">
+                   <span class="text-xl">🛡️</span> 15-Day Money Back
+                 </div>
+                 <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full whitespace-nowrap">
+                    <span class="text-xl">💎</span> Lifetime Exchange
+                 </div>
+                 <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full whitespace-nowrap">
+                    <span class="text-xl">📜</span> BIS Hallmarked
+                 </div>
+               </div>
+            </ng-template>
 
+            <!-- Render details here only on large screens -->
+            <div class="hidden lg:block">
+              <ng-container *ngTemplateOutlet="productDetailsTpl"></ng-container>
+            </div>
           </div>
 
           <!-- RIGHT COLUMN: Sticky Buy Box -->
@@ -377,6 +383,11 @@ import { environment } from '../../environments/environment';
                 </div>
 
              </div>
+          </div>
+
+          <!-- Render details here only on small screens -->
+          <div class="block lg:hidden mt-8 w-full">
+            <ng-container *ngTemplateOutlet="productDetailsTpl"></ng-container>
           </div>
 
         </div>
