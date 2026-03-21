@@ -32,15 +32,26 @@
     padding: 0;
   }
 
-  /* A4 page grid layout */
+  /* A4 page grid layout for 50 items (5 columns x 10 rows) */
+  @page {
+    size: A4 portrait;
+    margin: 5mm;
+  }
+
   .print-grid {
     display: grid;
-    /* Typically A4 can fit around 5-6 QR codes horizontally and 8-10 vertically for small tags. We'll use 5 columns. */
+    /* Exactly 5 columns */
     grid-template-columns: repeat(5, 1fr);
-    grid-gap: 10mm 5mm; /* Gap between labels */
-    padding: 10mm; /* Margin for the whole sheet */
+    /* Exactly 10 rows per page */
+    grid-template-rows: repeat(10, auto);
+    /* Calculate precise gaps so it stays strictly on one page for 50 items */
+    gap: 3mm 3mm;
+    padding: 5mm;
     width: 210mm; /* A4 width */
-    margin: auto;
+    height: 297mm; /* A4 height */
+    box-sizing: border-box;
+    margin: 0;
+    page-break-after: always; /* Ensure next set of 50 goes to a new page */
   }
 
   /* Individual tag cell */
@@ -50,15 +61,17 @@
     align-items: center;
     justify-content: center;
     border: 1px dashed #ccc; /* Helper border to cut */
-    padding: 5mm;
+    padding: 2mm;
     page-break-inside: avoid;
     box-sizing: border-box;
     width: 100%;
+    /* Let the grid item grow to fill its cell in the 5x10 grid */
+    height: 100%;
   }
 
   .qr-container {
-    width: 25mm; /* Size of QR code */
-    height: 25mm;
+    width: 15mm; /* Slightly smaller to ensure fit for 10 rows */
+    height: 15mm;
     margin-bottom: 2mm;
     display: flex;
     align-items: center;
