@@ -93,6 +93,15 @@ public class ProductController {
         return ResponseEntity.status(201).body(entityMapper.toProductDTO(created));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Update product (Admin)")
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
+        Product product = entityMapper.toProductEntity(productDTO);
+        Product updated = productService.updateProduct(id, product);
+        return ResponseEntity.ok(entityMapper.toProductDTO(updated));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Delete product (Admin)")

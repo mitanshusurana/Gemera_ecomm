@@ -125,6 +125,117 @@ public class ProductService {
         return skuBuilder.toString();
     }
 
+    public Product updateProduct(UUID id, Product updatedProduct) {
+        return productRepository.findById(id).map(existing -> {
+            // Basic Info
+            existing.setName(updatedProduct.getName());
+            existing.setDescription(updatedProduct.getDescription());
+            existing.setPrice(updatedProduct.getPrice());
+            existing.setStock(updatedProduct.getStock());
+            existing.setCategory(updatedProduct.getCategory());
+            existing.setSubCategory(updatedProduct.getSubCategory());
+            if (updatedProduct.getSku() != null && !updatedProduct.getSku().isEmpty()) {
+                existing.setSku(updatedProduct.getSku());
+            }
+            existing.setIsVerified(updatedProduct.getIsVerified());
+
+            // Media
+            existing.setImages(updatedProduct.getImages());
+            existing.setVideoUrl(updatedProduct.getVideoUrl());
+
+            // Taxonomy & Specs
+            existing.setOccasions(updatedProduct.getOccasions());
+            existing.setStyles(updatedProduct.getStyles());
+            existing.setCustomizationOptions(updatedProduct.getCustomizationOptions());
+            existing.setPriceBreakup(updatedProduct.getPriceBreakup());
+            existing.setSpecifications(updatedProduct.getSpecifications());
+
+            // 1. Finished Jewelry
+            existing.setMetalType(updatedProduct.getMetalType());
+            existing.setMetalPurity(updatedProduct.getMetalPurity());
+            existing.setGrossWeight(updatedProduct.getGrossWeight());
+            existing.setNetWeight(updatedProduct.getNetWeight());
+            existing.setTotalCaratWeight(updatedProduct.getTotalCaratWeight());
+            existing.setDimensions(updatedProduct.getDimensions());
+            existing.setCurrentLocation(updatedProduct.getCurrentLocation());
+            existing.setHuid(updatedProduct.getHuid());
+            existing.setBisHallmark(updatedProduct.getBisHallmark());
+            existing.setHallmarkingDate(updatedProduct.getHallmarkingDate());
+            existing.setDesignStyle(updatedProduct.getDesignStyle());
+            existing.setMetalColor(updatedProduct.getMetalColor());
+            existing.setManufacturingTerminology(updatedProduct.getManufacturingTerminology());
+            existing.setStoneDetailIds(updatedProduct.getStoneDetailIds());
+
+            // 2. Loose Gemstones
+            existing.setStoneSku(updatedProduct.getStoneSku());
+            existing.setSpecies(updatedProduct.getSpecies());
+            existing.setVariety(updatedProduct.getVariety());
+            existing.setShape(updatedProduct.getShape());
+            existing.setCut(updatedProduct.getCut());
+            existing.setCaratWeight(updatedProduct.getCaratWeight());
+            existing.setColorHue(updatedProduct.getColorHue());
+            existing.setColorTone(updatedProduct.getColorTone());
+            existing.setColorSaturation(updatedProduct.getColorSaturation());
+            existing.setColorTradeTerm(updatedProduct.getColorTradeTerm());
+            existing.setClarity(updatedProduct.getClarity());
+            existing.setMeasurements(updatedProduct.getMeasurements());
+            existing.setTreatmentStatus(updatedProduct.getTreatmentStatus());
+            existing.setLabReportNumber(updatedProduct.getLabReportNumber());
+            existing.setCertificateImage(updatedProduct.getCertificateImage());
+            existing.setPolish(updatedProduct.getPolish());
+            existing.setSymmetry(updatedProduct.getSymmetry());
+            existing.setFluorescence(updatedProduct.getFluorescence());
+            existing.setGirdle(updatedProduct.getGirdle());
+            existing.setCulet(updatedProduct.getCulet());
+            existing.setTablePercentage(updatedProduct.getTablePercentage());
+            existing.setDepthPercentage(updatedProduct.getDepthPercentage());
+            existing.setOriginProvenance(updatedProduct.getOriginProvenance());
+            existing.setStockStatus(updatedProduct.getStockStatus());
+
+            // 3. Religious Idols & Gemstone Carvings
+            existing.setSubjectDeityName(updatedProduct.getSubjectDeityName());
+            existing.setGemstoneMaterial(updatedProduct.getGemstoneMaterial());
+            existing.setCarvingStyle(updatedProduct.getCarvingStyle());
+            existing.setQualityDescription(updatedProduct.getQualityDescription());
+            existing.setAsana(updatedProduct.getAsana());
+            existing.setMudra(updatedProduct.getMudra());
+            existing.setAyudha(updatedProduct.getAyudha());
+            existing.setVahana(updatedProduct.getVahana());
+            existing.setArtistName(updatedProduct.getArtistName());
+            existing.setHistoricalContext(updatedProduct.getHistoricalContext());
+            existing.setCarvingTechnique(updatedProduct.getCarvingTechnique());
+
+            // 4. Manufacturing & Rough Materials
+            existing.setLotNumber(updatedProduct.getLotNumber());
+            existing.setMineOrigin(updatedProduct.getMineOrigin());
+            existing.setRoughMaterial(updatedProduct.getRoughMaterial());
+            existing.setRoughWeight(updatedProduct.getRoughWeight());
+            existing.setPurchaseDate(updatedProduct.getPurchaseDate());
+            existing.setSupplierCode(updatedProduct.getSupplierCode());
+            existing.setAcquisitionCost(updatedProduct.getAcquisitionCost());
+            existing.setMatrixParentRock(updatedProduct.getMatrixParentRock());
+            existing.setCrystalMorphology(updatedProduct.getCrystalMorphology());
+            existing.setYieldEstimate(updatedProduct.getYieldEstimate());
+            existing.setWastageLog(updatedProduct.getWastageLog());
+            existing.setManufacturingStage(updatedProduct.getManufacturingStage());
+
+            // 5. Components & Materials
+            existing.setComponentType(updatedProduct.getComponentType());
+            existing.setMaterial(updatedProduct.getMaterial());
+            existing.setPurity(updatedProduct.getPurity());
+            existing.setQuantityPcs(updatedProduct.getQuantityPcs());
+            existing.setWeightPerPiece(updatedProduct.getWeightPerPiece());
+            existing.setTotalWeight(updatedProduct.getTotalWeight());
+            existing.setReorderPointAlert(updatedProduct.getReorderPointAlert());
+            existing.setBeadStyle(updatedProduct.getBeadStyle());
+            existing.setLayoutPattern(updatedProduct.getLayoutPattern());
+            existing.setVendorInformation(updatedProduct.getVendorInformation());
+            existing.setMinOrderQuantity(updatedProduct.getMinOrderQuantity());
+
+            return productRepository.save(existing);
+        }).orElseThrow(() -> new RuntimeException("Product not found"));
+    }
+
     public void deleteProduct(UUID id) {
         productRepository.deleteById(id);
     }

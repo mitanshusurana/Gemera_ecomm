@@ -130,7 +130,9 @@ import { environment } from '../../environments/environment';
                   </div>
 
                   <!-- Images View (Loop all images as swipeable items) -->
-                  <div #mediaImage *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index" class="w-full h-full shrink-0 snap-center relative">
+                  <div #mediaImage *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index"
+                       class="w-full h-full shrink-0 snap-center relative"
+                       [class.hidden]="showVideo()">
                     <img *ngIf="img" [ngSrc]="img"
                          fill priority
                          sizes="(max-width: 1024px) 100vw, 50vw"

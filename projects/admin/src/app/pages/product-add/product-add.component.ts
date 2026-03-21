@@ -460,11 +460,86 @@ export class ProductAddComponent implements OnInit {
     }
   }
 
-  onVideoFileChange(event: any) {
+  async onVideoFileChange(event: any) {
     if (event.target.files.length > 0) {
-      this.selectedVideoFile = event.target.files[0];
-      this.triggerBackgroundUploads();
+      const originalFile = event.target.files[0];
+      this.uploadingMedia = true;
+      this.uploadProgressMessage = 'Processing video to remove audio...';
+
+      try {
+        this.selectedVideoFile = await this.stripAudioFromVideo(originalFile);
+        this.triggerBackgroundUploads();
+      } catch (err) {
+        console.error('Failed to strip audio:', err);
+        // Fallback to original file if processing fails
+        this.selectedVideoFile = originalFile;
+        this.triggerBackgroundUploads();
+      }
     }
+  }
+
+  private stripAudioFromVideo(file: File): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.muted = true;
+      const url = URL.createObjectURL(file);
+      video.src = url;
+
+      video.onloadedmetadata = () => {
+        video.play().then(() => {
+          try {
+            // @ts-ignore - captureStream might not be in all TS DOM lib versions
+            const stream: MediaStream = video.captureStream ? video.captureStream() : video.mozCaptureStream();
+
+            // Get only the video tracks
+            const videoTracks = stream.getVideoTracks();
+            if (videoTracks.length === 0) {
+              reject(new Error("No video tracks found"));
+              return;
+            }
+
+            const silentStream = new MediaStream([videoTracks[0]]);
+            let mimeType = file.type;
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+              mimeType = 'video/webm'; // fallback
+            }
+            const mediaRecorder = new MediaRecorder(silentStream, { mimeType: mimeType });
+            const chunks: BlobPart[] = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+              if (e.data.size > 0) {
+                chunks.push(e.data);
+              }
+            };
+
+            mediaRecorder.onstop = () => {
+              const blob = new Blob(chunks, { type: mimeType });
+              const newFile = new File([blob], file.name, { type: mimeType });
+              URL.revokeObjectURL(url);
+              resolve(newFile);
+            };
+
+            mediaRecorder.start();
+
+            // When video finishes, stop recording
+            video.onended = () => {
+              mediaRecorder.stop();
+            };
+          } catch (e) {
+            URL.revokeObjectURL(url);
+            reject(e);
+          }
+        }).catch(err => {
+            URL.revokeObjectURL(url);
+            reject(err);
+        });
+      };
+
+      video.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Error loading video for processing"));
+      };
+    });
   }
 
   triggerBackgroundUploads() {
