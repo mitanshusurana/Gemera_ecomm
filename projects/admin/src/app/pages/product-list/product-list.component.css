@@ -9,8 +9,14 @@
   }
 
   /* Hide main layout elements explicitly */
-  header, nav, .bg-white.dark\:bg-slate-900.border-b {
+  header, nav, aside, footer, button:not(.print-only), .bg-white.dark\:bg-slate-900.border-b {
     display: none !important;
+  }
+
+  /* Ensure backgrounds are forced to be white */
+  body, html, .bg-gray-50, .bg-gray-100 {
+    background-color: white !important;
+    background-image: none !important;
   }
 
   .no-print, .no-print * {
