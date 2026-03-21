@@ -2,7 +2,7 @@ import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit }
 import { SettingService } from '../services/setting.service';
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
-import { FormsModule } from "@angular/forms";
+import { FormsModule, ReactiveFormsModule, FormControl, Validators } from "@angular/forms";
 import { APP_CATEGORIES } from "../core/constants";
 import { EmailNotificationService } from "../services/email-notification.service";
 import { ToastService } from "../services/toast.service";
@@ -11,7 +11,7 @@ import { environment } from "../../environments/environment";
 @Component({
   selector: "app-footer",
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <footer *ngIf="settings" class="bg-primary-950 text-white w-full overflow-hidden border-t-4 border-secondary-500">
@@ -22,21 +22,26 @@ import { environment } from "../../environments/environment";
                 <h3 class="font-display font-bold text-2xl mb-1">Join the Caratloop Family</h3>
                 <p class="text-primary-200 text-sm">Be the first to know about new collections & exclusive offers.</p>
              </div>
-             <div class="flex w-full md:w-auto max-w-md gap-0">
-                <input
-                  type="email"
-                  [(ngModel)]="email"
-                  (keyup.enter)="subscribe()"
-                  placeholder="Enter your email"
-                  class="w-full px-4 py-3 bg-white text-gray-900 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-secondary-500"
-                >
-                <button
-                  (click)="subscribe()"
-                  [disabled]="isSubscribing"
-                  class="bg-secondary-500 hover:bg-secondary-600 text-white font-bold px-6 py-3 rounded-r-lg transition-colors whitespace-nowrap disabled:opacity-50"
-                >
-                   {{ isSubscribing ? 'Signing Up...' : 'Sign Up' }}
-                </button>
+             <div class="flex flex-col w-full md:w-auto max-w-md">
+                <div class="flex w-full gap-0">
+                   <input
+                     type="email"
+                     [formControl]="emailControl"
+                     (keyup.enter)="subscribe()"
+                     placeholder="Enter your email"
+                     class="w-full px-4 py-3 bg-white text-gray-900 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                   >
+                   <button
+                     (click)="subscribe()"
+                     [disabled]="isSubscribing"
+                     class="bg-secondary-500 hover:bg-secondary-600 text-white font-bold px-6 py-3 rounded-r-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                   >
+                      {{ isSubscribing ? 'Signing Up...' : 'Sign Up' }}
+                   </button>
+                </div>
+                <div *ngIf="emailControl.invalid && (emailControl.dirty || emailControl.touched)" class="text-red-400 text-xs mt-1">
+                   <span *ngIf="emailControl.errors?.['email']">Please enter a valid email address.</span>
+                </div>
              </div>
           </div>
       </div>
@@ -129,7 +134,7 @@ export class FooterComponent implements OnInit {
   env = environment;
   categories = APP_CATEGORIES;
   settings: any = null;
-  email = '';
+  emailControl = new FormControl('', [Validators.required, Validators.email]);
   isSubscribing = false;
 
   private emailService = inject(EmailNotificationService);
@@ -166,16 +171,17 @@ export class FooterComponent implements OnInit {
   }
 
   subscribe() {
-    if (!this.email || !this.email.includes('@')) {
+    if (this.emailControl.invalid) {
+        this.emailControl.markAsTouched();
         this.toastService.show('Please enter a valid email address', 'error');
         return;
     }
 
     this.isSubscribing = true;
-    this.emailService.subscribeToNotifications(this.email).subscribe({
+    this.emailService.subscribeToNotifications(this.emailControl.value!).subscribe({
         next: () => {
             this.toastService.show('Successfully subscribed to newsletter!', 'success');
-            this.email = '';
+            this.emailControl.reset();
             this.isSubscribing = false;
             this.cdr.markForCheck();
         },

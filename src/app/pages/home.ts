@@ -72,7 +72,7 @@ interface CollectionUI {
        <div class="container-luxury px-6">
           <div class="text-center mb-16">
              <h2 class="text-3xl md:text-4xl font-display font-bold text-primary-900 mb-4">Shop By Occasion</h2>
-             <p class="text-gray-500">Curated edits for every moment of your life</p>
+             <p class="text-primary-700">Curated edits for every moment of your life</p>
           </div>
 
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -127,7 +127,7 @@ interface CollectionUI {
               <div class="w-16 h-16 rounded-full bg-primary-50 text-primary-800 flex items-center justify-center text-3xl group-hover:bg-primary-800 group-hover:text-white transition-colors duration-300">
                  {{ cat.icon }}
               </div>
-              <span class="font-bold text-gray-800 group-hover:text-primary-800 text-sm md:text-base">{{ cat.title }}</span>
+              <span class="font-bold text-primary-900 group-hover:text-primary-800 text-sm md:text-base">{{ cat.title }}</span>
            </a>
         </div>
       </div>
@@ -141,7 +141,7 @@ interface CollectionUI {
                 <h2 class="text-3xl md:text-4xl font-display font-bold text-primary-900 mb-2">
                   Best Sellers
                 </h2>
-                <p class="text-gray-500">
+                <p class="text-primary-700">
                   Pieces loved by our community
                 </p>
             </div>
@@ -181,13 +181,13 @@ interface CollectionUI {
 
             <!-- Product Info -->
             <div class="pt-4 pb-2">
-              <h3 class="font-medium text-gray-900 text-sm mb-1 line-clamp-1 group-hover:text-primary-700 transition-colors">
+              <h3 class="font-medium text-primary-900 text-sm mb-1 line-clamp-1 group-hover:text-primary-700 transition-colors">
                 {{ product.name }}
               </h3>
 
               <div class="flex items-center gap-2">
                 <span class="font-bold text-primary-900">{{ product.price | currencyConvert }}</span>
-                <span *ngIf="product.originalPrice" class="text-xs text-gray-400 line-through">{{ product.originalPrice | currencyConvert }}</span>
+                <span *ngIf="product.originalPrice" class="text-xs text-primary-400 line-through">{{ product.originalPrice | currencyConvert }}</span>
               </div>
             </div>
           </a>
@@ -206,19 +206,19 @@ interface CollectionUI {
       <div class="container-luxury px-6 relative z-10">
          <div class="text-center mb-16">
             <h2 class="text-3xl md:text-5xl font-display font-bold mb-4">Client Diaries</h2>
-            <p class="text-primary-200">Stories of sparkle from our cherished customers</p>
+            <p class="text-primary-200" style="color: var(--color-text-muted-light, #d1fae5);">Stories of sparkle from our cherished customers</p>
          </div>
 
          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Testimonial 1 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-gray-200">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light text-primary-200" style="color: var(--color-text-muted-light, #d1fae5);">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl text-white">S</div>
                   <div>
                      <h4 class="font-bold text-white">Sneha Kapoor</h4>
-                     <p class="text-xs uppercase tracking-wider text-gray-400">Marketing Head</p>
+                     <p class="text-xs uppercase tracking-wider text-secondary-500">Marketing Head</p>
                   </div>
                </div>
             </div>
@@ -226,12 +226,12 @@ interface CollectionUI {
             <!-- Testimonial 2 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-gray-200">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
+               <p class="text-lg leading-relaxed mb-6 font-light text-primary-200" style="color: var(--color-text-muted-light, #d1fae5);">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl text-white">A</div>
                   <div>
                      <h4 class="font-bold text-white">Ankit Sharma</h4>
-                     <p class="text-xs uppercase tracking-wider text-gray-400">Entrepreneur</p>
+                     <p class="text-xs uppercase tracking-wider text-secondary-500">Entrepreneur</p>
                   </div>
                </div>
             </div>
@@ -239,12 +239,12 @@ interface CollectionUI {
             <!-- Testimonial 3 -->
             <div class="bg-primary-800 p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-secondary-400 mb-4 text-sm">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-gray-200">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light text-primary-200" style="color: var(--color-text-muted-light, #d1fae5);">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary-700 flex items-center justify-center font-bold text-xl text-white">P</div>
                   <div>
                      <h4 class="font-bold text-white">Priya Menon</h4>
-                     <p class="text-xs uppercase tracking-wider text-gray-400">Doctor</p>
+                     <p class="text-xs uppercase tracking-wider text-secondary-500">Doctor</p>
                   </div>
                </div>
             </div>
@@ -258,7 +258,7 @@ interface CollectionUI {
           <div class="flex-1">
              <span class="text-secondary-600 font-bold uppercase tracking-widest text-xs mb-2 block">Smart Investment</span>
              <h2 class="text-3xl md:text-5xl font-display font-bold text-primary-900 mb-6">Caratloop <span class="text-secondary-600">Treasure Plan</span></h2>
-             <p class="text-gray-600 text-lg mb-8 max-w-xl">
+             <p class="text-primary-800 text-lg mb-8 max-w-xl">
                The smartest way to buy jewellery. Pay for 10 months, and we pay the 11th installment for you.
              </p>
              <div class="flex gap-4">
@@ -278,7 +278,7 @@ interface CollectionUI {
     <section class="py-20 bg-white border-t border-gray-100">
       <div class="container-luxury text-center px-6">
         <h2 class="text-2xl font-display font-bold text-primary-900 mb-2">@CaratloopJewels</h2>
-        <p class="text-gray-500 mb-10">Follow us on Instagram for daily inspiration</p>
+        <p class="text-primary-700 mb-10">Follow us on Instagram for daily inspiration</p>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
            <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">

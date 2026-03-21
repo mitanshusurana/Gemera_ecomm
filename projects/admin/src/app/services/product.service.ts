@@ -41,6 +41,12 @@ export class ProductService {
     return this.http.post(`${this.apiUrl}/upload-image`, formData);
   }
 
+  uploadVideo(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.apiUrl}/upload-video`, formData);
+  }
+
   // --- Bulk Print Queue ---
   // Store the full product object to preserve sku, name, and price even if navigated away
   private printQueue = new Map<string, any>();

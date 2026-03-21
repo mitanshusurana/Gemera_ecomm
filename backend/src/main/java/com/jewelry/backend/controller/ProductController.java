@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -119,6 +121,67 @@ public class ProductController {
             return ResponseEntity.ok(Map.of("url", fileUrl));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Failed to upload file"));
+        }
+    }
+
+    @PostMapping("/upload-video")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Upload video and strip audio asynchronously")
+    public ResponseEntity<Map<String, String>> uploadVideo(@RequestParam("file") MultipartFile file) {
+        Path tempInputFile = null;
+        Path tempOutputFile = null;
+        try {
+            // Write the uploaded video to a temporary file
+            tempInputFile = Files.createTempFile("video_in_", ".mp4");
+            tempOutputFile = Files.createTempFile("video_out_", ".mp4");
+            file.transferTo(tempInputFile.toFile());
+
+            // Synchronously process video with fast ffmpeg operation
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                    "ffmpeg", "-y", "-i", tempInputFile.toAbsolutePath().toString(),
+                    "-c", "copy", "-an", tempOutputFile.toAbsolutePath().toString()
+            );
+            processBuilder.redirectErrorStream(true);
+            Process process = processBuilder.start();
+
+            // Consume the process output to avoid deadlocks
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // Ignore output, just consume it
+                }
+            }
+
+            try {
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    return ResponseEntity.internalServerError().body(Map.of("error", "Failed to process video audio stripping"));
+                }
+
+                // Upload the processed video
+                String fileUrl = storageService.uploadFileFromPath(tempOutputFile, "video/mp4");
+
+                return ResponseEntity.ok(Map.of("url", fileUrl));
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return ResponseEntity.internalServerError().body(Map.of("error", "Video processing interrupted"));
+            }
+
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to upload file"));
+        } finally {
+            // Cleanup temporary files
+            if (tempInputFile != null) {
+                try {
+                    Files.deleteIfExists(tempInputFile);
+                } catch (IOException ignored) {}
+            }
+            if (tempOutputFile != null) {
+                try {
+                    Files.deleteIfExists(tempOutputFile);
+                } catch (IOException ignored) {}
+            }
         }
     }
 }
