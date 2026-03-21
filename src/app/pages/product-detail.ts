@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, ViewEncapsulation, ViewChild, ElementRef, ViewChildren, QueryList } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, signal, computed, inject, ChangeDetectionStrategy, ViewEncapsulation, ViewChild, ElementRef, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
@@ -139,6 +139,14 @@ import { environment } from '../../environments/environment';
                          class="object-contain p-4 md:p-8 transition-transform duration-500"
                          [alt]="product()?.name">
                   </div>
+                </div>
+              </div>
+
+              <!-- Mobile Pagination Dots -->
+              <div class="flex justify-center gap-2 mt-2 md:hidden" *ngIf="!showVideo()">
+                <div *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index"
+                     class="w-2 h-2 rounded-full transition-colors duration-300"
+                     [ngClass]="selectedMediaIndex() === i ? 'bg-primary-800' : 'bg-gray-300'">
                 </div>
               </div>
             </div>
@@ -417,7 +425,7 @@ import { environment } from '../../environments/environment';
     :host { display: block; }
   `]
 })
-export class ProductDetailComponent implements OnInit, OnDestroy {
+export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   private productService = inject(ProductService);
   private cartService = inject(CartService);
   private route = inject(ActivatedRoute);
@@ -480,7 +488,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+  }
 
   private loadProduct(id: string): void {
     this.loading.set(true);
@@ -580,6 +592,45 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   hasOption(t: string) { return !!this.product()?.customizationOptions?.some(o => o.type === t); }
   getOptions(t: string) { return this.product()?.customizationOptions?.filter(o => o.type === t) || []; }
   formatKey(k: string) { return k.replace(/([A-Z])/g, ' $1').trim(); }
+
+  private observer: IntersectionObserver | null = null;
+
+  ngAfterViewInit() {
+    this.setupIntersectionObserver();
+    this.mediaImageElements.changes.subscribe(() => {
+      this.setupIntersectionObserver();
+    });
+  }
+
+  private setupIntersectionObserver() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+
+    // Only setup if we have elements to observe
+    if (this.mediaImageElements && this.mediaImageElements.length > 0) {
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            // Find the index of the intersecting element
+            const index = this.mediaImageElements.toArray().findIndex(el => el.nativeElement === entry.target);
+            if (index !== -1 && this.selectedMediaIndex() !== index) {
+              this.selectedMediaIndex.set(index);
+            }
+          }
+        });
+      }, {
+        root: document.getElementById('main-media-scroll'),
+        threshold: 0.5
+      });
+
+      this.mediaImageElements.forEach(el => {
+        if (el.nativeElement) {
+          this.observer!.observe(el.nativeElement);
+        }
+      });
+    }
+  }
 
   selectMedia(type: 'video' | 'image', index?: number) {
      if (type === 'video') {

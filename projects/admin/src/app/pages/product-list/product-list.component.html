@@ -94,7 +94,7 @@
                     </button>
                     <!-- Hover QR Code Popup -->
                     <div *ngIf="product.sku" class="hidden group-hover:block absolute left-full ml-2 z-10 bg-white p-2 border rounded shadow-lg top-1/2 transform -translate-y-1/2">
-                      <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + product.sku" alt="QR Code" class="w-32 h-32 object-contain" />
+                      <qrcode [qrdata]="product.sku" [width]="128" [errorCorrectionLevel]="'M'"></qrcode>
                       <p class="text-xs text-center mt-1 text-gray-500 font-mono">{{product.sku}}</p>
                     </div>
                   </div>
@@ -118,19 +118,3 @@
   </div>
 </div>
 
-<!-- Hidden Print Area -->
-<div class="print-only" *ngIf="printQueueObjects.length > 0">
-  <div class="print-grid">
-    <div class="print-cell" *ngFor="let product of printQueueObjects">
-      <div class="qr-container">
-        <img *ngIf="product.sku" [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + product.sku" alt="QR Code" />
-        <div *ngIf="!product.sku" class="no-sku">No SKU</div>
-      </div>
-      <div class="print-details">
-        <div class="print-sku">{{product.sku || 'N/A'}}</div>
-        <div class="print-name">{{product.name | slice:0:20}}{{product.name.length > 20 ? '...' : ''}}</div>
-        <div class="print-price">{{product.price | currency}}</div>
-      </div>
-    </div>
-  </div>
-</div>
