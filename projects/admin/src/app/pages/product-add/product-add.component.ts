@@ -474,8 +474,12 @@ export class ProductAddComponent implements OnInit {
     this.uploadProgressMessage = 'Uploading media...';
     this.errorMessage = '';
 
+    // Capture state locally to avoid race conditions if user changes selection while uploading
+    const currentFilesCount = this.selectedFiles.length;
+    const hasVideo = !!this.selectedVideoFile;
+
     // Images
-    if (this.selectedFiles.length > 0) {
+    if (currentFilesCount > 0) {
       uploadRequests.push(...this.selectedFiles.map(file =>
         this.productService.uploadImage(file).pipe(
           catchError(err => {
@@ -487,7 +491,7 @@ export class ProductAddComponent implements OnInit {
     }
 
     // Video
-    if (this.selectedVideoFile) {
+    if (hasVideo && this.selectedVideoFile) {
       uploadRequests.push(
         this.productService.uploadVideo(this.selectedVideoFile).pipe(
           catchError(err => {
@@ -501,10 +505,13 @@ export class ProductAddComponent implements OnInit {
     if (uploadRequests.length > 0) {
       forkJoin(uploadRequests).subscribe({
         next: (responses) => {
-          let imageResponses = responses.slice(0, this.selectedFiles.length);
-          let videoResponse = this.selectedVideoFile ? responses[responses.length - 1] : null;
+          // Use captured state for mapping responses to prevent misalignment
+          let imageResponses = responses.slice(0, currentFilesCount);
+          let videoResponse = hasVideo ? responses[responses.length - 1] : null;
 
-          this.uploadedImageUrls = imageResponses.map(res => res.url);
+          if (imageResponses.length > 0) {
+            this.uploadedImageUrls = imageResponses.map(res => res.url);
+          }
           if (videoResponse) {
             this.uploadedVideoUrl = videoResponse.url;
           }

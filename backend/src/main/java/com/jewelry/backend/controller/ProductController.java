@@ -155,7 +155,9 @@ public class ProductController {
             try {
                 int exitCode = process.waitFor();
                 if (exitCode != 0) {
-                    return ResponseEntity.internalServerError().body(Map.of("error", "Failed to process video audio stripping"));
+                    // Fall back to original file if ffmpeg fails (e.g. format issues, or existing no-audio)
+                    String fallbackUrl = storageService.uploadFileFromPath(tempInputFile, file.getContentType() != null ? file.getContentType() : "video/mp4");
+                    return ResponseEntity.ok(Map.of("url", fallbackUrl));
                 }
 
                 // Upload the processed video
