@@ -55,11 +55,7 @@ public class AdminController {
         Page<User> users = userRepository.findAll(PageRequest.of(page, size));
         Page<UserDTO> userDTOs = users.map(user -> {
             UserDTO dto = entityMapper.toUserDTO(user);
-            List<Order> orders = orderRepository.findByUser(user);
-            BigDecimal totalSpend = orders.stream()
-                    .filter(o -> "COMPLETED".equals(o.getStatus()) || "DELIVERED".equals(o.getStatus()))
-                    .map(Order::getTotal)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalSpend = orderRepository.sumTotalByUserAndStatusIn(user, List.of("COMPLETED", "DELIVERED"));
             dto.setTotalSpend(totalSpend);
             dto.setTier("Gold");
             return dto;
