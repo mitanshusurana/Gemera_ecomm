@@ -23,4 +23,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.status IN :statuses")
     BigDecimal sumTotalByStatusIn(@Param("statuses") List<String> statuses);
+
+    @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.user = :user AND o.status IN :statuses")
+    BigDecimal sumTotalByUserAndStatusIn(@Param("user") User user, @Param("statuses") List<String> statuses);
 }

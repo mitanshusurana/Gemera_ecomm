@@ -168,12 +168,14 @@ export class ProductListComponent implements OnInit, AfterViewInit {
     });
 
     // A4 size is 210 x 297 mm
+    // To fit 60 items, we can use 5 columns and 12 rows
+    // 5 * 12 = 60 items per page
     const marginX = 10;
     const marginY = 10;
-    const itemWidth = 50;
-    const itemHeight = 60;
-    const itemsPerRow = Math.floor((210 - marginX * 2) / itemWidth);
-    const itemsPerCol = Math.floor((297 - marginY * 2) / itemHeight);
+    const itemWidth = 38; // 190mm usable width / 5
+    const itemHeight = 23; // 277mm usable height / 12
+    const itemsPerRow = 5;
+    const itemsPerCol = 12;
     const maxItemsPerPage = itemsPerRow * itemsPerCol;
 
     for (let i = 0; i < this.printQueueObjects.length; i++) {
@@ -198,52 +200,26 @@ export class ProductListComponent implements OnInit, AfterViewInit {
         try {
           const qrDataUrl = await QRCode.toDataURL(product.sku, {
             errorCorrectionLevel: 'M',
-            margin: 1,
+            margin: 0,
             width: 150
           });
-          doc.addImage(qrDataUrl, 'PNG', x + (itemWidth - 32) / 2, y + 2, 30, 30);
+          doc.addImage(qrDataUrl, 'PNG', x + 1, y + 1, 15, 15);
         } catch (err) {
           console.error('Failed to generate QR for sku:', product.sku, err);
-          doc.setFontSize(8);
-          doc.text('QR Error', x + 5, y + 15);
+          doc.setFontSize(6);
+          doc.text('QR Error', x + 2, y + 5);
         }
       }
 
-      // Add product details
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-      doc.text(product.sku || 'N/A', x + 2, y + 36);
-
-      doc.setFontSize(8);
-      doc.setTextColor(50, 50, 50);
-      const nameLines = doc.splitTextToSize(product.name || '', itemWidth - 6);
-      doc.text(nameLines.slice(0, 2), x + 2, y + 41);
-
-      let specsY = y + 48;
+      // Add product details (SKU & Name)
       doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
-
-      let specStr = '';
-      if (product.caratWeight) specStr += `${product.caratWeight}ct `;
-      else if (product.totalCaratWeight) specStr += `${product.totalCaratWeight}ct `;
-
-      if (product.grossWeight) specStr += `${product.grossWeight}g `;
-
-      if (product.shape) specStr += `${product.shape} `;
-      if (product.measurements) specStr += `${product.measurements} `;
-
-      if (specStr) {
-         // split in case it's too long
-         const specLines = doc.splitTextToSize(specStr, itemWidth - 6);
-         doc.text(specLines, x + 2, specsY);
-         specsY += (specLines.length * 3) + 1;
-      }
-
-      // Add price
-      doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
-      const formattedPrice = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(product.price || 0);
-      doc.text(formattedPrice, x + 2, specsY + 2);
+      doc.text(product.sku || 'N/A', x + 17, y + 5);
+
+      doc.setFontSize(6);
+      doc.setTextColor(50, 50, 50);
+      const nameLines = doc.splitTextToSize(product.name || '', itemWidth - 19);
+      doc.text(nameLines.slice(0, 3), x + 17, y + 8);
     }
 
     doc.save('product-qr-codes.pdf');

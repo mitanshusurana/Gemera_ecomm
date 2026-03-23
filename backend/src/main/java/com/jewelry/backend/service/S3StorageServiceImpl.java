@@ -1,19 +1,18 @@
 package com.jewelry.backend.service;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.UUID;
 
 @Service
@@ -34,14 +33,16 @@ public class S3StorageServiceImpl implements StorageService {
     @Value("${cloudflare.r2.public-url}")
     private String publicUrl;
 
-    private AmazonS3 s3Client;
+    private S3Client s3Client;
 
     @PostConstruct
     private void initS3Client() {
-        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, "auto"))
+        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
+        s3Client = S3Client.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                .endpointOverride(URI.create(endpoint))
+                .region(Region.US_EAST_1) // Region doesn't matter for R2 but SDK v2 requires it
+                .httpClient(software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient.create())
                 .build();
     }
 
@@ -55,11 +56,13 @@ public class S3StorageServiceImpl implements StorageService {
 
         String newFilename = UUID.randomUUID().toString() + extension;
 
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType(file.getContentType());
-        metadata.setContentLength(file.getSize());
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(newFilename)
+                .contentType(file.getContentType())
+                .build();
 
-        s3Client.putObject(new PutObjectRequest(bucket, newFilename, file.getInputStream(), metadata));
+        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
         return publicUrl + "/" + newFilename;
     }
@@ -74,13 +77,13 @@ public class S3StorageServiceImpl implements StorageService {
 
         String newFilename = UUID.randomUUID().toString() + extension;
 
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType(contentType);
-        metadata.setContentLength(java.nio.file.Files.size(filePath));
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(newFilename)
+                .contentType(contentType)
+                .build();
 
-        try (java.io.InputStream is = java.nio.file.Files.newInputStream(filePath)) {
-            s3Client.putObject(new PutObjectRequest(bucket, newFilename, is, metadata));
-        }
+        s3Client.putObject(putObjectRequest, RequestBody.fromFile(filePath));
 
         return publicUrl + "/" + newFilename;
     }
