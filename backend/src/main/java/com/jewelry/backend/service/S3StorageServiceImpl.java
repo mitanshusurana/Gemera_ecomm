@@ -12,9 +12,13 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.context.annotation.Profile;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Service
 public class S3StorageServiceImpl implements StorageService {
@@ -35,9 +39,14 @@ public class S3StorageServiceImpl implements StorageService {
     private String publicUrl;
 
     private AmazonS3 s3Client;
+    private boolean isMocked = false;
 
     @PostConstruct
     private void initS3Client() {
+        if ("default-key".equals(accessKey) || endpoint.contains("default.r2.cloudflarestorage")) {
+            isMocked = true;
+            return;
+        }
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         s3Client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
@@ -54,6 +63,10 @@ public class S3StorageServiceImpl implements StorageService {
         }
 
         String newFilename = UUID.randomUUID().toString() + extension;
+
+        if (isMocked) {
+            return "https://mock-storage.com/" + newFilename;
+        }
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType(file.getContentType());
@@ -73,6 +86,10 @@ public class S3StorageServiceImpl implements StorageService {
         }
 
         String newFilename = UUID.randomUUID().toString() + extension;
+
+        if (isMocked) {
+            return "https://mock-storage.com/" + newFilename;
+        }
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType(contentType);

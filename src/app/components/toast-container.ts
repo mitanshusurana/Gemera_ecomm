@@ -26,7 +26,7 @@ import { ToastService } from '../services/toast.service';
 
         <!-- Content -->
         <div class="flex-1 pt-0.5">
-          <p class="text-sm font-medium text-gray-900">{{ toast.message }}</p>
+          <p class="text-sm font-medium text-primary-900">{{ toast.message }}</p>
         </div>
 
         <!-- Close -->
