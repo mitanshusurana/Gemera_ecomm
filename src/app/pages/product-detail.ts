@@ -84,21 +84,19 @@ import { environment } from '../../environments/environment';
           <!-- LEFT COLUMN: Scrollable Content (Images + Details) -->
           <div class="lg:w-[58%] flex flex-col gap-12">
 
-            <!-- Image Gallery (Stacked/Grid) -->
+            <!-- Image Gallery -->
             <div class="flex flex-col gap-4">
-              <!-- Desktop / Mobile Media Gallery -->
-              <div class="flex flex-col md:flex-row gap-4 h-auto md:h-[600px]">
+              <div class="flex flex-col md:flex-row gap-4">
 
-                <!-- Thumbnails (Left on Desktop, Carousel Dots on Mobile) -->
-                <!-- Use 'snap-x snap-mandatory' for touch friendly sliding on mobile -->
+                <!-- Thumbnails -->
                 <div class="order-2 md:order-1 flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 md:pr-2 hide-scrollbar snap-x snap-mandatory shrink-0">
 
                   <!-- Video Thumbnail -->
                   <div *ngIf="product()?.videoUrl"
-                       (click)="selectMedia('video')"
+                       (click)="scrollToMedia(0)"
                        class="snap-start relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-gray-100 flex items-center justify-center"
-                       [class.border-primary-800]="showVideo()"
-                       [class.border-transparent]="!showVideo()">
+                       [class.border-primary-800]="selectedMediaIndex() === 0"
+                       [class.border-transparent]="selectedMediaIndex() !== 0">
                      <div class="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
                         <svg class="w-8 h-8 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                      </div>
@@ -106,47 +104,56 @@ import { environment } from '../../environments/environment';
                   </div>
 
                   <!-- Image Thumbnails -->
-                  <div *ngFor="let img of product()?.images; let i = index"
-                       (click)="selectMedia('image', i)"
+                  <div *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index"
+                       (click)="scrollToMedia(product()?.videoUrl ? i + 1 : i)"
                        class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-gray-50 rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
-                       [class.border-primary-800]="selectedMediaIndex() === i && !showVideo()"
-                       [class.border-transparent]="selectedMediaIndex() !== i || showVideo()">
-                     <img [ngSrc]="img" fill sizes="(max-width: 1024px) 100vw, 50vw" class="object-cover hover:scale-105 transition-transform duration-500">
+                       [class.border-primary-800]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
+                       [class.border-transparent]="selectedMediaIndex() !== (product()?.videoUrl ? i + 1 : i)">
+                     <img *ngIf="img" [ngSrc]="img" fill sizes="100px" class="object-cover">
                   </div>
                 </div>
 
-                <!-- Main Display Area (Touch Swipe on Mobile) -->
-                <div id="main-media-scroll" class="scroll-smooth order-1 md:order-2 flex-1 relative bg-gray-50 rounded-lg overflow-hidden border border-gray-100 h-[400px] md:h-full flex items-center justify-start snap-x snap-mandatory overflow-x-auto hide-scrollbar">
+                <!-- Main Display Area -->
+                <div #scrollContainer
+                     (scroll)="onGalleryScroll($event)"
+                     id="main-media-scroll"
+                     class="scroll-smooth order-1 md:order-2 flex-1 relative bg-white rounded-lg overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-gray-100 aspect-square md:aspect-auto">
 
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                    <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-100 shadow-sm">Only {{product()?.stock}} left</span>
-                    <span *ngIf="product()?.stock === 0" class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-100 shadow-sm">Out of Stock</span>
-                    <span class="px-2 py-1 bg-white/90 backdrop-blur text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded border border-gray-200 shadow-sm">Best Seller</span>
+                    <!-- Stock Warning (Warm/Amber Glass) -->
+                    <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0"
+                          class="glass-tag glass-warning">
+                      Only {{product()?.stock}} left
+                    </span>
+
+                    <!-- Out of Stock (Red Glass) -->
+                    <span *ngIf="product()?.stock === 0"
+                          class="glass-tag glass-error">
+                      Out of Stock
+                    </span>
+
+                    <!-- Best Seller (Classic White Glass) -->
+                    <span class="glass-tag glass-neutral">
+                      Best Seller
+                    </span>
                   </div>
 
-                  <!-- Video View -->
-                  <div #mediaVideo *ngIf="product()?.videoUrl" class="w-full h-full shrink-0 snap-center flex items-center justify-center bg-gray-50 relative pointer-events-none">
-                     <video [src]="product()?.videoUrl" autoplay loop muted playsinline class="w-full h-full object-cover pointer-events-auto"></video>
+                  <!-- Video Item -->
+                  <div *ngIf="product()?.videoUrl"
+                       class="w-full h-full shrink-0 snap-center flex items-center justify-center bg-black">
+                     <video [src]="product()?.videoUrl" autoplay loop muted playsinline class="w-full h-full object-contain"></video>
                   </div>
 
-                  <!-- Images View (Loop all images as swipeable items) -->
-                  <div #mediaImage *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index"
-                       class="w-full h-full shrink-0 snap-center relative"
-                       [class.hidden]="showVideo()">
+                  <!-- Image Items -->
+                  <div *ngFor="let img of (product()?.images || []); let i = index"
+                       class="w-full h-full shrink-0 snap-center relative">
                     <img *ngIf="img" [ngSrc]="img"
-                         fill priority
-                         sizes="(max-width: 1024px) 100vw, 50vw"
-                         class="object-contain p-4 md:p-8 transition-transform duration-500"
+                         fill
+                         [priority]="i === 0"
+                         sizes="(max-width: 768px) 100vw, 50vw"
+                         class="object-contain p-4"
                          [alt]="product()?.name">
                   </div>
-                </div>
-              </div>
-
-              <!-- Mobile Pagination Dots -->
-              <div class="flex justify-center gap-2 mt-2 md:hidden" *ngIf="!showVideo()">
-                <div *ngFor="let img of (product()?.images?.length ? product()?.images : [product()?.imageUrl || '']); let i = index"
-                     class="w-2 h-2 rounded-full transition-colors duration-300"
-                     [ngClass]="selectedMediaIndex() === i ? 'bg-primary-800' : 'bg-gray-300'">
                 </div>
               </div>
             </div>
@@ -260,7 +267,7 @@ import { environment } from '../../environments/environment';
 
           <!-- RIGHT COLUMN: Sticky Buy Box -->
           <div class="lg:w-[42%] relative">
-             <div class="sticky top-24 bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+             <div class="sticky top-24 bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] max-h-[calc(100vh-8rem)] overflow-y-auto hide-scrollbar">
 
                 <!-- Product Header -->
                 <div class="mb-4">
@@ -422,7 +429,54 @@ import { environment } from '../../environments/environment';
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host {
+      display: block;
+      overflow-x: hidden;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .hide-scrollbar::-webkit-scrollbar-thumb {
+      background: #e5e7eb;
+      border-radius: 10px;
+    }
+
+    .glass-tag {
+      padding: 0.375rem 0.75rem;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 0.5rem;
+      border-width: 1px;
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* Neutral/White Glass */
+    .glass-neutral {
+      background-color: rgb(255 255 255 / 0.7);
+      border-color: rgb(255 255 255 / 0.4);
+      color: rgb(31 41 55);
+    }
+
+    /* Warning/Low Stock Glass */
+    .glass-warning {
+      background-color: rgb(255 247 237 / 0.6);
+      border-color: rgb(254 215 170 / 0.5);
+      color: rgb(194 65 12);
+    }
+
+    /* Error/OOS Glass */
+    .glass-error {
+      background-color: rgb(254 242 242 / 0.6);
+      border-color: rgb(254 202 202 / 0.5);
+      color: rgb(185 28 28);
+    }
   `]
 })
 export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -440,7 +494,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
   // UI State
   selectedImage = signal<string | null>(null);
   selectedMediaIndex = signal<number>(0);
-  showVideo = signal(false);
   sizeGuideOpen = signal(false);
   showPriceBreakup = signal(false);
   tryAtHomeOpen = signal(false);
@@ -454,8 +507,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
   pincode = signal('');
   deliveryDate = signal<string | null>(null);
 
-  @ViewChild('mediaVideo') mediaVideoElement!: ElementRef;
-  @ViewChildren('mediaImage') mediaImageElements!: QueryList<ElementRef>;
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLDivElement>;
 
   // Computed Prices
   currentPrice = computed(() => {
@@ -489,9 +541,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   ngOnDestroy(): void {
-    if (this.observer) {
-      this.observer.disconnect();
-    }
   }
 
   private loadProduct(id: string): void {
@@ -593,62 +642,35 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
   getOptions(t: string) { return this.product()?.customizationOptions?.filter(o => o.type === t) || []; }
   formatKey(k: string) { return k.replace(/([A-Z])/g, ' $1').trim(); }
 
-  private observer: IntersectionObserver | null = null;
-
   ngAfterViewInit() {
-    this.setupIntersectionObserver();
-    this.mediaImageElements.changes.subscribe(() => {
-      this.setupIntersectionObserver();
+    // Left empty for now. Can be removed later if not needed by other logic.
+  }
+
+  scrollToMedia(index: number) {
+    this.selectedMediaIndex.set(index);
+    if (!this.scrollContainer?.nativeElement) return;
+
+    const container = this.scrollContainer.nativeElement;
+    const width = container.offsetWidth;
+
+    container.scrollTo({
+      left: width * index,
+      behavior: 'smooth'
     });
   }
 
-  private setupIntersectionObserver() {
-    if (this.observer) {
-      this.observer.disconnect();
+  onGalleryScroll(event: Event) {
+    const container = event.target as HTMLElement;
+    // Use clientWidth for more accuracy in layout calculations
+    const width = container.clientWidth;
+    if (width === 0) return;
+
+    // Added a small threshold to prevent "flickering" between indices
+    const scrollPos = container.scrollLeft + (width / 2);
+    const index = Math.floor(scrollPos / width);
+
+    if (this.selectedMediaIndex() !== index) {
+      this.selectedMediaIndex.set(index);
     }
-
-    // Only setup if we have elements to observe
-    if (this.mediaImageElements && this.mediaImageElements.length > 0) {
-      this.observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-            // Find the index of the intersecting element
-            const index = this.mediaImageElements.toArray().findIndex(el => el.nativeElement === entry.target);
-            if (index !== -1 && this.selectedMediaIndex() !== index) {
-              this.selectedMediaIndex.set(index);
-            }
-          }
-        });
-      }, {
-        root: document.getElementById('main-media-scroll'),
-        threshold: 0.5
-      });
-
-      this.mediaImageElements.forEach(el => {
-        if (el.nativeElement) {
-          this.observer!.observe(el.nativeElement);
-        }
-      });
-    }
-  }
-
-  selectMedia(type: 'video' | 'image', index?: number) {
-     if (type === 'video') {
-         this.showVideo.set(true);
-         this.selectedMediaIndex.set(-1);
-         if (this.mediaVideoElement?.nativeElement) {
-             this.mediaVideoElement.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-         }
-     } else if (index !== undefined) {
-         this.showVideo.set(false);
-         this.selectedMediaIndex.set(index);
-         // Timeout ensures view is updated before scrolling
-         setTimeout(() => {
-             const el = this.mediaImageElements.toArray()[index];
-             if (el?.nativeElement) {
-                 el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-             }
-         }, 0);
-     }
   }
 }
