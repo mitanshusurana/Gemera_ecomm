@@ -18,9 +18,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Service
 public class EmailService {
+
+    private static final Logger LOGGER = Logger.getLogger(EmailService.class.getName());
 
     @Autowired
     private JavaMailSender mailSender;
@@ -75,13 +79,13 @@ public class EmailService {
                 notification.setStatus("SENT");
             } catch (Exception e) {
                 // If SMTP is not configured or fails
-                System.err.println("Failed to send email: " + e.getMessage());
+                LOGGER.log(Level.WARNING, "Failed to send email", e);
                 notification.setStatus("FAILED");
             }
 
         } catch (Exception e) {
             notification.setStatus("FAILED");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error in email service", e);
         }
 
         return notificationRepository.save(notification);
