@@ -41,7 +41,7 @@ interface CollectionUI {
             <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
               Elevate Your <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-secondary-200 to-secondary-500">Everyday</span>
             </h1>
-            <p class="text-primary-100 text-lg mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed font-light">
+            <p class="text-primary-100 text-lg mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed font-light" style="color: var(--color-text-muted-light, #d1fae5);">
                Lightweight, premium designer jewelry crafted for the modern professional. Seamlessly transition from the boardroom to the ballroom.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
