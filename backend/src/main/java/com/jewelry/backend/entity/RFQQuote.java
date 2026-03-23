@@ -22,7 +22,7 @@ public class RFQQuote extends BaseEntity {
     private RFQ rfq;
 
     private BigDecimal quoteAmount;
-    private String currency = "USD";
+    private String currency = "INR";
     private String notes;
     private LocalDate validUntil;
     private boolean accepted;

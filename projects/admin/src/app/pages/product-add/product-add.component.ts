@@ -119,8 +119,8 @@ export class ProductAddComponent implements OnInit {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
       description: ['', Validators.required],
-      price: [0, [Validators.required, Validators.min(0)]],
-      stock: [0, [Validators.required, Validators.min(0)]],
+      price: [null, [Validators.required, Validators.min(0)]],
+      stock: [null, [Validators.required, Validators.min(0)]],
       category: ['', Validators.required],
       subCategory: [''],
       sku: [''], // Auto-generated if empty
@@ -138,9 +138,9 @@ export class ProductAddComponent implements OnInit {
       // 1. Finished Jewelry
       metalType: [''],
       metalPurity: [''],
-      grossWeight: [0],
-      netWeight: [0],
-      totalCaratWeight: [0],
+      grossWeight: [null],
+      netWeight: [null],
+      totalCaratWeight: [null],
       dimensions: [''],
       currentLocation: [''],
       huid: [''],
@@ -157,7 +157,7 @@ export class ProductAddComponent implements OnInit {
       variety: [''],
       shape: [''],
       cut: [''],
-      caratWeight: [0],
+      caratWeight: [null],
       colorHue: [''],
       colorTone: [''],
       colorSaturation: [''],
@@ -172,8 +172,8 @@ export class ProductAddComponent implements OnInit {
       fluorescence: [''],
       girdle: [''],
       culet: [''],
-      tablePercentage: [0],
-      depthPercentage: [0],
+      tablePercentage: [null],
+      depthPercentage: [null],
       originProvenance: [''],
       stockStatus: ['Real'],
 
@@ -194,13 +194,13 @@ export class ProductAddComponent implements OnInit {
       lotNumber: [''],
       mineOrigin: [''],
       roughMaterial: [''],
-      roughWeight: [0],
+      roughWeight: [null],
       purchaseDate: [''],
       supplierCode: [''],
-      acquisitionCost: [0],
+      acquisitionCost: [null],
       matrixParentRock: [''],
       crystalMorphology: [''],
-      yieldEstimate: [0],
+      yieldEstimate: [null],
       wastageLog: [''],
       manufacturingStage: [''],
 
@@ -208,23 +208,23 @@ export class ProductAddComponent implements OnInit {
       componentType: [''],
       material: [''],
       purity: [''],
-      quantityPcs: [0],
-      weightPerPiece: [0],
-      totalWeight: [0],
-      reorderPointAlert: [0],
+      quantityPcs: [null],
+      weightPerPiece: [null],
+      totalWeight: [null],
+      reorderPointAlert: [null],
       beadStyle: [''],
       layoutPattern: [''],
       vendorInformation: [''],
-      minOrderQuantity: [0],
+      minOrderQuantity: [null],
 
       priceBreakup: this.fb.group({
-        metal: [0],
-        gemstone: [0],
-        makingCharges: [0],
-        tax: [0],
-        total: [0],
-        discount: [0],
-        grandTotal: [0]
+        metal: [null],
+        gemstone: [null],
+        makingCharges: [null],
+        tax: [null],
+        total: [null],
+        discount: [null],
+        grandTotal: [null]
       })
     });
 
@@ -275,8 +275,8 @@ export class ProductAddComponent implements OnInit {
     this.productForm.patchValue({
       name: product.name || '',
       description: product.description || '',
-      price: product.price || 0,
-      stock: product.stock || 0,
+      price: product.price ?? null,
+      stock: product.stock ?? null,
       category: product.category || '',
       subCategory: product.subCategory || '',
       sku: product.sku || '',
@@ -288,9 +288,9 @@ export class ProductAddComponent implements OnInit {
       // Category Specific (Will just patch everything, non-matching fields are ignored safely if not in UI or just kept in memory)
       metalType: product.metalType || '',
       metalPurity: product.metalPurity || '',
-      grossWeight: product.grossWeight || 0,
-      netWeight: product.netWeight || 0,
-      totalCaratWeight: product.totalCaratWeight || 0,
+      grossWeight: product.grossWeight ?? null,
+      netWeight: product.netWeight ?? null,
+      totalCaratWeight: product.totalCaratWeight ?? null,
       dimensions: product.dimensions || '',
       currentLocation: product.currentLocation || '',
       huid: product.huid || '',
@@ -306,7 +306,7 @@ export class ProductAddComponent implements OnInit {
       variety: product.variety || '',
       shape: product.shape || '',
       cut: product.cut || '',
-      caratWeight: product.caratWeight || 0,
+      caratWeight: product.caratWeight ?? null,
       colorHue: product.colorHue || '',
       colorTone: product.colorTone || '',
       colorSaturation: product.colorSaturation || '',
@@ -321,8 +321,8 @@ export class ProductAddComponent implements OnInit {
       fluorescence: product.fluorescence || '',
       girdle: product.girdle || '',
       culet: product.culet || '',
-      tablePercentage: product.tablePercentage || 0,
-      depthPercentage: product.depthPercentage || 0,
+      tablePercentage: product.tablePercentage ?? null,
+      depthPercentage: product.depthPercentage ?? null,
       originProvenance: product.originProvenance || '',
       stockStatus: product.stockStatus || 'Real',
 
@@ -341,27 +341,27 @@ export class ProductAddComponent implements OnInit {
       lotNumber: product.lotNumber || '',
       mineOrigin: product.mineOrigin || '',
       roughMaterial: product.roughMaterial || '',
-      roughWeight: product.roughWeight || 0,
+      roughWeight: product.roughWeight ?? null,
       purchaseDate: product.purchaseDate || '',
       supplierCode: product.supplierCode || '',
-      acquisitionCost: product.acquisitionCost || 0,
+      acquisitionCost: product.acquisitionCost ?? null,
       matrixParentRock: product.matrixParentRock || '',
       crystalMorphology: product.crystalMorphology || '',
-      yieldEstimate: product.yieldEstimate || 0,
+      yieldEstimate: product.yieldEstimate ?? null,
       wastageLog: product.wastageLog || '',
       manufacturingStage: product.manufacturingStage || '',
 
       componentType: product.componentType || '',
       material: product.material || '',
       purity: product.purity || '',
-      quantityPcs: product.quantityPcs || 0,
-      weightPerPiece: product.weightPerPiece || 0,
-      totalWeight: product.totalWeight || 0,
-      reorderPointAlert: product.reorderPointAlert || 0,
+      quantityPcs: product.quantityPcs ?? null,
+      weightPerPiece: product.weightPerPiece ?? null,
+      totalWeight: product.totalWeight ?? null,
+      reorderPointAlert: product.reorderPointAlert ?? null,
       beadStyle: product.beadStyle || '',
       layoutPattern: product.layoutPattern || '',
       vendorInformation: product.vendorInformation || '',
-      minOrderQuantity: product.minOrderQuantity || 0
+      minOrderQuantity: product.minOrderQuantity ?? null
     });
 
     if (product.priceBreakup) {
@@ -413,7 +413,7 @@ export class ProductAddComponent implements OnInit {
     this.customizationOptions.push(this.fb.group({
       type: ['', Validators.required],
       name: ['', Validators.required],
-      priceModifier: [0, Validators.required]
+      priceModifier: [null, Validators.required]
     }));
   }
 

@@ -1,4 +1,5 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { SettingService } from './setting.service';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR';
 
@@ -6,13 +7,16 @@ export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR';
   providedIn: 'root'
 })
 export class CurrencyService {
+  private settingService = inject(SettingService);
+
   currentCurrency = signal<CurrencyCode>(this.getStoredCurrency());
 
+  // INR is base 1
   private rates: Record<CurrencyCode, number> = {
-    'USD': 1,
-    'EUR': 0.92,
-    'GBP': 0.79,
-    'INR': 83.50
+    'INR': 1,
+    'USD': 0.012,
+    'EUR': 0.011,
+    'GBP': 0.009
   };
 
   private symbols: Record<CurrencyCode, string> = {
@@ -24,6 +28,19 @@ export class CurrencyService {
 
   readonly availableCurrencies: CurrencyCode[] = ['USD', 'EUR', 'GBP', 'INR'];
 
+  constructor() {
+    this.settingService.getSettings().subscribe({
+      next: (settings) => {
+        if (settings) {
+          if (settings.usdRate) this.rates['USD'] = parseFloat(settings.usdRate);
+          if (settings.eurRate) this.rates['EUR'] = parseFloat(settings.eurRate);
+          if (settings.gbpRate) this.rates['GBP'] = parseFloat(settings.gbpRate);
+        }
+      },
+      error: (err) => console.error('Failed to load currency rates from settings', err)
+    });
+  }
+
   private getStoredCurrency(): CurrencyCode {
     if (typeof localStorage !== 'undefined') {
       const stored = localStorage.getItem('currency');
@@ -31,7 +48,7 @@ export class CurrencyService {
         return stored as CurrencyCode;
       }
     }
-    return 'USD';
+    return 'INR';
   }
 
   setCurrency(code: CurrencyCode) {

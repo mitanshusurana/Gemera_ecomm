@@ -20,7 +20,10 @@ export class SettingsComponent implements OnInit {
     companyEmail: ['', [Validators.required, Validators.email]],
     whatsappNumber: ['', Validators.required],
     companyInstagram: [''],
-    companyFacebook: ['']
+    companyFacebook: [''],
+    usdRate: ['0.012', Validators.required],
+    eurRate: ['0.011', Validators.required],
+    gbpRate: ['0.009', Validators.required]
   });
 
   saving = false;

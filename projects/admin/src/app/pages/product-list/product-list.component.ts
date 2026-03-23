@@ -229,16 +229,20 @@ export class ProductListComponent implements OnInit, AfterViewInit {
 
       if (product.grossWeight) specStr += `${product.grossWeight}g `;
 
+      if (product.shape) specStr += `${product.shape} `;
+      if (product.measurements) specStr += `${product.measurements} `;
+
       if (specStr) {
-         doc.text(specStr, x + 2, specsY);
-         specsY += 4;
+         // split in case it's too long
+         const specLines = doc.splitTextToSize(specStr, itemWidth - 6);
+         doc.text(specLines, x + 2, specsY);
+         specsY += (specLines.length * 3) + 1;
       }
 
       // Add price
       doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
-      // Format price properly assuming USD or generic currency
-      const formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price || 0);
+      const formattedPrice = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(product.price || 0);
       doc.text(formattedPrice, x + 2, specsY + 2);
     }
 
