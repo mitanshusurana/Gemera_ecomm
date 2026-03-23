@@ -77,6 +77,24 @@
                 <label class="text-sm font-medium text-slate-900 dark:text-slate-100">Store Address</label>
                 <textarea formControlName="companyAddress" class="w-full h-24 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"></textarea>
               </div>
+
+              <div class="border-t border-slate-200 dark:border-slate-800 pt-6 mt-6">
+                <h3 class="text-md font-bold text-slate-900 dark:text-slate-100 mb-4">Currency Exchange Rates (Base 1 INR)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-slate-900 dark:text-slate-100">USD Rate (e.g., 0.012)</label>
+                    <input formControlName="usdRate" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-slate-900 dark:text-slate-100">EUR Rate (e.g., 0.011)</label>
+                    <input formControlName="eurRate" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-slate-900 dark:text-slate-100">GBP Rate (e.g., 0.009)</label>
+                    <input formControlName="gbpRate" class="w-full h-11 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
         </div>

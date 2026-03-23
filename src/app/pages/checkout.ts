@@ -763,7 +763,7 @@ export class CheckoutComponent implements OnInit {
         return;
     }
 
-    // Convert base amount (USD) to INR
+    // Convert base amount to INR
     // Razorpay integration is currently configured for INR payments only.
     const amountInINR = this.currencyService.convert(this.cartTotal(), 'INR');
     // Convert to paise (smallest unit)

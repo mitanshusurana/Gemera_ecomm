@@ -47,7 +47,7 @@ export class OrderService {
   initializePayment(
     orderId: string,
     amount: number,
-    currency: string = 'USD',
+    currency: string = 'INR',
     paymentMethod: string = 'CREDIT_CARD'
   ): Observable<any> {
     const body: InitializePaymentRequest = { orderId, amount, currency, paymentMethod };
