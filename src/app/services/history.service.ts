@@ -27,7 +27,7 @@ export class HistoryService {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
     } catch (e) {
-      // Failed to save history
+      console.error('Failed to save history to local storage', e);
     }
   }
 
@@ -38,7 +38,7 @@ export class HistoryService {
         this.recentlyViewed.set(JSON.parse(stored));
       }
     } catch (e) {
-      // Failed to load history
+      console.error('Failed to load history from local storage', e);
     }
   }
 }
