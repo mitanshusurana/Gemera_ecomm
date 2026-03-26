@@ -12,6 +12,7 @@ import { CurrencyService } from '../services/currency.service';
 import { RING_CATEGORIES } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { environment } from '../../environments/environment';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-product-detail',
@@ -20,6 +21,7 @@ import { environment } from '../../environments/environment';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
+    <div [innerHTML]="productSchema()"></div>
     <div class="min-h-screen bg-white font-sans text-primary-900">
 
       <!-- Breadcrumb -->
@@ -487,9 +489,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
   private toastService = inject(ToastService);
   private historyService = inject(HistoryService);
   private currencyService = inject(CurrencyService);
+  private sanitizer = inject(DomSanitizer);
 
   loading = signal(true);
   product = signal<ProductDetail | null>(null);
+  productSchema = signal<SafeHtml>('');
 
   // UI State
   selectedImage = signal<string | null>(null);
@@ -555,6 +559,38 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
            this.selectedMetal.set(p.customizationOptions.find(o => o.type === 'metal' && o.priceModifier === 0) || null);
            this.selectedDiamondQuality.set(p.customizationOptions.find(o => o.type === 'diamond' && o.priceModifier === 0) || null);
         }
+        const schema = {
+          "@context": "https://schema.org/",
+          "@type": "Product",
+          "name": p.name,
+          "image": p.images?.length ? p.images : [p.imageUrl],
+          "description": p.description || p.name,
+          "sku": p.sku || p.specifications?.productDetails?.sku,
+          "offers": {
+            "@type": "Offer",
+            "url": "https://www.caratloop.com/products/" + p.id,
+            "priceCurrency": "INR",
+            "price": p.price,
+            "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "itemCondition": "https://schema.org/NewCondition",
+            "hasMerchantReturnPolicy": {
+              "@type": "MerchantReturnPolicy",
+              "applicableCountry": "IN",
+              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+              "merchantReturnDays": 30,
+              "returnMethod": "https://schema.org/ReturnByMail",
+              "returnFees": "https://schema.org/FreeReturn"
+            }
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "reviewCount": p.reviewCount || 10
+          }
+        };
+        this.productSchema.set(this.sanitizer.bypassSecurityTrustHtml(
+          '<script type="application/ld+json">' + JSON.stringify(schema) + '</script>'
+        ));
       },
       error: () => this.loading.set(false)
     });

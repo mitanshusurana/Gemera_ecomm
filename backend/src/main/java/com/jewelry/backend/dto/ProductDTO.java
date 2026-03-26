@@ -28,6 +28,10 @@ public class ProductDTO {
     private Integer stock;
     private String videoUrl;
 
+    private String seoTitle;
+    private String seoDescription;
+    private String ogImage;
+
     private String inventoryOwnership;
     private String supplierName;
     private String returnDueDate;

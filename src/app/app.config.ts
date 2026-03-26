@@ -2,7 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChang
 import { provideRouter, withInMemoryScrolling, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { provideClientHydration } from '@angular/platform-browser';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
 import { IMAGE_LOADER, ImageLoaderConfig, provideImgixLoader } from '@angular/common';
 
@@ -45,6 +45,6 @@ export const appConfig: ApplicationConfig = {
       useFactory: (treasureService: TreasureService) => () => treasureService.loadConfig(),
       deps: [TreasureService],
       multi: true
-    }
+    }, provideClientHydration(withEventReplay())
   ]
 };
