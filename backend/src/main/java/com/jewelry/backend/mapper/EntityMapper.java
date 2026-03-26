@@ -50,6 +50,10 @@ public class EntityMapper {
         product.setStock(dto.getStock());
         product.setVideoUrl(dto.getVideoUrl());
 
+        product.setSeoTitle(dto.getSeoTitle());
+        product.setSeoDescription(dto.getSeoDescription());
+        product.setOgImage(dto.getOgImage());
+
         product.setInventoryOwnership(dto.getInventoryOwnership());
         product.setSupplierName(dto.getSupplierName());
         product.setReturnDueDate(dto.getReturnDueDate());
@@ -201,6 +205,10 @@ public class EntityMapper {
         dto.setIsVerified(product.getIsVerified());
         dto.setStock(product.getStock());
         dto.setVideoUrl(product.getVideoUrl());
+
+        dto.setSeoTitle(product.getSeoTitle());
+        dto.setSeoDescription(product.getSeoDescription());
+        dto.setOgImage(product.getOgImage());
 
         dto.setInventoryOwnership(product.getInventoryOwnership());
         dto.setSupplierName(product.getSupplierName());

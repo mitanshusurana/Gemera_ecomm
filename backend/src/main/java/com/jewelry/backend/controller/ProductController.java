@@ -27,6 +27,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.File;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -66,7 +69,11 @@ public class ProductController {
     @GetMapping("/{id}")
     @Operation(summary = "Get product details")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable UUID id) {
-        return ResponseEntity.ok(entityMapper.toProductDTO(productService.getProductById(id)));
+        ProductDTO productDTO = entityMapper.toProductDTO(productService.getProductById(id));
+        return ResponseEntity.ok()
+                .header("Link", "<https://www.caratloop.com/products/" + id + ">; rel=\"canonical\"")
+                .header("X-Robots-Tag", "index, follow")
+                .body(productDTO);
     }
 
     @GetMapping("/categories")
@@ -116,11 +123,32 @@ public class ProductController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Upload image to Cloudflare R2")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+        Path tempWebpFile = null;
         try {
+            String contentType = file.getContentType();
+            if (contentType != null && contentType.startsWith("image/") && !contentType.equals("image/webp")) {
+                BufferedImage originalImage = ImageIO.read(file.getInputStream());
+                if (originalImage != null) {
+                    tempWebpFile = Files.createTempFile("image_out_", ".webp");
+                    boolean success = ImageIO.write(originalImage, "webp", tempWebpFile.toFile());
+                    if (success) {
+                        String fileUrl = storageService.uploadFileFromPath(tempWebpFile, "image/webp");
+                        return ResponseEntity.ok(Map.of("url", fileUrl));
+                    }
+                }
+            }
+
+            // Fallback to original
             String fileUrl = storageService.uploadFile(file);
             return ResponseEntity.ok(Map.of("url", fileUrl));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Failed to upload file"));
+        } finally {
+            if (tempWebpFile != null) {
+                try {
+                    Files.deleteIfExists(tempWebpFile);
+                } catch (IOException ignored) {}
+            }
         }
     }
 

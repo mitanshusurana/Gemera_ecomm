@@ -38,6 +38,35 @@ import { CommonModule } from '@angular/common';
 
       <!-- Article Grid -->
       <div class="container-luxury pb-24">
+        <div class="mb-16 bg-gray-50 p-8 md:p-12 rounded-2xl border border-gray-100 shadow-sm">
+          <div class="flex flex-col md:flex-row gap-8 items-center md:items-start">
+            <div class="w-full md:w-1/3">
+              <div class="aspect-[3/4] bg-diamond-100 rounded-xl overflow-hidden relative">
+                <div class="absolute inset-0 flex items-center justify-center text-8xl">👑</div>
+              </div>
+            </div>
+            <div class="w-full md:w-2/3">
+              <h2 class="text-3xl font-display font-bold text-primary-900 mb-4">About the Founders: A Jaipur Legacy</h2>
+              <div class="space-y-4 text-gray-700 leading-relaxed text-lg">
+                <p>
+                  Caratloop is built on a foundation of multi-generational gemstone expertise originating from <strong>Jaipur, India</strong>—the undisputed gemstone capital of the world. For decades, our family has been at the forefront of sourcing, cutting, and trading the finest precious stones, establishing a reputation for uncompromising quality and ethical practices.
+                </p>
+                <p>
+                  Today, we bridge this deep-rooted traditional knowledge with modern transparency. As a team combining certified gemstone expertise with backgrounds in CMA and Software Engineering, we ensure that every piece of Caratloop jewelry is not only a masterpiece of traditional craftsmanship but also a paragon of modern reliability and value.
+                </p>
+                <div class="pt-4 border-t border-gray-200">
+                  <h3 class="font-bold text-primary-900 mb-2">Why Choose Caratloop?</h3>
+                  <ul class="list-disc pl-5 space-y-2 text-base">
+                    <li><strong>Direct from Source:</strong> Eliminating middlemen by sourcing directly from Jaipur's finest artisans.</li>
+                    <li><strong>Certified Authenticity:</strong> Every gemstone undergoes rigorous lab testing and certification.</li>
+                    <li><strong>Modern Transparency:</strong> Clear, upfront pricing with comprehensive breakdown of costs.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <!-- Article 1 -->
           <article class="card card-hover group cursor-pointer">

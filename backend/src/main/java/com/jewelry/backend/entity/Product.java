@@ -25,6 +25,11 @@ public class Product extends BaseEntity {
     private Integer stock;
     private String videoUrl;
 
+    // SEO Metadata
+    private String seoTitle;
+    private String seoDescription;
+    private String ogImage;
+
     // Global e-commerce / inventory ownership
     private String inventoryOwnership; // "Owned Stock" vs "Consignment/Memo"
     private String supplierName; // Consignment Supplier
