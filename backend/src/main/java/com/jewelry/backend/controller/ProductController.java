@@ -7,6 +7,7 @@ import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.service.ProductService;
 import com.jewelry.backend.service.StorageService;
+import com.jewelry.backend.util.CustomMultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -132,7 +133,8 @@ public class ProductController {
                     tempWebpFile = Files.createTempFile("image_out_", ".webp");
                     boolean success = ImageIO.write(originalImage, "webp", tempWebpFile.toFile());
                     if (success) {
-                        String fileUrl = storageService.uploadFileFromPath(tempWebpFile, "image/webp");
+                        CustomMultipartFile customFile = new CustomMultipartFile(tempWebpFile, "image/webp");
+                        String fileUrl = storageService.uploadFile(customFile);
                         return ResponseEntity.ok(Map.of("url", fileUrl));
                     }
                 }
@@ -184,12 +186,14 @@ public class ProductController {
                 int exitCode = process.waitFor();
                 if (exitCode != 0) {
                     // Fall back to original file if ffmpeg fails (e.g. format issues, or existing no-audio)
-                    String fallbackUrl = storageService.uploadFileFromPath(tempInputFile, file.getContentType() != null ? file.getContentType() : "video/mp4");
+                    CustomMultipartFile customFile = new CustomMultipartFile(tempInputFile, file.getContentType() != null ? file.getContentType() : "video/mp4");
+                    String fallbackUrl = storageService.uploadFile(customFile);
                     return ResponseEntity.ok(Map.of("url", fallbackUrl));
                 }
 
                 // Upload the processed video
-                String fileUrl = storageService.uploadFileFromPath(tempOutputFile, "video/mp4");
+                CustomMultipartFile customFile = new CustomMultipartFile(tempOutputFile, "video/mp4");
+                String fileUrl = storageService.uploadFile(customFile);
 
                 return ResponseEntity.ok(Map.of("url", fileUrl));
 
