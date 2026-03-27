@@ -9,20 +9,21 @@ RUN cd /app && npm run build -- --configuration production
 
 FROM node:22-alpine
 
-RUN mkdir /app
+RUN mkdir -p /app/dist
 
-# Copy the built artifacts
-COPY --from=build /app/dist/fusion-angular-tailwind-starter /app/dist
+# Copy the entire built dist folder structure (includes both browser and server subdirectories)
+COPY --from=build /app/dist/fusion-angular-tailwind-starter /app/dist/fusion-angular-tailwind-starter
 
-# Copy the environment substitution script
-COPY env-subst.sh /app/env-subst.sh
-RUN chmod +x /app/env-subst.sh
+# Copy package.json for reference (optional)
+COPY package*.json /app/
 
 # We expose 4000 as it's the default Node Express port for Angular SSR
 EXPOSE 4000
 
 ENV PORT=4000
-ENV TARGET_DIR="/app/dist"
 
-# Run environment variable substitution then start the SSR server
-CMD ["/bin/sh", "-c", "/app/env-subst.sh && cd /app && node dist/server/server.mjs"]
+# Set working directory to dist so server.mjs can correctly resolve ../browser
+WORKDIR /app/dist/fusion-angular-tailwind-starter
+
+# Run the SSR server directly - server.mjs will find ../browser relative to its location
+CMD ["node", "server/server.mjs"]
