@@ -6,8 +6,6 @@ COPY package*.json /app/
 RUN cd /app && npm install --legacy-peer-deps
 COPY . /app/
 RUN cd /app && npm run build -- --configuration production
-# Fix for Angular manifest bug
-RUN cd /app && node patch_manifest_3.js && node patch_manifest_4.js
 
 FROM node:22-alpine
 

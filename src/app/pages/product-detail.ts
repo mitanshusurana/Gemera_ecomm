@@ -589,7 +589,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
           }
         };
         this.productSchema.set(this.sanitizer.bypassSecurityTrustHtml(
-          '<script type="application/ld+json">' + JSON.stringify(schema) + '</script>'
+          '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
         ));
       },
       error: () => this.loading.set(false)
