@@ -51,7 +51,7 @@ export class App {
       ]
     };
     this.organizationSchema = this.sanitizer.bypassSecurityTrustHtml(
-      '<script type="application/ld+json">' + JSON.stringify(schema) + '</script>'
+      '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
     );
   }
 }
