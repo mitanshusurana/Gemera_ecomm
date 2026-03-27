@@ -49,3 +49,4 @@ backend/bin/
 backend/.settings/
 backend/.classpath
 backend/.project
+.env
