@@ -67,24 +67,4 @@ public class S3StorageServiceImpl implements StorageService {
         return publicUrl + "/" + newFilename;
     }
 
-    @Override
-    public String uploadFileFromPath(java.nio.file.Path filePath, String contentType) throws IOException {
-        String originalFilename = filePath.getFileName().toString();
-        String extension = "";
-        if (originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
-
-        String newFilename = UUID.randomUUID().toString() + extension;
-
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(newFilename)
-                .contentType(contentType)
-                .build();
-
-        s3Client.putObject(putObjectRequest, RequestBody.fromFile(filePath));
-
-        return publicUrl + "/" + newFilename;
-    }
 }

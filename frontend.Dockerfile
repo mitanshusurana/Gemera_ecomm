@@ -1,16 +1,30 @@
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
-COPY . .
-RUN npm run build -- --configuration production
+FROM node:22-alpine AS build
 
-FROM nginx:alpine
-# Check if browser folder exists, if not copy parent.
-# But Docker COPY doesn't support conditional.
-# We assume standard Angular CLI output for application builder.
-COPY --from=build /app/dist/fusion-angular-tailwind-starter/browser /usr/share/nginx/html
-COPY nginx-custom.conf /etc/nginx/conf.d/default.conf
-COPY env-subst.sh /docker-entrypoint.d/99-env-subst.sh
-RUN chmod +x /docker-entrypoint.d/99-env-subst.sh
-EXPOSE 80
+# Use explicit commands instead of WORKDIR that might trigger the overlayfs issue
+RUN mkdir /app
+COPY package*.json /app/
+RUN cd /app && npm install --legacy-peer-deps
+COPY . /app/
+RUN cd /app && npm run build -- --configuration production
+# Fix for Angular manifest bug
+RUN cd /app && node patch_manifest_3.js && node patch_manifest_4.js
+
+FROM node:22-alpine
+
+RUN mkdir /app
+
+# Copy the built artifacts
+COPY --from=build /app/dist/fusion-angular-tailwind-starter /app/dist
+
+# Copy the environment substitution script
+COPY env-subst.sh /app/env-subst.sh
+RUN chmod +x /app/env-subst.sh
+
+# We expose 4000 as it's the default Node Express port for Angular SSR
+EXPOSE 4000
+
+ENV PORT=4000
+ENV TARGET_DIR="/app/dist"
+
+# Run environment variable substitution then start the SSR server
+CMD ["/bin/sh", "-c", "/app/env-subst.sh && cd /app && node dist/server/server.mjs"]
