@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
-RUN npm run ng -- build admin --configuration production
+RUN npx ng build admin --configuration production
 
 FROM nginx:alpine
 COPY --from=build /app/dist/admin/browser /usr/share/nginx/html
