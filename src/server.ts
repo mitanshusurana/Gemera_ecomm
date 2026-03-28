@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
+import express from 'express';
 
 const serverDistFolder = import.meta.dirname;
 
@@ -26,17 +27,30 @@ async function initServer() {
     // Load manifests first, then Angular imports
     try {
       console.log('Loading Angular app-engine-manifest...');
-      // Use dynamic imports that bypass static module resolution checks during build
       // @ts-ignore
-      await import('./angular-app-engine-manifest.mjs');
+      const appEngineManifest = await import('./angular-app-engine-manifest.mjs');
       console.log('✓ Manifest loaded');
 
-      if (existsSync(appManifestPath)) {
-        console.log('Loading Angular app-manifest...');
-        // @ts-ignore
-        await import('./angular-app-manifest.mjs');
-        console.log('✓ App manifest loaded');
+      console.log('Loading Angular app-manifest...');
+      // @ts-ignore
+      const appManifest = await import('./angular-app-manifest.mjs');
+      console.log('✓ App manifest loaded');
+
+      // Import the manifest setter functions (internal APIs)
+      const { ɵsetAngularAppManifest, ɵsetAngularAppEngineManifest } = await import('@angular/ssr');
+
+      // Add allowedHosts to manifests if missing (for local development)
+      if (!appEngineManifest.default.allowedHosts) {
+        appEngineManifest.default.allowedHosts = ['localhost', '127.0.0.1'];
       }
+      if (!appManifest.default.allowedHosts) {
+        appManifest.default.allowedHosts = ['localhost', '127.0.0.1'];
+      }
+
+      // Set the manifests using the proper SSR API
+      ɵsetAngularAppManifest(appManifest.default);
+      ɵsetAngularAppEngineManifest(appEngineManifest.default);
+      console.log('✓ Manifests set via SSR API');
     } catch (error: any) {
       console.error('Failed to load manifests:', error.message);
       process.exit(1);
@@ -49,7 +63,6 @@ async function initServer() {
       isMainModule,
       writeResponseToNodeResponse,
     } = await import('@angular/ssr/node');
-    const express = await import('express');
 
     const browserDistFolder = join(serverDistFolder, '../browser');
 
@@ -59,11 +72,13 @@ async function initServer() {
     }
 
     console.log('Creating AngularNodeAppEngine...');
-    const app = express.default();
+    const app = express();
     let angularApp: any;
 
     try {
-      angularApp = new AngularNodeAppEngine();
+      angularApp = new AngularNodeAppEngine({
+        allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', '*.app.github.dev']
+      });
       console.log('✓ AngularNodeAppEngine initialized');
     } catch (error: any) {
       console.error('ERROR: Failed to initialize AngularNodeAppEngine');
