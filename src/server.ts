@@ -39,12 +39,12 @@ async function initServer() {
       // Import the manifest setter functions (internal APIs)
       const { ɵsetAngularAppManifest, ɵsetAngularAppEngineManifest } = await import('@angular/ssr');
 
-      // Add allowedHosts to manifests if missing (for local development)
+      // Ensure allowedHosts is an array (Angular SSR tries to iterate over it)
       if (!appEngineManifest.default.allowedHosts) {
-        appEngineManifest.default.allowedHosts = undefined; // Allow all hosts for production SSR
+        appEngineManifest.default.allowedHosts = [];
       }
       if (!appManifest.default.allowedHosts) {
-        appManifest.default.allowedHosts = undefined; // Allow all hosts for production SSR
+        appManifest.default.allowedHosts = [];
       }
 
       // Set the manifests using the proper SSR API
@@ -76,9 +76,7 @@ async function initServer() {
     let angularApp: any;
 
     try {
-      angularApp = new AngularNodeAppEngine({
-        allowedHosts: undefined  // Disable host checking for development
-      });
+      angularApp = new AngularNodeAppEngine();
       console.log('✓ AngularNodeAppEngine initialized');
     } catch (error: any) {
       console.error('ERROR: Failed to initialize AngularNodeAppEngine');
