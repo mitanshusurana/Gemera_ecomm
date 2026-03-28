@@ -77,7 +77,7 @@ async function initServer() {
 
     try {
       angularApp = new AngularNodeAppEngine({
-        allowedHosts: ['localhost', '127.0.0.1', '0.0.0.0', '*.app.github.dev']
+        allowedHosts: undefined  // Disable host checking for development
       });
       console.log('✓ AngularNodeAppEngine initialized');
     } catch (error: any) {
@@ -101,12 +101,30 @@ async function initServer() {
      * Handle all other requests by rendering the Angular application.
      */
     app.use((req: any, res: any, next: any) => {
-      angularApp
-        .handle(req)
-        .then((response: any) =>
-          response ? writeResponseToNodeResponse(response, res) : next(),
-        )
-        .catch(next);
+      console.log(`SSR Request: ${req.method} ${req.url} from ${req.headers.host}`);
+
+      try {
+        const result = angularApp.handle(req);
+        console.log('SSR handle called, awaiting result...');
+
+        result.then((response: any) => {
+          console.log(`SSR Response received: ${response ? 'response object' : 'null'}`);
+          if (response) {
+            console.log('Writing response...');
+            writeResponseToNodeResponse(response, res);
+            console.log('Response written');
+          } else {
+            console.log('No response from Angular, calling next()');
+            next();
+          }
+        }).catch((error: any) => {
+          console.error('SSR Error in promise:', error);
+          next(error);
+        });
+      } catch (syncError: any) {
+        console.error('SSR Error synchronously:', syncError);
+        next(syncError);
+      }
     });
 
     /**
@@ -114,12 +132,13 @@ async function initServer() {
      */
     if (isMainModule(import.meta.url) || process.env['pm_id']) {
       const port = process.env['PORT'] || 4000;
-      app.listen(port, (error: any) => {
+      const host = process.env['HOST'] || '0.0.0.0'; // Bind to 0.0.0.0 for Docker
+      app.listen(port, host, (error: any) => {
         if (error) {
           throw error;
         }
 
-        console.log(`Node Express server listening on http://localhost:${port}`);
+        console.log(`Node Express server listening on http://${host}:${port}`);
       });
     }
 

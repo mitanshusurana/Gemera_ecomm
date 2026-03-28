@@ -72,6 +72,7 @@ services:
       WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-917976091951}
       NODE_ENV: production
       PORT: 4000
+      HOST: 0.0.0.0
     ports:
       - "80:4000"  # Fixed: Maps VM port 80 to container port 4000 (Express SSR)
     depends_on:
