@@ -47,8 +47,15 @@ ENV PORT=4000 \
 RUN echo "Final dist structure:" && \
     ls -la dist/ && \
     ls -la dist/browser/ && \
-    ls -la dist/server/
+    ls -la dist/server/ && \
+    echo "" && \
+    echo "Checking manifest files:" && \
+    file dist/server/angular-app-engine-manifest.mjs && \
+    head -20 dist/server/angular-app-engine-manifest.mjs && \
+    echo "" && \
+    echo "Server.mjs first 30 lines:" && \
+    head -30 dist/server/server.mjs
 
-# Run the SSR server
+# Run the SSR server with verbose logging
 # The server.mjs is at dist/server/server.mjs and it will resolve ../browser correctly
-CMD ["node", "dist/server/server.mjs"]
+CMD ["node", "--enable-source-maps", "--trace-warnings", "dist/server/server.mjs"]
