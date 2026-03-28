@@ -75,9 +75,6 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
           # platforms: linux/amd64,linux/arm64
-          # Disable caching to ensure fresh builds with proper SSR manifest generation
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:buildcache,mode=max
 
       # Extract metadata for Docker
       - name: Extract Docker metadata (Admin)
