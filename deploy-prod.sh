@@ -44,46 +44,20 @@ else
 fi
 
 # Step 3: Set environment variables
-echo -e "${YELLOW}[4/10]${NC} Configuring environment variables..."
+echo -e "${YELLOW}[4/10]${NC} Checking environment variables..."
 
-# Create .env file if it doesn't exist
-if [ ! -f ".env.prod" ]; then
-    cat > .env.prod << 'EOF'
-# Database Configuration
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=changeme_secure_password
-
-# Cloudflare R2 (Object Storage)
-R2_ACCESS_KEY=your_r2_access_key
-R2_SECRET_KEY=your_r2_secret_key
-R2_ENDPOINT=https://your-account.r2.cloudflarestorage.com
-R2_BUCKET_NAME=jewelry-assets
-R2_PUBLIC_URL=https://pub-your-account.r2.dev
-
-# Backend Configuration
-ADMIN_EMAIL=admin@gemara.com
-ADMIN_PASSWORD=change_me_strong_password
-JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-
-# Frontend URLs (Update with your domain)
-FRONTEND_API_URL=http://backend:8080/api/v1
-ADMIN_API_URL=http://backend:8080/api/v1
-RAZORPAY_KEY=rzp_test_S5goGHXLEuP6hP
-WHATSAPP_NUMBER=917976091951
-
-# Container Registry (Optional - for overriding image names)
-BACKEND_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-backend:latest
-FRONTEND_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-frontend:latest
-ADMIN_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-admin:latest
-EOF
-    echo -e "${GREEN}✓ Created .env.prod file (UPDATE WITH YOUR VALUES!)${NC}"
+if [ ! -f ".env" ]; then
+    echo -e "${RED}✗ .env file not found.${NC}"
+    echo "Please copy .env.template to .env and configure your variables before running this script."
+    echo "Command: cp .env.template .env && nano .env"
+    exit 1
 else
-    echo -e "${GREEN}✓ .env.prod file exists${NC}"
+    echo -e "${GREEN}✓ .env file exists${NC}"
 fi
 
 # Step 4: Validate docker-compose.prod.yml
 echo -e "${YELLOW}[5/10]${NC} Validating docker-compose.prod.yml..."
-if docker-compose -f docker-compose.prod.yml config > /dev/null 2>&1; then
+if docker-compose --env-file .env -f docker-compose.prod.yml config > /dev/null 2>&1; then
     echo -e "${GREEN}✓ docker-compose.prod.yml is valid${NC}"
 else
     echo -e "${RED}✗ docker-compose.prod.yml has errors${NC}"
@@ -94,7 +68,7 @@ fi
 echo -e "${YELLOW}[6/10]${NC} Pulling Docker images..."
 echo "Note: First pull may take 5-10 minutes depending on internet speed"
 echo ""
-if docker-compose -f docker-compose.prod.yml pull; then
+if docker-compose --env-file .env -f docker-compose.prod.yml pull; then
     echo -e "${GREEN}✓ Images pulled successfully${NC}"
 else
     echo -e "${RED}✗ Failed to pull images. Check GHCR credentials.${NC}"
@@ -108,12 +82,12 @@ echo -e "${GREEN}✓ Images verified${NC}"
 
 # Step 7: Stop existing containers (if any)
 echo -e "${YELLOW}[8/10]${NC} Stopping existing containers (if any)..."
-docker-compose -f docker-compose.prod.yml down || true
+docker-compose --env-file .env -f docker-compose.prod.yml down || true
 echo -e "${GREEN}✓ Ready for new deployment${NC}"
 
 # Step 8: Start services
 echo -e "${YELLOW}[9/10]${NC} Starting services..."
-if docker-compose -f docker-compose.prod.yml up -d; then
+if docker-compose --env-file .env -f docker-compose.prod.yml up -d; then
     echo -e "${GREEN}✓ Services started${NC}"
 else
     echo -e "${RED}✗ Failed to start services${NC}"
@@ -125,7 +99,7 @@ echo -e "${YELLOW}[10/10]${NC} Waiting for services to be ready..."
 echo "Checking database connection..."
 sleep 5
 for i in {1..30}; do
-    if docker-compose -f docker-compose.prod.yml exec -T postgres pg_isready &> /dev/null; then
+    if docker-compose --env-file .env -f docker-compose.prod.yml exec -T postgres pg_isready &> /dev/null; then
         echo -e "${GREEN}✓ Database is ready${NC}"
         break
     fi
@@ -140,7 +114,7 @@ echo -e "${GREEN}✓ Deployment Successful!${NC}"
 echo "======================================"
 echo ""
 echo "Service Status:"
-docker-compose -f docker-compose.prod.yml ps
+docker-compose --env-file .env -f docker-compose.prod.yml ps
 echo ""
 echo "Access your services:"
 echo "  Frontend:  http://YOUR_VM_IP:80"
@@ -149,11 +123,11 @@ echo "  Backend:   http://YOUR_VM_IP:8080/api/v1"
 echo "  Database:  localhost:5432"
 echo ""
 echo "View logs:"
-echo "  docker-compose -f docker-compose.prod.yml logs -f jewelry-frontend"
-echo "  docker-compose -f docker-compose.prod.yml logs -f jewelry-backend"
+echo "  docker-compose --env-file .env -f docker-compose.prod.yml logs -f jewelry-frontend"
+echo "  docker-compose --env-file .env -f docker-compose.prod.yml logs -f jewelry-backend"
 echo ""
 echo "To update with new images:"
-echo "  docker-compose -f docker-compose.prod.yml pull"
-echo "  docker-compose -f docker-compose.prod.yml up -d"
+echo "  docker-compose --env-file .env -f docker-compose.prod.yml pull"
+echo "  docker-compose --env-file .env -f docker-compose.prod.yml up -d"
 echo ""
 

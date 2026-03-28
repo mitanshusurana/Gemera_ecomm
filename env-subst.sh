@@ -4,8 +4,9 @@
 # This script is optional if environment variables are handled at build time
 # Uncomment the sections below if you need runtime environment substitution
 
-# TARGET_DIR is the path to the browser distribution
-TARGET_DIR="${TARGET_DIR:-/app/dist/fusion-angular-tailwind-starter/browser}"
+# TARGET_DIR is the path to the distribution
+# We use the parent dist folder so it applies to both browser and server builds for SSR
+TARGET_DIR="${TARGET_DIR:-/app/dist}"
 
 if [ ! -d "$TARGET_DIR" ]; then
     echo "Warning: Target directory $TARGET_DIR not found. Skipping environment substitution."
