@@ -1,29 +1,54 @@
 FROM node:22-alpine AS build
 
-# Use explicit commands instead of WORKDIR that might trigger the overlayfs issue
-RUN mkdir /app
-COPY package*.json /app/
-RUN cd /app && npm install --legacy-peer-deps
-COPY . /app/
-RUN cd /app && npm run build -- --configuration production
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with clean npm cache
+RUN npm ci --legacy-peer-deps && npm cache clean --force
+
+# Copy all source files
+COPY . .
+
+# Build the Angular application for production with SSR
+RUN npm run build -- --configuration production
+
+# Verify the build output structure
+RUN echo "Build output structure:" && \
+    ls -la dist/fusion-angular-tailwind-starter/ && \
+    if [ -d "dist/fusion-angular-tailwind-starter/server" ]; then \
+      echo "Server folder contents:"; \
+      ls -la dist/fusion-angular-tailwind-starter/server/; \
+    else \
+      echo "WARNING: Server folder not found in build output"; \
+    fi
 
 FROM node:22-alpine
 
-RUN mkdir -p /app/dist
+WORKDIR /app
 
-# Copy the entire built dist folder structure (includes both browser and server subdirectories)
-COPY --from=build /app/dist/fusion-angular-tailwind-starter /app/dist/fusion-angular-tailwind-starter
+# Copy the entire dist folder from build stage
+COPY --from=build /app/dist/fusion-angular-tailwind-starter ./dist
 
-# Copy package.json for reference (optional)
-COPY package*.json /app/
+# Copy package.json and package-lock.json for production dependencies
+COPY package*.json ./
 
-# We expose 4000 as it's the default Node Express port for Angular SSR
+# Install only production dependencies
+RUN npm ci --legacy-peer-deps --omit=dev
+
+# Expose the default Node Express port for Angular SSR
 EXPOSE 4000
 
-ENV PORT=4000
+ENV PORT=4000 \
+    NODE_ENV=production
 
-# Set working directory to dist so server.mjs can correctly resolve ../browser
-WORKDIR /app/dist/fusion-angular-tailwind-starter
+# Verify the final file structure
+RUN echo "Final dist structure:" && \
+    ls -la dist/ && \
+    ls -la dist/browser/ && \
+    ls -la dist/server/
 
-# Run the SSR server directly - server.mjs will find ../browser relative to its location
-CMD ["node", "server/server.mjs"]
+# Run the SSR server
+# The server.mjs is at dist/server/server.mjs and it will resolve ../browser correctly
+CMD ["node", "dist/server/server.mjs"]

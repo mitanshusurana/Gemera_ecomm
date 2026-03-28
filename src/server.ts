@@ -6,8 +6,17 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { existsSync } from 'node:fs';
 
-const browserDistFolder = join(import.meta.dirname, '../browser');
+const serverDistFolder = import.meta.dirname;
+const browserDistFolder = join(serverDistFolder, '../browser');
+
+// Verify the required directories exist
+if (!existsSync(browserDistFolder)) {
+  console.error(`ERROR: Browser distribution folder not found at ${browserDistFolder}`);
+  console.error('Make sure the Angular application has been built with: npm run build -- --configuration production');
+  process.exit(1);
+}
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
