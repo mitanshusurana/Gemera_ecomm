@@ -48,11 +48,7 @@ RUN echo "Final dist structure:" && \
     ls -la dist/ && \
     ls -la dist/browser/ && \
     ls -la dist/server/ && \
-    echo "" && \
-    echo "Checking manifest files:" && \
-    file dist/server/angular-app-engine-manifest.mjs && \
     head -20 dist/server/angular-app-engine-manifest.mjs && \
-    echo "" && \
     echo "Server.mjs first 30 lines:" && \
     head -30 dist/server/server.mjs
 
