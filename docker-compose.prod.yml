@@ -5,15 +5,15 @@ version: '3.8'
 #
 # USAGE:
 # Option 1: Direct deployment (image names hardcoded)
-#   docker-compose -f docker-compose.prod.yml pull
-#   docker-compose -f docker-compose.prod.yml up -d
+#   docker-compose --env-file .env -f docker-compose.prod.yml pull
+#   docker-compose --env-file .env -f docker-compose.prod.yml up -d
 #
 # Option 2: Override images via environment variables
 #   export BACKEND_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-backend:latest
 #   export FRONTEND_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-frontend:latest
 #   export ADMIN_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-admin:latest
-#   docker-compose -f docker-compose.prod.yml pull
-#   docker-compose -f docker-compose.prod.yml up -d
+#   docker-compose --env-file .env -f docker-compose.prod.yml pull
+#   docker-compose --env-file .env -f docker-compose.prod.yml up -d
 #
 # Important: 
 # - Make sure you have docker login to ghcr.io before running pull

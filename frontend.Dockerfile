@@ -52,6 +52,10 @@ EXPOSE 4000
 ENV PORT=4000 \
     NODE_ENV=production
 
+# Copy environment substitution script
+COPY env-subst.sh ./
+RUN chmod +x ./env-subst.sh
+
 # Verify the final file structure
 RUN echo "Final dist structure:" && \
     ls -la dist/ && \
@@ -63,4 +67,4 @@ RUN echo "Final dist structure:" && \
 
 # Run the SSR server with verbose logging
 # The server.mjs is at dist/server/server.mjs and it will resolve ../browser correctly
-CMD ["node", "--enable-source-maps", "--trace-warnings", "dist/server/server.mjs"]
+CMD ["sh", "-c", "./env-subst.sh && node --enable-source-maps --trace-warnings dist/server/server.mjs"]
