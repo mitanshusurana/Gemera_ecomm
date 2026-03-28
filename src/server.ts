@@ -41,10 +41,10 @@ async function initServer() {
 
       // Add allowedHosts to manifests if missing (for local development)
       if (!appEngineManifest.default.allowedHosts) {
-        appEngineManifest.default.allowedHosts = ['localhost', '127.0.0.1'];
+        appEngineManifest.default.allowedHosts = undefined; // Allow all hosts for production SSR
       }
       if (!appManifest.default.allowedHosts) {
-        appManifest.default.allowedHosts = ['localhost', '127.0.0.1'];
+        appManifest.default.allowedHosts = undefined; // Allow all hosts for production SSR
       }
 
       // Set the manifests using the proper SSR API
@@ -131,7 +131,7 @@ async function initServer() {
      * Start the server if this module is the main entry point, or it is ran via PM2.
      */
     if (isMainModule(import.meta.url) || process.env['pm_id']) {
-      const port = process.env['PORT'] || 4000;
+      const port = parseInt(process.env['PORT'] || '4000', 10);
       const host = process.env['HOST'] || '0.0.0.0'; // Bind to 0.0.0.0 for Docker
       app.listen(port, host, (error: any) => {
         if (error) {
