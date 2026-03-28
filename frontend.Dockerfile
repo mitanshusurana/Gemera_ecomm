@@ -12,16 +12,25 @@ RUN npm ci --legacy-peer-deps && npm cache clean --force
 COPY . .
 
 # Build the Angular application for production with SSR
-RUN npm run build -- --configuration production
+RUN npm run build:prod
+
+# Validate the build output - exit if validation fails
+RUN npm run build:validate || { echo "Build validation failed - SSR configuration incomplete"; exit 1; }
 
 # Verify the build output structure
 RUN echo "Build output structure:" && \
     ls -la dist/fusion-angular-tailwind-starter/ && \
     if [ -d "dist/fusion-angular-tailwind-starter/server" ]; then \
+      echo "✓ Server folder found"; \
       echo "Server folder contents:"; \
       ls -la dist/fusion-angular-tailwind-starter/server/; \
+      if [ ! -f "dist/fusion-angular-tailwind-starter/server/angular-app-engine-manifest.mjs" ]; then \
+        echo "ERROR: angular-app-engine-manifest.mjs not found!"; \
+        exit 1; \
+      fi; \
     else \
-      echo "WARNING: Server folder not found in build output"; \
+      echo "ERROR: Server folder not found in build output"; \
+      exit 1; \
     fi
 
 FROM node:22-alpine

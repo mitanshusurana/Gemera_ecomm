@@ -5,6 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "build:prod:ssr": "ng build --configuration production && npm run build:validate",
+    "build:validate": "node scripts/validate-build.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:fusion-angular-tailwind-starter": "node dist/fusion-angular-tailwind-starter/server/server.mjs"

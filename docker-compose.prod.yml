@@ -1,9 +1,24 @@
 version: '3.8'
 
 # PRODUCTION DEPLOYMENT FOR ORACLE VM (NO BUILD REQUIRED)
+# Images are pre-built by GitHub Actions and pushed to GitHub Container Registry (GHCR)
+#
 # USAGE:
-# 1. Update the image paths below with your GitHub Username and Repository Name
-# 2. Run: docker-compose -f docker-compose.prod.yml up -d
+# Option 1: Direct deployment (image names hardcoded)
+#   docker-compose -f docker-compose.prod.yml pull
+#   docker-compose -f docker-compose.prod.yml up -d
+#
+# Option 2: Override images via environment variables
+#   export BACKEND_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-backend:latest
+#   export FRONTEND_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-frontend:latest
+#   export ADMIN_IMAGE=ghcr.io/mitanshusurana/gemera_ecomm-admin:latest
+#   docker-compose -f docker-compose.prod.yml pull
+#   docker-compose -f docker-compose.prod.yml up -d
+#
+# Important: 
+# - Make sure you have docker login to ghcr.io before running pull
+# - If containers don't start, verify image names with: docker image ls | grep gemera
+# - Check logs with: docker-compose logs -f jewelry-frontend
 
 services:
   postgres:
@@ -20,10 +35,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    # Replace GH_USERNAME and REPO_NAME with your GitHub info
-    image: ghcr.io/GH_USERNAME/REPO_NAME-backend:latest
+    image: ${BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-backend:latest}
     container_name: jewelry-backend
     restart: always
+    imagePullPolicy: Always
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/jewelry_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
@@ -45,30 +60,32 @@ services:
       - postgres
 
   frontend:
-    # Replace GH_USERNAME and REPO_NAME with your GitHub info
-    image: ghcr.io/GH_USERNAME/REPO_NAME-frontend:latest
+    image: ${FRONTEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-frontend:latest}
     container_name: jewelry-frontend
     restart: always
+    imagePullPolicy: Always
     environment:
       # Change localhost to your Oracle VM Public IP or Domain
       API_URL: ${FRONTEND_API_URL:-http://localhost:8080/api/v1}
       RAZORPAY_KEY: ${RAZORPAY_KEY:-rzp_test_S5goGHXLEuP6hP}
       WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-917976091951}
+      NODE_ENV: production
+      PORT: 4000
     ports:
-      - "80:80"  # Mapping to default HTTP port for production
+      - "80:4000"  # Fixed: Maps VM port 80 to container port 4000 (Express SSR)
     depends_on:
       - backend
 
   admin:
-    # Replace GH_USERNAME and REPO_NAME with your GitHub info
-    image: ghcr.io/GH_USERNAME/REPO_NAME-admin:latest
+    image: ${ADMIN_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-admin:latest}
     container_name: jewelry-admin
     restart: always
+    imagePullPolicy: Always
     environment:
       # Change localhost to your Oracle VM Public IP or Domain
       API_URL: ${ADMIN_API_URL:-http://localhost:8080/api/v1}
     ports:
-      - "4300:80" # Consider mapping to 81 or setting up a reverse proxy later
+      - "81:80"  # Maps VM port 81 to container port 80 (NGINX)
     depends_on:
       - backend
 

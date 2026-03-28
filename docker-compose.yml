@@ -50,6 +50,11 @@ services:
       PORT: 4000
       NODE_ENV: production
     ports:
+      - "4200:4000"
+    depends_on:
+      - backend
+      NODE_ENV: production
+    ports:
       - "80:4000"
     depends_on:
       - backend
