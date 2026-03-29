@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="100%" height="100%">
+  <path d="M 215,100 A 124,124 0 0,0 380,265" fill="none" stroke="#C5A059" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 420,265 A 124,124 0 0,0 585,100" fill="none" stroke="#C5A059" stroke-width="4" stroke-linecap="round"/>
+
+  <circle cx="330" cy="150" r="110" fill="none" stroke="#0A1128" stroke-width="12"/>
+  <circle cx="470" cy="150" r="110" fill="none" stroke="#0A1128" stroke-width="12"/>
+<g xmlns="http://www.w3.org/2000/svg" stroke="#ffffff" stroke-width="0.75" stroke-linejoin="round">
+    <polygon points="270,145 340,95 340,145" fill="#0F52BA"/> <polygon points="340,95 400,95 400,145 340,145" fill="#50C878"/> <polygon points="400,95 460,95 460,145 400,145" fill=" #E0115F"/> <polygon points="460,95 530,145 460,145" fill="#B9F2FF"/> <polygon points="270,145 340,145 400,245" fill="#126180"/> <polygon points="340,145 400,145 400,245" fill="#10A39D"/> <polygon points="400,145 460,145 400,245" fill=" #9B111E"/> <polygon points="460,145 530,145 400,245" fill="#F1F7FF"/> </g>
+
+
+  <g font-family="'Montserrat', 'Helvetica Neue', 'Arial', sans-serif" font-size="38" font-weight="400" fill="#0A1128" text-anchor="middle">
+    <text x="290" y="340">C</text>
+    <text x="320" y="340">A</text>
+    <text x="350" y="340">R</text>
+    <text x="380" y="340">A</text>
+    <text x="405" y="340">T</text>
+    <text x="430" y="340">L</text>
+    <text x="505" y="340">P</text>
+  </g>
+
+  <g fill="none" stroke="#0A1128" stroke-width="3.5">
+    <circle cx="455" cy="327" r="14"/>
+    <circle cx="475" cy="327" r="14"/>
+  </g>
+</svg>
