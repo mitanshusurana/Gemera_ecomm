@@ -73,9 +73,8 @@ import { APP_CATEGORIES } from '../core/constants';
             </button>
 
             <!-- Logo -->
-            <a routerLink="/" class="flex flex-col items-center leading-none">
-              <span class="text-2xl font-display font-bold text-primary-800 tracking-wide">CARATLOOP</span>
-              <span class="text-[0.6rem] uppercase tracking-[0.2em] text-secondary-600 font-semibold">Modern Jewels</span>
+            <a routerLink="/" class="flex items-center">
+              <img src="/logo-with-name.svg" alt="Caratloop Fine Jewelry Logo" class="h-10 w-auto" />
             </a>
           </div>
 
