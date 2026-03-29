@@ -31,7 +31,9 @@ export class CartService {
                 this.getCart().subscribe();
             });
         } else {
-            this.getCart().subscribe();
+            // Do not hit API on load if not authenticated. Instead just load guest cart.
+            const guestCart = this.getGuestCart();
+            this.cart$.next(guestCart);
         }
     });
   }

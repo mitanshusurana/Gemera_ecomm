@@ -12,6 +12,7 @@ import { ToastService } from "../services/toast.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { Address, CartItem } from "../core/models";
 import { environment } from "../../environments/environment";
+import { COUNTRIES } from "../core/countries";
 
 @Component({
   selector: "app-checkout",
@@ -284,10 +285,7 @@ import { environment } from "../../environments/environment";
                     required
                     class="input-field"
                   >
-                    <option value="USA">United States</option>
-                    <option value="Canada">Canada</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="Australia">Australia</option>
+                    <option *ngFor="let country of countriesList" [value]="country">{{ country }}</option>
                   </select>
                 </div>
 
@@ -522,6 +520,8 @@ export class CheckoutComponent implements OnInit {
   cartTotal = signal(45000);
   isProcessing = signal(false);
 
+  countriesList = COUNTRIES;
+
   shippingData = {
     firstName: "",
     lastName: "",
@@ -531,7 +531,7 @@ export class CheckoutComponent implements OnInit {
     city: "",
     state: "",
     zipCode: "",
-    country: "USA",
+    country: "India",
   };
 
   guestPassword = '';
@@ -647,7 +647,7 @@ export class CheckoutComponent implements OnInit {
                 city: '',
                 state: '',
                 zipCode: '',
-                country: 'USA'
+                country: 'India'
             };
         }
     });
@@ -678,9 +678,13 @@ export class CheckoutComponent implements OnInit {
             // Register success, now login to get token
             this.authService.login(registerData.email, registerData.password).subscribe({
                 next: () => {
-                    this.isProcessing.set(false);
                     this.checkAuth(); // Update auth signal
-                    this.currentStep.set(this.currentStep() + 1);
+                    // CartService's user subscription will handle guest cart sync automatically on login
+                    // Just wait a little bit or proceed immediately
+                    setTimeout(() => {
+                        this.isProcessing.set(false);
+                        this.currentStep.set(this.currentStep() + 1);
+                    }, 500);
                 },
                 error: (err) => {
                     this.isProcessing.set(false);
@@ -716,6 +720,26 @@ export class CheckoutComponent implements OnInit {
 
     this.isProcessing.set(true);
 
+    // If using a new address and user is authenticated, save it to their profile
+    if (this.selectedAddressId() === 'new' && this.isAuthenticated()) {
+        const { email, ...addressData } = this.shippingData;
+        this.authService.addAddress({ ...addressData, isDefault: this.userAddresses().length === 0 }).subscribe({
+            next: () => {
+                // Proceed with order after saving address
+                this.processPaymentSelection();
+            },
+            error: () => {
+                // Log but proceed anyway so we don't block checkout
+                console.error('Failed to save address to profile');
+                this.processPaymentSelection();
+            }
+        });
+    } else {
+        this.processPaymentSelection();
+    }
+  }
+
+  private processPaymentSelection() {
     if (this.selectedPaymentMethod === 'COD') {
       this.handleCODPayment();
     } else {

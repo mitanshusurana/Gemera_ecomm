@@ -9,6 +9,7 @@ import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
 import { ToastService } from '../services/toast.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
+import { COUNTRIES } from '../core/countries';
 
 @Component({
   selector: 'app-account',
@@ -377,7 +378,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             </div>
             <div class="grid grid-cols-2 gap-4">
               <input [(ngModel)]="currentAddress().zipCode" name="zipCode" placeholder="ZIP Code" class="input-field" required>
-              <input [(ngModel)]="currentAddress().country" name="country" placeholder="Country" class="input-field" required>
+              <select [(ngModel)]="currentAddress().country" name="country" class="input-field" required>
+                <option *ngFor="let country of countriesList" [value]="country">{{ country }}</option>
+              </select>
             </div>
             <input [(ngModel)]="currentAddress().phone" name="phone" placeholder="Phone" class="input-field" required>
 
@@ -405,6 +408,7 @@ export class AccountComponent implements OnInit {
   // Address State
   isAddressModalOpen = signal(false);
   currentAddress = signal<Partial<Address>>({});
+  countriesList = COUNTRIES;
 
   private authService = inject(AuthService);
   private currencyService = inject(CurrencyService);
@@ -514,7 +518,7 @@ export class AccountComponent implements OnInit {
 
   // Address Methods
   openAddressModal(address?: Address) {
-    this.currentAddress.set(address ? { ...address } : { country: 'United States' });
+    this.currentAddress.set(address ? { ...address } : { country: 'India' });
     this.isAddressModalOpen.set(true);
   }
 

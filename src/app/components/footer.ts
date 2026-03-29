@@ -146,8 +146,8 @@ export class FooterComponent implements OnInit {
           email: data?.companyEmail || this.env.companyEmail,
           phone: data?.companyPhone || this.env.companyPhone,
           address: data?.companyAddress || this.env.companyAddress,
-          facebookUrl: data?.companyFacebook || this.env.companyFacebook,
-          instagramUrl: data?.companyInstagram || this.env.companyInstagram,
+          facebookUrl: this.formatUrl(data?.companyFacebook || this.env.companyFacebook),
+          instagramUrl: this.formatUrl(data?.companyInstagram || this.env.companyInstagram),
           whatsappNumber: data?.whatsappNumber || this.env.whatsappNumber
         };
         this.cdr.markForCheck();
@@ -158,13 +158,21 @@ export class FooterComponent implements OnInit {
           email: this.env.companyEmail,
           phone: this.env.companyPhone,
           address: this.env.companyAddress,
-          facebookUrl: this.env.companyFacebook,
-          instagramUrl: this.env.companyInstagram,
+          facebookUrl: this.formatUrl(this.env.companyFacebook),
+          instagramUrl: this.formatUrl(this.env.companyInstagram),
           whatsappNumber: this.env.whatsappNumber
         };
         this.cdr.markForCheck();
       }
     });
+  }
+
+  private formatUrl(url: string | undefined): string {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `https://${url}`;
   }
 
   subscribe() {
