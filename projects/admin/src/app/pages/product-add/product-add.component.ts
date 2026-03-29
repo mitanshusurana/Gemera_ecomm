@@ -84,8 +84,6 @@ export class ProductAddComponent implements OnInit {
   // Background Upload States
   uploadingMedia = false;
   uploadProgressMessage = '';
-  uploadedImageUrls: string[] = [];
-  uploadedVideoUrl: string | null = null;
 
   // Auto-generation flags
   isNameManuallyEdited = false;
@@ -456,29 +454,26 @@ export class ProductAddComponent implements OnInit {
   onFileChange(event: any) {
     if (event.target.files.length > 0) {
       this.selectedFiles = Array.from(event.target.files);
-      this.triggerBackgroundUploads();
+      this.uploadImages();
     }
   }
 
   onVideoFileChange(event: any) {
     if (event.target.files.length > 0) {
       this.selectedVideoFile = event.target.files[0];
-      this.triggerBackgroundUploads();
+      this.uploadVideo();
     }
   }
 
-  triggerBackgroundUploads() {
+  uploadImages() {
     const uploadRequests = [];
 
     this.uploadingMedia = true;
-    this.uploadProgressMessage = 'Uploading media...';
+    this.uploadProgressMessage = 'Uploading images...';
     this.errorMessage = '';
 
-    // Capture state locally to avoid race conditions if user changes selection while uploading
     const currentFilesCount = this.selectedFiles.length;
-    const hasVideo = !!this.selectedVideoFile;
 
-    // Images
     if (currentFilesCount > 0) {
       uploadRequests.push(...this.selectedFiles.map(file =>
         this.productService.uploadImage(file).pipe(
@@ -488,41 +483,60 @@ export class ProductAddComponent implements OnInit {
           })
         )
       ));
-    }
 
-    // Video
-    if (hasVideo && this.selectedVideoFile) {
-      uploadRequests.push(
-        this.productService.uploadVideo(this.selectedVideoFile).pipe(
-          catchError(err => {
-            console.error('Failed to upload video', err);
-            throw err;
-          })
-        )
-      );
+      // Clear selected files after queueing to prevent re-upload on subsequent actions
+      this.selectedFiles = [];
     }
 
     if (uploadRequests.length > 0) {
       forkJoin(uploadRequests).subscribe({
         next: (responses) => {
-          // Use captured state for mapping responses to prevent misalignment
-          let imageResponses = responses.slice(0, currentFilesCount);
-          let videoResponse = hasVideo ? responses[responses.length - 1] : null;
-
-          if (imageResponses.length > 0) {
-            this.uploadedImageUrls = imageResponses.map(res => res.url);
-          }
-          if (videoResponse) {
-            this.uploadedVideoUrl = videoResponse.url;
+          if (responses.length > 0) {
+            const newUrls = responses.map(res => res.url);
+            this.existingImages = [...this.existingImages, ...newUrls];
           }
 
           this.uploadingMedia = false;
-          this.uploadProgressMessage = 'Media upload complete.';
+          this.uploadProgressMessage = 'Image upload complete.';
         },
         error: (err) => {
-          this.errorMessage = 'Failed to upload one or more media files.';
+          this.errorMessage = 'Failed to upload one or more image files.';
           this.uploadingMedia = false;
           this.uploadProgressMessage = '';
+        }
+      });
+    } else {
+      this.uploadingMedia = false;
+      this.uploadProgressMessage = '';
+    }
+  }
+
+  uploadVideo() {
+    this.uploadingMedia = true;
+    this.uploadProgressMessage = 'Uploading video...';
+    this.errorMessage = '';
+
+    if (this.selectedVideoFile) {
+      this.productService.uploadVideo(this.selectedVideoFile).pipe(
+        catchError(err => {
+          console.error('Failed to upload video', err);
+          throw err;
+        })
+      ).subscribe({
+        next: (response) => {
+          if (response) {
+            this.existingVideoUrl = response.url;
+          }
+          this.selectedVideoFile = null;
+
+          this.uploadingMedia = false;
+          this.uploadProgressMessage = 'Video upload complete.';
+        },
+        error: (err) => {
+          this.errorMessage = 'Failed to upload video.';
+          this.uploadingMedia = false;
+          this.uploadProgressMessage = '';
+          this.selectedVideoFile = null;
         }
       });
     } else {
@@ -545,10 +559,10 @@ export class ProductAddComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    this.createProductRecord(this.uploadedImageUrls, this.uploadedVideoUrl || undefined);
+    this.createProductRecord();
   }
 
-  private createProductRecord(uploadedImageUrls: string[], uploadedVideoUrl?: string) {
+  private createProductRecord() {
     const formValue = this.productForm.value;
 
     // Parse comma separated strings to arrays
@@ -556,16 +570,13 @@ export class ProductAddComponent implements OnInit {
     const occasionKeywords = formValue.occasionKeywordsStr ? (formValue.occasionKeywordsStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
     const stoneDetailIds = formValue.stoneDetailIds ? (formValue.stoneDetailIds as string).split(',').map(s => s.trim()).filter(s => s) : [];
 
-    const finalImages = [...this.existingImages, ...uploadedImageUrls];
-    const finalVideoUrl = uploadedVideoUrl || this.existingVideoUrl;
-
     const productData = {
       ...formValue,
       seoQualifiers,
       occasionKeywords,
       stoneDetailIds,
-      images: finalImages,
-      videoUrl: finalVideoUrl,
+      images: this.existingImages,
+      videoUrl: this.existingVideoUrl,
       specifications: null
     };
 
