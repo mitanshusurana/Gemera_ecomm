@@ -170,16 +170,31 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                      <ng-container [ngSwitch]="product()?.category">
                         <!-- Finished Jewelry -->
                         <ng-container *ngSwitchCase="'Finished Jewelry'">
-                           <div *ngIf="product()?.metalType || product()?.grossWeight">
+                           <div *ngIf="product()?.metalDetails || product()?.grossWeight || product()?.stoneDetails">
                               <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
                               <div class="space-y-2 text-sm">
-                                 <div class="flex justify-between" *ngIf="product()?.metalType"><span class="text-gray-500">Metal Type</span><span class="font-medium text-gray-900">{{ product()?.metalType }}</span></div>
-                                 <div class="flex justify-between" *ngIf="product()?.metalPurity"><span class="text-gray-500">Purity</span><span class="font-medium text-gray-900">{{ product()?.metalPurity }}</span></div>
-                                 <div class="flex justify-between" *ngIf="product()?.metalColor"><span class="text-gray-500">Metal Color</span><span class="font-medium text-gray-900">{{ product()?.metalColor }}</span></div>
                                  <div class="flex justify-between" *ngIf="product()?.grossWeight"><span class="text-gray-500">Gross Weight</span><span class="font-medium text-gray-900">{{ product()?.grossWeight }} g</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.metalDetails?.metalType"><span class="text-gray-500">Metal Type</span><span class="font-medium text-gray-900">{{ product()?.metalDetails?.metalType }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.metalDetails?.metalPurity"><span class="text-gray-500">Purity</span><span class="font-medium text-gray-900">{{ product()?.metalDetails?.metalPurity }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.metalColor"><span class="text-gray-500">Metal Color</span><span class="font-medium text-gray-900">{{ product()?.metalColor }}</span></div>
+                                 <div class="flex justify-between" *ngIf="product()?.metalDetails?.netWeight"><span class="text-gray-500">Net Weight</span><span class="font-medium text-gray-900">{{ product()?.metalDetails?.netWeight }} g</span></div>
                                  <div class="flex justify-between" *ngIf="product()?.dimensions"><span class="text-gray-500">Dimensions</span><span class="font-medium text-gray-900">{{ product()?.dimensions }}</span></div>
                                  <div class="flex justify-between" *ngIf="product()?.bisHallmark"><span class="text-gray-500">BIS Hallmark</span><span class="font-medium text-gray-900">Yes</span></div>
                               </div>
+
+                              <ng-container *ngIf="product()?.stoneDetails?.length">
+                                 <h5 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3 mt-4">Stone Details</h5>
+                                 <div class="space-y-3">
+                                    <div *ngFor="let stone of product()?.stoneDetails" class="bg-gray-50 p-3 rounded-md text-sm border border-gray-100">
+                                       <div class="grid grid-cols-2 gap-2">
+                                          <div><span class="text-gray-500 block text-xs">Type</span><span class="font-medium text-gray-900">{{ stone.stoneType || 'N/A' }}</span></div>
+                                          <div><span class="text-gray-500 block text-xs">Shape</span><span class="font-medium text-gray-900">{{ stone.shape || 'N/A' }}</span></div>
+                                          <div><span class="text-gray-500 block text-xs">Pieces</span><span class="font-medium text-gray-900">{{ stone.pieceCount || '0' }}</span></div>
+                                          <div><span class="text-gray-500 block text-xs">Carat Weight</span><span class="font-medium text-gray-900">{{ stone.totalCaratWeight || '0' }} ct</span></div>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </ng-container>
                            </div>
                         </ng-container>
 
@@ -292,16 +307,35 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                    <p class="text-xs text-green-700 font-medium mb-3">Inclusive of all taxes</p>
 
                    <!-- Price Breakup Toggle -->
-                   <button *ngIf="hasPriceBreakup()" (click)="togglePriceBreakup()" class="text-xs font-bold text-secondary-600 hover:text-secondary-800 flex items-center gap-1 uppercase tracking-wide">
+                   <button *ngIf="hasPriceBreakup()" (click)="togglePriceBreakup()" class="text-xs font-bold text-secondary-600 hover:text-secondary-800 flex items-center gap-1 uppercase tracking-wide mt-2">
                       View Price Breakup <span class="transition-transform" [class.rotate-180]="showPriceBreakup()">▼</span>
                    </button>
 
-                   <div *ngIf="showPriceBreakup() && hasPriceBreakup()" class="mt-3 bg-gray-50 p-3 rounded text-sm text-gray-600 animate-fade-in space-y-2">
-                      <div class="flex justify-between"><span>Metal</span> <span>{{ currentPriceBreakup()!.metal | currencyConvert }}</span></div>
-                      <div class="flex justify-between"><span>Stone</span> <span>{{ currentPriceBreakup()!.gemstone | currencyConvert }}</span></div>
-                      <div class="flex justify-between"><span>Making</span> <span>{{ currentPriceBreakup()!.makingCharges | currencyConvert }}</span></div>
-                      <div class="flex justify-between"><span>Tax</span> <span>{{ currentPriceBreakup()!.tax | currencyConvert }}</span></div>
-                      <div class="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200"><span>Grand Total</span> <span>{{ currentPriceBreakup()!.total | currencyConvert }}</span></div>
+                   <!-- Transparent Price Breakdown Accordion -->
+                   <div *ngIf="showPriceBreakup() && hasPriceBreakup()" class="mt-4 bg-white border border-gray-200 shadow-sm p-4 rounded-lg text-sm text-gray-700 animate-fade-in transition-all duration-300">
+                      <h4 class="font-semibold text-gray-900 mb-3 border-b border-gray-100 pb-2">Price Breakdown</h4>
+                      <div class="space-y-3">
+                         <div class="flex justify-between items-center">
+                            <span class="flex items-center gap-2"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Metal</span>
+                            <span class="font-medium">{{ currentPriceBreakup()!.metal | currencyConvert }}</span>
+                         </div>
+                         <div class="flex justify-between items-center">
+                            <span class="flex items-center gap-2"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg> Stones</span>
+                            <span class="font-medium">{{ currentPriceBreakup()!.gemstone | currencyConvert }}</span>
+                         </div>
+                         <div class="flex justify-between items-center">
+                            <span class="flex items-center gap-2"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Making Charges</span>
+                            <span class="font-medium">{{ currentPriceBreakup()!.makingCharges | currencyConvert }}</span>
+                         </div>
+                         <div class="flex justify-between items-center">
+                            <span class="flex items-center gap-2"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path></svg> Tax (3%)</span>
+                            <span class="font-medium">{{ currentPriceBreakup()!.tax | currencyConvert }}</span>
+                         </div>
+                         <div class="flex justify-between items-center pt-3 border-t border-gray-200 mt-2">
+                            <span class="font-bold text-gray-900 text-base">Grand Total</span>
+                            <span class="font-bold text-secondary-600 text-lg">{{ currentPriceBreakup()!.total | currencyConvert }}</span>
+                         </div>
+                      </div>
                    </div>
                 </div>
 

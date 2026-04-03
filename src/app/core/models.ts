@@ -59,12 +59,27 @@ export interface Product {
   specifications?: ProductSpecifications;
 
   // Specific Category fields
-  metalType?: string;
-  metalPurity?: string;
   metalColor?: string;
   grossWeight?: number;
   dimensions?: string;
   bisHallmark?: boolean;
+  huid?: string;
+
+  metalDetails?: {
+    id?: string;
+    metalType?: string;
+    metalPurity?: string;
+    netWeight?: number;
+  };
+
+  stoneDetails?: {
+    id?: string;
+    stoneType?: string;
+    shape?: string;
+    pieceCount?: number;
+    totalCaratWeight?: number;
+    settingType?: string;
+  }[];
 
   species?: string;
   variety?: string;

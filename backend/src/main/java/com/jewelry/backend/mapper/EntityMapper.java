@@ -67,10 +67,7 @@ public class EntityMapper {
         product.setStyles(dto.getStyles());
 
         // 1. Finished Jewelry
-        product.setMetalType(dto.getMetalType());
-        product.setMetalPurity(dto.getMetalPurity());
         product.setGrossWeight(dto.getGrossWeight());
-        product.setNetWeight(dto.getNetWeight());
         product.setTotalCaratWeight(dto.getTotalCaratWeight());
         product.setDimensions(dto.getDimensions());
         product.setCurrentLocation(dto.getCurrentLocation());
@@ -81,6 +78,28 @@ public class EntityMapper {
         product.setMetalColor(dto.getMetalColor());
         product.setManufacturingTerminology(dto.getManufacturingTerminology());
         product.setStoneDetailIds(dto.getStoneDetailIds());
+
+        if (dto.getMetalDetails() != null) {
+            MetalDetail metalDetail = new MetalDetail();
+            metalDetail.setId(dto.getMetalDetails().getId());
+            metalDetail.setMetalType(dto.getMetalDetails().getMetalType());
+            metalDetail.setMetalPurity(dto.getMetalDetails().getMetalPurity());
+            metalDetail.setNetWeight(dto.getMetalDetails().getNetWeight());
+            product.setMetalDetails(metalDetail);
+        }
+
+        if (dto.getStoneDetails() != null) {
+            product.setStoneDetails(dto.getStoneDetails().stream().map(stoneDto -> {
+                StoneDetail stone = new StoneDetail();
+                stone.setId(stoneDto.getId());
+                stone.setStoneType(stoneDto.getStoneType());
+                stone.setShape(stoneDto.getShape());
+                stone.setPieceCount(stoneDto.getPieceCount());
+                stone.setTotalCaratWeight(stoneDto.getTotalCaratWeight());
+                stone.setSettingType(stoneDto.getSettingType());
+                return stone;
+            }).collect(Collectors.toList()));
+        }
 
         // 2. Loose Gemstones
         product.setStoneSku(dto.getStoneSku());
@@ -157,6 +176,19 @@ public class EntityMapper {
                 return opt;
             }).collect(Collectors.toList()));
         }
+
+        if (dto.getPriceBreakup() != null) {
+            Product.PriceBreakup pb = new Product.PriceBreakup();
+            pb.setMetal(dto.getPriceBreakup().getMetal());
+            pb.setGemstone(dto.getPriceBreakup().getGemstone());
+            pb.setMakingCharges(dto.getPriceBreakup().getMakingCharges());
+            pb.setTax(dto.getPriceBreakup().getTax());
+            pb.setTotal(dto.getPriceBreakup().getTotal());
+            pb.setDiscount(dto.getPriceBreakup().getDiscount());
+            pb.setGrandTotal(dto.getPriceBreakup().getGrandTotal());
+            product.setPriceBreakup(pb);
+        }
+
         return product;
     }
 
@@ -223,10 +255,7 @@ public class EntityMapper {
         dto.setStyles(product.getStyles());
 
         // 1. Finished Jewelry
-        dto.setMetalType(product.getMetalType());
-        dto.setMetalPurity(product.getMetalPurity());
         dto.setGrossWeight(product.getGrossWeight());
-        dto.setNetWeight(product.getNetWeight());
         dto.setTotalCaratWeight(product.getTotalCaratWeight());
         dto.setDimensions(product.getDimensions());
         dto.setCurrentLocation(product.getCurrentLocation());
@@ -237,6 +266,28 @@ public class EntityMapper {
         dto.setMetalColor(product.getMetalColor());
         dto.setManufacturingTerminology(product.getManufacturingTerminology());
         dto.setStoneDetailIds(product.getStoneDetailIds());
+
+        if (product.getMetalDetails() != null) {
+            MetalDetailDTO metalDetailDTO = new MetalDetailDTO();
+            metalDetailDTO.setId(product.getMetalDetails().getId());
+            metalDetailDTO.setMetalType(product.getMetalDetails().getMetalType());
+            metalDetailDTO.setMetalPurity(product.getMetalDetails().getMetalPurity());
+            metalDetailDTO.setNetWeight(product.getMetalDetails().getNetWeight());
+            dto.setMetalDetails(metalDetailDTO);
+        }
+
+        if (product.getStoneDetails() != null) {
+            dto.setStoneDetails(product.getStoneDetails().stream().map(stone -> {
+                StoneDetailDTO stoneDto = new StoneDetailDTO();
+                stoneDto.setId(stone.getId());
+                stoneDto.setStoneType(stone.getStoneType());
+                stoneDto.setShape(stone.getShape());
+                stoneDto.setPieceCount(stone.getPieceCount());
+                stoneDto.setTotalCaratWeight(stone.getTotalCaratWeight());
+                stoneDto.setSettingType(stone.getSettingType());
+                return stoneDto;
+            }).collect(Collectors.toList()));
+        }
 
         // 2. Loose Gemstones
         dto.setStoneSku(product.getStoneSku());
@@ -313,6 +364,19 @@ public class EntityMapper {
                 return optDto;
             }).collect(Collectors.toList()));
         }
+
+        if (product.getPriceBreakup() != null) {
+            ProductDTO.PriceBreakupDTO pbDto = new ProductDTO.PriceBreakupDTO();
+            pbDto.setMetal(product.getPriceBreakup().getMetal());
+            pbDto.setGemstone(product.getPriceBreakup().getGemstone());
+            pbDto.setMakingCharges(product.getPriceBreakup().getMakingCharges());
+            pbDto.setTax(product.getPriceBreakup().getTax());
+            pbDto.setTotal(product.getPriceBreakup().getTotal());
+            pbDto.setDiscount(product.getPriceBreakup().getDiscount());
+            pbDto.setGrandTotal(product.getPriceBreakup().getGrandTotal());
+            dto.setPriceBreakup(pbDto);
+        }
+
         return dto;
     }
 

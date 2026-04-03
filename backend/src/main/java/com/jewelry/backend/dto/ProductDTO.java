@@ -48,10 +48,7 @@ public class ProductDTO {
 
     // ----- SPECIFIC FIELDS FOR CATEGORIES -----
 
-    private String metalType;
-    private String metalPurity;
     private BigDecimal grossWeight;
-    private BigDecimal netWeight;
     private BigDecimal totalCaratWeight;
     private String dimensions;
     private String currentLocation;
@@ -61,7 +58,11 @@ public class ProductDTO {
     private String designStyle;
     private String metalColor;
     private String manufacturingTerminology;
-    private List<String> stoneDetailIds;
+
+    private MetalDetailDTO metalDetails;
+    private List<StoneDetailDTO> stoneDetails;
+
+    private List<String> stoneDetailIds; // legacy
 
     private String stoneSku;
     private String species;
