@@ -103,8 +103,16 @@ public class ProductService {
 
         // 2. Material & 3. Purity
         if ("Finished Jewelry".equalsIgnoreCase(category) || "Ring Setting".equalsIgnoreCase(category)) {
-            String material = product.getMetalType() != null ? product.getMetalType().substring(0, Math.min(product.getMetalType().length(), 2)).toUpperCase() : "XX";
-            String purity = product.getMetalPurity() != null ? NON_DIGIT_PATTERN.matcher(product.getMetalPurity()).replaceAll("") : "00";
+            String material = "XX";
+            String purity = "00";
+            if (product.getMetalDetails() != null) {
+                if (product.getMetalDetails().getMetalType() != null) {
+                    material = product.getMetalDetails().getMetalType().substring(0, Math.min(product.getMetalDetails().getMetalType().length(), 2)).toUpperCase();
+                }
+                if (product.getMetalDetails().getMetalPurity() != null) {
+                    purity = NON_DIGIT_PATTERN.matcher(product.getMetalDetails().getMetalPurity()).replaceAll("");
+                }
+            }
             skuBuilder.append(material).append(purity).append("-");
         } else if ("Loose Gemstones".equalsIgnoreCase(category)) {
             String variety = product.getVariety() != null && !product.getVariety().isEmpty() ? product.getVariety().substring(0, Math.min(product.getVariety().length(), 3)).toUpperCase() : "XXX";

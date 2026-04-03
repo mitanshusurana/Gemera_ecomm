@@ -207,20 +207,29 @@
       <div *ngIf="selectedCategory === 'Finished Jewelry' || selectedCategory === 'Ring Setting'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Finished Jewelry Details</h3>
         <div class="grid grid-cols-6 gap-6">
-          <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Metal Type</label>
-            <select formControlName="metalType" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-              <option value="">Select Metal</option>
-              <option *ngFor="let m of metalTypes" [value]="m">{{ m }}</option>
-            </select>
+
+          <!-- Metal Details Group -->
+          <div formGroupName="metalDetails" class="col-span-6 grid grid-cols-6 gap-6">
+            <div class="col-span-6 sm:col-span-2">
+              <label class="block text-sm font-medium text-gray-700">Metal Type</label>
+              <select formControlName="metalType" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                <option value="">Select Metal</option>
+                <option *ngFor="let m of metalTypes" [value]="m">{{ m }}</option>
+              </select>
+            </div>
+            <div class="col-span-6 sm:col-span-2">
+              <label class="block text-sm font-medium text-gray-700">Metal Purity</label>
+              <select formControlName="metalPurity" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                <option value="">Select Purity</option>
+                <option *ngFor="let p of metalPurities" [value]="p">{{ p }}</option>
+              </select>
+            </div>
+            <div class="col-span-6 sm:col-span-2">
+              <label class="block text-sm font-medium text-gray-700">Net Weight (g)</label>
+              <input type="number" formControlName="netWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            </div>
           </div>
-          <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Metal Purity (Karat)</label>
-            <select formControlName="metalPurity" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-              <option value="">Select Purity</option>
-              <option *ngFor="let p of metalPurities" [value]="p">{{ p }}</option>
-            </select>
-          </div>
+
           <div class="col-span-6 sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700">Metal Color</label>
             <select formControlName="metalColor" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
@@ -231,10 +240,6 @@
           <div class="col-span-6 sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700">Gross Weight (g)</label>
             <input type="number" formControlName="grossWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-          </div>
-          <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Net Weight (g)</label>
-            <input type="number" formControlName="netWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700">Total Carat Weight</label>
@@ -270,6 +275,51 @@
           <div class="col-span-6 sm:col-span-2 flex items-center mt-6">
             <input type="checkbox" formControlName="bisHallmark" id="bisHallmark" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
             <label for="bisHallmark" class="ml-2 block text-sm text-gray-900">BIS Hallmark</label>
+          </div>
+
+          <!-- Stone Details Array -->
+          <div class="col-span-6 mt-6 border-t pt-4">
+            <div class="flex justify-between items-center mb-4">
+              <h4 class="text-md font-medium text-gray-900">Stone Details</h4>
+              <button type="button" (click)="addStoneDetail()" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                Add Stone
+              </button>
+            </div>
+
+            <div formArrayName="stoneDetails">
+              <div *ngFor="let stone of stoneDetails.controls; let i=index" [formGroupName]="i" class="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200 relative">
+                <button type="button" (click)="removeStoneDetail(i)" class="absolute top-2 right-2 text-gray-400 hover:text-red-500">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div class="grid grid-cols-5 gap-4">
+                  <div class="col-span-5 sm:col-span-1">
+                    <label class="block text-xs font-medium text-gray-700">Type</label>
+                    <input type="text" formControlName="stoneType" placeholder="e.g. Diamond" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                  </div>
+                  <div class="col-span-5 sm:col-span-1">
+                    <label class="block text-xs font-medium text-gray-700">Shape</label>
+                    <select formControlName="shape" class="mt-1 block w-full py-1.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-xs">
+                      <option value="">Select Shape</option>
+                      <option *ngFor="let sh of shapes" [value]="sh">{{ sh }}</option>
+                    </select>
+                  </div>
+                  <div class="col-span-5 sm:col-span-1">
+                    <label class="block text-xs font-medium text-gray-700">Pieces</label>
+                    <input type="number" formControlName="pieceCount" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                  </div>
+                  <div class="col-span-5 sm:col-span-1">
+                    <label class="block text-xs font-medium text-gray-700">Total Carat</label>
+                    <input type="number" formControlName="totalCaratWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                  </div>
+                  <div class="col-span-5 sm:col-span-1">
+                    <label class="block text-xs font-medium text-gray-700">Setting</label>
+                    <input type="text" formControlName="settingType" placeholder="e.g. Prong" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Stone Linking for BOM -->

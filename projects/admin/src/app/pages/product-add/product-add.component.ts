@@ -74,6 +74,10 @@ export class ProductAddComponent implements OnInit {
   productForm!: FormGroup;
 
   loading = false;
+
+  get stoneDetails(): FormArray {
+    return this.productForm.get('stoneDetails') as FormArray;
+  }
   errorMessage = '';
   selectedFiles: File[] = [];
   selectedVideoFile: File | null = null;
@@ -134,10 +138,7 @@ export class ProductAddComponent implements OnInit {
       customizationOptions: this.fb.array([]),
 
       // 1. Finished Jewelry
-      metalType: [''],
-      metalPurity: [''],
       grossWeight: [null],
-      netWeight: [null],
       totalCaratWeight: [null],
       dimensions: [''],
       currentLocation: [''],
@@ -147,7 +148,13 @@ export class ProductAddComponent implements OnInit {
       designStyle: [''],
       metalColor: [''],
       manufacturingTerminology: [''],
-      stoneDetailIds: [''],
+      metalDetails: this.fb.group({
+        metalType: [''],
+        metalPurity: [''],
+        netWeight: [null]
+      }),
+      stoneDetails: this.fb.array([]),
+      stoneDetailIds: [''], // Legacy
 
       // 2. Loose Gemstones
       stoneSku: [''],
@@ -284,10 +291,7 @@ export class ProductAddComponent implements OnInit {
       occasionKeywordsStr: product.occasionKeywords ? product.occasionKeywords.join(', ') : '',
 
       // Category Specific (Will just patch everything, non-matching fields are ignored safely if not in UI or just kept in memory)
-      metalType: product.metalType || '',
-      metalPurity: product.metalPurity || '',
       grossWeight: product.grossWeight ?? null,
-      netWeight: product.netWeight ?? null,
       totalCaratWeight: product.totalCaratWeight ?? null,
       dimensions: product.dimensions || '',
       currentLocation: product.currentLocation || '',
@@ -298,6 +302,12 @@ export class ProductAddComponent implements OnInit {
       metalColor: product.metalColor || '',
       manufacturingTerminology: product.manufacturingTerminology || '',
       stoneDetailIds: product.stoneDetailIds ? product.stoneDetailIds.join(', ') : '',
+
+      metalDetails: product.metalDetails ? {
+        metalType: product.metalDetails.metalType || '',
+        metalPurity: product.metalDetails.metalPurity || '',
+        netWeight: product.metalDetails.netWeight ?? null
+      } : { metalType: '', metalPurity: '', netWeight: null },
 
       stoneSku: product.stoneSku || '',
       species: product.species || '',
@@ -378,6 +388,12 @@ export class ProductAddComponent implements OnInit {
       });
     }
 
+    if (product.stoneDetails) {
+      product.stoneDetails.forEach((stone: any) => {
+        this.addStoneDetail(stone);
+      });
+    }
+
     if (product.occasions) {
       product.occasions.forEach((occ: string) => {
         this.occasions.push(this.fb.control(occ));
@@ -417,6 +433,21 @@ export class ProductAddComponent implements OnInit {
 
   removeCustomizationOption(index: number) {
     this.customizationOptions.removeAt(index);
+  }
+
+  addStoneDetail(stone?: any) {
+    const stoneGroup = this.fb.group({
+      stoneType: [stone ? stone.stoneType : ''],
+      shape: [stone ? stone.shape : ''],
+      pieceCount: [stone ? stone.pieceCount : null],
+      totalCaratWeight: [stone ? stone.totalCaratWeight : null],
+      settingType: [stone ? stone.settingType : '']
+    });
+    this.stoneDetails.push(stoneGroup);
+  }
+
+  removeStoneDetail(index: number) {
+    this.stoneDetails.removeAt(index);
   }
 
   markNameAsEdited() {

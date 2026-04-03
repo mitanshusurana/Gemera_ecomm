@@ -60,10 +60,7 @@ public class Product extends BaseEntity {
     // ----- SPECIFIC FIELDS FOR CATEGORIES -----
 
     // 1. Finished Jewelry
-    private String metalType;
-    private String metalPurity; // Karat
     private BigDecimal grossWeight;
-    private BigDecimal netWeight;
     private BigDecimal totalCaratWeight;
     private String dimensions;
     private String currentLocation;
@@ -74,8 +71,16 @@ public class Product extends BaseEntity {
     private String metalColor; // Yellow, White, Rose, etc.
     private String manufacturingTerminology; // Jadau, Kundan, Meenakari
 
+    @jakarta.persistence.OneToOne(cascade = jakarta.persistence.CascadeType.ALL)
+    @jakarta.persistence.JoinColumn(name = "metal_detail_id")
+    private MetalDetail metalDetails;
+
+    @jakarta.persistence.OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @jakarta.persistence.JoinColumn(name = "product_id")
+    private List<StoneDetail> stoneDetails;
+
     @ElementCollection
-    private List<String> stoneDetailIds; // BOM linking to specific loose stones
+    private List<String> stoneDetailIds; // BOM linking to specific loose stones (legacy)
 
     // 2. Loose Gemstones
     private String stoneSku;
