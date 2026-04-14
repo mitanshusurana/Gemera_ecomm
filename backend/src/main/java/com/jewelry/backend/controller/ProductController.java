@@ -34,7 +34,7 @@ import java.awt.image.BufferedImage;
 
 @RestController
 @RequestMapping("/api/v1/products")
-@CrossOrigin(origins = "*")
+
 @Tag(name = "Products", description = "Product catalog APIs")
 public class ProductController {
 
@@ -174,16 +174,23 @@ public class ProductController {
             processBuilder.redirectErrorStream(true);
             Process process = processBuilder.start();
 
-            // Consume the process output to avoid deadlocks
-            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // Ignore output, just consume it
+            // Consume the process output on a separate thread to avoid deadlocks
+            java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+            executor.submit(() -> {
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ProductController.class.getName());
+                    while ((line = reader.readLine()) != null) {
+                        logger.fine("ffmpeg: " + line); // Log instead of silently ignoring
+                    }
+                } catch (IOException e) {
+                    java.util.logging.Logger.getLogger(ProductController.class.getName()).severe("Error reading ffmpeg output: " + e.getMessage());
                 }
-            }
+            });
 
             try {
                 int exitCode = process.waitFor();
+                executor.shutdown();
                 if (exitCode != 0) {
                     // Fall back to original file if ffmpeg fails (e.g. format issues, or existing no-audio)
                     CustomMultipartFile customFile = new CustomMultipartFile(tempInputFile, file.getContentType() != null ? file.getContentType() : "video/mp4");

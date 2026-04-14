@@ -16,7 +16,7 @@ import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/v1/treasure")
-@CrossOrigin(origins = "*")
+
 @Tag(name = "Treasure Plan", description = "Treasure Chest Plan APIs")
 public class TreasurePlanController {
 

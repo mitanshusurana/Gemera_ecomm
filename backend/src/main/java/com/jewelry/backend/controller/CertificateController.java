@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/certificates")
-@CrossOrigin(origins = "*")
+
 @Tag(name = "Certificates", description = "Certificate Verification APIs")
 public class CertificateController {
 

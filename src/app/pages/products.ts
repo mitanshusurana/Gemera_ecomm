@@ -4,6 +4,8 @@ import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ActivatedRoute, RouterLink, Router } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { Title } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { SeoService } from '../services/seo.service';
 import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
 import { Product, Category, ProductDetail } from "../core/models";
@@ -195,6 +197,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               </div>
             </div>
           </div>
+    <div [innerHTML]="schemaHtml"></div>
 
           <!-- Products Grid -->
           <div class="lg:col-span-3">
@@ -404,6 +407,8 @@ export class ProductsComponent implements OnInit {
   private compareService = inject(CompareService);
   private toastService = inject(ToastService);
   private titleService = inject(Title);
+  private seoService = inject(SeoService);
+  private sanitizer = inject(DomSanitizer);
   private currencyService = inject(CurrencyService);
   private destroyRef = inject(DestroyRef);
 
@@ -453,8 +458,24 @@ export class ProductsComponent implements OnInit {
 
   private router = inject(Router);
 
+  schemaHtml: SafeHtml = '';
+
   ngOnInit(): void {
-    this.titleService.setTitle('Fine Jewellery Collections | Caratloop');
+    this.seoService.updateTags({
+      title: 'Fine Jewellery Collections | Caratloop',
+      description: 'Browse our complete selection of fine jewellery, loose gemstones, and accessories.'
+    });
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "Fine Jewellery Collections",
+      "description": "Browse our complete selection of fine jewellery and gemstones"
+    };
+
+    this.schemaHtml = this.sanitizer.bypassSecurityTrustHtml(
+      '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
+    );
 
     this.activatedRoute.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
