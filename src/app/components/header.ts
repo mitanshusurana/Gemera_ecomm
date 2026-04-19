@@ -74,7 +74,7 @@ import { APP_CATEGORIES } from '../core/constants';
 
             <!-- Logo -->
             <a routerLink="/" class="flex items-center">
-              <img src="/logo-with-name.svg" alt="Caratloop Fine Jewelry Logo" class="h-10 w-auto" />
+              <img src="/logo-with-name.png" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain" />
             </a>
           </div>
 

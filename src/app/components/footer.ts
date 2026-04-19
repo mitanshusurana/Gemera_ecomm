@@ -52,7 +52,7 @@ import { environment } from "../../environments/environment";
           <!-- Brand -->
           <div class="col-span-1">
             <div class="flex items-center gap-2 mb-6">
-              <img src="/logo-with-name-light.svg" alt="Caratloop Fine Jewelry Logo" class="h-12 w-auto" />
+              <img src="/logo-with-name-light.png" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain rounded-md" />
             </div>
             <p class="text-sm mb-6 leading-relaxed" style="color: var(--color-text-muted-light, #d1fae5);">
               Elegance for the everyday. We craft lightweight, premium designer jewelry for the modern corporate lifestyle.
