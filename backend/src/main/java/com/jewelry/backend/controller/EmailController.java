@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/email")
-@CrossOrigin(origins = "*")
+
 @Tag(name = "Email", description = "Email Notification APIs")
 public class EmailController {
 

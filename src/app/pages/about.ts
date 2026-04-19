@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { SeoService } from '../services/seo.service';
 
 @Component({
   selector: 'app-about',
@@ -51,6 +53,33 @@ import { CommonModule } from '@angular/common';
         </div>
       </div>
     </div>
+    <div [innerHTML]="schemaHtml"></div>
   `,
 })
-export class AboutComponent {}
+export class AboutComponent implements OnInit {
+  private seoService = inject(SeoService);
+  private sanitizer = inject(DomSanitizer);
+
+  schemaHtml: SafeHtml = '';
+
+  ngOnInit() {
+    this.seoService.updateTags({
+      title: 'About Us | Caratloop',
+      description: 'Learn about Caratloop, our story, ethically sourced gemstones, and master artisanship in fine jewelry.'
+    });
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Caratloop",
+      "url": "https://www.caratloop.com",
+      "logo": "https://www.caratloop.com/logo.svg",
+      "description": "Crafting eternal beauty with ethically sourced gemstones and master artisanship.",
+      "foundingDate": "1985"
+    };
+
+    this.schemaHtml = this.sanitizer.bypassSecurityTrustHtml(
+      '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
+    );
+  }
+}

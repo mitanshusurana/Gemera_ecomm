@@ -98,6 +98,15 @@ export class ProductListComponent implements OnInit, AfterViewInit {
 
   stopScanner() {
     this.codeReader.reset();
+
+    // Explicitly release video stream from the browser
+    if (this.scannerVideo && this.scannerVideo.nativeElement) {
+      const stream = this.scannerVideo.nativeElement.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        this.scannerVideo.nativeElement.srcObject = null;
+      }
+    }
   }
 
   onSearch(event: any) {

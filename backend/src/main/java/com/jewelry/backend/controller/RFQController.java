@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/rfq")
-@CrossOrigin(origins = "*")
+
 @Tag(name = "RFQ", description = "Request for Quote APIs")
 public class RFQController {
 
