@@ -139,13 +139,29 @@ public class ProductService {
         return skuBuilder.toString();
     }
 
-    public Product updateProduct(UUID id, Product updatedProduct) {
+        public Product updateProduct(UUID id, Product updatedProduct) {
         return productRepository.findById(id).map(existing -> {
             String originalSku = existing.getSku();
-            BeanUtils.copyProperties(updatedProduct, existing, getNullPropertyNames(updatedProduct));
-            // Ensure ID and timestamps are not overwritten
+
+            // Fix: Clear existing collections to let Hibernate manage orphanRemoval properly, rather than replacing the collection instance entirely.
+            if (existing.getStoneDetails() != null) {
+                existing.getStoneDetails().clear();
+            }
+            if (updatedProduct.getStoneDetails() != null) {
+                if (existing.getStoneDetails() == null) {
+                    existing.setStoneDetails(new java.util.ArrayList<>());
+                }
+                existing.getStoneDetails().addAll(updatedProduct.getStoneDetails());
+            }
+
+            // Exclude collections from BeanUtils.copyProperties to prevent "A collection with cascade=all delete-orphan was no longer referenced by the owning entity instance" error
+            java.util.List<String> ignoredPropertiesList = new java.util.ArrayList<>(java.util.Arrays.asList(getNullPropertyNames(updatedProduct)));
+            ignoredPropertiesList.add("stoneDetails");
+            ignoredPropertiesList.add("id");
+
+            org.springframework.beans.BeanUtils.copyProperties(updatedProduct, existing, ignoredPropertiesList.toArray(new String[0]));
+
             existing.setId(id);
-            // Optionally protect SKU if it shouldn't be overridden with empty values
             if (updatedProduct.getSku() != null && updatedProduct.getSku().trim().isEmpty()) {
                 existing.setSku(originalSku);
             }
