@@ -1,0 +1,189 @@
+Initializing Angular SSR application...
+Loading Angular app-engine-manifest...
+✓ Manifest loaded
+Loading Angular app-manifest...
+✓ App manifest loaded
+✓ Manifests set via SSR API
+Creating AngularNodeAppEngine...
+✓ AngularNodeAppEngine initialized
+Node Express server listening on http://0.0.0.0:4000
+SSR Request: GET / from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET / from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/treasure/config from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/treasure/config").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/settings from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/settings").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/products?page=0&size=8 from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/products?page=0&size=8").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/products/categories from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/products/categories").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /ngsw-worker.js from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/ngsw-worker.js").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET / from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/treasure/config from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/treasure/config").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/settings from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/settings").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/products?page=0&size=8 from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/products?page=0&size=8").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/products/categories from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/products/categories").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET / from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/treasure/config from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/treasure/config").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/settings from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/settings").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/products?page=0&size=8 from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/products?page=0&size=8").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /PLACEHOLDER_API_URL/products/categories from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/PLACEHOLDER_API_URL/products/categories").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written
+SSR Request: GET /ngsw-worker.js from localhost:4000
+ERROR: Bad Request ("http://localhost:4000/ngsw-worker.js").
+URL with hostname "localhost" is not allowed.
+Falling back to client side rendering. This will become a 400 Bad Request in a future major version.
+
+For more information, see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+SSR handle called, awaiting result...
+SSR Response received: response object
+Writing response...
+Response written

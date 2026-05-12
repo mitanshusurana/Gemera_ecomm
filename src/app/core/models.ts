@@ -142,6 +142,7 @@ export interface Cart {
   shipping: number;
   total: number;
   appliedDiscount: number;
+  discount?: number;
   giftWrap?: boolean;
   wishlist?: Product[];
 }

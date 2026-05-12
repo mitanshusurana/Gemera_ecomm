@@ -102,7 +102,7 @@ public class ProductService {
         skuBuilder.append("-");
 
         // 2. Material & 3. Purity
-        if ("Finished Jewelry".equalsIgnoreCase(category) || "Ring Setting".equalsIgnoreCase(category)) {
+        if ("Jewelry".equalsIgnoreCase(category) || "Settings".equalsIgnoreCase(category)) {
             String material = "XX";
             String purity = "00";
             if (product.getMetalDetails() != null) {
@@ -114,16 +114,16 @@ public class ProductService {
                 }
             }
             skuBuilder.append(material).append(purity).append("-");
-        } else if ("Loose Gemstones".equalsIgnoreCase(category)) {
+        } else if ("Gemstones".equalsIgnoreCase(category)) {
             String variety = product.getVariety() != null && !product.getVariety().isEmpty() ? product.getVariety().substring(0, Math.min(product.getVariety().length(), 3)).toUpperCase() : "XXX";
             skuBuilder.append(variety).append("-");
-        } else if ("Religious Idols & Gemstone Carvings".equalsIgnoreCase(category)) {
+        } else if ("Spiritual Idols".equalsIgnoreCase(category)) {
             String material = product.getGemstoneMaterial() != null && !product.getGemstoneMaterial().isEmpty() ? product.getGemstoneMaterial().substring(0, Math.min(product.getGemstoneMaterial().length(), 3)).toUpperCase() : "XXX";
             skuBuilder.append(material).append("-");
-        } else if ("Manufacturing & Rough Materials".equalsIgnoreCase(category)) {
+        } else if ("Materials & Roughs".equalsIgnoreCase(category)) {
              String material = product.getRoughMaterial() != null && !product.getRoughMaterial().isEmpty() ? product.getRoughMaterial().substring(0, Math.min(product.getRoughMaterial().length(), 2)).toUpperCase() : "XX";
              skuBuilder.append(material).append("-");
-        } else if ("Components & Materials".equalsIgnoreCase(category)) {
+        } else if ("Components".equalsIgnoreCase(category)) {
              String material = product.getMaterial() != null && !product.getMaterial().isEmpty() ? product.getMaterial().substring(0, Math.min(product.getMaterial().length(), 2)).toUpperCase() : "XX";
              String purity = product.getPurity() != null && !product.getPurity().isEmpty() ? NON_DIGIT_PATTERN.matcher(product.getPurity()).replaceAll("") : "00";
              skuBuilder.append(material).append(purity).append("-");

@@ -19,9 +19,6 @@ import java.util.UUID;
 @Service
 public class CartService {
 
-    @Value("${app.cart.tax-rate:0.10}")
-    private BigDecimal taxRate;
-
     @Value("${app.cart.shipping-threshold:1000}")
     private BigDecimal shippingThreshold;
 
@@ -39,6 +36,9 @@ public class CartService {
 
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    GlobalSettingRepository globalSettingRepository;
 
     @Autowired
     UserRepository userRepository;
@@ -196,9 +196,38 @@ public class CartService {
         }
         cart.setDiscount(discount);
 
-        BigDecimal taxableAmount = subtotal.subtract(discount);
-        if (taxableAmount.compareTo(BigDecimal.ZERO) < 0) taxableAmount = BigDecimal.ZERO;
-        cart.setTax(taxableAmount.multiply(taxRate));
+        // Fetch tax rates
+        BigDecimal taxRateJewelry = new BigDecimal(globalSettingRepository.findBySettingKey("taxRateJewelry").map(s -> s.getSettingValue()).orElse("0.03"));
+        BigDecimal taxRateGemstones = new BigDecimal(globalSettingRepository.findBySettingKey("taxRateGemstones").map(s -> s.getSettingValue()).orElse("0.0025"));
+        BigDecimal taxRateDefault = new BigDecimal(globalSettingRepository.findBySettingKey("taxRateDefault").map(s -> s.getSettingValue()).orElse("0.03"));
+
+        BigDecimal totalTax = BigDecimal.ZERO;
+
+        if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+            // Distribute discount proportionally and calculate tax
+            for (CartItem item : cart.getItems()) {
+                BigDecimal itemTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                BigDecimal proportion = itemTotal.divide(subtotal, 4, java.math.RoundingMode.HALF_UP);
+                BigDecimal itemDiscount = discount.multiply(proportion);
+                BigDecimal taxableAmount = itemTotal.subtract(itemDiscount);
+
+                if (taxableAmount.compareTo(BigDecimal.ZERO) < 0) taxableAmount = BigDecimal.ZERO;
+
+                String category = item.getProduct().getCategory();
+                BigDecimal applicableTaxRate;
+                if ("Jewelry".equalsIgnoreCase(category)) {
+                    applicableTaxRate = taxRateJewelry;
+                } else if ("Gemstones".equalsIgnoreCase(category)) {
+                    applicableTaxRate = taxRateGemstones;
+                } else {
+                    applicableTaxRate = taxRateDefault;
+                }
+
+                totalTax = totalTax.add(taxableAmount.multiply(applicableTaxRate));
+            }
+        }
+
+        cart.setTax(totalTax);
 
         cart.setShipping(subtotal.compareTo(shippingThreshold) > 0 ? BigDecimal.ZERO : standardShippingFee);
 

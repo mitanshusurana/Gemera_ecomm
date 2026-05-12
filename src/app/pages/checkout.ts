@@ -465,7 +465,7 @@ import { COUNTRIES } from "../core/countries";
                 <div class="flex justify-between">
                   <span class="text-gray-600">Subtotal</span>
                   <span class="font-semibold">{{
-                    (cartTotal() * 0.9) | currencyConvert
+                    cartSubtotal() | currencyConvert
                   }}</span>
                 </div>
                 <div class="flex justify-between">
@@ -475,8 +475,12 @@ import { COUNTRIES } from "../core/countries";
                 <div class="flex justify-between">
                   <span class="text-gray-600">Tax</span>
                   <span class="font-semibold">{{
-                    (cartTotal() * 0.1) | currencyConvert
+                    cartTax() | currencyConvert
                   }}</span>
+                </div>
+                <div *ngIf="cartDiscount() > 0" class="flex justify-between text-emerald-600">
+                  <span>Discount</span>
+                  <span class="font-semibold">-{{ cartDiscount() | currencyConvert }}</span>
                 </div>
               </div>
 
@@ -517,7 +521,10 @@ import { COUNTRIES } from "../core/countries";
 export class CheckoutComponent implements OnInit {
   currentStep = signal(1);
   cartItems = signal<CartItem[]>([]);
-  cartTotal = signal(45000);
+  cartTotal = signal(0);
+  cartSubtotal = signal(0);
+  cartTax = signal(0);
+  cartDiscount = signal(0);
   isProcessing = signal(false);
 
   countriesList = COUNTRIES;
@@ -612,6 +619,9 @@ export class CheckoutComponent implements OnInit {
       next: (cart) => {
         this.cartItems.set(cart.items);
         this.cartTotal.set(cart.total);
+        this.cartSubtotal.set(cart.subtotal || 0);
+        this.cartTax.set(cart.tax || 0);
+        this.cartDiscount.set(cart.discount || 0);
       },
       error: (error) => {
         // Error loading cart

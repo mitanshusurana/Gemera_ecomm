@@ -23,7 +23,10 @@ export class SettingsComponent implements OnInit {
     companyFacebook: [''],
     usdRate: ['0.012', Validators.required],
     eurRate: ['0.011', Validators.required],
-    gbpRate: ['0.009', Validators.required]
+    gbpRate: ['0.009', Validators.required],
+    taxRateJewelry: ['0.03', Validators.required],
+    taxRateGemstones: ['0.0025', Validators.required],
+    taxRateDefault: ['0.03', Validators.required]
   });
 
   saving = false;

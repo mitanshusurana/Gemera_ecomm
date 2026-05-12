@@ -1,0 +1,37 @@
+
+> fusion-angular-tailwind-starter@0.0.0 test
+> ng test --watch=false --browsers=ChromeHeadless
+
+❯ Building...
+✔ Building...
+Application bundle generation failed. [4.344 seconds] - 2026-05-12T03:46:36.515Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'discount' does not exist on type 'Cart'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/checkout.ts:624:35:
+[37m      624 │         this.cartDiscount.set(cart.[32mdiscount[37m || 0);
+          ╵                                    [32m~~~~~~~~[0m
+
+
+❯ Building...
+✔ Building...
+Initial chunk files  | Names             |  Raw size
+test_main.js         | test_main         |   2.28 MB |
+polyfills.js         | polyfills         |   1.02 MB |
+styles.css           | styles            | 122.55 kB |
+jasmine-cleanup-1.js | jasmine-cleanup-1 |  67.20 kB |
+chunk-EVSPGG2W.js    | -                 |   1.64 kB |
+jasmine-cleanup-0.js | jasmine-cleanup-0 | 519 bytes |
+
+                     | Initial total     |   3.48 MB
+
+Application bundle generation complete. [3.607 seconds] - 2026-05-12T03:46:40.270Z
+
+[33m12 05 2026 03:46:40.412:WARN [filelist]: [39mPattern "/app/dist/test-out/a6e2b186-23d8-4ea2-8c49-fe161c705412/spec-*.js" does not match any file.
+[32m12 05 2026 03:46:40.574:INFO [karma-server]: [39mKarma v6.4.4 server started at http://localhost:9876/
+[32m12 05 2026 03:46:40.575:INFO [launcher]: [39mLaunching browsers ChromeHeadless with concurrency unlimited
+[32m12 05 2026 03:46:40.585:INFO [launcher]: [39mStarting browser ChromeHeadless
+[32m12 05 2026 03:46:47.126:INFO [Chrome Headless 145.0.0.0 (Linux 0.0.0)]: [39mConnected on socket cLGjXrsYnManWjtYAAAB with id 26003512
+Chrome Headless 145.0.0.0 (Linux 0.0.0): Executed 0 of 0[32m SUCCESS[39m (0 secs / 0 secs)
+[1A[2KChrome Headless 145.0.0.0 (Linux 0.0.0): Executed 0 of 0[32m SUCCESS[39m (0.005 secs / 0 secs)
+[32mTOTAL: 0 SUCCESS[39m

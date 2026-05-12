@@ -116,23 +116,6 @@ interface CollectionUI {
        </div>
     </section>
 
-    <!-- Shop By Category (Modern Grid) -->
-    <section class="py-20 bg-gray-50">
-      <div class="container-luxury px-6">
-        <h2 class="text-3xl md:text-4xl font-display font-bold text-primary-900 mb-12 text-center">Shop by Category</h2>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-           <a *ngFor="let cat of collections()" routerLink="/products" [queryParams]="{category: cat.name}"
-              class="group bg-white p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col items-center justify-center gap-4 text-center cursor-pointer hover:-translate-y-1">
-              <div class="w-16 h-16 rounded-full bg-primary-50 text-primary-800 flex items-center justify-center text-3xl group-hover:bg-primary-800 group-hover:text-white transition-colors duration-300">
-                 {{ cat.icon }}
-              </div>
-              <span class="font-bold text-primary-900 group-hover:text-primary-800 text-sm md:text-base">{{ cat.title }}</span>
-           </a>
-        </div>
-      </div>
-    </section>
-
     <!-- Featured Collections -->
     <section class="py-20 bg-white">
       <div class="container-luxury">
@@ -274,28 +257,7 @@ interface CollectionUI {
        </div>
     </section>
 
-    <!-- Instagram Feed (Re-styled) -->
-    <section class="py-20 bg-white border-t border-gray-100">
-      <div class="container-luxury text-center px-6">
-        <h2 class="text-2xl font-display font-bold text-primary-900 mb-2">@CaratloopJewels</h2>
-        <p class="text-primary-700 mb-10">Follow us on Instagram for daily inspiration</p>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-rose-50/50 group-hover:scale-110 transition-transform duration-500">💍</div>
-           </div>
-           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-blue-50/50 group-hover:scale-110 transition-transform duration-500">💎</div>
-           </div>
-           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-green-50/50 group-hover:scale-110 transition-transform duration-500">✨</div>
-           </div>
-           <div class="relative group aspect-square overflow-hidden rounded-xl bg-gray-50 cursor-pointer">
-              <div class="w-full h-full flex items-center justify-center text-4xl bg-yellow-50/50 group-hover:scale-110 transition-transform duration-500">👑</div>
-           </div>
-        </div>
-      </div>
-    </section>
 
     <!-- Quick View Modal -->
     <app-quick-view-modal
