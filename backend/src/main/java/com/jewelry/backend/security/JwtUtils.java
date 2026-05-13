@@ -51,7 +51,7 @@ public class JwtUtils {
 
     public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
+            Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(authToken);
             return true;
         } catch (MalformedJwtException e) {
             // log error
@@ -59,6 +59,9 @@ public class JwtUtils {
             // log error
         } catch (UnsupportedJwtException e) {
             // log error
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            // log error
+            java.util.logging.Logger.getLogger(JwtUtils.class.getName()).log(java.util.logging.Level.SEVERE, "Invalid JWT signature: " + e.getMessage());
         } catch (IllegalArgumentException e) {
             // log error
         }
