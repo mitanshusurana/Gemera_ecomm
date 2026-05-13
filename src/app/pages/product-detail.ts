@@ -1,9 +1,28 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, signal, computed, inject, ChangeDetectionStrategy, ViewEncapsulation, ViewChild, ElementRef, ViewChildren, QueryList } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  signal,
+  computed,
+  inject,
+  ChangeDetectionStrategy,
+  ViewEncapsulation,
+  ViewChild,
+  ElementRef,
+  ViewChildren,
+  QueryList,
+} from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
 import { CartService } from '../services/cart.service';
-import { ProductDetail, Product, CustomizationOption, PriceBreakup } from '../core/models';
+import {
+  ProductDetail,
+  Product,
+  CustomizationOption,
+  PriceBreakup,
+} from '../core/models';
 import { ToastService } from '../services/toast.service';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
@@ -17,7 +36,14 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterLink, FormsModule, SizeGuideModalComponent, CurrencyConvertPipe],
+  imports: [
+    CommonModule,
+    NgOptimizedImage,
+    RouterLink,
+    FormsModule,
+    SizeGuideModalComponent,
+    CurrencyConvertPipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -262,18 +288,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                   </div>
                </div>
 
-               <!-- Tags/Footer of Left Column -->
-               <div class="flex gap-4 mt-4 overflow-x-auto pb-2 hide-scrollbar">
-                 <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full whitespace-nowrap">
-                   <span class="text-xl">🛡️</span> 15-Day Money Back
-                 </div>
-                 <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full whitespace-nowrap">
-                    <span class="text-xl">💎</span> Lifetime Exchange
-                 </div>
-                 <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full whitespace-nowrap">
-                    <span class="text-xl">📜</span> BIS Hallmarked
-                 </div>
-               </div>
             </ng-template>
 
             <!-- Render details here only on large screens -->
@@ -427,6 +441,19 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                    </button>
                 </div>
 
+               <!-- Trust Badges (Moved to Buy Box) -->
+               <div class="flex flex-wrap gap-2 mt-6">
+                 <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg w-full sm:w-auto">
+                   <span class="text-lg">🛡️</span> 15-Day Money Back
+                 </div>
+                 <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg w-full sm:w-auto">
+                    <span class="text-lg">💎</span> Lifetime Exchange
+                 </div>
+                 <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg w-full sm:w-auto">
+                    <span class="text-lg">📜</span> BIS Hallmarked
+                 </div>
+               </div>
+
                 <div class="mt-6 pt-4 border-t border-gray-100 flex justify-center gap-6 text-xs font-medium text-gray-500">
                    <a routerLink="/contact" class="hover:text-primary-800 transition-colors">Contact Us</a>
                    <span>|</span>
@@ -439,6 +466,19 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
           <!-- Render details here only on small screens -->
           <div class="block lg:hidden mt-8 w-full">
             <ng-container *ngTemplateOutlet="productDetailsTpl"></ng-container>
+          </div>
+
+          <!-- Sticky Mobile Add to Cart Bar -->
+          <div class="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-[0_-4px_10px_rgb(0,0,0,0.05)] z-40 flex items-center justify-between gap-4 animate-fade-in-up">
+             <div>
+                <p class="text-xs text-gray-500 mb-0.5 truncate max-w-[150px]">{{ product()?.name }}</p>
+                <p class="font-bold text-gray-900 text-lg leading-none">{{ (currentPriceBreakup()?.total || currentPrice()) | currencyConvert }}</p>
+             </div>
+             <button (click)="handleAddToCart()"
+                     [disabled]="product()?.stock === 0"
+                     class="bg-gradient-to-r from-primary-800 to-primary-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0">
+                {{ product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+             </button>
           </div>
 
         </div>
@@ -464,58 +504,62 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      overflow-x: hidden;
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+        overflow-x: hidden;
+      }
 
-    .hide-scrollbar::-webkit-scrollbar {
-      width: 4px;
-    }
-    .hide-scrollbar::-webkit-scrollbar-thumb {
-      background: #e5e7eb;
-      border-radius: 10px;
-    }
+      .hide-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .hide-scrollbar::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 10px;
+      }
 
-    .glass-tag {
-      padding: 0.375rem 0.75rem;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-radius: 0.5rem;
-      border-width: 1px;
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      display: inline-flex;
-      align-items: center;
-    }
+      .glass-tag {
+        padding: 0.375rem 0.75rem;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-radius: 0.5rem;
+        border-width: 1px;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        display: inline-flex;
+        align-items: center;
+      }
 
-    /* Neutral/White Glass */
-    .glass-neutral {
-      background-color: rgb(255 255 255 / 0.7);
-      border-color: rgb(255 255 255 / 0.4);
-      color: rgb(31 41 55);
-    }
+      /* Neutral/White Glass */
+      .glass-neutral {
+        background-color: rgb(255 255 255 / 0.7);
+        border-color: rgb(255 255 255 / 0.4);
+        color: rgb(31 41 55);
+      }
 
-    /* Warning/Low Stock Glass */
-    .glass-warning {
-      background-color: rgb(255 247 237 / 0.6);
-      border-color: rgb(254 215 170 / 0.5);
-      color: rgb(194 65 12);
-    }
+      /* Warning/Low Stock Glass */
+      .glass-warning {
+        background-color: rgb(255 247 237 / 0.6);
+        border-color: rgb(254 215 170 / 0.5);
+        color: rgb(194 65 12);
+      }
 
-    /* Error/OOS Glass */
-    .glass-error {
-      background-color: rgb(254 242 242 / 0.6);
-      border-color: rgb(254 202 202 / 0.5);
-      color: rgb(185 28 28);
-    }
-  `]
+      /* Error/OOS Glass */
+      .glass-error {
+        background-color: rgb(254 242 242 / 0.6);
+        border-color: rgb(254 202 202 / 0.5);
+        color: rgb(185 28 28);
+      }
+    `,
+  ],
 })
-export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit {
+export class ProductDetailComponent
+  implements OnInit, OnDestroy, AfterViewInit
+{
   private productService = inject(ProductService);
   private cartService = inject(CartService);
   private route = inject(ActivatedRoute);
@@ -551,7 +595,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
   currentPrice = computed(() => {
     let price = this.product()?.price || 0;
     if (this.selectedMetal()) price += this.selectedMetal()?.priceModifier ?? 0;
-    if (this.selectedDiamondQuality()) price += this.selectedDiamondQuality()?.priceModifier ?? 0;
+    if (this.selectedDiamondQuality())
+      price += this.selectedDiamondQuality()?.priceModifier ?? 0;
     return price;
   });
 
@@ -562,24 +607,31 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
     let gemstonePrice = base.gemstone;
 
     // Adjust logic based on modifiers
-    if (this.selectedMetal()) metalPrice += this.selectedMetal()?.priceModifier ?? 0;
-    if (this.selectedDiamondQuality()) gemstonePrice += this.selectedDiamondQuality()?.priceModifier ?? 0;
+    if (this.selectedMetal())
+      metalPrice += this.selectedMetal()?.priceModifier ?? 0;
+    if (this.selectedDiamondQuality())
+      gemstonePrice += this.selectedDiamondQuality()?.priceModifier ?? 0;
 
     const subtotal = metalPrice + gemstonePrice + base.makingCharges;
     const tax = Math.round(subtotal * 0.03);
-    return { metal: metalPrice, gemstone: gemstonePrice, makingCharges: base.makingCharges, tax, total: subtotal + tax };
+    return {
+      metal: metalPrice,
+      gemstone: gemstonePrice,
+      makingCharges: base.makingCharges,
+      tax,
+      total: subtotal + tax,
+    };
   });
 
   ngOnInit(): void {
-    this.route.params.subscribe(p => {
-        if(p['id']) {
-            this.loadProduct(p['id']);
-        }
+    this.route.params.subscribe((p) => {
+      if (p['id']) {
+        this.loadProduct(p['id']);
+      }
     });
   }
 
-  ngOnDestroy(): void {
-  }
+  ngOnDestroy(): void {}
 
   private loadProduct(id: string): void {
     this.loading.set(true);
@@ -590,70 +642,90 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
         this.loading.set(false);
         this.selectedImage.set(null);
         if (p.customizationOptions) {
-           this.selectedMetal.set(p.customizationOptions.find(o => o.type === 'metal' && o.priceModifier === 0) || null);
-           this.selectedDiamondQuality.set(p.customizationOptions.find(o => o.type === 'diamond' && o.priceModifier === 0) || null);
+          this.selectedMetal.set(
+            p.customizationOptions.find(
+              (o) => o.type === 'metal' && o.priceModifier === 0,
+            ) || null,
+          );
+          this.selectedDiamondQuality.set(
+            p.customizationOptions.find(
+              (o) => o.type === 'diamond' && o.priceModifier === 0,
+            ) || null,
+          );
         }
         const schema = {
-          "@context": "https://schema.org/",
-          "@type": "Product",
-          "name": p.name,
-          "image": p.images?.length ? p.images : [p.imageUrl],
-          "description": p.description || p.name,
-          "sku": p.sku || p.specifications?.productDetails?.sku,
-          "offers": {
-            "@type": "Offer",
-            "url": "https://www.caratloop.com/products/" + p.id,
-            "priceCurrency": "INR",
-            "price": p.price,
-            "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-            "itemCondition": "https://schema.org/NewCondition",
-            "hasMerchantReturnPolicy": {
-              "@type": "MerchantReturnPolicy",
-              "applicableCountry": "IN",
-              "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-              "merchantReturnDays": 30,
-              "returnMethod": "https://schema.org/ReturnByMail",
-              "returnFees": "https://schema.org/FreeReturn"
-            }
+          '@context': 'https://schema.org/',
+          '@type': 'Product',
+          name: p.name,
+          image: p.images?.length ? p.images : [p.imageUrl],
+          description: p.description || p.name,
+          sku: p.sku || p.specifications?.productDetails?.sku,
+          offers: {
+            '@type': 'Offer',
+            url: 'https://www.caratloop.com/products/' + p.id,
+            priceCurrency: 'INR',
+            price: p.price,
+            availability:
+              p.stock > 0
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            itemCondition: 'https://schema.org/NewCondition',
+            hasMerchantReturnPolicy: {
+              '@type': 'MerchantReturnPolicy',
+              applicableCountry: 'IN',
+              returnPolicyCategory:
+                'https://schema.org/MerchantReturnFiniteReturnWindow',
+              merchantReturnDays: 30,
+              returnMethod: 'https://schema.org/ReturnByMail',
+              returnFees: 'https://schema.org/FreeReturn',
+            },
           },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "reviewCount": p.reviewCount || 10
-          }
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '4.8',
+            reviewCount: p.reviewCount || 10,
+          },
         };
-        this.productSchema.set(this.sanitizer.bypassSecurityTrustHtml(
-          '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
-        ));
+        this.productSchema.set(
+          this.sanitizer.bypassSecurityTrustHtml(
+            '<script type="application/ld+json">' +
+              JSON.stringify(schema).replace(/</g, '\\u003c') +
+              '</script>',
+          ),
+        );
       },
-      error: () => this.loading.set(false)
+      error: () => this.loading.set(false),
     });
   }
 
   handleAddToCart(): void {
     if (this.product()) {
-        const options = {
-          metal: this.selectedMetal()?.name,
-          diamond: this.selectedDiamondQuality()?.name,
-          price: this.currentPrice(),
-          product: this.product()
-        };
-        this.cartService.addToCart(this.product()!.id, 1, options).subscribe(() => {
-            this.toastService.show('Added to Shopping Bag', 'success');
+      const options = {
+        metal: this.selectedMetal()?.name,
+        diamond: this.selectedDiamondQuality()?.name,
+        price: this.currentPrice(),
+        product: this.product(),
+      };
+      this.cartService
+        .addToCart(this.product()!.id, 1, options)
+        .subscribe(() => {
+          this.toastService.show('Added to Shopping Bag', 'success');
         });
     }
   }
 
   handleBuyNow(): void {
     if (this.product()) {
-        const options = {
-          metal: this.selectedMetal()?.name,
-          diamond: this.selectedDiamondQuality()?.name,
-          price: this.currentPrice(),
-          product: this.product()
-        };
-        this.cartService.addToCart(this.product()!.id, 1, options).subscribe(() => {
-            this.router.navigate(['/cart']);
+      const options = {
+        metal: this.selectedMetal()?.name,
+        diamond: this.selectedDiamondQuality()?.name,
+        price: this.currentPrice(),
+        product: this.product(),
+      };
+      this.cartService
+        .addToCart(this.product()!.id, 1, options)
+        .subscribe(() => {
+          this.router.navigate(['/cart']);
         });
     }
   }
@@ -666,38 +738,52 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
     window.open(url, '_blank');
   }
 
-  togglePriceBreakup() { this.showPriceBreakup.set(!this.showPriceBreakup()); }
-  openTryAtHome() { this.tryAtHomeOpen.set(true); }
+  togglePriceBreakup() {
+    this.showPriceBreakup.set(!this.showPriceBreakup());
+  }
+  openTryAtHome() {
+    this.tryAtHomeOpen.set(true);
+  }
   confirmTryAtHome() {
-     this.tryAtHomeOpen.set(false);
-     this.toastService.show('Booking Confirmed! Check your email.', 'success');
+    this.tryAtHomeOpen.set(false);
+    this.toastService.show('Booking Confirmed! Check your email.', 'success');
   }
 
   checkDelivery() {
-    if (this.pincode().length < 6) return this.toastService.show('Please enter a valid 6-digit pincode', 'error');
+    if (this.pincode().length < 6)
+      return this.toastService.show(
+        'Please enter a valid 6-digit pincode',
+        'error',
+      );
     this.toastService.show('Checking availability...', 'info');
 
     this.productService.checkDeliveryAvailability(this.pincode()).subscribe({
-        next: (response) => {
-            if (response.available) {
-                this.deliveryDate.set(response.estimatedDate || 'Available');
-                this.toastService.show(response.message || 'Delivery available', 'success');
-            } else {
-                this.deliveryDate.set(null);
-                this.toastService.show(response.message || 'Delivery not available', 'error');
-            }
-        },
-        error: () => {
-             this.deliveryDate.set(null);
-             this.toastService.show('Could not check delivery', 'error');
+      next: (response) => {
+        if (response.available) {
+          this.deliveryDate.set(response.estimatedDate || 'Available');
+          this.toastService.show(
+            response.message || 'Delivery available',
+            'success',
+          );
+        } else {
+          this.deliveryDate.set(null);
+          this.toastService.show(
+            response.message || 'Delivery not available',
+            'error',
+          );
         }
+      },
+      error: () => {
+        this.deliveryDate.set(null);
+        this.toastService.show('Could not check delivery', 'error');
+      },
     });
   }
 
   isRingCategory(): boolean {
-      const cat = this.product()?.category;
-      if (!cat) return false;
-      return RING_CATEGORIES.some(c => cat.includes(c));
+    const cat = this.product()?.category;
+    if (!cat) return false;
+    return RING_CATEGORIES.some((c) => cat.includes(c));
   }
 
   // Helpers
@@ -705,12 +791,22 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
     const pb = this.product()?.priceBreakup;
     if (!pb) return false;
     // Check if there is valid numerical data beyond just 0
-    return (pb.metal > 0 || pb.gemstone > 0 || pb.makingCharges > 0 || pb.total > 0);
+    return (
+      pb.metal > 0 || pb.gemstone > 0 || pb.makingCharges > 0 || pb.total > 0
+    );
   }
 
-  hasOption(t: string) { return !!this.product()?.customizationOptions?.some(o => o.type === t); }
-  getOptions(t: string) { return this.product()?.customizationOptions?.filter(o => o.type === t) || []; }
-  formatKey(k: string) { return k.replace(/([A-Z])/g, ' $1').trim(); }
+  hasOption(t: string) {
+    return !!this.product()?.customizationOptions?.some((o) => o.type === t);
+  }
+  getOptions(t: string) {
+    return (
+      this.product()?.customizationOptions?.filter((o) => o.type === t) || []
+    );
+  }
+  formatKey(k: string) {
+    return k.replace(/([A-Z])/g, ' $1').trim();
+  }
 
   ngAfterViewInit() {
     // Left empty for now. Can be removed later if not needed by other logic.
@@ -725,7 +821,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
 
     container.scrollTo({
       left: width * index,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }
 
@@ -736,7 +832,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy, AfterViewInit 
     if (width === 0) return;
 
     // Added a small threshold to prevent "flickering" between indices
-    const scrollPos = container.scrollLeft + (width / 2);
+    const scrollPos = container.scrollLeft + width / 2;
     const index = Math.floor(scrollPos / width);
 
     if (this.selectedMediaIndex() !== index) {
