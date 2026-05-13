@@ -1,21 +1,21 @@
 export enum ProductCategory {
-  FINISHED_JEWELRY = 'Finished Jewelry',
-  LOOSE_GEMSTONES = 'Loose Gemstones',
-  RELIGIOUS_IDOLS = 'Religious Idols & Gemstone Carvings',
-  ROUGH_MATERIALS = 'Manufacturing & Rough Materials',
-  COMPONENTS_MATERIALS = 'Components & Materials',
-  BESPOKE_CUSTOM = 'Custom',
-  RING_SETTINGS = 'Ring Setting'
+  FINISHED_JEWELRY = 'Jewelry',
+  LOOSE_GEMSTONES = 'Gemstones',
+  RELIGIOUS_IDOLS = 'Spiritual Idols',
+  ROUGH_MATERIALS = 'Materials & Roughs',
+  COMPONENTS_MATERIALS = 'Components',
+  BESPOKE_CUSTOM = 'Custom Made',
+  RING_SETTINGS = 'Settings'
 }
 
 export const APP_CATEGORIES = [
-  { id: '1', name: 'finished-jewelry', displayName: 'Finished Jewelry', value: ProductCategory.FINISHED_JEWELRY },
-  { id: '2', name: 'loose-gemstones', displayName: 'Loose Gemstones', value: ProductCategory.LOOSE_GEMSTONES },
-  { id: '3', name: 'spiritual-idols', displayName: 'Religious Idols & Gemstone Carvings', value: ProductCategory.RELIGIOUS_IDOLS },
-  { id: '4', name: 'rough-materials', displayName: 'Manufacturing & Rough Materials', value: ProductCategory.ROUGH_MATERIALS },
-  { id: '5', name: 'components-materials', displayName: 'Components & Materials', value: ProductCategory.COMPONENTS_MATERIALS },
-  { id: '6', name: 'bespoke-custom', displayName: 'Bespoke Custom', value: ProductCategory.BESPOKE_CUSTOM },
-  { id: '7', name: 'ring-settings', displayName: 'Ring Settings', value: ProductCategory.RING_SETTINGS }
+  { id: '1', name: 'finished-jewelry', displayName: 'Jewelry', value: ProductCategory.FINISHED_JEWELRY },
+  { id: '2', name: 'loose-gemstones', displayName: 'Gemstones', value: ProductCategory.LOOSE_GEMSTONES },
+  { id: '3', name: 'spiritual-idols', displayName: 'Spiritual Idols', value: ProductCategory.RELIGIOUS_IDOLS },
+  { id: '4', name: 'rough-materials', displayName: 'Materials & Roughs', value: ProductCategory.ROUGH_MATERIALS },
+  { id: '5', name: 'components-materials', displayName: 'Components', value: ProductCategory.COMPONENTS_MATERIALS },
+  { id: '6', name: 'bespoke-custom', displayName: 'Custom Made', value: ProductCategory.BESPOKE_CUSTOM },
+  { id: '7', name: 'ring-settings', displayName: 'Settings', value: ProductCategory.RING_SETTINGS }
 ];
 
 export const SUB_CATEGORIES_MAP: { [key: string]: string[] } = {

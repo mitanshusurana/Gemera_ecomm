@@ -240,7 +240,7 @@ export class ProductAddComponent implements OnInit {
 
     // Auto-select variety based on subCategory for Loose Gemstones
     this.productForm.get('subCategory')?.valueChanges.subscribe((subCategoryVal) => {
-      if (this.selectedCategory === 'Loose Gemstones' && subCategoryVal) {
+      if (this.selectedCategory === 'Gemstones' && subCategoryVal) {
         if (this.varieties.includes(subCategoryVal)) {
           this.productForm.get('variety')?.setValue(subCategoryVal);
         }
@@ -459,7 +459,7 @@ export class ProductAddComponent implements OnInit {
   }
 
   generateNameAndDescription() {
-    if (this.selectedCategory !== 'Loose Gemstones') return;
+    if (this.selectedCategory !== 'Gemstones') return;
 
     const v = this.productForm.value;
     const carat = v.caratWeight ? `${v.caratWeight} ct` : '';

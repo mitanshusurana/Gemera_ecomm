@@ -127,7 +127,7 @@ public class EntityMapper {
         product.setOriginProvenance(dto.getOriginProvenance());
         product.setStockStatus(dto.getStockStatus());
 
-        // 3. Religious Idols & Gemstone Carvings
+        // 3. Spiritual Idols
         product.setSubjectDeityName(dto.getSubjectDeityName());
         product.setGemstoneMaterial(dto.getGemstoneMaterial());
         product.setCarvingStyle(dto.getCarvingStyle());
@@ -140,7 +140,7 @@ public class EntityMapper {
         product.setHistoricalContext(dto.getHistoricalContext());
         product.setCarvingTechnique(dto.getCarvingTechnique());
 
-        // 4. Manufacturing & Rough Materials
+        // 4. Materials & Roughs
         product.setLotNumber(dto.getLotNumber());
         product.setMineOrigin(dto.getMineOrigin());
         product.setRoughMaterial(dto.getRoughMaterial());
@@ -154,7 +154,7 @@ public class EntityMapper {
         product.setWastageLog(dto.getWastageLog());
         product.setManufacturingStage(dto.getManufacturingStage());
 
-        // 5. Components & Materials
+        // 5. Components
         product.setComponentType(dto.getComponentType());
         product.setMaterial(dto.getMaterial());
         product.setPurity(dto.getPurity());
@@ -166,6 +166,20 @@ public class EntityMapper {
         product.setLayoutPattern(dto.getLayoutPattern());
         product.setVendorInformation(dto.getVendorInformation());
         product.setMinOrderQuantity(dto.getMinOrderQuantity());
+
+        if (dto.getPriceBreakup() != null) {
+            com.jewelry.backend.entity.Product.PriceBreakup pb = new com.jewelry.backend.entity.Product.PriceBreakup();
+            pb.setMetal(dto.getPriceBreakup().getMetal());
+            pb.setGemstone(dto.getPriceBreakup().getGemstone());
+            pb.setMakingCharges(dto.getPriceBreakup().getMakingCharges());
+            pb.setTax(dto.getPriceBreakup().getTax());
+            pb.setTotal(dto.getPriceBreakup().getTotal());
+            pb.setDiscount(dto.getPriceBreakup().getDiscount());
+            pb.setGrandTotal(dto.getPriceBreakup().getGrandTotal());
+            product.setPriceBreakup(pb);
+        }
+
+
 
         if (dto.getCustomizationOptions() != null) {
             product.setCustomizationOptions(dto.getCustomizationOptions().stream().map(optDto -> {
@@ -315,7 +329,7 @@ public class EntityMapper {
         dto.setOriginProvenance(product.getOriginProvenance());
         dto.setStockStatus(product.getStockStatus());
 
-        // 3. Religious Idols & Gemstone Carvings
+        // 3. Spiritual Idols
         dto.setSubjectDeityName(product.getSubjectDeityName());
         dto.setGemstoneMaterial(product.getGemstoneMaterial());
         dto.setCarvingStyle(product.getCarvingStyle());
@@ -328,7 +342,7 @@ public class EntityMapper {
         dto.setHistoricalContext(product.getHistoricalContext());
         dto.setCarvingTechnique(product.getCarvingTechnique());
 
-        // 4. Manufacturing & Rough Materials
+        // 4. Materials & Roughs
         dto.setLotNumber(product.getLotNumber());
         dto.setMineOrigin(product.getMineOrigin());
         dto.setRoughMaterial(product.getRoughMaterial());
@@ -342,7 +356,7 @@ public class EntityMapper {
         dto.setWastageLog(product.getWastageLog());
         dto.setManufacturingStage(product.getManufacturingStage());
 
-        // 5. Components & Materials
+        // 5. Components
         dto.setComponentType(product.getComponentType());
         dto.setMaterial(product.getMaterial());
         dto.setPurity(product.getPurity());
@@ -354,6 +368,20 @@ public class EntityMapper {
         dto.setLayoutPattern(product.getLayoutPattern());
         dto.setVendorInformation(product.getVendorInformation());
         dto.setMinOrderQuantity(product.getMinOrderQuantity());
+
+        if (product.getPriceBreakup() != null) {
+            com.jewelry.backend.dto.ProductDTO.PriceBreakupDTO pb = new com.jewelry.backend.dto.ProductDTO.PriceBreakupDTO();
+            pb.setMetal(product.getPriceBreakup().getMetal());
+            pb.setGemstone(product.getPriceBreakup().getGemstone());
+            pb.setMakingCharges(product.getPriceBreakup().getMakingCharges());
+            pb.setTax(product.getPriceBreakup().getTax());
+            pb.setTotal(product.getPriceBreakup().getTotal());
+            pb.setDiscount(product.getPriceBreakup().getDiscount());
+            pb.setGrandTotal(product.getPriceBreakup().getGrandTotal());
+            dto.setPriceBreakup(pb);
+        }
+
+
 
         if (product.getCustomizationOptions() != null) {
             dto.setCustomizationOptions(product.getCustomizationOptions().stream().map(opt -> {

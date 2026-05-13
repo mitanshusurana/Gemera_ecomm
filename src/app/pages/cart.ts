@@ -190,7 +190,7 @@ export class CartComponent implements OnInit, OnDestroy {
   subtotal = computed(() => this.cart()?.subtotal || 0);
   shipping = computed(() => this.cart()?.shipping || 0);
   tax = computed(() => this.cart()?.tax || 0);
-  discount = computed(() => this.cart()?.appliedDiscount || 0);
+  discount = computed(() => this.cart()?.discount || 0);
   total = computed(() => this.cart()?.total || 0);
 
   // Timer Signal

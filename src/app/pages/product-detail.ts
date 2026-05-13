@@ -169,7 +169,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                      <!-- Dynamic Category Rendering -->
                      <ng-container [ngSwitch]="product()?.category">
                         <!-- Finished Jewelry -->
-                        <ng-container *ngSwitchCase="'Finished Jewelry'">
+                        <ng-container *ngSwitchCase="'Jewelry'">
                            <div *ngIf="product()?.metalDetails || product()?.grossWeight || product()?.stoneDetails">
                               <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Product Specifications</h4>
                               <div class="space-y-2 text-sm">
@@ -199,7 +199,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                         </ng-container>
 
                         <!-- Loose Gemstones -->
-                        <ng-container *ngSwitchCase="'Loose Gemstones'">
+                        <ng-container *ngSwitchCase="'Gemstones'">
                            <div *ngIf="product()?.shape || product()?.caratWeight">
                               <h4 class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Gemstone Details</h4>
                               <div class="space-y-2 text-sm">
