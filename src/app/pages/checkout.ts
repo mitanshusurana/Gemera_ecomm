@@ -1,21 +1,29 @@
-import { Component, signal, OnInit, computed, inject, PLATFORM_ID, ChangeDetectionStrategy } from "@angular/core";
-import { CommonModule, isPlatformBrowser } from "@angular/common";
-import { FormsModule } from "@angular/forms";
-import { RouterLink, Router } from "@angular/router";
-import { AuthService } from "../services/auth.service";
-import { CartService } from "../services/cart.service";
-import { OrderService } from "../services/order.service";
-import { PaymentService } from "../services/payment.service";
-import { CurrencyService } from "../services/currency.service";
-import { EmailNotificationService } from "../services/email-notification.service";
-import { ToastService } from "../services/toast.service";
-import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
-import { Address, CartItem } from "../core/models";
-import { environment } from "../../environments/environment";
-import { COUNTRIES } from "../core/countries";
+import {
+  Component,
+  signal,
+  OnInit,
+  computed,
+  inject,
+  PLATFORM_ID,
+  ChangeDetectionStrategy,
+} from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { CartService } from '../services/cart.service';
+import { OrderService } from '../services/order.service';
+import { PaymentService } from '../services/payment.service';
+import { CurrencyService } from '../services/currency.service';
+import { EmailNotificationService } from '../services/email-notification.service';
+import { ToastService } from '../services/toast.service';
+import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
+import { Address, CartItem } from '../core/models';
+import { environment } from '../../environments/environment';
+import { COUNTRIES } from '../core/countries';
 
 @Component({
-  selector: "app-checkout",
+  selector: 'app-checkout',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,15 +94,22 @@ import { COUNTRIES } from "../core/countries";
         </div>
 
         <!-- Guest Checkout Banner -->
-        <div *ngIf="!isAuthenticated()" class="bg-diamond-50 border border-diamond-200 rounded-lg p-4 mb-8 flex justify-between items-center animate-fade-in-up">
+        <div
+          *ngIf="!isAuthenticated()"
+          class="bg-diamond-50 border border-diamond-200 rounded-lg p-4 mb-8 flex justify-between items-center animate-fade-in-up"
+        >
           <div class="flex items-center gap-3">
             <span class="text-2xl">👤</span>
             <div>
               <p class="font-bold text-diamond-900">Already have an account?</p>
-              <p class="text-sm text-gray-600">Sign in for a faster checkout experience.</p>
+              <p class="text-sm text-gray-600">
+                Sign in for a faster checkout experience.
+              </p>
             </div>
           </div>
-          <a routerLink="/login" class="btn-outline text-sm px-4 py-2">Sign In</a>
+          <a routerLink="/login" class="btn-outline text-sm px-4 py-2"
+            >Sign In</a
+          >
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -106,37 +121,64 @@ import { COUNTRIES } from "../core/countries";
                 <h2 class="text-2xl font-bold text-diamond-900">
                   Shipping Address
                 </h2>
-                <span *ngIf="!isAuthenticated()" class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">GUEST CHECKOUT</span>
+                <span
+                  *ngIf="!isAuthenticated()"
+                  class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded"
+                  >GUEST CHECKOUT</span
+                >
               </div>
 
               <!-- Saved Addresses Selection -->
-              <div *ngIf="isAuthenticated() && savedAddresses().length > 0" class="mb-8 space-y-4">
+              <div
+                *ngIf="isAuthenticated() && savedAddresses().length > 0"
+                class="mb-8 space-y-4"
+              >
                 <h3 class="font-semibold text-gray-900">Saved Addresses</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div *ngFor="let address of savedAddresses()"
-                       (click)="selectAddress(address)"
-                       class="border-2 rounded-lg p-4 cursor-pointer hover:border-gold-500 transition-all"
-                       [ngClass]="selectedAddressId() === address.id ? 'border-gold-500 bg-gold-50' : 'border-diamond-200'">
+                  <div
+                    *ngFor="let address of savedAddresses()"
+                    (click)="selectAddress(address)"
+                    class="border-2 rounded-lg p-4 cursor-pointer hover:border-gold-500 transition-all"
+                    [ngClass]="
+                      selectedAddressId() === address.id
+                        ? 'border-gold-500 bg-gold-50'
+                        : 'border-diamond-200'
+                    "
+                  >
                     <div class="flex justify-between">
-                      <span class="font-bold text-gray-900">{{ address.firstName }} {{ address.lastName }}</span>
-                      <span *ngIf="address.isDefault" class="text-xs text-gold-600 font-bold">DEFAULT</span>
+                      <span class="font-bold text-gray-900"
+                        >{{ address.firstName }} {{ address.lastName }}</span
+                      >
+                      <span
+                        *ngIf="address.isDefault"
+                        class="text-xs text-gold-600 font-bold"
+                        >DEFAULT</span
+                      >
                     </div>
                     <p class="text-sm text-gray-600 mt-1">
-                      {{ address.street }}<br>
-                      {{ address.city }}, {{ address.state }} {{ address.zipCode }}
+                      {{ address.street }}<br />
+                      {{ address.city }}, {{ address.state }}
+                      {{ address.zipCode }}
                     </p>
                   </div>
 
                   <!-- New Address Option -->
-                  <div (click)="selectNewAddress()"
-                       class="border-2 border-dashed border-diamond-300 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-gold-500 hover:text-gold-600 text-gray-500 transition-all"
-                       [ngClass]="selectedAddressId() === 'new' ? 'border-gold-500 bg-gold-50 text-gold-600' : ''">
+                  <div
+                    (click)="selectNewAddress()"
+                    class="border-2 border-dashed border-diamond-300 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-gold-500 hover:text-gold-600 text-gray-500 transition-all"
+                    [ngClass]="
+                      selectedAddressId() === 'new'
+                        ? 'border-gold-500 bg-gold-50 text-gold-600'
+                        : ''
+                    "
+                  >
                     <span class="font-semibold">+ Use New Address</span>
                   </div>
                 </div>
               </div>
 
-              <form *ngIf="selectedAddressId() === 'new' || !isAuthenticated()"
+              <form
+                *ngIf="selectedAddressId() === 'new' || !isAuthenticated()"
                 (ngSubmit)="nextStep()"
                 #shippingForm="ngForm"
                 class="space-y-6 animate-fade-in-up"
@@ -187,19 +229,17 @@ import { COUNTRIES } from "../core/countries";
                 </div>
 
                 <div *ngIf="!isAuthenticated()">
-                  <label class="block text-sm font-semibold text-gray-900 mb-2"
-                    >Create Password</label
+                  <div
+                    class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-2"
                   >
-                  <input
-                    type="password"
-                    [(ngModel)]="guestPassword"
-                    name="password"
-                    required
-                    minlength="6"
-                    class="input-field"
-                    placeholder="Create a password for your account"
-                  />
-                  <p class="text-xs text-gray-500 mt-1">We'll create an account for you to track your order.</p>
+                    <p
+                      class="text-sm text-blue-800 font-medium flex items-center gap-2"
+                    >
+                      <span>✨</span> We will automatically create an account
+                      for you to track your order. Your login details will be
+                      emailed to you!
+                    </p>
+                  </div>
                 </div>
 
                 <div>
@@ -285,7 +325,12 @@ import { COUNTRIES } from "../core/countries";
                     required
                     class="input-field"
                   >
-                    <option *ngFor="let country of countriesList" [value]="country">{{ country }}</option>
+                    <option
+                      *ngFor="let country of countriesList"
+                      [value]="country"
+                    >
+                      {{ country }}
+                    </option>
                   </select>
                 </div>
 
@@ -306,16 +351,18 @@ import { COUNTRIES } from "../core/countries";
                   [disabled]="!shippingForm.valid || isProcessing()"
                   class="w-full btn-primary"
                 >
-                  {{ isProcessing() ? 'Creating Account...' : 'Continue to Pay' }}
+                  {{
+                    isProcessing() ? 'Creating Account...' : 'Continue to Pay'
+                  }}
                 </button>
               </form>
 
               <!-- Continue Button for Saved Address -->
-              <div *ngIf="selectedAddressId() !== 'new' && isAuthenticated()" class="mt-8 animate-fade-in-up">
-                <button
-                  (click)="nextStep()"
-                  class="w-full btn-primary"
-                >
+              <div
+                *ngIf="selectedAddressId() !== 'new' && isAuthenticated()"
+                class="mt-8 animate-fade-in-up"
+              >
+                <button (click)="nextStep()" class="w-full btn-primary">
                   Continue to Pay
                 </button>
               </div>
@@ -380,7 +427,11 @@ import { COUNTRIES } from "../core/countries";
                     <div class="space-y-3">
                       <label
                         class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors"
-                        [ngClass]="selectedPaymentMethod === 'RAZORPAY' ? 'border-gold-500 bg-gold-50' : 'border-gray-200 hover:border-gold-300'"
+                        [ngClass]="
+                          selectedPaymentMethod === 'RAZORPAY'
+                            ? 'border-gold-500 bg-gold-50'
+                            : 'border-gray-200 hover:border-gold-300'
+                        "
                       >
                         <input
                           type="radio"
@@ -393,12 +444,18 @@ import { COUNTRIES } from "../core/countries";
                           <p class="font-semibold text-gray-900">
                             Pay Online (Cards, UPI, NetBanking)
                           </p>
-                          <p class="text-sm text-gray-600">Secure payment via Razorpay</p>
+                          <p class="text-sm text-gray-600">
+                            Secure payment via Razorpay
+                          </p>
                         </div>
                       </label>
                       <label
                         class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors"
-                        [ngClass]="selectedPaymentMethod === 'COD' ? 'border-gold-500 bg-gold-50' : 'border-gray-200 hover:border-gold-300'"
+                        [ngClass]="
+                          selectedPaymentMethod === 'COD'
+                            ? 'border-gold-500 bg-gold-50'
+                            : 'border-gray-200 hover:border-gold-300'
+                        "
                       >
                         <input
                           type="radio"
@@ -411,7 +468,9 @@ import { COUNTRIES } from "../core/countries";
                           <p class="font-semibold text-gray-900">
                             Cash on Delivery (COD)
                           </p>
-                          <p class="text-sm text-gray-600">Pay when your order is delivered</p>
+                          <p class="text-sm text-gray-600">
+                            Pay when your order is delivered
+                          </p>
                         </div>
                       </label>
                     </div>
@@ -433,7 +492,13 @@ import { COUNTRIES } from "../core/countries";
                   class="flex-1 btn-primary"
                   [disabled]="isProcessing()"
                 >
-                  {{ isProcessing() ? "Processing..." : (selectedPaymentMethod === 'COD' ? 'Place Order' : 'Pay Now') }}
+                  {{
+                    isProcessing()
+                      ? 'Processing...'
+                      : selectedPaymentMethod === 'COD'
+                        ? 'Place Order'
+                        : 'Pay Now'
+                  }}
                 </button>
               </div>
             </div>
@@ -455,7 +520,7 @@ import { COUNTRIES } from "../core/countries";
                   >
                     <span class="text-gray-600">{{ item.product.name }}</span>
                     <span class="font-semibold">{{
-                      (item.price * item.quantity) | currencyConvert
+                      item.price * item.quantity | currencyConvert
                     }}</span>
                   </div>
                 </ng-container>
@@ -478,9 +543,14 @@ import { COUNTRIES } from "../core/countries";
                     cartTax() | currencyConvert
                   }}</span>
                 </div>
-                <div *ngIf="cartDiscount() > 0" class="flex justify-between text-emerald-600">
+                <div
+                  *ngIf="cartDiscount() > 0"
+                  class="flex justify-between text-emerald-600"
+                >
                   <span>Discount</span>
-                  <span class="font-semibold">-{{ cartDiscount() | currencyConvert }}</span>
+                  <span class="font-semibold"
+                    >-{{ cartDiscount() | currencyConvert }}</span
+                  >
                 </div>
               </div>
 
@@ -530,18 +600,16 @@ export class CheckoutComponent implements OnInit {
   countriesList = COUNTRIES;
 
   shippingData = {
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    street: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "India",
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'India',
   };
-
-  guestPassword = '';
 
   billingSameAsShipping = true;
   isAuthenticated = signal(false);
@@ -551,7 +619,7 @@ export class CheckoutComponent implements OnInit {
   // Address Selection
   savedAddresses = computed(() => {
     let addrs: Address[] = [];
-    this.authService.user().subscribe(u => addrs = u?.addresses || []);
+    this.authService.user().subscribe((u) => (addrs = u?.addresses || []));
     return this.userAddresses();
   });
 
@@ -577,25 +645,26 @@ export class CheckoutComponent implements OnInit {
     this.loadRazorpayScript();
 
     // Subscribe to user changes
-    this.authService.user().subscribe(user => {
+    this.authService.user().subscribe((user) => {
       if (user) {
         // Update basic info if new address form is active
         if (this.selectedAddressId() === 'new') {
-            this.shippingData.firstName = user.firstName || '';
-            this.shippingData.lastName = user.lastName || '';
-            this.shippingData.email = user.email || '';
-            this.shippingData.phone = user.phone || '';
+          this.shippingData.firstName = user.firstName || '';
+          this.shippingData.lastName = user.lastName || '';
+          this.shippingData.email = user.email || '';
+          this.shippingData.phone = user.phone || '';
         }
 
         // Update addresses list
         if (user.addresses && user.addresses.length > 0) {
-            this.userAddresses.set(user.addresses);
-            // Default to first address or default one
-            const defaultAddr = user.addresses.find(a => a.isDefault) || user.addresses[0];
-            this.selectAddress(defaultAddr);
+          this.userAddresses.set(user.addresses);
+          // Default to first address or default one
+          const defaultAddr =
+            user.addresses.find((a) => a.isDefault) || user.addresses[0];
+          this.selectAddress(defaultAddr);
         } else {
-            this.userAddresses.set([]);
-            this.selectedAddressId.set('new');
+          this.userAddresses.set([]);
+          this.selectedAddressId.set('new');
         }
       }
     });
@@ -632,34 +701,34 @@ export class CheckoutComponent implements OnInit {
   selectAddress(address: Address) {
     this.selectedAddressId.set(address.id);
     this.shippingData = {
-        firstName: address.firstName,
-        lastName: address.lastName,
-        email: this.shippingData.email,
-        phone: address.phone,
-        street: address.street,
-        city: address.city,
-        state: address.state,
-        zipCode: address.zipCode,
-        country: address.country
+      firstName: address.firstName,
+      lastName: address.lastName,
+      email: this.shippingData.email,
+      phone: address.phone,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country,
     };
   }
 
   selectNewAddress() {
     this.selectedAddressId.set('new');
-    this.authService.user().subscribe(user => {
-        if (user) {
-            this.shippingData = {
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                phone: user.phone,
-                street: '',
-                city: '',
-                state: '',
-                zipCode: '',
-                country: 'India'
-            };
-        }
+    this.authService.user().subscribe((user) => {
+      if (user) {
+        this.shippingData = {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: 'India',
+        };
+      }
     });
   }
 
@@ -673,40 +742,95 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
+  private generateRandomPassword(length: number = 10): string {
+    const uppers = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowers = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const specials = '!@#$%^&*';
+
+    // Ensure at least one of each required character type
+    const getRandomChar = (charset: string) =>
+      charset[crypto.getRandomValues(new Uint32Array(1))[0] % charset.length];
+
+    let password = [
+      getRandomChar(uppers),
+      getRandomChar(lowers),
+      getRandomChar(numbers),
+      getRandomChar(specials),
+    ];
+
+    // Fill the rest with random characters from all sets
+    const allChars = uppers + lowers + numbers + specials;
+    for (let i = password.length; i < length; i++) {
+      password.push(getRandomChar(allChars));
+    }
+
+    // Shuffle the password
+    for (let i = password.length - 1; i > 0; i--) {
+      const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+      [password[i], password[j]] = [password[j], password[i]];
+    }
+
+    return password.join('');
+  }
+
   private registerGuest() {
     this.isProcessing.set(true);
+    const autoPassword = this.generateRandomPassword();
+
     const registerData = {
-        firstName: this.shippingData.firstName,
-        lastName: this.shippingData.lastName,
-        email: this.shippingData.email,
-        phone: this.shippingData.phone,
-        password: this.guestPassword
+      firstName: this.shippingData.firstName,
+      lastName: this.shippingData.lastName,
+      email: this.shippingData.email,
+      phone: this.shippingData.phone,
+      password: autoPassword,
     };
 
     this.authService.register(registerData).subscribe({
-        next: () => {
-            // Register success, now login to get token
-            this.authService.login(registerData.email, registerData.password).subscribe({
-                next: () => {
-                    this.checkAuth(); // Update auth signal
-                    // CartService's user subscription will handle guest cart sync automatically on login
-                    // Just wait a little bit or proceed immediately
-                    setTimeout(() => {
-                        this.isProcessing.set(false);
-                        this.currentStep.set(this.currentStep() + 1);
-                    }, 500);
-                },
-                error: (err) => {
-                    this.isProcessing.set(false);
-                    this.toastService.show('Account created but login failed. Please sign in.', 'error');
-                    this.router.navigate(['/login']);
-                }
-            });
-        },
-        error: (err) => {
-            this.isProcessing.set(false);
-            this.toastService.show('Failed to create account. Please try again or sign in.', 'error');
-        }
+      next: () => {
+        // Register success, now login to get token
+        this.authService
+          .login(registerData.email, registerData.password)
+          .subscribe({
+            next: () => {
+              this.checkAuth(); // Update auth signal
+
+              // Send email with the generated password
+              this.emailService
+                .sendPromotionalEmail({
+                  email: registerData.email,
+                  subject: 'Welcome to Caratloop - Your Account Details',
+                  content: `Thank you for shopping with us! We have created an account for you so you can easily track your order. \n\nYour login email is: ${registerData.email}\nYour temporary password is: ${autoPassword}\n\nPlease log in and change your password as soon as possible.`,
+                })
+                .subscribe({
+                  error: (e) =>
+                    console.error('Failed to send welcome email', e),
+                });
+
+              // CartService's user subscription will handle guest cart sync automatically on login
+              // Just wait a little bit or proceed immediately
+              setTimeout(() => {
+                this.isProcessing.set(false);
+                this.currentStep.set(this.currentStep() + 1);
+              }, 500);
+            },
+            error: (err) => {
+              this.isProcessing.set(false);
+              this.toastService.show(
+                'Account created but login failed. Please sign in.',
+                'error',
+              );
+              this.router.navigate(['/login']);
+            },
+          });
+      },
+      error: (err) => {
+        this.isProcessing.set(false);
+        this.toastService.show(
+          'Failed to create account. Please try again or sign in.',
+          'error',
+        );
+      },
     });
   }
 
@@ -720,32 +844,44 @@ export class CheckoutComponent implements OnInit {
     if (this.isProcessing()) return;
 
     // Check for out of stock items
-    const outOfStockItems = this.cartItems().filter(item => item.product && item.product.stock === 0);
+    const outOfStockItems = this.cartItems().filter(
+      (item) => item.product && item.product.stock === 0,
+    );
     if (outOfStockItems.length > 0) {
-        const itemNames = outOfStockItems.map((i: CartItem) => i.product.name).join(', ');
-        this.toastService.show(`Some items are out of stock: ${itemNames}. Please remove them from cart.`, 'error');
-        this.router.navigate(['/cart']);
-        return;
+      const itemNames = outOfStockItems
+        .map((i: CartItem) => i.product.name)
+        .join(', ');
+      this.toastService.show(
+        `Some items are out of stock: ${itemNames}. Please remove them from cart.`,
+        'error',
+      );
+      this.router.navigate(['/cart']);
+      return;
     }
 
     this.isProcessing.set(true);
 
     // If using a new address and user is authenticated, save it to their profile
     if (this.selectedAddressId() === 'new' && this.isAuthenticated()) {
-        const { email, ...addressData } = this.shippingData;
-        this.authService.addAddress({ ...addressData, isDefault: this.userAddresses().length === 0 }).subscribe({
-            next: () => {
-                // Proceed with order after saving address
-                this.processPaymentSelection();
-            },
-            error: () => {
-                // Log but proceed anyway so we don't block checkout
-                console.error('Failed to save address to profile');
-                this.processPaymentSelection();
-            }
+      const { email, ...addressData } = this.shippingData;
+      this.authService
+        .addAddress({
+          ...addressData,
+          isDefault: this.userAddresses().length === 0,
+        })
+        .subscribe({
+          next: () => {
+            // Proceed with order after saving address
+            this.processPaymentSelection();
+          },
+          error: () => {
+            // Log but proceed anyway so we don't block checkout
+            console.error('Failed to save address to profile');
+            this.processPaymentSelection();
+          },
         });
     } else {
-        this.processPaymentSelection();
+      this.processPaymentSelection();
     }
   }
 
@@ -763,7 +899,7 @@ export class CheckoutComponent implements OnInit {
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
 
     // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
-    const sanitizedItems = this.cartItems().map(item => {
+    const sanitizedItems = this.cartItems().map((item) => {
       const { id, ...itemWithoutId } = item;
       return itemWithoutId;
     });
@@ -771,30 +907,39 @@ export class CheckoutComponent implements OnInit {
     const orderData: any = {
       shippingAddress: shippingAddr,
       billingAddress: billingAddr,
-      paymentMethod: "COD",
-      shippingMethod: "EXPRESS",
+      paymentMethod: 'COD',
+      shippingMethod: 'EXPRESS',
       items: sanitizedItems,
       total: this.cartTotal(),
-      paymentDetails: {} // Empty for COD
+      paymentDetails: {}, // Empty for COD
     };
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
-        sessionStorage.setItem("lastOrderId", order.id);
-        this.router.navigate(["/order-confirmation"]);
+        sessionStorage.setItem('lastOrderId', order.id);
+        this.router.navigate(['/order-confirmation']);
       },
       error: (error) => {
         this.isProcessing.set(false);
-        this.toastService.show("Order placement failed. Please contact support.", 'error');
+        this.toastService.show(
+          'Order placement failed. Please contact support.',
+          'error',
+        );
       },
     });
   }
 
   private initiateRazorpay() {
-    if (!isPlatformBrowser(this.platformId) || typeof Razorpay === 'undefined') {
-        this.isProcessing.set(false);
-        this.toastService.show('Payment gateway failed to load. Please check your internet connection or disable ad blockers.', 'error');
-        return;
+    if (
+      !isPlatformBrowser(this.platformId) ||
+      typeof Razorpay === 'undefined'
+    ) {
+      this.isProcessing.set(false);
+      this.toastService.show(
+        'Payment gateway failed to load. Please check your internet connection or disable ad blockers.',
+        'error',
+      );
+      return;
     }
 
     // Convert base amount to INR
@@ -805,62 +950,76 @@ export class CheckoutComponent implements OnInit {
 
     // Create Razorpay Order
     this.paymentService.createRazorpayOrder(amountInPaise, 'INR').subscribe({
-        next: (response) => {
-            this.openRazorpayModal(response);
-        },
-        error: (error) => {
-            this.isProcessing.set(false);
-            this.toastService.show('Failed to initiate payment. Please try again.', 'error');
-        }
+      next: (response) => {
+        this.openRazorpayModal(response);
+      },
+      error: (error) => {
+        this.isProcessing.set(false);
+        this.toastService.show(
+          'Failed to initiate payment. Please try again.',
+          'error',
+        );
+      },
     });
   }
 
-  openRazorpayModal(orderData: { id: string, amount: number, currency: string }) {
-      const options: Razorpay.Options = {
-          key: environment.razorpayKey,
-          amount: orderData.amount,
-          currency: orderData.currency,
-          name: 'LuxeGems',
-          description: 'Jewellery Purchase',
-          order_id: orderData.id,
-          prefill: {
-              name: `${this.shippingData.firstName} ${this.shippingData.lastName}`,
-              email: this.shippingData.email,
-              contact: this.shippingData.phone
-          },
-          theme: {
-              color: '#D4AF37'
-          },
-          handler: (response: Razorpay.PaymentSuccessResponse) => {
-              this.handlePaymentSuccess(response);
-          },
-          modal: {
-              ondismiss: () => {
-                  this.isProcessing.set(false);
-                  this.paymentService.logFailedTransaction({
-                      error_code: 'PAYMENT_CANCELLED',
-                      error_description: 'User closed the payment modal',
-                      razorpay_order_id: orderData.id
-                  }).subscribe();
-              }
-          }
-      };
-
-      const rzp = new Razorpay(options);
-      rzp.on('payment.failed', (response: Razorpay.PaymentFailedResponse) => {
+  openRazorpayModal(orderData: {
+    id: string;
+    amount: number;
+    currency: string;
+  }) {
+    const options: Razorpay.Options = {
+      key: environment.razorpayKey,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      name: 'LuxeGems',
+      description: 'Jewellery Purchase',
+      order_id: orderData.id,
+      prefill: {
+        name: `${this.shippingData.firstName} ${this.shippingData.lastName}`,
+        email: this.shippingData.email,
+        contact: this.shippingData.phone,
+      },
+      theme: {
+        color: '#D4AF37',
+      },
+      handler: (response: Razorpay.PaymentSuccessResponse) => {
+        this.handlePaymentSuccess(response);
+      },
+      modal: {
+        ondismiss: () => {
           this.isProcessing.set(false);
-          this.paymentService.logFailedTransaction({
-              error_code: response.error.code,
-              error_description: response.error.description,
-              error_source: response.error.source,
-              error_step: response.error.step,
-              error_reason: response.error.reason,
-              razorpay_order_id: response.error.metadata.order_id,
-              razorpay_payment_id: response.error.metadata.payment_id
-          }).subscribe();
-          this.toastService.show('Payment Failed: ' + response.error.description, 'error');
-      });
-      rzp.open();
+          this.paymentService
+            .logFailedTransaction({
+              error_code: 'PAYMENT_CANCELLED',
+              error_description: 'User closed the payment modal',
+              razorpay_order_id: orderData.id,
+            })
+            .subscribe();
+        },
+      },
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', (response: Razorpay.PaymentFailedResponse) => {
+      this.isProcessing.set(false);
+      this.paymentService
+        .logFailedTransaction({
+          error_code: response.error.code,
+          error_description: response.error.description,
+          error_source: response.error.source,
+          error_step: response.error.step,
+          error_reason: response.error.reason,
+          razorpay_order_id: response.error.metadata.order_id,
+          razorpay_payment_id: response.error.metadata.payment_id,
+        })
+        .subscribe();
+      this.toastService.show(
+        'Payment Failed: ' + response.error.description,
+        'error',
+      );
+    });
+    rzp.open();
   }
 
   handlePaymentSuccess(response: Razorpay.PaymentSuccessResponse) {
@@ -869,7 +1028,7 @@ export class CheckoutComponent implements OnInit {
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
 
     // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
-    const sanitizedItems = this.cartItems().map(item => {
+    const sanitizedItems = this.cartItems().map((item) => {
       const { id, ...itemWithoutId } = item;
       return itemWithoutId;
     });
@@ -877,26 +1036,29 @@ export class CheckoutComponent implements OnInit {
     const orderData: any = {
       shippingAddress: shippingAddr,
       billingAddress: billingAddr,
-      paymentMethod: "RAZORPAY",
-      shippingMethod: "EXPRESS",
+      paymentMethod: 'RAZORPAY',
+      shippingMethod: 'EXPRESS',
       items: sanitizedItems,
       total: this.cartTotal(),
       paymentDetails: {
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_signature: response.razorpay_signature
-      }
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_signature: response.razorpay_signature,
+      },
     };
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
         // Backend sends email confirmation automatically
-        sessionStorage.setItem("lastOrderId", order.id);
-        this.router.navigate(["/order-confirmation"]);
+        sessionStorage.setItem('lastOrderId', order.id);
+        this.router.navigate(['/order-confirmation']);
       },
       error: (error) => {
         this.isProcessing.set(false);
-        this.toastService.show("Payment successful but order placement failed. Please contact support.", 'error');
+        this.toastService.show(
+          'Payment successful but order placement failed. Please contact support.',
+          'error',
+        );
       },
     });
   }
