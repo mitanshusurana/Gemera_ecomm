@@ -44,8 +44,15 @@ export class ErrorInterceptor implements HttpInterceptor {
           }
         }
 
-        // Show toast
-        this.toastService.show(errorMessage, 'error');
+        // Suppress toast for 401/403 on cart endpoints since CartService will gracefully fall back
+        const isCartAuthError = error instanceof HttpErrorResponse &&
+                               (error.status === 401 || error.status === 403) &&
+                               request.url.includes('/api/v1/cart');
+
+        if (!isCartAuthError) {
+          // Show toast
+          this.toastService.show(errorMessage, 'error');
+        }
 
         return throwError(() => error);
       })

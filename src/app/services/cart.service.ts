@@ -1,14 +1,14 @@
 import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, forkJoin } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
 import { Cart, CartItem } from '../core/models';
 import { AuthService } from './auth.service';
 import { ApiConfigService } from './api-config.service';
 import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CartService {
   private http = inject(HttpClient);
@@ -23,29 +23,36 @@ export class CartService {
 
   constructor() {
     // Sync signal with subject
-    this.cart$.subscribe(c => this.cartSignal.set(c));
+    this.cart$.subscribe((c) => this.cartSignal.set(c));
 
-    this.authService.user().subscribe(user => {
-        if (user) {
-            this.syncGuestCart().subscribe(() => {
-                this.getCart().subscribe();
-            });
-        } else {
-            // Do not hit API on load if not authenticated. Instead just load guest cart.
-            const guestCart = this.getGuestCart();
-            this.cart$.next(guestCart);
-        }
+    this.authService.user().subscribe((user) => {
+      if (user) {
+        this.syncGuestCart().subscribe(() => {
+          this.getCart().subscribe();
+        });
+      } else {
+        // Do not hit API on load if not authenticated. Instead just load guest cart.
+        const guestCart = this.getGuestCart();
+        this.cart$.next(guestCart);
+      }
     });
   }
 
   getCart(): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       return this.http.get<Cart>(this.baseUrl).pipe(
-        tap(cart => {
+        tap((cart) => {
           // Ensure all numeric values are properly typed as numbers
           this.normalizeCart(cart);
           this.cart$.next(cart);
-        })
+        }),
+        catchError((error) => {
+          if (error.status === 401 || error.status === 403) {
+            this.authService.clearSession();
+            return this.getCart(); // Re-run, which will now fall into the else block
+          }
+          throw error;
+        }),
       );
     } else {
       const guestCart = this.getGuestCart();
@@ -55,29 +62,60 @@ export class CartService {
   }
 
   addToCart(
-      productId: string,
-      quantity: number = 1,
-      options?: { metal?: string, diamond?: string, price?: number, stoneId?: string, stoneName?: string, customization?: string, engraving?: string, product?: any }
+    productId: string,
+    quantity: number = 1,
+    options?: {
+      metal?: string;
+      diamond?: string;
+      price?: number;
+      stoneId?: string;
+      stoneName?: string;
+      customization?: string;
+      engraving?: string;
+      product?: any;
+    },
   ): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       // Clean up options before sending to API if needed, or API ignores extra fields
       const { product, ...apiOptions } = options || {};
-      return this.http.post<Cart>(`${this.baseUrl}/items`, { productId, quantity, options: apiOptions })
-        .pipe(tap(cart => {
-          this.normalizeCart(cart);
-          this.cart$.next(cart);
-        }));
+      return this.http
+        .post<Cart>(`${this.baseUrl}/items`, {
+          productId,
+          quantity,
+          options: apiOptions,
+        })
+        .pipe(
+          tap((cart) => {
+            this.normalizeCart(cart);
+            this.cart$.next(cart);
+          }),
+          catchError((error) => {
+            if (error.status === 401 || error.status === 403) {
+              this.authService.clearSession();
+              return this.addToCart(productId, quantity, options); // Re-run, now as guest
+            }
+            throw error;
+          }),
+        );
     } else {
       return of(this.addToGuestCart(productId, quantity, options)).pipe(
-        tap(cart => this.cart$.next(cart))
+        tap((cart) => this.cart$.next(cart)),
       );
     }
   }
 
   updateCartOptions(options: { giftWrap: boolean }): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
-      return this.http.post<Cart>(`${this.baseUrl}/options`, options)
-          .pipe(tap(cart => this.cart$.next(cart)));
+      return this.http.post<Cart>(`${this.baseUrl}/options`, options).pipe(
+        tap((cart) => this.cart$.next(cart)),
+        catchError((error) => {
+          if (error.status === 401 || error.status === 403) {
+            this.authService.clearSession();
+            return this.updateCartOptions(options); // Re-run as guest
+          }
+          throw error;
+        }),
+      );
     } else {
       const cart = this.getGuestCart();
       cart.giftWrap = options.giftWrap;
@@ -89,11 +127,21 @@ export class CartService {
 
   updateCartItem(itemId: string, quantity: number): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
-      return this.http.put<Cart>(`${this.baseUrl}/items/${itemId}`, { quantity })
-          .pipe(tap(cart => this.cart$.next(cart)));
+      return this.http
+        .put<Cart>(`${this.baseUrl}/items/${itemId}`, { quantity })
+        .pipe(
+          tap((cart) => this.cart$.next(cart)),
+          catchError((error) => {
+            if (error.status === 401 || error.status === 403) {
+              this.authService.clearSession();
+              return this.updateCartItem(itemId, quantity); // Re-run as guest
+            }
+            throw error;
+          }),
+        );
     } else {
       const cart = this.getGuestCart();
-      const item = cart.items.find(i => i.id === itemId);
+      const item = cart.items.find((i) => i.id === itemId);
       if (item) {
         item.quantity = quantity;
         this.recalculateTotals(cart);
@@ -106,11 +154,19 @@ export class CartService {
 
   removeFromCart(itemId: string): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
-      return this.http.delete<Cart>(`${this.baseUrl}/items/${itemId}`)
-          .pipe(tap(cart => this.cart$.next(cart)));
+      return this.http.delete<Cart>(`${this.baseUrl}/items/${itemId}`).pipe(
+        tap((cart) => this.cart$.next(cart)),
+        catchError((error) => {
+          if (error.status === 401 || error.status === 403) {
+            this.authService.clearSession();
+            return this.removeFromCart(itemId); // Re-run as guest
+          }
+          throw error;
+        }),
+      );
     } else {
       const cart = this.getGuestCart();
-      cart.items = cart.items.filter(i => i.id !== itemId);
+      cart.items = cart.items.filter((i) => i.id !== itemId);
       this.recalculateTotals(cart);
       this.saveGuestCart(cart);
       this.cart$.next(cart);
@@ -120,8 +176,18 @@ export class CartService {
 
   applyCoupon(couponCode: string): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
-      return this.http.post<Cart>(`${this.baseUrl}/apply-coupon`, { couponCode })
-          .pipe(tap(cart => this.cart$.next(cart)));
+      return this.http
+        .post<Cart>(`${this.baseUrl}/apply-coupon`, { couponCode })
+        .pipe(
+          tap((cart) => this.cart$.next(cart)),
+          catchError((error) => {
+            if (error.status === 401 || error.status === 403) {
+              this.authService.clearSession();
+              return this.applyCoupon(couponCode); // Re-run as guest
+            }
+            throw error;
+          }),
+        );
     } else {
       // Mock coupon for guest
       return of(this.getGuestCart());
@@ -148,7 +214,7 @@ export class CartService {
       tax: 0,
       shipping: 0,
       total: 0,
-      appliedDiscount: 0
+      appliedDiscount: 0,
     };
   }
 
@@ -158,35 +224,43 @@ export class CartService {
     }
   }
 
-  private addToGuestCart(productId: string, quantity: number, options: any): Cart {
+  private addToGuestCart(
+    productId: string,
+    quantity: number,
+    options: any,
+  ): Cart {
     const cart = this.getGuestCart();
     const price = options?.price || options?.product?.price || 1000;
 
     // Check if item exists
-    const existing = cart.items.find(i => i.productId === productId && JSON.stringify(i.selectedMetal) === JSON.stringify(options?.metal));
+    const existing = cart.items.find(
+      (i) =>
+        i.productId === productId &&
+        JSON.stringify(i.selectedMetal) === JSON.stringify(options?.metal),
+    );
 
     if (existing) {
       existing.quantity += quantity;
     } else {
       // Use provided product details or fallback
       const productData = options?.product || {
-          id: productId,
-          name: 'Product ' + productId,
-          price: price,
-          imageUrl: '',
-          description: '',
-          rating: 5,
-          reviewCount: 0,
-          category: 'Ring',
-          subcategory: '',
-          gemstones: [],
-          metal: '',
-          weight: 0,
-          stock: 10,
-          sku: '',
-          certifications: [],
-          createdAt: '',
-          updatedAt: ''
+        id: productId,
+        name: 'Product ' + productId,
+        price: price,
+        imageUrl: '',
+        description: '',
+        rating: 5,
+        reviewCount: 0,
+        category: 'Ring',
+        subcategory: '',
+        gemstones: [],
+        metal: '',
+        weight: 0,
+        stock: 10,
+        sku: '',
+        certifications: [],
+        createdAt: '',
+        updatedAt: '',
       };
 
       cart.items.push({
@@ -197,7 +271,7 @@ export class CartService {
         product: productData,
         selectedMetal: options?.metal,
         selectedDiamond: options?.diamond,
-        customization: options?.engraving
+        customization: options?.engraving,
       });
     }
 
@@ -208,34 +282,61 @@ export class CartService {
 
   private recalculateTotals(cart: Cart) {
     cart.subtotal = cart.items.reduce((sum, item) => {
-      const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-      return sum + (itemPrice * item.quantity);
+      const itemPrice =
+        typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+      return sum + itemPrice * item.quantity;
     }, 0);
     cart.tax = cart.subtotal * 0.1; // Mock 10% tax
     cart.shipping = cart.subtotal > 500 ? 0 : 50;
-    cart.total = cart.subtotal + cart.tax + cart.shipping - cart.appliedDiscount;
+    cart.total =
+      cart.subtotal + cart.tax + cart.shipping - cart.appliedDiscount;
   }
 
   private normalizeCart(cart: Cart): void {
     // Ensure all prices are numbers
     if (cart.items) {
-      cart.items.forEach(item => {
+      cart.items.forEach((item) => {
         // If item.price is not set, use product.price
         if (!item.price || item.price === 0) {
-          item.price = item.product?.price ? (typeof item.product.price === 'string' ? parseFloat(item.product.price) : Number(item.product.price)) : 0;
+          item.price = item.product?.price
+            ? typeof item.product.price === 'string'
+              ? parseFloat(item.product.price)
+              : Number(item.product.price)
+            : 0;
         } else {
-          item.price = typeof item.price === 'string' ? parseFloat(item.price) : Number(item.price) || 0;
+          item.price =
+            typeof item.price === 'string'
+              ? parseFloat(item.price)
+              : Number(item.price) || 0;
         }
-        item.quantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : Number(item.quantity) || 0;
+        item.quantity =
+          typeof item.quantity === 'string'
+            ? parseInt(item.quantity, 10)
+            : Number(item.quantity) || 0;
       });
     }
-    
+
     // Ensure cart totals are numbers
-    cart.subtotal = typeof cart.subtotal === 'string' ? parseFloat(cart.subtotal) : Number(cart.subtotal) || 0;
-    cart.tax = typeof cart.tax === 'string' ? parseFloat(cart.tax) : Number(cart.tax) || 0;
-    cart.shipping = typeof cart.shipping === 'string' ? parseFloat(cart.shipping) : Number(cart.shipping) || 0;
-    cart.total = typeof cart.total === 'string' ? parseFloat(cart.total) : Number(cart.total) || 0;
-    cart.appliedDiscount = typeof cart.appliedDiscount === 'string' ? parseFloat(cart.appliedDiscount) : Number(cart.appliedDiscount) || 0;
+    cart.subtotal =
+      typeof cart.subtotal === 'string'
+        ? parseFloat(cart.subtotal)
+        : Number(cart.subtotal) || 0;
+    cart.tax =
+      typeof cart.tax === 'string'
+        ? parseFloat(cart.tax)
+        : Number(cart.tax) || 0;
+    cart.shipping =
+      typeof cart.shipping === 'string'
+        ? parseFloat(cart.shipping)
+        : Number(cart.shipping) || 0;
+    cart.total =
+      typeof cart.total === 'string'
+        ? parseFloat(cart.total)
+        : Number(cart.total) || 0;
+    cart.appliedDiscount =
+      typeof cart.appliedDiscount === 'string'
+        ? parseFloat(cart.appliedDiscount)
+        : Number(cart.appliedDiscount) || 0;
   }
 
   private syncGuestCart(): Observable<any> {
@@ -243,27 +344,27 @@ export class CartService {
     if (isPlatformBrowser(this.platformId)) {
       const guestCart = this.getGuestCart();
       if (guestCart.items.length > 0) {
-        const observables = guestCart.items.map(item => {
+        const observables = guestCart.items.map((item) => {
           // Map guest item to API payload
           const options = {
-              metal: item.selectedMetal,
-              diamond: item.selectedDiamond,
-              engraving: item.customization,
-              price: item.price
+            metal: item.selectedMetal,
+            diamond: item.selectedDiamond,
+            engraving: item.customization,
+            price: item.price,
           };
           return this.http.post<Cart>(`${this.baseUrl}/items`, {
-              productId: item.productId,
-              quantity: item.quantity,
-              options
+            productId: item.productId,
+            quantity: item.quantity,
+            options,
           });
         });
 
         return forkJoin(observables).pipe(
           tap(() => {
             if (isPlatformBrowser(this.platformId)) {
-                localStorage.removeItem(this.GUEST_CART_KEY);
+              localStorage.removeItem(this.GUEST_CART_KEY);
             }
-          })
+          }),
         );
       }
     }

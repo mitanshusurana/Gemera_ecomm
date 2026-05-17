@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpBackend } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
@@ -15,14 +16,19 @@ export class AuthService {
   private httpBackend = inject(HttpBackend); // Bypass interceptors
   private router = inject(Router);
   private apiConfig = inject(ApiConfigService);
+  private platformId = inject(PLATFORM_ID);
   private baseUrl = this.apiConfig.getEndpoint('auth');
   private usersUrl = this.apiConfig.getEndpoint('users');
-  private authToken$ = new BehaviorSubject<string | null>(localStorage.getItem('authToken'));
+  private authToken$ = new BehaviorSubject<string | null>(null);
   private user$ = new BehaviorSubject<User | null>(null);
 
   constructor() {
-    if (this.authToken$.value) {
-      this.refreshUser();
+    if (isPlatformBrowser(this.platformId)) {
+      const storedToken = localStorage.getItem('authToken');
+      if (storedToken) {
+        this.authToken$.next(storedToken);
+        this.refreshUser();
+      }
     }
   }
 
@@ -101,30 +107,47 @@ export class AuthService {
     return this.http.get<{ points: number, tier: string }>(`${this.usersUrl}/loyalty`);
   }
 
+  /**
+   * Silently clears user session locally (tokens and state)
+   * without calling the backend or redirecting.
+   * Useful when we discover the token is expired/invalid implicitly.
+   */
+  clearSession(): void {
+    this.clearAuthToken();
+    this.user$.next(null);
+  }
+
   // Helper to fetch user if token exists but user is null (page reload)
   private refreshUser() {
     this.http.get<User>(`${this.usersUrl}/me`).subscribe({
         next: user => this.user$.next(user),
-        error: () => this.logout() // Token invalid
+        error: () => this.clearSession() // Token invalid, fallback to guest gracefully
     });
   }
 
   private setAuthToken(token: string, refreshToken?: string): void {
     this.authToken$.next(token);
-    localStorage.setItem('authToken', token);
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('authToken', token);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
     }
   }
 
   private clearAuthToken(): void {
     this.authToken$.next(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('refreshToken');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+    }
   }
 
   getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken');
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem('refreshToken');
+    }
+    return null;
   }
 
   getAuthToken(): string | null {
