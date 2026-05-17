@@ -1196,6 +1196,17 @@ export class ProductDetailComponent
       'occasions',
       'styles',
       'ogImage',
+      // Internal or duplicate fields to hide from visual specs list
+      'subCategory',
+      'subcategory',
+      'isVerified',
+      'inventoryOwnership',
+      'bisHallmark',
+      'stockStatus',
+      'sku',
+      'huid',
+      'rating',
+      'certifications',
     ];
 
     const specs: { key: string; value: any }[] = [];
