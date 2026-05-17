@@ -12,6 +12,8 @@ import { TreasurePlanListComponent } from './pages/treasure-plans/treasure-plan-
 import { SettingsComponent } from './pages/settings/settings.component';
 import { AuditLogComponent } from './pages/audit-logs/audit-log.component';
 import { SystemMaintenanceComponent } from './pages/system-maintenance/system-maintenance.component';
+import { AppointmentListComponent } from './pages/appointments/appointment-list.component';
+import { InquiryListComponent } from './pages/inquiries/inquiry-list.component';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -22,6 +24,8 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
+      { path: 'appointments', component: AppointmentListComponent },
+      { path: 'inquiries', component: InquiryListComponent },
       { path: 'customers', component: CustomerListComponent },
       { path: 'products', component: ProductListComponent },
       { path: 'products/new', component: ProductAddComponent },

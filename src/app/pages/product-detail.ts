@@ -32,6 +32,8 @@ import { RING_CATEGORIES } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { environment } from '../../environments/environment';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AppointmentService } from '../services/appointment.service';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-product-detail',
@@ -41,6 +43,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
     NgOptimizedImage,
     RouterLink,
     FormsModule,
+    ReactiveFormsModule,
     SizeGuideModalComponent,
     CurrencyConvertPipe,
   ],
@@ -907,11 +910,28 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                     Buy Now
                   </button>
                 </div>
+                <div class="grid grid-cols-2 gap-2 w-full mb-2">
+                  <button
+                    (click)="openTryAtHome()"
+                    class="w-full border border-secondary-600 text-primary-800 font-bold py-3 rounded-lg hover:bg-secondary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
+                  >
+                    <span>🏠</span> Try at Home
+                  </button>
+                  <button
+                    (click)="openStoreVisit()"
+                    class="w-full border border-primary-600 text-primary-800 font-bold py-3 rounded-lg hover:bg-primary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
+                  >
+                    <span>🏢</span> Store Visit
+                  </button>
+                </div>
                 <button
-                  (click)="openTryAtHome()"
-                  class="w-full border border-secondary-600 text-primary-800 font-bold py-3 rounded-lg hover:bg-secondary-50 transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2"
+                  (click)="openVideoConsult()"
+                  class="w-full bg-[#25D366] text-white font-bold py-3 rounded-lg hover:bg-[#128C7E] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2"
                 >
-                  <span>🏠</span> Book Try at Home
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
+                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+                  </svg>
+                  Video Consult
                 </button>
               </div>
 
@@ -1007,20 +1027,28 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
           <div
             class="bg-gradient-to-r from-primary-800 to-primary-950 text-white p-6 text-center"
           >
-            <h3 class="font-serif font-bold text-xl">Book Try at Home</h3>
+            <h3 class="font-serif font-bold text-xl">Book {{ appointmentType() === 'TRY_AT_HOME' ? 'Try at Home' : (appointmentType() === 'STORE_VISIT' ? 'Store Visit' : 'Video Consult') }}</h3>
           </div>
-          <div class="p-6 space-y-4">
+          <form [formGroup]="appointmentForm" (ngSubmit)="confirmTryAtHome()" class="p-6 space-y-4">
             <p class="text-sm text-gray-600 text-center mb-4">
-              Our consultant will bring this jewellery to your doorstep.
+              {{ appointmentType() === 'TRY_AT_HOME' ? 'Our consultant will bring this jewellery to your doorstep.' : (appointmentType() === 'STORE_VISIT' ? 'Book a VIP consultation at our store.' : 'Our expert will guide you via WhatsApp Video call.') }}
             </p>
-            <input type="date" class="w-full p-2 border rounded" />
+
+            <div class="space-y-3">
+              <input type="text" formControlName="name" placeholder="Your Name" class="w-full p-2 border rounded border-gray-300" required />
+              <input type="email" formControlName="email" placeholder="Email Address" class="w-full p-2 border rounded border-gray-300" required />
+              <input type="tel" formControlName="phone" placeholder="Phone Number" class="w-full p-2 border rounded border-gray-300" required />
+              <input type="date" formControlName="requestedDate" class="w-full p-2 border rounded border-gray-300" required />
+            </div>
+
             <button
-              (click)="confirmTryAtHome()"
-              class="w-full bg-primary-800 text-white py-3 rounded font-bold"
+              type="submit"
+              [disabled]="appointmentForm.invalid || submittingAppointment()"
+              class="w-full bg-primary-800 text-white py-3 rounded font-bold disabled:opacity-50"
             >
-              Confirm
+              {{ submittingAppointment() ? 'Booking...' : 'Confirm' }}
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>
@@ -1090,7 +1118,19 @@ export class ProductDetailComponent
   private currencyService = inject(CurrencyService);
   private sanitizer = inject(DomSanitizer);
 
+  private appointmentService = inject(AppointmentService);
+  private fb = inject(FormBuilder);
+
+  appointmentForm: FormGroup = this.fb.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    phone: ['', Validators.required],
+    requestedDate: ['', Validators.required],
+  });
+
   loading = signal(true);
+  submittingAppointment = signal(false);
+  appointmentType = signal<'TRY_AT_HOME' | 'STORE_VISIT' | 'VIDEO_CONSULT'>('TRY_AT_HOME');
   product = signal<ProductDetail | null>(null);
   productSchema = signal<SafeHtml>('');
 
@@ -1351,11 +1391,49 @@ export class ProductDetailComponent
     this.showPriceBreakup.set(!this.showPriceBreakup());
   }
   openTryAtHome() {
+    this.appointmentType.set('TRY_AT_HOME');
     this.tryAtHomeOpen.set(true);
+    this.appointmentForm.reset();
   }
+
+  openStoreVisit() {
+    this.appointmentType.set('STORE_VISIT');
+    this.tryAtHomeOpen.set(true);
+    this.appointmentForm.reset();
+  }
+
+  openVideoConsult() {
+    this.appointmentType.set('VIDEO_CONSULT');
+    this.tryAtHomeOpen.set(true);
+    this.appointmentForm.reset();
+  }
+
   confirmTryAtHome() {
-    this.tryAtHomeOpen.set(false);
-    this.toastService.show('Booking Confirmed! Check your email.', 'success');
+    if (this.appointmentForm.invalid) return;
+
+    this.submittingAppointment.set(true);
+
+    const productId = this.product()?.id;
+    const formData = this.appointmentForm.value;
+
+    this.appointmentService.createAppointment({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      appointmentType: this.appointmentType(),
+      requestedDate: new Date(formData.requestedDate).toISOString(),
+      productId: productId
+    }).subscribe({
+      next: () => {
+        this.submittingAppointment.set(false);
+        this.tryAtHomeOpen.set(false);
+        this.toastService.show('Booking Confirmed! Our team will contact you shortly.', 'success');
+      },
+      error: () => {
+        this.submittingAppointment.set(false);
+        this.toastService.show('Failed to book appointment. Please try again.', 'error');
+      }
+    });
   }
 
   checkDelivery() {

@@ -87,5 +87,9 @@ export const routes: Routes = [
     path: "journal",
     loadComponent: () => import("./pages/journal").then(m => m.JournalComponent)
   },
+  {
+    path: "custom-design",
+    loadComponent: () => import("./pages/custom-design").then(m => m.CustomDesignComponent)
+  },
   { path: "**", redirectTo: "" },
 ];
