@@ -32,8 +32,8 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError(error => {
-        if (error instanceof HttpErrorResponse && error.status === 401 && request.url.includes('/api/')) {
-          return this.handle401Error(authReq, next, authService);
+        if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403) && request.url.includes('/api/')) {
+          return this.handleAuthError(authReq, next, authService);
         }
         return throwError(() => error);
       })
@@ -48,7 +48,7 @@ export class AuthInterceptor implements HttpInterceptor {
     });
   }
 
-  private handle401Error(request: HttpRequest<unknown>, next: HttpHandler, authService: AuthService) {
+  private handleAuthError(request: HttpRequest<unknown>, next: HttpHandler, authService: AuthService) {
     if (!this.isRefreshing) {
       this.isRefreshing = true;
       this.refreshTokenSubject.next(null);
@@ -61,7 +61,7 @@ export class AuthInterceptor implements HttpInterceptor {
         }),
         catchError((err) => {
           this.isRefreshing = false;
-          authService.logout();
+          authService.clearSession(); // Silently clear instead of unused logout observable
           return throwError(() => err);
         })
       );
