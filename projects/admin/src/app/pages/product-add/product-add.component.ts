@@ -112,7 +112,7 @@ export class ProductAddComponent implements OnInit {
   get availableSubCategories(): any[] {
     const categoryName = this.selectedCategory;
     if (!categoryName) return [];
-    const category = this.categoriesList.find((c: any) => c.name === categoryName);
+    const category = this.categoriesList.find((c: any) => c.displayName === categoryName);
     return category && category.subcategories ? category.subcategories : [];
   }
 
