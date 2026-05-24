@@ -505,6 +505,18 @@ export class ProductsComponent implements OnInit {
 
     this.productService.getCategories().subscribe((res: any) => {
       this.categories = res.categories;
+      this.gemstoneTypes = SUB_CATEGORIES_MAP[ProductCategory.LOOSE_GEMSTONES] || [
+        'Diamonds',
+        'Emeralds',
+        'Rubies',
+        'Blue Sapphire',
+        'Yellow Sapphire',
+        'Pearl',
+        'Coral',
+        "Cat's Eye",
+        'Gomedak',
+        'Other Colored Gemstones'
+      ];
     });
 
     this.activatedRoute.queryParams
@@ -519,7 +531,7 @@ export class ProductsComponent implements OnInit {
   }
 
   isGemstoneCategorySelected(): boolean {
-    return false; // Deprecated with unified categories
+    return this.selectedCategories().includes('gemstones');
   }
 
   loadProducts(): void {
