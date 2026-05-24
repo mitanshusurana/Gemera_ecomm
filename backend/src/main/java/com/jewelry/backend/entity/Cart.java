@@ -1,11 +1,12 @@
 package com.jewelry.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Transient;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,6 +35,7 @@ public class Cart extends BaseEntity {
 
     private boolean giftWrap;
 
+    @Column(columnDefinition = "boolean default false")
     private boolean abandonmentEmailSent = false;
 
     @Transient
