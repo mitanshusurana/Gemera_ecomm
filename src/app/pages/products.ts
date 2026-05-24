@@ -13,7 +13,7 @@ import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
-import { OCCASIONS_LIST, STYLES_LIST } from '../core/constants';
+import { OCCASIONS_LIST, STYLES_LIST, SUB_CATEGORIES_MAP, ProductCategory } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
