@@ -11,6 +11,10 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
+  getCategories(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/categories`);
+  }
+
   getProducts(search?: string): Observable<any> {
     let url = this.apiUrl;
     if (search) {

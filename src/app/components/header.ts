@@ -1,4 +1,4 @@
-import { Component, computed, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, computed, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, NavigationEnd, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -9,7 +9,7 @@ import { Product, User } from '../core/models';
 import { FormsModule } from '@angular/forms';
 import { WishlistService } from '../services/wishlist.service';
 import { CurrencyService } from '../services/currency.service';
-import { APP_CATEGORIES } from '../core/constants';
+
 
 @Component({
   selector: 'app-header',
@@ -170,18 +170,40 @@ import { APP_CATEGORIES } from '../core/constants';
         </div>
 
         <!-- Navigation Categories (Desktop) -->
-        <nav class="hidden lg:flex justify-center items-center gap-8 mt-4 border-t border-gray-100 pt-3">
-            <a *ngFor="let cat of categories"
-               [routerLink]="['/products']"
-               [queryParams]="{category: cat.value}"
-               class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group">
-                {{ cat.displayName }}
-                <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-            </a>
-            <a routerLink="/custom-design" class="text-sm font-bold text-primary-600 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group flex items-center gap-1">
+        <nav class="hidden lg:flex justify-center items-center gap-8 mt-4 border-t border-gray-100 pt-3 relative">
+            <div *ngFor="let cat of categories" class="group/menu">
+              <a [routerLink]="['/products']"
+                 [queryParams]="{category: cat.name}"
+                 class="text-sm font-semibold text-gray-700 hover:text-primary-700 uppercase tracking-wide px-2 py-3 relative block">
+                  {{ cat.displayName }}
+                  <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover/menu:scale-x-100 transition-transform origin-left"></span>
+              </a>
+
+              <!-- Mega Menu Dropdown -->
+              <div *ngIf="cat.subcategories && cat.subcategories.length > 0" class="absolute top-full left-0 w-full bg-white shadow-2xl border-t border-gray-100 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-300 z-50">
+                <div class="container-luxury py-8">
+                  <div class="flex flex-wrap gap-x-12 gap-y-8">
+                    <div *ngFor="let subcat of cat.subcategories" class="min-w-[150px]">
+                      <a [routerLink]="['/products']" [queryParams]="{category: subcat.name}" class="font-display font-bold text-gray-900 mb-3 block hover:text-primary-700">
+                        {{ subcat.displayName }} <span *ngIf="subcat.subcategories?.length" class="text-xs">›</span>
+                      </a>
+                      <ul *ngIf="subcat.subcategories && subcat.subcategories.length > 0" class="space-y-2">
+                        <li *ngFor="let child of subcat.subcategories">
+                          <a [routerLink]="['/products']" [queryParams]="{category: child.name}" class="text-sm text-gray-600 hover:text-primary-600 transition-colors">
+                            {{ child.displayName }}
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <a routerLink="/custom-design" class="text-sm font-bold text-primary-600 hover:text-primary-700 uppercase tracking-wide px-2 py-3 relative group/menu flex items-center gap-1">
                 <span class="text-lg">🎨</span> Custom Design
             </a>
-            <a routerLink="/treasure" class="text-sm font-bold text-secondary-600 hover:text-secondary-700 uppercase tracking-wide px-2 py-1 relative group flex items-center gap-1">
+            <a routerLink="/treasure" class="text-sm font-bold text-secondary-600 hover:text-secondary-700 uppercase tracking-wide px-2 py-3 relative group/menu flex items-center gap-1">
                 <span class="text-lg">💎</span> Treasure Plan
             </a>
         </nav>
@@ -200,13 +222,29 @@ import { APP_CATEGORIES } from '../core/constants';
               >
           </div>
           <a routerLink="/" (click)="toggleMobileMenu()" class="font-medium text-gray-800 py-2 border-b border-gray-50">Home</a>
-          <a *ngFor="let cat of categories"
-             [routerLink]="['/products']"
-             [queryParams]="{category: cat.value}"
-             (click)="toggleMobileMenu()"
-             class="font-medium text-gray-800 py-2 border-b border-gray-50">
-             {{ cat.displayName }}
-          </a>
+          <div *ngFor="let cat of categories" class="border-b border-gray-50">
+            <div class="flex justify-between items-center py-2">
+              <a [routerLink]="['/products']" [queryParams]="{category: cat.name}" (click)="toggleMobileMenu()" class="font-medium text-gray-800 flex-1">
+                {{ cat.displayName }}
+              </a>
+              <button *ngIf="cat.subcategories?.length" (click)="activeMobileCategory = activeMobileCategory === cat.id ? null : cat.id" class="px-2 py-1 text-gray-500">
+                <svg class="w-4 h-4 transition-transform" [class.rotate-180]="activeMobileCategory === cat.id" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+            </div>
+
+            <div *ngIf="activeMobileCategory === cat.id && cat.subcategories?.length" class="pl-4 pb-2">
+              <div *ngFor="let subcat of cat.subcategories" class="py-1">
+                <a [routerLink]="['/products']" [queryParams]="{category: subcat.name}" (click)="toggleMobileMenu()" class="text-sm font-semibold text-gray-700 block py-1">
+                  {{ subcat.displayName }}
+                </a>
+                <div *ngIf="subcat.subcategories?.length" class="pl-4">
+                   <a *ngFor="let child of subcat.subcategories" [routerLink]="['/products']" [queryParams]="{category: child.name}" (click)="toggleMobileMenu()" class="text-sm text-gray-500 block py-1">
+                     - {{ child.displayName }}
+                   </a>
+                </div>
+              </div>
+            </div>
+          </div>
           <a routerLink="/custom-design" (click)="toggleMobileMenu()" class="font-bold text-primary-700 py-2 border-b border-gray-50 flex items-center gap-2">🎨 Custom Design</a>
           <a routerLink="/treasure" (click)="toggleMobileMenu()" class="font-bold text-secondary-700 py-2 border-b border-gray-50 flex items-center gap-2">💎 Treasure Plan</a>
         </div>
@@ -214,13 +252,14 @@ import { APP_CATEGORIES } from '../core/constants';
     </header>
   `
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
+  activeMobileCategory: string | null = null;
   isMobileMenuOpen = false;
   isCurrencyDropdownOpen = false;
   searchQuery = '';
   searchResults: Product[] = [];
   isSearchFocused = false;
-  categories = APP_CATEGORIES;
+  categories: any[] = [];
 
   private authService = inject(AuthService);
   private cartService = inject(CartService);
@@ -238,6 +277,15 @@ export class HeaderComponent {
 
   availableCurrencies = this.currencyService.availableCurrencies;
   currentCurrency = this.currencyService.currentCurrency;
+
+  ngOnInit() {
+    this.productService.getCategories().subscribe({
+      next: (res: any) => {
+        this.categories = res.categories;
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
   constructor() {
     this.authService.user()

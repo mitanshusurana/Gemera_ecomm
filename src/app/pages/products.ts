@@ -13,7 +13,7 @@ import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
-import { APP_CATEGORIES, SUB_CATEGORIES_MAP, ProductCategory, OCCASIONS_LIST, STYLES_LIST } from '../core/constants';
+import { OCCASIONS_LIST, STYLES_LIST } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
@@ -74,7 +74,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 <!-- Category Filter -->
                 <div class="card p-6">
                   <h3 class="font-semibold text-gray-900 mb-4">Categories</h3>
-                  <div class="space-y-3">
+                  <div class="space-y-4">
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -82,20 +82,45 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                         [checked]="selectedCategories().length === 0"
                         (change)="toggleCategory('all')"
                       />
-                      <span class="text-sm text-gray-700">All Products</span>
+                      <span class="text-sm font-semibold text-gray-800">All Collections</span>
                     </label>
-                    <label
-                      *ngFor="let category of appCategories"
-                      class="flex items-center gap-3 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        class="w-4 h-4"
-                        [checked]="selectedCategories().includes(category.value)"
-                        (change)="toggleCategory(category.value)"
-                      />
-                      <span class="text-sm text-gray-700">{{ category.displayName }}</span>
-                    </label>
+
+                    <div *ngFor="let category of categories" class="space-y-2">
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            [checked]="selectedCategories().includes(category.name)"
+                            (change)="toggleCategory(category.name)"
+                            class="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
+                          >
+                          <span class="text-sm text-gray-800 font-semibold group-hover:text-primary-800 transition-colors">{{category.displayName}}</span>
+                        </label>
+
+                        <div *ngIf="category.subcategories?.length" class="pl-6 space-y-2 border-l border-gray-100 ml-2">
+                          <div *ngFor="let subcat of category.subcategories">
+                             <label class="flex items-center gap-3 cursor-pointer group">
+                              <input
+                                type="checkbox"
+                                [checked]="selectedCategories().includes(subcat.name)"
+                                (change)="toggleCategory(subcat.name)"
+                                class="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
+                              >
+                              <span class="text-sm text-gray-700 group-hover:text-primary-800 transition-colors">{{subcat.displayName}}</span>
+                             </label>
+                             <div *ngIf="subcat.subcategories?.length" class="pl-6 space-y-2 mt-2">
+                                <label *ngFor="let child of subcat.subcategories" class="flex items-center gap-3 cursor-pointer group">
+                                  <input
+                                    type="checkbox"
+                                    [checked]="selectedCategories().includes(child.name)"
+                                    (change)="toggleCategory(child.name)"
+                                    class="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
+                                  >
+                                  <span class="text-sm text-gray-500 group-hover:text-primary-800 transition-colors">- {{child.displayName}}</span>
+                                </label>
+                             </div>
+                          </div>
+                        </div>
+                    </div>
                   </div>
                 </div>
 
@@ -396,10 +421,10 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   `,
 })
 export class ProductsComponent implements OnInit {
-  appCategories = APP_CATEGORIES;
+  categories: any[] = [];
   occasionsList = OCCASIONS_LIST;
   stylesList = STYLES_LIST;
-  gemstoneTypes = SUB_CATEGORIES_MAP[ProductCategory.LOOSE_GEMSTONES];
+  gemstoneTypes: any[] = [];
 
   private productService = inject(ProductService);
   private cartService = inject(CartService);
@@ -477,6 +502,11 @@ export class ProductsComponent implements OnInit {
       '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
     );
 
+
+    this.productService.getCategories().subscribe((res: any) => {
+      this.categories = res.categories;
+    });
+
     this.activatedRoute.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
@@ -489,7 +519,7 @@ export class ProductsComponent implements OnInit {
   }
 
   isGemstoneCategorySelected(): boolean {
-    return this.selectedCategories().includes(ProductCategory.LOOSE_GEMSTONES);
+    return false; // Deprecated with unified categories
   }
 
   loadProducts(): void {

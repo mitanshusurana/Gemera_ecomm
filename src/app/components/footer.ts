@@ -1,9 +1,10 @@
+import { ProductService } from "../services/product.service";
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from "@angular/core";
 import { SettingService } from '../services/setting.service';
 import { CommonModule } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from "@angular/forms";
-import { APP_CATEGORIES } from "../core/constants";
+
 import { EmailNotificationService } from "../services/email-notification.service";
 import { ToastService } from "../services/toast.service";
 import { environment } from "../../environments/environment";
@@ -76,7 +77,7 @@ import { environment } from "../../environments/environment";
               <li><a routerLink="/rfq" class="text-sm font-bold text-secondary-400 hover:text-white transition-colors flex items-center gap-1">📋 Request for Quote</a></li>
               <li><a routerLink="/treasure" class="text-sm font-bold text-secondary-400 hover:text-white transition-colors flex items-center gap-1">✨ Treasure Plan</a></li>
               <li *ngFor="let cat of categories.slice(0, 5)">
-                <a [routerLink]="['/products']" [queryParams]="{category: cat.value}" class="text-sm text-primary-200 hover:text-secondary-400 transition-colors">{{ cat.displayName }}</a>
+                <a [routerLink]="['/products']" [queryParams]="{category: cat.name}" class="text-sm text-primary-200 hover:text-secondary-400 transition-colors">{{ cat.displayName }}</a>
               </li>
             </ul>
           </div>
@@ -128,8 +129,9 @@ import { environment } from "../../environments/environment";
   `,
 })
 export class FooterComponent implements OnInit {
+  private productService = inject(ProductService);
   env = environment;
-  categories = APP_CATEGORIES;
+  categories: any[] = [];
   settings: any = null;
   emailControl = new FormControl('', [Validators.required, Validators.email]);
   isSubscribing = false;
@@ -140,6 +142,11 @@ export class FooterComponent implements OnInit {
   private settingService = inject(SettingService);
 
   ngOnInit() {
+    this.productService.getCategories().subscribe((res: any) => {
+      this.categories = res.categories;
+      this.cdr.markForCheck();
+    });
+
     this.settingService.getSettings().subscribe({
       next: (data: any) => {
         this.settings = {
