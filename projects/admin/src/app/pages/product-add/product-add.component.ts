@@ -254,7 +254,7 @@ export class ProductAddComponent implements OnInit {
     // Auto-select variety based on subCategory for Loose Gemstones
     this.productForm.get('subCategory')?.valueChanges.subscribe((subCategoryVal) => {
       if (this.selectedCategory === 'Gemstones' && subCategoryVal) {
-        if (this.varieties.includes(subCategoryVal)) {
+        if (this.varieties.includes(subCategoryVal) || subCategoryVal) {
           this.productForm.get('variety')?.setValue(subCategoryVal);
         }
       }
