@@ -275,7 +275,7 @@ export class ProductAddComponent implements OnInit {
     });
 
     // Auto-generate triggers
-    ['caratWeight', 'cut', 'colorHue', 'colorTradeTerm', 'variety'].forEach(field => {
+    ['category', 'subCategory', 'caratWeight', 'cut', 'colorHue', 'colorTradeTerm', 'variety'].forEach(field => {
       this.productForm.get(field)?.valueChanges.subscribe(() => {
         this.generateNameAndDescription();
       });
@@ -485,7 +485,7 @@ export class ProductAddComponent implements OnInit {
   }
 
   generateNameAndDescription() {
-    if (this.selectedCategory !== 'Gemstones') return;
+    if (!this.selectedCategory) return;
 
     const v = this.productForm.value;
     const carat = v.caratWeight ? `${v.caratWeight} ct` : '';
@@ -494,7 +494,11 @@ export class ProductAddComponent implements OnInit {
     const variety = v.variety || v.subCategory || '';
 
     // E.g. "1.5 ct Brilliant Cut Royal Blue Sapphire"
-    const parts = [carat, cut, color, variety].filter(p => p.trim() !== '');
+    let parts = [carat, cut, color, variety].filter(p => p.trim() !== '');
+    if (this.selectedCategory !== 'Gemstones') {
+      const type = v.variety || v.subCategory || this.selectedCategory || '';
+      parts = [type].filter(p => p.trim() !== '');
+    }
     const generatedName = parts.join(' ');
 
     const generatedDesc = `This is a beautiful ${generatedName}. Perfect for custom jewelry designs or as an investment piece.`;
