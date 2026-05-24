@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { ProductService } from '../../services/product.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
-import { APP_CATEGORIES, SUB_CATEGORIES_MAP, OCCASIONS_LIST, STYLES_LIST, ProductCategory } from '../../core/constants';
+import { OCCASIONS_LIST, STYLES_LIST, ProductCategory } from '../../core/constants';
 
 @Component({
   selector: 'app-product-add',
@@ -23,8 +23,8 @@ export class ProductAddComponent implements OnInit {
     private route: ActivatedRoute
   ) {}
 
-  categoriesList = APP_CATEGORIES;
-  subCategoriesMap = SUB_CATEGORIES_MAP;
+  categoriesList: any[] = [];
+  subCategoriesMap: any = {};
   occasionsList = OCCASIONS_LIST;
   stylesList = STYLES_LIST;
 
@@ -109,12 +109,25 @@ export class ProductAddComponent implements OnInit {
     return this.productForm.get('category')?.value;
   }
 
-  get availableSubCategories(): string[] {
-    const category = this.selectedCategory;
-    return category ? (this.subCategoriesMap[category] || []) : [];
+  get availableSubCategories(): any[] {
+    const categoryName = this.selectedCategory;
+    if (!categoryName) return [];
+    const category = this.categoriesList.find((c: any) => c.name === categoryName);
+    return category && category.subcategories ? category.subcategories : [];
+  }
+
+  get availableChildCategories(): any[] {
+     const subCategoryName = this.productForm.get('subCategory')?.value;
+     if (!subCategoryName) return [];
+     const subCategory = this.availableSubCategories.find((c: any) => c.name === subCategoryName);
+     return subCategory && subCategory.subcategories ? subCategory.subcategories : [];
   }
 
   ngOnInit() {
+    this.productService.getCategories().subscribe((res: any) => {
+      this.categoriesList = res.categories;
+    });
+
     this.productId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.productId;
 
