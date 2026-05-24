@@ -506,9 +506,9 @@ export class ProductsComponent implements OnInit {
     this.productService.getCategories().subscribe((res: any) => {
       this.categories = res.categories;
       this.gemstoneTypes = SUB_CATEGORIES_MAP[ProductCategory.LOOSE_GEMSTONES] || [
-        'Diamonds',
-        'Emeralds',
-        'Rubies',
+        'Diamond',
+        'Emerald',
+        'Ruby',
         'Blue Sapphire',
         'Yellow Sapphire',
         'Pearl',

@@ -109,7 +109,7 @@ public class DataInitializer {
 
         // Root 2: Loose Gemstones
         Category gemstonesRoot = createCategory("Gemstones", null);
-        Arrays.asList("Diamonds", "Emeralds", "Rubies", "Blue Sapphire", "Yellow Sapphire", "Pearl", "Coral", "Cat's Eye", "Gomedak", "Other Colored Gemstones").forEach(c -> createCategory(c, gemstonesRoot));
+        Arrays.asList("Diamond", "Emerald", "Ruby", "Blue Sapphire", "Yellow Sapphire", "Pearl", "Coral", "Cat's Eye", "Gomedak", "Other Colored Gemstones").forEach(c -> createCategory(c, gemstonesRoot));
 
         Category exclusive = createCategory("Exclusive Gemstones", gemstonesRoot);
         Arrays.asList("Emerald").forEach(c -> createCategory(c, exclusive));

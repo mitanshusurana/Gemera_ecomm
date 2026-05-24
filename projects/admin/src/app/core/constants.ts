@@ -62,9 +62,9 @@ export const SUB_CATEGORIES_MAP: { [key: string]: string[] } = {
     'Pendants/Other (Brooches, Watches)'
   ],
   [ProductCategory.LOOSE_GEMSTONES]: [
-    'Diamonds',
-    'Emeralds',
-    'Rubies',
+    'Diamond',
+    'Emerald',
+    'Ruby',
     'Blue Sapphire',
     'Yellow Sapphire',
     'Pearl',
