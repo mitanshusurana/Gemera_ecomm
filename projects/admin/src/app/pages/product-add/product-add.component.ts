@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { ProductService } from '../../services/product.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
-import { OCCASIONS_LIST, STYLES_LIST, ProductCategory } from '../../core/constants';
+import { OCCASIONS_LIST, STYLES_LIST, ProductCategory, SUB_CATEGORIES_MAP } from '../../core/constants';
 
 @Component({
   selector: 'app-product-add',
@@ -112,6 +112,19 @@ export class ProductAddComponent implements OnInit {
   get availableSubCategories(): any[] {
     const categoryName = this.selectedCategory;
     if (!categoryName) return [];
+
+    // First try static mapping if it's Gemstones or others to guarantee they appear
+    let staticList: string[] = [];
+    if (categoryName === 'Jewelry') staticList = SUB_CATEGORIES_MAP[ProductCategory.FINISHED_JEWELRY];
+    if (categoryName === 'Gemstones') staticList = SUB_CATEGORIES_MAP[ProductCategory.LOOSE_GEMSTONES];
+    if (categoryName === 'Spiritual Idols') staticList = SUB_CATEGORIES_MAP[ProductCategory.RELIGIOUS_IDOLS];
+    if (categoryName === 'Materials & Roughs') staticList = SUB_CATEGORIES_MAP[ProductCategory.ROUGH_MATERIALS];
+    if (categoryName === 'Components') staticList = SUB_CATEGORIES_MAP[ProductCategory.COMPONENTS_MATERIALS];
+
+    if (staticList && staticList.length > 0) {
+        return staticList.map(name => ({ name, displayName: name, subcategories: [] }));
+    }
+
     const category = this.categoriesList.find((c: any) => c.displayName === categoryName);
     return category && category.subcategories ? category.subcategories : [];
   }

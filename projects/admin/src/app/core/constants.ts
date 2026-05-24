@@ -52,3 +52,37 @@ export const RING_CATEGORIES = [
   'Ring Setting',
   'Ring'
 ];
+
+export const SUB_CATEGORIES_MAP: { [key: string]: string[] } = {
+  [ProductCategory.FINISHED_JEWELRY]: [
+    'Rings (Engagement, Wedding, Cocktail, Signet, Eternity, Birthstone)',
+    'Necklaces (Choker, Pendant, Statement, Chain, Lariat, Bar Necklace)',
+    'Earrings (Studs, Hoops, Drops, Dangles, Jackets, Bali, Ear Cuffs)',
+    'Bracelets (Bangles, Cuffs, Tennis, Beaded, Bolo, Bajuband)',
+    'Pendants/Other (Brooches, Watches)'
+  ],
+  [ProductCategory.LOOSE_GEMSTONES]: [
+    'Diamonds',
+    'Emeralds',
+    'Rubies',
+    'Blue Sapphire',
+    'Yellow Sapphire',
+    'Pearl',
+    'Coral',
+    "Cat's Eye",
+    'Gomedak',
+    'Other Colored Gemstones'
+  ],
+  [ProductCategory.RELIGIOUS_IDOLS]: [
+    'Murtis (Ganesh, Krishna, Shiva, Lakshmi)'
+  ],
+  [ProductCategory.ROUGH_MATERIALS]: [
+    'Rough Parcels',
+    'Single Rough Crystals'
+  ],
+  [ProductCategory.COMPONENTS_MATERIALS]: [
+    'Findings (Clasps, Hooks)',
+    'Beads',
+    'Silver Wire'
+  ]
+};
