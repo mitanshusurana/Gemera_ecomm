@@ -92,6 +92,8 @@ public class CartService {
         }
 
         recalculateCart(cart);
+        // Reset abandonment flag if they add a new item
+        cart.setAbandonmentEmailSent(false);
         return cartRepository.save(cart);
     }
 
@@ -150,6 +152,7 @@ public class CartService {
         }
 
         recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
         return cartRepository.save(cart);
     }
 
@@ -163,6 +166,7 @@ public class CartService {
         Cart cart = getCart(userEmail);
         cart.setGiftWrap(giftWrap);
         recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
         return cartRepository.save(cart);
     }
 
@@ -179,6 +183,7 @@ public class CartService {
              }
         }
         recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
         return cartRepository.save(cart);
     }
 

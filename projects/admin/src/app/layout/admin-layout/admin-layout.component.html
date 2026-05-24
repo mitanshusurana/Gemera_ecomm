@@ -72,6 +72,16 @@
       </a>
 
       <!-- Adding placeholder links for the other tabs -->
+      <a routerLink="/appointments" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">event</span>
+        <p class="text-[10px] font-bold leading-none">Appts</p>
+      </a>
+
+      <a routerLink="/inquiries" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">draw</span>
+        <p class="text-[10px] font-bold leading-none">Inquiries</p>
+      </a>
+
       <a routerLink="/settings" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
         <span class="material-symbols-outlined">settings</span>
         <p class="text-[10px] font-bold leading-none">Settings</p>

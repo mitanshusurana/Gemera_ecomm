@@ -178,6 +178,9 @@ import { APP_CATEGORIES } from '../core/constants';
                 {{ cat.displayName }}
                 <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
             </a>
+            <a routerLink="/custom-design" class="text-sm font-bold text-primary-600 hover:text-primary-700 uppercase tracking-wide px-2 py-1 relative group flex items-center gap-1">
+                <span class="text-lg">🎨</span> Custom Design
+            </a>
             <a routerLink="/treasure" class="text-sm font-bold text-secondary-600 hover:text-secondary-700 uppercase tracking-wide px-2 py-1 relative group flex items-center gap-1">
                 <span class="text-lg">💎</span> Treasure Plan
             </a>
@@ -204,6 +207,7 @@ import { APP_CATEGORIES } from '../core/constants';
              class="font-medium text-gray-800 py-2 border-b border-gray-50">
              {{ cat.displayName }}
           </a>
+          <a routerLink="/custom-design" (click)="toggleMobileMenu()" class="font-bold text-primary-700 py-2 border-b border-gray-50 flex items-center gap-2">🎨 Custom Design</a>
           <a routerLink="/treasure" (click)="toggleMobileMenu()" class="font-bold text-secondary-700 py-2 border-b border-gray-50 flex items-center gap-2">💎 Treasure Plan</a>
         </div>
       </div>

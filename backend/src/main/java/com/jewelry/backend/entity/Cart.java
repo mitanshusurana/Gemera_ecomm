@@ -34,6 +34,8 @@ public class Cart extends BaseEntity {
 
     private boolean giftWrap;
 
+    private boolean abandonmentEmailSent = false;
+
     @Transient
     private List<Product> wishlist;
 }
