@@ -30,7 +30,7 @@ public class AppointmentController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Appointment> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<Appointment> updateStatus(@PathVariable java.util.UUID id, @RequestBody Map<String, String> payload) {
         return ResponseEntity.ok(appointmentService.updateStatus(id, payload.get("status")));
     }
 }
