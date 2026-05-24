@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay, of } from 'rxjs';
 import { Product, ProductDetail, Category, PaginatedResponse, DeliveryAvailability } from '../core/models';
 import { ApiConfigService } from './api-config.service';
 
@@ -50,8 +50,15 @@ export class ProductService {
     return this.http.get<ProductDetail>(`${this.baseUrl}/${productId}`);
   }
 
+  private categoriesCache$?: Observable<{ categories: Category[] }>;
+
   getCategories(): Observable<{ categories: Category[] }> {
-    return this.http.get<{ categories: Category[] }>(`${this.baseUrl}/categories`);
+    if (!this.categoriesCache$) {
+      this.categoriesCache$ = this.http.get<{ categories: Category[] }>(`${this.baseUrl}/categories`).pipe(
+        shareReplay(1)
+      );
+    }
+    return this.categoriesCache$;
   }
 
   searchProducts(query: string, limit: number = 10): Observable<{ results: Product[] }> {

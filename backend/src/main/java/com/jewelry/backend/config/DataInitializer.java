@@ -58,8 +58,8 @@ public class DataInitializer {
     }
 
     private void initCategories() {
-        if (categoryRepository.count() > 0) {
-            return; // Already initialized
+        if (categoryRepository.count() > 0 && categoryRepository.findAll().stream().anyMatch(c -> c.getName().equals("emerald"))) {
+            return; // Already initialized completely
         }
 
         System.out.println("Initializing categories...");
@@ -142,8 +142,18 @@ public class DataInitializer {
     }
 
     private Category createCategory(String name, Category parent) {
+        String cleanName = name.toLowerCase().replace(" ", "-").replace("/", "");
+        java.util.Optional<Category> existing = categoryRepository.findAll().stream().filter(c -> c.getName().equals(cleanName)).findFirst();
+        if (existing.isPresent()) {
+            Category cat = existing.get();
+            if (parent != null && cat.getParent() == null) {
+                cat.setParent(parent);
+                return categoryRepository.save(cat);
+            }
+            return cat;
+        }
         Category category = new Category();
-        category.setName(name.toLowerCase().replace(" ", "-").replace("/", ""));
+        category.setName(cleanName);
         category.setDisplayName(name);
         category.setParent(parent);
         return categoryRepository.save(category);

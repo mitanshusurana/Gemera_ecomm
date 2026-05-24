@@ -25,7 +25,7 @@ public class AppointmentService {
         return appointmentRepository.findAll();
     }
 
-    public Appointment updateStatus(Long id, String status) {
+    public Appointment updateStatus(java.util.UUID id, String status) {
         Appointment appointment = appointmentRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Appointment not found"));
         appointment.setStatus(status);
