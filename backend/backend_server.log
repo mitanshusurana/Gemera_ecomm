@@ -238,3 +238,27 @@ select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from set
 2026-05-24T09:12:51.946Z  WARN 330818 --- [jewelry-backend] [nio-8080-exec-7] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
 2026-05-24T09:12:51.947Z ERROR 330818 --- [jewelry-backend] [nio-8080-exec-7] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
 select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T09:59:10.313Z  WARN 330818 --- [jewelry-backend] [nio-8080-exec-6] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T09:59:10.340Z ERROR 330818 --- [jewelry-backend] [nio-8080-exec-6] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T09:59:13.864Z  WARN 330818 --- [jewelry-backend] [io-8080-exec-10] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T09:59:13.865Z ERROR 330818 --- [jewelry-backend] [io-8080-exec-10] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T09:59:49.143Z  WARN 330818 --- [jewelry-backend] [nio-8080-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T09:59:49.148Z ERROR 330818 --- [jewelry-backend] [nio-8080-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T09:59:49.447Z  WARN 330818 --- [jewelry-backend] [nio-8080-exec-8] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T09:59:49.447Z ERROR 330818 --- [jewelry-backend] [nio-8080-exec-8] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T10:00:12.484Z  WARN 330818 --- [jewelry-backend] [nio-8080-exec-6] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T10:00:12.485Z ERROR 330818 --- [jewelry-backend] [nio-8080-exec-6] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T10:00:16.050Z  WARN 330818 --- [jewelry-backend] [nio-8080-exec-9] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T10:00:16.050Z ERROR 330818 --- [jewelry-backend] [nio-8080-exec-9] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T10:00:25.671Z  WARN 330818 --- [jewelry-backend] [io-8080-exec-10] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T10:00:25.677Z ERROR 330818 --- [jewelry-backend] [io-8080-exec-10] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]
+2026-05-24T10:00:25.924Z  WARN 330818 --- [jewelry-backend] [nio-8080-exec-3] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 42001, SQLState: 42001
+2026-05-24T10:00:25.924Z ERROR 330818 --- [jewelry-backend] [nio-8080-exec-3] o.h.engine.jdbc.spi.SqlExceptionHelper   : Syntax error in SQL statement "select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.[*]value from settings s1_0"; expected "identifier"; SQL statement:
+select s1_0.id,s1_0.created_at,s1_0.key_name,s1_0.updated_at,s1_0.value from settings s1_0 [42001-224]

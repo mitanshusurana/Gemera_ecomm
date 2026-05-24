@@ -12,10 +12,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 @Configuration
 public class DataInitializer {
@@ -68,14 +64,15 @@ public class DataInitializer {
 
         System.out.println("Initializing categories...");
 
-        // Our Collection
-        Category ourCollection = createCategory("Our Collection", null);
+        // Root 1: Finished Jewelry
+        Category jewelryRoot = createCategory("Jewelry", null);
+
+        Category ourCollection = createCategory("Our Collection", jewelryRoot);
         createCategory("Mens Collection", ourCollection);
         createCategory("Womens Collection", ourCollection);
         createCategory("Kids Collection", ourCollection);
 
-        // All Jewellery
-        Category allJewellery = createCategory("All Jewellery", null);
+        Category allJewellery = createCategory("All Jewellery", jewelryRoot);
         Category ring = createCategory("Ring", allJewellery);
         Arrays.asList("Six Stone", "9 Stone/ Navaratna", "3 Stone", "Other", "Fancy", "Cocktail", "Bridal", "Heart", "Band", "Couple", "Engagement", "7 Stone", "Solitare", "Floral", "Medium", "4 Stone", "Close Setting Ring", "Eternity Ring", "1 Stone").forEach(c -> createCategory(c, ring));
 
@@ -97,33 +94,49 @@ public class DataInitializer {
         Category necklace = createCategory("Necklace", allJewellery);
         Arrays.asList("Fancy", "Other", "Medium", "Chain", "Floral", "Necklace With Colorstone", "Bridal").forEach(c -> createCategory(c, necklace));
 
-        // Gold Jewellery
-        Category goldJewellery = createCategory("Gold Jewellery", null);
+        Category goldJewellery = createCategory("Gold Jewellery", jewelryRoot);
         Arrays.asList("Ring", "Bracelet", "Bangle", "Nosepin", "Pendant", "Earring", "Necklace").forEach(c -> createCategory(c, goldJewellery));
 
-        // Silver Jewellery
-        Category silverJewellery = createCategory("Silver Jewellery", null);
+        Category silverJewellery = createCategory("Silver Jewellery", jewelryRoot);
         Arrays.asList("Pendant", "Necklace").forEach(c -> createCategory(c, silverJewellery));
 
-        // Diamond Jewellery
-        Category diamondJewellery = createCategory("Diamond Jewellery", null);
+        Category diamondJewellery = createCategory("Diamond Jewellery", jewelryRoot);
         Arrays.asList("Ring", "Bracelet", "Bangle", "Nosepin", "Pendant", "Earring", "Necklace").forEach(c -> createCategory(c, diamondJewellery));
 
-        // CVD Jewellery
-        Category cvdJewellery = createCategory("CVD Jewellery", null);
+        Category cvdJewellery = createCategory("CVD Jewellery", jewelryRoot);
         Arrays.asList("Ring", "Bracelet", "Earring").forEach(c -> createCategory(c, cvdJewellery));
 
-        // Gemstones
-        Category gemstones = createCategory("Gemstones", null);
-        Category exclusive = createCategory("Exclusive Gemstones", gemstones);
+
+        // Root 2: Loose Gemstones
+        Category gemstonesRoot = createCategory("Gemstones", null);
+        Arrays.asList("Diamonds", "Emeralds", "Rubies", "Blue Sapphire", "Yellow Sapphire", "Pearl", "Coral", "Cat's Eye", "Gomedak", "Other Colored Gemstones").forEach(c -> createCategory(c, gemstonesRoot));
+
+        Category exclusive = createCategory("Exclusive Gemstones", gemstonesRoot);
         Arrays.asList("Emerald").forEach(c -> createCategory(c, exclusive));
 
-        Category special = createCategory("Special Collections", gemstones);
+        Category special = createCategory("Special Collections", gemstonesRoot);
         Arrays.asList("Blue Sapphire", "Moon Stone", "Sapphire").forEach(c -> createCategory(c, special));
 
-        // Others
-        createCategory("Loose Diamonds", null);
-        createCategory("Lab Grown", null);
+        createCategory("Loose Diamonds", gemstonesRoot);
+        createCategory("Lab Grown", gemstonesRoot);
+
+        // Root 3: Spiritual Idols
+        Category idolsRoot = createCategory("Spiritual Idols", null);
+        Arrays.asList("Ganesh", "Krishna", "Shiva", "Lakshmi").forEach(c -> createCategory(c, idolsRoot));
+
+        // Root 4: Materials & Roughs
+        Category roughsRoot = createCategory("Materials & Roughs", null);
+        Arrays.asList("Rough Parcels", "Single Rough Crystals").forEach(c -> createCategory(c, roughsRoot));
+
+        // Root 5: Components
+        Category componentsRoot = createCategory("Components", null);
+        Arrays.asList("Findings (Clasps, Hooks)", "Beads", "Silver Wire").forEach(c -> createCategory(c, componentsRoot));
+
+        // Root 6: Custom Made
+        createCategory("Custom Made", null);
+
+        // Root 7: Settings
+        createCategory("Settings", null);
 
         System.out.println("Categories initialized.");
     }
