@@ -18,7 +18,7 @@ export interface CustomInquiry {
 })
 export class InquiryService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/v1/inquiries`;
+  private apiUrl = `${environment.apiUrl}/inquiries`;
 
   createInquiry(formData: FormData): Observable<CustomInquiry> {
     return this.http.post<CustomInquiry>(this.apiUrl, formData);
