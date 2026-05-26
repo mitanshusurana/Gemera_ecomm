@@ -12,12 +12,12 @@ import { FormsModule } from '@angular/forms';
       <div (click)="close.emit()" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
 
       <!-- Modal Content -->
-      <div class="relative bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+      <div class="relative bg-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
         <!-- Header -->
-        <div class="sticky top-0 bg-white border-b border-diamond-200 p-6 flex justify-between items-center z-10">
+        <div class="sticky top-0 bg-surface border-b border-diamond-200 p-6 flex justify-between items-center z-10">
           <h2 class="text-2xl font-display font-bold text-diamond-900">Ring Size Guide</h2>
           <button (click)="close.emit()" class="p-2 hover:bg-diamond-50 rounded-full transition-colors">
-            <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
@@ -28,19 +28,19 @@ import { FormsModule } from '@angular/forms';
           <button (click)="activeTab.set('chart')"
                   [class.text-gold-600]="activeTab() === 'chart'"
                   [class.border-gold-500]="activeTab() === 'chart'"
-                  class="flex-1 py-4 text-center font-semibold text-gray-600 border-b-2 border-transparent hover:text-gold-500 transition-colors">
+                  class="flex-1 py-4 text-center font-semibold text-ink border-b-2 border-transparent hover:text-gold-500 transition-colors">
             Size Chart
           </button>
           <button (click)="activeTab.set('virtual')"
                   [class.text-gold-600]="activeTab() === 'virtual'"
                   [class.border-gold-500]="activeTab() === 'virtual'"
-                  class="flex-1 py-4 text-center font-semibold text-gray-600 border-b-2 border-transparent hover:text-gold-500 transition-colors">
+                  class="flex-1 py-4 text-center font-semibold text-ink border-b-2 border-transparent hover:text-gold-500 transition-colors">
             Virtual Sizer
           </button>
           <button (click)="activeTab.set('kit')"
                   [class.text-gold-600]="activeTab() === 'kit'"
                   [class.border-gold-500]="activeTab() === 'kit'"
-                  class="flex-1 py-4 text-center font-semibold text-gray-600 border-b-2 border-transparent hover:text-gold-500 transition-colors">
+                  class="flex-1 py-4 text-center font-semibold text-ink border-b-2 border-transparent hover:text-gold-500 transition-colors">
             Request Kit
           </button>
         </div>
@@ -50,13 +50,13 @@ import { FormsModule } from '@angular/forms';
 
           <!-- TAB: CHART -->
           <div *ngIf="activeTab() === 'chart'" class="animate-fade-in">
-            <p class="text-gray-600 mb-6">
+            <p class="text-ink mb-6">
               Use the chart below to find your ring size. If you are between sizes, we recommend choosing the larger size.
             </p>
 
             <div class="overflow-x-auto mb-8">
               <table class="w-full text-sm text-left">
-                <thead class="bg-diamond-50 text-gray-700 font-semibold">
+                <thead class="bg-diamond-50 text-ink font-semibold">
                   <tr>
                     <th class="px-4 py-3 rounded-tl-lg">US & Canada</th>
                     <th class="px-4 py-3">UK & Australia</th>
@@ -76,17 +76,17 @@ import { FormsModule } from '@angular/forms';
             </div>
 
             <div class="bg-diamond-50 rounded-xl p-6">
-              <h3 class="font-bold text-gray-900 mb-4">How to Measure</h3>
+              <h3 class="font-bold text-ink mb-4">How to Measure</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 class="font-semibold text-gold-600 mb-2">Option 1: Measure a Ring</h4>
-                  <p class="text-sm text-gray-700">
+                  <p class="text-sm text-ink">
                     Select a ring that properly fits the intended finger. Measure the inside diameter.
                   </p>
                 </div>
                 <div>
                   <h4 class="font-semibold text-gold-600 mb-2">Option 2: Measure Your Finger</h4>
-                  <p class="text-sm text-gray-700">
+                  <p class="text-sm text-ink">
                     Wrap a strip of paper around your finger. Mark the spot where it meets and measure the distance.
                   </p>
                 </div>
@@ -96,17 +96,17 @@ import { FormsModule } from '@angular/forms';
 
           <!-- TAB: VIRTUAL SIZER -->
           <div *ngIf="activeTab() === 'virtual'" class="animate-fade-in text-center">
-            <h3 class="font-bold text-lg text-gray-900 mb-2">Match Your Ring</h3>
-            <p class="text-gray-600 mb-8 max-w-md mx-auto">
+            <h3 class="font-bold text-lg text-ink mb-2">Match Your Ring</h3>
+            <p class="text-ink mb-8 max-w-md mx-auto">
               Place a ring that fits you well on the screen. Adjust the slider until the circle below perfectly fills the <strong>inside</strong> of your ring.
             </p>
 
-            <div class="bg-gray-100 rounded-2xl p-8 mb-8 flex items-center justify-center relative min-h-[300px]">
+            <div class="bg-surface rounded-2xl p-8 mb-8 flex items-center justify-center relative min-h-[300px]">
               <!-- The Circle -->
               <div class="rounded-full bg-gold-400 border-4 border-gold-600 shadow-inner flex items-center justify-center transition-all duration-75"
                    [style.width.mm]="sliderValue()"
                    [style.height.mm]="sliderValue()">
-                 <span class="text-white font-bold text-xs">{{ sliderValue() | number:'1.1-1' }} mm</span>
+                 <span class="text-surface font-bold text-xs">{{ sliderValue() | number:'1.1-1' }} mm</span>
               </div>
             </div>
 
@@ -115,16 +115,16 @@ import { FormsModule } from '@angular/forms';
                      [min]="14" [max]="24" [step]="0.1"
                      [ngModel]="sliderValue()"
                      (ngModelChange)="updateSlider($event)"
-                     class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gold-600">
-              <div class="flex justify-between text-xs text-gray-500 mt-2">
+                     class="w-full h-2 bg-surface rounded-lg appearance-none cursor-pointer accent-gold-600">
+              <div class="flex justify-between text-xs text-ink mt-2">
                 <span>14mm</span>
                 <span>Move slider to adjust size</span>
                 <span>24mm</span>
               </div>
 
               <div class="mt-8 p-4 bg-gold-50 rounded-lg border border-gold-200">
-                <p class="font-bold text-gray-900">Estimated Size: <span class="text-2xl text-gold-600">{{ estimatedSize() }}</span></p>
-                <p class="text-xs text-gray-600 mt-1">(US Standard)</p>
+                <p class="font-bold text-ink">Estimated Size: <span class="text-2xl text-gold-600">{{ estimatedSize() }}</span></p>
+                <p class="text-xs text-ink mt-1">(US Standard)</p>
               </div>
             </div>
           </div>
@@ -133,8 +133,8 @@ import { FormsModule } from '@angular/forms';
           <div *ngIf="activeTab() === 'kit'" class="animate-fade-in">
              <div class="text-center mb-8">
                <span class="text-4xl">📦</span>
-               <h3 class="font-bold text-xl text-gray-900 mt-2">Free Ring Sizer Kit</h3>
-               <p class="text-gray-600 mt-2">We'll ship a professional sizing tool to your doorstep, free of charge.</p>
+               <h3 class="font-bold text-xl text-ink mt-2">Free Ring Sizer Kit</h3>
+               <p class="text-ink mt-2">We'll ship a professional sizing tool to your doorstep, free of charge.</p>
              </div>
 
              <form (submit)="submitKitRequest()" class="space-y-4 max-w-md mx-auto">

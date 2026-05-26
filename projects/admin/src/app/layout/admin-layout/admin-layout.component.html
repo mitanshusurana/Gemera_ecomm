@@ -1,27 +1,27 @@
 <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-24">
   <!-- Header -->
-  <header class="flex items-center bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-50">
+  <header class="flex items-center bg-surface dark:bg-surface border-b border-ink dark:border-ink p-4 sticky top-0 z-50">
     <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
       <span class="material-symbols-outlined text-primary">diamond</span>
     </div>
-    <h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight flex-1 px-4 tracking-tight">AURELIUS ADMIN</h2>
+    <h2 class="text-ink dark:text-ink text-lg font-bold leading-tight flex-1 px-4 tracking-tight">AURELIUS ADMIN</h2>
 
     <div class="flex gap-2 items-center">
-      <button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+      <button class="flex items-center justify-center rounded-lg h-10 w-10 bg-surface dark:bg-surface text-ink dark:text-ink">
         <span class="material-symbols-outlined">search</span>
       </button>
-      <button class="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 relative">
+      <button class="flex items-center justify-center rounded-lg h-10 w-10 bg-surface dark:bg-surface text-ink dark:text-ink relative">
         <span class="material-symbols-outlined">notifications</span>
         <span class="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500"></span>
       </button>
-      <button (click)="logout()" class="flex items-center justify-center rounded-lg h-10 w-10 hover:bg-red-50 hover:text-red-600 text-slate-600 dark:text-slate-400 transition-colors" title="Logout">
+      <button (click)="logout()" class="flex items-center justify-center rounded-lg h-10 w-10 hover:bg-red-50 hover:text-red-600 text-ink dark:text-ink transition-colors" title="Logout">
         <span class="material-symbols-outlined">logout</span>
       </button>
     </div>
   </header>
 
   <!-- Live Metal Prices Ticker (Mock) -->
-  <div class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 overflow-hidden hidden sm:block">
+  <div class="bg-surface dark:bg-surface border-b border-ink dark:border-ink overflow-hidden hidden sm:block">
     <div class="flex gap-3 p-3 overflow-x-auto no-scrollbar justify-center">
       <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-3">
         <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
@@ -35,9 +35,9 @@
         <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
         <p class="text-emerald-700 dark:text-emerald-400 text-xs font-semibold whitespace-nowrap">Platinum: $910.40 (+0.1%)</p>
       </div>
-      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3">
-        <span class="material-symbols-outlined text-slate-600 text-sm">schedule</span>
-        <p class="text-slate-700 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">Updated: 2m ago</p>
+      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-surface dark:bg-surface border border-ink dark:border-ink px-3">
+        <span class="material-symbols-outlined text-ink text-sm">schedule</span>
+        <p class="text-ink dark:text-ink text-xs font-semibold whitespace-nowrap">Updated: 2m ago</p>
       </div>
     </div>
   </div>
@@ -48,41 +48,41 @@
   </main>
 
   <!-- Bottom Navigation Bar -->
-  <nav class="fixed bottom-0 left-0 right-0 z-50 flex items-center bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-3 pb-6 md:pb-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] justify-center">
+  <nav class="fixed bottom-0 left-0 right-0 z-50 flex items-center bg-surface dark:bg-surface border-t border-ink dark:border-ink px-6 py-3 pb-6 md:pb-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] justify-center">
     <div class="flex w-full max-w-lg gap-2">
-      <a routerLink="/dashboard" routerLinkActive="text-primary" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+      <a routerLink="/dashboard" routerLinkActive="text-primary" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">dashboard</span>
         <p class="text-[10px] font-bold leading-none">Dashboard</p>
       </a>
 
-      <a routerLink="/products" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+      <a routerLink="/products" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">inventory_2</span>
         <p class="text-[10px] font-bold leading-none">Products</p>
       </a>
 
       <div class="relative -top-6">
-        <a routerLink="/products/new" class="bg-primary text-white size-14 rounded-full shadow-lg shadow-primary/40 flex items-center justify-center border-4 border-background-light dark:border-background-dark hover:scale-105 transition-transform">
+        <a routerLink="/products/new" class="bg-primary text-surface size-14 rounded-full shadow-lg shadow-primary/40 flex items-center justify-center border-4 border-background-light dark:border-background-dark hover:scale-105 transition-transform">
           <span class="material-symbols-outlined text-2xl">add</span>
         </a>
       </div>
 
-      <a routerLink="/orders" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+      <a routerLink="/orders" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">shopping_bag</span>
         <p class="text-[10px] font-bold leading-none">Orders</p>
       </a>
 
       <!-- Adding placeholder links for the other tabs -->
-      <a routerLink="/appointments" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+      <a routerLink="/appointments" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">event</span>
         <p class="text-[10px] font-bold leading-none">Appts</p>
       </a>
 
-      <a routerLink="/inquiries" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+      <a routerLink="/inquiries" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">draw</span>
         <p class="text-[10px] font-bold leading-none">Inquiries</p>
       </a>
 
-      <a routerLink="/settings" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors">
+      <a routerLink="/settings" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">settings</span>
         <p class="text-[10px] font-bold leading-none">Settings</p>
       </a>

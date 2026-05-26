@@ -21,7 +21,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
       class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200"
     >
       <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        class="bg-surface rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <!-- Close Button -->
@@ -33,7 +33,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
           </h2>
           <button
             (click)="close.emit()"
-            class="text-gray-500 hover:text-gray-700 transition-colors"
+            class="text-ink hover:text-ink transition-colors"
           >
             <svg
               class="w-6 h-6"
@@ -84,7 +84,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
               </div>
 
               <!-- Name -->
-              <h3 class="text-2xl font-semibold text-gray-900 mb-3">
+              <h3 class="text-2xl font-semibold text-ink mb-3">
                 {{ product?.name || "Product" }}
               </h3>
 
@@ -95,7 +95,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                     >★</span
                   >
                 </div>
-                <span class="text-sm text-gray-600"
+                <span class="text-sm text-ink"
                   >({{ product?.reviewCount || 0 }} reviews)</span
                 >
               </div>
@@ -108,7 +108,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                   </span>
                   <span
                     *ngIf="product && product.originalPrice"
-                    class="text-lg text-gray-500 line-through"
+                    class="text-lg text-ink line-through"
                   >
                     {{ product.originalPrice | currencyConvert }}
                   </span>
@@ -116,16 +116,16 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
               </div>
 
               <!-- Description -->
-              <p class="text-gray-700 text-sm mb-6">
+              <p class="text-ink text-sm mb-6">
                 {{ product?.description || "No description available" }}
               </p>
 
               <!-- Specifications -->
               <div *ngIf="product && product.specifications" class="mb-6">
-                <h4 class="font-semibold text-gray-900 mb-3">Key Specs</h4>
+                <h4 class="font-semibold text-ink mb-3">Key Specs</h4>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                   <div *ngIf="product.specifications?.carat">
-                    <p class="text-gray-600">
+                    <p class="text-ink">
                       Carat:
                       <span class="font-semibold">{{
                         product.specifications.carat
@@ -133,7 +133,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                     </p>
                   </div>
                   <div *ngIf="product.specifications?.clarity">
-                    <p class="text-gray-600">
+                    <p class="text-ink">
                       Clarity:
                       <span class="font-semibold">{{
                         product.specifications.clarity
@@ -141,7 +141,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                     </p>
                   </div>
                   <div *ngIf="product.specifications?.color">
-                    <p class="text-gray-600">
+                    <p class="text-ink">
                       Color:
                       <span class="font-semibold">{{
                         product.specifications.color
@@ -149,7 +149,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                     </p>
                   </div>
                   <div *ngIf="product.specifications?.cut">
-                    <p class="text-gray-600">
+                    <p class="text-ink">
                       Cut:
                       <span class="font-semibold">{{
                         product.specifications.cut
@@ -157,7 +157,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                     </p>
                   </div>
                   <div *ngIf="product.metal">
-                    <p class="text-gray-600">
+                    <p class="text-ink">
                       Metal:
                       <span class="font-semibold">{{
                         product.metal
@@ -238,7 +238,7 @@ export class QuickViewModalComponent {
   }
 
   getStockClass(): string {
-    if (!this.product) return "bg-gray-100";
+    if (!this.product) return "bg-surface";
     if (this.product.stock > 10) return "bg-green-100 text-green-800";
     if (this.product.stock > 0) return "bg-yellow-100 text-yellow-800";
     return "bg-red-100 text-red-800";

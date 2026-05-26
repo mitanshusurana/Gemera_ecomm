@@ -28,18 +28,18 @@ import { COUNTRIES } from '../core/countries';
   imports: [CommonModule, FormsModule, RouterLink, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-surface">
       <!-- Breadcrumb -->
       <div class="bg-diamond-50 border-b border-diamond-200">
         <div class="container-luxury py-4">
           <div class="flex items-center gap-2 text-sm">
             <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-gray-500">/</span>
+            <span class="text-ink">/</span>
             <a routerLink="/cart" class="text-gold-600 hover:text-gold-700"
               >Cart</a
             >
-            <span class="text-gray-500">/</span>
-            <span class="text-gray-700">Checkout</span>
+            <span class="text-ink">/</span>
+            <span class="text-ink">Checkout</span>
           </div>
         </div>
       </div>
@@ -58,8 +58,8 @@ import { COUNTRIES } from '../core/countries';
               class="flex items-center justify-center w-10 h-10 rounded-full"
               [ngClass]="
                 currentStep() >= 1
-                  ? 'bg-gold-500 text-white'
-                  : 'bg-diamond-200 text-gray-700'
+                  ? 'bg-gold-500 text-surface'
+                  : 'bg-diamond-200 text-ink'
               "
             >
               1
@@ -72,8 +72,8 @@ import { COUNTRIES } from '../core/countries';
               class="flex items-center justify-center w-10 h-10 rounded-full"
               [ngClass]="
                 currentStep() >= 2
-                  ? 'bg-gold-500 text-white'
-                  : 'bg-diamond-200 text-gray-700'
+                  ? 'bg-gold-500 text-surface'
+                  : 'bg-diamond-200 text-ink'
               "
             >
               2
@@ -82,12 +82,12 @@ import { COUNTRIES } from '../core/countries';
           <div class="flex justify-between mt-4 text-sm">
             <span
               class="font-semibold"
-              [ngClass]="currentStep() >= 1 ? 'text-gold-600' : 'text-gray-600'"
+              [ngClass]="currentStep() >= 1 ? 'text-gold-600' : 'text-ink'"
               >Shipping</span
             >
             <span
               class="font-semibold"
-              [ngClass]="currentStep() >= 2 ? 'text-gold-600' : 'text-gray-600'"
+              [ngClass]="currentStep() >= 2 ? 'text-gold-600' : 'text-ink'"
               >Confirm & Pay</span
             >
           </div>
@@ -102,7 +102,7 @@ import { COUNTRIES } from '../core/countries';
             <span class="text-2xl">👤</span>
             <div>
               <p class="font-bold text-diamond-900">Already have an account?</p>
-              <p class="text-sm text-gray-600">
+              <p class="text-sm text-ink">
                 Sign in for a faster checkout experience.
               </p>
             </div>
@@ -123,7 +123,7 @@ import { COUNTRIES } from '../core/countries';
                 </h2>
                 <span
                   *ngIf="!isAuthenticated()"
-                  class="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded"
+                  class="text-xs font-semibold text-ink bg-surface px-2 py-1 rounded"
                   >GUEST CHECKOUT</span
                 >
               </div>
@@ -133,7 +133,7 @@ import { COUNTRIES } from '../core/countries';
                 *ngIf="isAuthenticated() && savedAddresses().length > 0"
                 class="mb-8 space-y-4"
               >
-                <h3 class="font-semibold text-gray-900">Saved Addresses</h3>
+                <h3 class="font-semibold text-ink">Saved Addresses</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div
                     *ngFor="let address of savedAddresses()"
@@ -146,7 +146,7 @@ import { COUNTRIES } from '../core/countries';
                     "
                   >
                     <div class="flex justify-between">
-                      <span class="font-bold text-gray-900"
+                      <span class="font-bold text-ink"
                         >{{ address.firstName }} {{ address.lastName }}</span
                       >
                       <span
@@ -155,7 +155,7 @@ import { COUNTRIES } from '../core/countries';
                         >DEFAULT</span
                       >
                     </div>
-                    <p class="text-sm text-gray-600 mt-1">
+                    <p class="text-sm text-ink mt-1">
                       {{ address.street }}<br />
                       {{ address.city }}, {{ address.state }}
                       {{ address.zipCode }}
@@ -165,7 +165,7 @@ import { COUNTRIES } from '../core/countries';
                   <!-- New Address Option -->
                   <div
                     (click)="selectNewAddress()"
-                    class="border-2 border-dashed border-diamond-300 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-gold-500 hover:text-gold-600 text-gray-500 transition-all"
+                    class="border-2 border-dashed border-diamond-300 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-gold-500 hover:text-gold-600 text-ink transition-all"
                     [ngClass]="
                       selectedAddressId() === 'new'
                         ? 'border-gold-500 bg-gold-50 text-gold-600'
@@ -186,7 +186,7 @@ import { COUNTRIES } from '../core/countries';
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                       >First Name</label
                     >
                     <input
@@ -200,7 +200,7 @@ import { COUNTRIES } from '../core/countries';
                   </div>
                   <div>
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                       >Last Name</label
                     >
                     <input
@@ -215,7 +215,7 @@ import { COUNTRIES } from '../core/countries';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-gray-900 mb-2"
+                  <label class="block text-sm font-semibold text-ink mb-2"
                     >Email Address</label
                   >
                   <input
@@ -243,7 +243,7 @@ import { COUNTRIES } from '../core/countries';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-gray-900 mb-2"
+                  <label class="block text-sm font-semibold text-ink mb-2"
                     >Phone Number</label
                   >
                   <input
@@ -257,7 +257,7 @@ import { COUNTRIES } from '../core/countries';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-gray-900 mb-2"
+                  <label class="block text-sm font-semibold text-ink mb-2"
                     >Street Address</label
                   >
                   <input
@@ -273,7 +273,7 @@ import { COUNTRIES } from '../core/countries';
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                       >City</label
                     >
                     <input
@@ -287,7 +287,7 @@ import { COUNTRIES } from '../core/countries';
                   </div>
                   <div>
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                       >State/Province</label
                     >
                     <input
@@ -301,7 +301,7 @@ import { COUNTRIES } from '../core/countries';
                   </div>
                   <div>
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                       >ZIP Code</label
                     >
                     <input
@@ -316,7 +316,7 @@ import { COUNTRIES } from '../core/countries';
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-gray-900 mb-2"
+                  <label class="block text-sm font-semibold text-ink mb-2"
                     >Country</label
                   >
                   <select
@@ -341,7 +341,7 @@ import { COUNTRIES } from '../core/countries';
                     name="billingSame"
                     class="mt-1"
                   />
-                  <span class="text-gray-700"
+                  <span class="text-ink"
                     >Billing address is same as shipping</span
                   >
                 </label>
@@ -377,11 +377,11 @@ import { COUNTRIES } from '../core/countries';
 
                 <div class="space-y-6">
                   <div>
-                    <h3 class="font-semibold text-gray-900 mb-4">
+                    <h3 class="font-semibold text-ink mb-4">
                       Shipping Address
                     </h3>
                     <div
-                      class="bg-diamond-50 rounded-lg p-4 text-sm text-gray-700"
+                      class="bg-diamond-50 rounded-lg p-4 text-sm text-ink"
                     >
                       <p>
                         {{ shippingData.firstName }} {{ shippingData.lastName }}
@@ -396,7 +396,7 @@ import { COUNTRIES } from '../core/countries';
                   </div>
 
                   <div class="border-t border-diamond-200 pt-6">
-                    <h3 class="font-semibold text-gray-900 mb-4">
+                    <h3 class="font-semibold text-ink mb-4">
                       Shipping Method
                     </h3>
                     <div class="space-y-2">
@@ -411,17 +411,17 @@ import { COUNTRIES } from '../core/countries';
                           class="w-4 h-4"
                         />
                         <div>
-                          <p class="font-semibold text-gray-900">
+                          <p class="font-semibold text-ink">
                             Express Shipping (2-3 days)
                           </p>
-                          <p class="text-sm text-gray-600">FREE</p>
+                          <p class="text-sm text-ink">FREE</p>
                         </div>
                       </label>
                     </div>
                   </div>
 
                   <div class="border-t border-diamond-200 pt-6">
-                    <h3 class="font-semibold text-gray-900 mb-4">
+                    <h3 class="font-semibold text-ink mb-4">
                       Payment Method
                     </h3>
                     <div class="space-y-3">
@@ -430,7 +430,7 @@ import { COUNTRIES } from '../core/countries';
                         [ngClass]="
                           selectedPaymentMethod === 'RAZORPAY'
                             ? 'border-gold-500 bg-gold-50'
-                            : 'border-gray-200 hover:border-gold-300'
+                            : 'border-ink hover:border-gold-300'
                         "
                       >
                         <input
@@ -441,10 +441,10 @@ import { COUNTRIES } from '../core/countries';
                           class="w-4 h-4 text-gold-600"
                         />
                         <div>
-                          <p class="font-semibold text-gray-900">
+                          <p class="font-semibold text-ink">
                             Pay Online (Cards, UPI, NetBanking)
                           </p>
-                          <p class="text-sm text-gray-600">
+                          <p class="text-sm text-ink">
                             Secure payment via Razorpay
                           </p>
                         </div>
@@ -454,7 +454,7 @@ import { COUNTRIES } from '../core/countries';
                         [ngClass]="
                           selectedPaymentMethod === 'COD'
                             ? 'border-gold-500 bg-gold-50'
-                            : 'border-gray-200 hover:border-gold-300'
+                            : 'border-ink hover:border-gold-300'
                         "
                       >
                         <input
@@ -465,10 +465,10 @@ import { COUNTRIES } from '../core/countries';
                           class="w-4 h-4 text-gold-600"
                         />
                         <div>
-                          <p class="font-semibold text-gray-900">
+                          <p class="font-semibold text-ink">
                             Cash on Delivery (COD)
                           </p>
-                          <p class="text-sm text-gray-600">
+                          <p class="text-sm text-ink">
                             Pay when your order is delivered
                           </p>
                         </div>
@@ -518,7 +518,7 @@ import { COUNTRIES } from '../core/countries';
                   <div
                     class="flex justify-between text-sm border-b border-diamond-100 pb-2"
                   >
-                    <span class="text-gray-600">{{ item.product.name }}</span>
+                    <span class="text-ink">{{ item.product.name }}</span>
                     <span class="font-semibold">{{
                       item.price * item.quantity | currencyConvert
                     }}</span>
@@ -528,17 +528,17 @@ import { COUNTRIES } from '../core/countries';
 
               <div class="space-y-4 mb-4 pb-4 border-b border-diamond-200">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Subtotal</span>
+                  <span class="text-ink">Subtotal</span>
                   <span class="font-semibold">{{
                     cartSubtotal() | currencyConvert
                   }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Shipping</span>
+                  <span class="text-ink">Shipping</span>
                   <span class="font-semibold">FREE</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Tax</span>
+                  <span class="text-ink">Tax</span>
                   <span class="font-semibold">{{
                     cartTax() | currencyConvert
                   }}</span>
@@ -555,7 +555,7 @@ import { COUNTRIES } from '../core/countries';
               </div>
 
               <div class="flex justify-between mb-6 text-xl">
-                <span class="font-bold text-gray-900">Total</span>
+                <span class="font-bold text-ink">Total</span>
                 <span class="font-bold text-2xl text-gold-600">{{
                   cartTotal() | currencyConvert
                 }}</span>
@@ -564,19 +564,19 @@ import { COUNTRIES } from '../core/countries';
               <div class="space-y-3">
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-ink">
                     Free insured shipping worldwide
                   </p>
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-ink">
                     30-day money-back guarantee
                   </p>
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-ink">
                     Lifetime warranty included
                   </p>
                 </div>

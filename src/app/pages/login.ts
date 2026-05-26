@@ -13,12 +13,12 @@ import { ToastService } from "../services/toast.service";
   template: `
     <div class="min-h-screen bg-gradient-to-br from-diamond-50 to-gold-50">
       <!-- Breadcrumb -->
-      <div class="bg-white border-b border-diamond-200">
+      <div class="bg-surface border-b border-diamond-200">
         <div class="container-luxury py-4">
           <div class="flex items-center gap-2 text-sm">
             <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-gray-500">/</span>
-            <span class="text-gray-700">{{
+            <span class="text-ink">/</span>
+            <span class="text-ink">{{
               isLogin() ? "Login" : "Register"
             }}</span>
           </div>
@@ -32,13 +32,13 @@ import { ToastService } from "../services/toast.service";
             <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">
               Welcome Back
             </h1>
-            <p class="text-gray-600 mb-8">
+            <p class="text-ink mb-8">
               Sign in to your account to continue shopping
             </p>
 
             <form (ngSubmit)="login()" #loginForm="ngForm" class="space-y-6">
               <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                <label class="block text-sm font-semibold text-ink mb-2">
                   Email Address
                 </label>
                 <input
@@ -52,7 +52,7 @@ import { ToastService } from "../services/toast.service";
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                <label class="block text-sm font-semibold text-ink mb-2">
                   Password
                 </label>
                 <input
@@ -71,7 +71,7 @@ import { ToastService } from "../services/toast.service";
                     type="checkbox"
                     class="w-4 h-4 rounded border-diamond-300"
                   />
-                  <span class="text-gray-700">Remember me</span>
+                  <span class="text-ink">Remember me</span>
                 </label>
                 <a
                   href="#"
@@ -89,7 +89,7 @@ import { ToastService } from "../services/toast.service";
                 {{ isLoading() ? "Signing in..." : "Sign In" }}
               </button>
 
-              <div class="text-center text-sm text-gray-600">
+              <div class="text-center text-sm text-ink">
                 Don't have an account?
                 <button
                   type="button"
@@ -107,7 +107,7 @@ import { ToastService } from "../services/toast.service";
             <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">
               Create Account
             </h1>
-            <p class="text-gray-600 mb-8">
+            <p class="text-ink mb-8">
               Join us to start shopping our fine collection
             </p>
 
@@ -118,7 +118,7 @@ import { ToastService } from "../services/toast.service";
             >
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold text-gray-900 mb-2">
+                  <label class="block text-sm font-semibold text-ink mb-2">
                     First Name
                   </label>
                   <input
@@ -131,7 +131,7 @@ import { ToastService } from "../services/toast.service";
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-gray-900 mb-2">
+                  <label class="block text-sm font-semibold text-ink mb-2">
                     Last Name
                   </label>
                   <input
@@ -146,7 +146,7 @@ import { ToastService } from "../services/toast.service";
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                <label class="block text-sm font-semibold text-ink mb-2">
                   Email Address
                 </label>
                 <input
@@ -160,7 +160,7 @@ import { ToastService } from "../services/toast.service";
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                <label class="block text-sm font-semibold text-ink mb-2">
                   Phone Number
                 </label>
                 <input
@@ -174,7 +174,7 @@ import { ToastService } from "../services/toast.service";
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                <label class="block text-sm font-semibold text-ink mb-2">
                   Password
                 </label>
                 <input
@@ -188,7 +188,7 @@ import { ToastService } from "../services/toast.service";
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                <label class="block text-sm font-semibold text-ink mb-2">
                   Confirm Password
                 </label>
                 <input
@@ -207,7 +207,7 @@ import { ToastService } from "../services/toast.service";
                   required
                   class="w-4 h-4 mt-1 rounded border-diamond-300"
                 />
-                <span class="text-sm text-gray-700">
+                <span class="text-sm text-ink">
                   I agree to the
                   <a
                     href="#"
@@ -237,7 +237,7 @@ import { ToastService } from "../services/toast.service";
                 {{ isLoading() ? "Creating account..." : "Create Account" }}
               </button>
 
-              <div class="text-center text-sm text-gray-600">
+              <div class="text-center text-sm text-ink">
                 Already have an account?
                 <button
                   type="button"

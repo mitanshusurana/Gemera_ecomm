@@ -13,50 +13,50 @@ import { ToastService } from '../services/toast.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-surface">
       <!-- Builder Header -->
-      <div class="bg-white border-b border-diamond-200 sticky top-0 z-40 shadow-sm">
+      <div class="bg-surface border-b border-diamond-200 sticky top-0 z-40 shadow-sm">
         <div class="container-luxury py-4">
           <div class="flex items-center justify-between">
             <h1 class="text-xl font-display font-bold text-diamond-900">Build Your Ring</h1>
             <div class="text-right">
-              <p class="text-xs text-gray-500 uppercase tracking-widest">Est. Total</p>
+              <p class="text-xs text-ink uppercase tracking-widest">Est. Total</p>
               <p class="text-xl font-bold text-gold-600">{{ currency.format(builder.totalPrice()) }}</p>
             </div>
           </div>
 
           <!-- Stepper -->
           <div class="mt-4 flex items-center justify-between max-w-2xl mx-auto relative">
-             <div class="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -z-10 -translate-y-1/2"></div>
+             <div class="absolute top-1/2 left-0 w-full h-0.5 bg-surface -z-10 -translate-y-1/2"></div>
 
              <!-- Step 1 -->
-             <button (click)="builder.goToStep(1)" class="flex flex-col items-center bg-gray-50 px-2" [disabled]="false">
+             <button (click)="builder.goToStep(1)" class="flex flex-col items-center bg-surface px-2" [disabled]="false">
                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors"
                     [class.bg-gold-500]="builder.currentStep() >= 1"
-                    [class.text-white]="builder.currentStep() >= 1"
-                    [class.bg-gray-300]="builder.currentStep() < 1">
+                    [class.text-surface]="builder.currentStep() >= 1"
+                    [class.bg-surface]="builder.currentStep() < 1">
                  1
                </div>
                <span class="text-xs font-semibold mt-1" [class.text-gold-600]="builder.currentStep() >= 1">Setting</span>
              </button>
 
              <!-- Step 2 -->
-             <button (click)="builder.goToStep(2)" class="flex flex-col items-center bg-gray-50 px-2" [disabled]="!builder.selectedSetting()">
+             <button (click)="builder.goToStep(2)" class="flex flex-col items-center bg-surface px-2" [disabled]="!builder.selectedSetting()">
                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors"
                     [class.bg-gold-500]="builder.currentStep() >= 2"
-                    [class.text-white]="builder.currentStep() >= 2"
-                    [class.bg-gray-300]="builder.currentStep() < 2">
+                    [class.text-surface]="builder.currentStep() >= 2"
+                    [class.bg-surface]="builder.currentStep() < 2">
                  2
                </div>
                <span class="text-xs font-semibold mt-1" [class.text-gold-600]="builder.currentStep() >= 2">Diamond</span>
              </button>
 
              <!-- Step 3 -->
-             <button (click)="builder.goToStep(3)" class="flex flex-col items-center bg-gray-50 px-2" [disabled]="!builder.selectedSetting() || !builder.selectedStone()">
+             <button (click)="builder.goToStep(3)" class="flex flex-col items-center bg-surface px-2" [disabled]="!builder.selectedSetting() || !builder.selectedStone()">
                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors"
                     [class.bg-gold-500]="builder.currentStep() >= 3"
-                    [class.text-white]="builder.currentStep() >= 3"
-                    [class.bg-gray-300]="builder.currentStep() < 3">
+                    [class.text-surface]="builder.currentStep() >= 3"
+                    [class.bg-surface]="builder.currentStep() < 3">
                  3
                </div>
                <span class="text-xs font-semibold mt-1" [class.text-gold-600]="builder.currentStep() >= 3">Review</span>
@@ -82,7 +82,7 @@ import { ToastService } from '../services/toast.service';
               <div class="p-4 pt-0">
                 <h3 class="font-bold text-lg mb-1">{{ product.name }}</h3>
                 <p class="text-gold-600 font-bold mb-2">{{ currency.format(product.price) }}</p>
-                <button class="btn-secondary w-full group-hover:bg-gold-500 group-hover:text-white group-hover:border-gold-500">
+                <button class="btn-secondary w-full group-hover:bg-gold-500 group-hover:text-surface group-hover:border-gold-500">
                   {{ builder.selectedSetting()?.id === product.id ? 'Selected' : 'Select Setting' }}
                 </button>
               </div>
@@ -93,7 +93,7 @@ import { ToastService } from '../services/toast.service';
         <!-- STEP 2: STONES -->
         <div *ngIf="builder.currentStep() === 2" class="animate-fade-in">
           <div class="flex items-center gap-4 mb-8">
-             <button (click)="builder.goToStep(1)" class="text-sm text-gray-500 hover:text-gold-600">← Change Setting</button>
+             <button (click)="builder.goToStep(1)" class="text-sm text-ink hover:text-gold-600">← Change Setting</button>
              <h2 class="text-2xl font-bold flex-1 text-center">Choose Your Diamond</h2>
              <div class="w-24"></div>
           </div>
@@ -112,7 +112,7 @@ import { ToastService } from '../services/toast.service';
                    <h3 class="font-bold text-lg">{{ product.name }}</h3>
                 </div>
                 <!-- Specs -->
-                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-4 bg-gray-50 p-2 rounded">
+                <div class="grid grid-cols-2 gap-2 text-xs text-ink mb-4 bg-surface p-2 rounded">
                   <div *ngIf="product.specifications?.carat">
                      <span class="font-semibold">Carat:</span> {{ product.specifications?.carat }}
                   </div>
@@ -125,7 +125,7 @@ import { ToastService } from '../services/toast.service';
                 </div>
 
                 <p class="text-gold-600 font-bold mb-2">{{ currency.format(product.price) }}</p>
-                <button class="btn-secondary w-full group-hover:bg-gold-500 group-hover:text-white group-hover:border-gold-500">
+                <button class="btn-secondary w-full group-hover:bg-gold-500 group-hover:text-surface group-hover:border-gold-500">
                    {{ builder.selectedStone()?.id === product.id ? 'Selected' : 'Select Diamond' }}
                 </button>
               </div>
@@ -139,7 +139,7 @@ import { ToastService } from '../services/toast.service';
 
           <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
              <!-- Visual -->
-             <div class="md:col-span-2 bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center justify-center relative overflow-hidden">
+             <div class="md:col-span-2 bg-surface rounded-2xl shadow-lg p-8 flex flex-col items-center justify-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-luxury opacity-5"></div>
                 <div class="relative z-10 flex flex-col items-center">
                     <div class="text-9xl mb-4 relative">
@@ -147,7 +147,7 @@ import { ToastService } from '../services/toast.service';
                         💍
                     </div>
                     <p class="font-display font-bold text-2xl text-diamond-900">{{ builder.selectedSetting()?.name }}</p>
-                    <p class="text-gray-500 mb-6">set with</p>
+                    <p class="text-ink mb-6">set with</p>
                     <p class="font-display font-bold text-xl text-diamond-900">{{ builder.selectedStone()?.name }}</p>
                 </div>
              </div>
@@ -155,7 +155,7 @@ import { ToastService } from '../services/toast.service';
              <!-- Summary -->
              <div class="space-y-6">
                 <div class="card p-6">
-                  <h3 class="font-bold text-gray-900 mb-4 pb-2 border-b">Order Summary</h3>
+                  <h3 class="font-bold text-ink mb-4 pb-2 border-b">Order Summary</h3>
 
                   <div class="flex justify-between py-2">
                     <div class="flex-1">
@@ -165,7 +165,7 @@ import { ToastService } from '../services/toast.service';
                     <p class="font-medium">{{ currency.format(builder.selectedSetting()?.price || 0) }}</p>
                   </div>
 
-                  <div class="flex justify-between py-2 border-t border-dashed border-gray-200">
+                  <div class="flex justify-between py-2 border-t border-dashed border-ink">
                     <div class="flex-1">
                       <p class="font-medium text-sm">{{ builder.selectedStone()?.name }}</p>
                       <button (click)="builder.goToStep(2)" class="text-xs text-gold-600 underline">Change</button>
@@ -173,7 +173,7 @@ import { ToastService } from '../services/toast.service';
                     <p class="font-medium">{{ currency.format(builder.selectedStone()?.price || 0) }}</p>
                   </div>
 
-                  <div class="flex justify-between py-4 border-t-2 border-gray-900 mt-4">
+                  <div class="flex justify-between py-4 border-t-2 border-ink mt-4">
                     <p class="font-bold text-lg">Total</p>
                     <p class="font-bold text-2xl text-gold-600">{{ currency.format(builder.totalPrice()) }}</p>
                   </div>
@@ -181,7 +181,7 @@ import { ToastService } from '../services/toast.service';
                   <button (click)="addToCart()" class="btn-primary w-full py-4 text-lg mt-4 shadow-gold">
                     Add to Cart
                   </button>
-                  <p class="text-xs text-center text-gray-500 mt-2">
+                  <p class="text-xs text-center text-ink mt-2">
                     Free shipping & 30-day returns included.
                   </p>
                 </div>

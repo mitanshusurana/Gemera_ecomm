@@ -9,12 +9,12 @@
   }
 
   /* Hide main layout elements explicitly */
-  header, nav, aside, footer, button:not(.print-only), .bg-white.dark\:bg-slate-900.border-b {
+  header, nav, aside, footer, button:not(.print-only), .bg-surface.dark\:bg-surface.border-b {
     display: none !important;
   }
 
   /* Ensure backgrounds are forced to be white */
-  body, html, .bg-gray-50, .bg-gray-100 {
+  body, html, .bg-surface, .bg-surface {
     background-color: white !important;
     background-image: none !important;
   }

@@ -1,7 +1,7 @@
 <div class="px-4 sm:px-6 lg:px-8">
   <div class="sm:flex sm:items-center">
     <div class="sm:flex-auto">
-      <h1 class="text-xl font-semibold text-gray-900">{{ isEditMode ? 'Edit Product' : 'Add Product' }}</h1>
+      <h1 class="text-xl font-semibold text-ink">{{ isEditMode ? 'Edit Product' : 'Add Product' }}</h1>
     </div>
   </div>
 
@@ -9,32 +9,32 @@
     <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
       <!-- Basic Information -->
-      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <div class="md:grid md:grid-cols-3 md:gap-6">
           <div class="md:col-span-1">
-            <h3 class="text-lg font-medium leading-6 text-gray-900">Basic Information</h3>
-            <p class="mt-1 text-sm text-gray-500">
+            <h3 class="text-lg font-medium leading-6 text-ink">Basic Information</h3>
+            <p class="mt-1 text-sm text-ink">
               General details for this item.
             </p>
           </div>
           <div class="mt-5 md:mt-0 md:col-span-2">
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6 sm:col-span-4">
-                <label for="name" class="block text-sm font-medium text-gray-700">Name *</label>
+                <label for="name" class="block text-sm font-medium text-ink">Name *</label>
                 <input type="text" formControlName="name" id="name" (input)="markNameAsEdited()"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6">
-                <label for="description" class="block text-sm font-medium text-gray-700">Description *</label>
+                <label for="description" class="block text-sm font-medium text-ink">Description *</label>
                 <textarea id="description" formControlName="description" rows="3" (input)="markDescriptionAsEdited()"
-                  class="shadow-sm focus:ring-emerald-500 focus:border-emerald-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md"></textarea>
+                  class="shadow-sm focus:ring-emerald-500 focus:border-emerald-500 mt-1 block w-full sm:text-sm border border-ink rounded-md"></textarea>
               </div>
 
               <div class="col-span-6 sm:col-span-2">
-                <label for="category" class="block text-sm font-medium text-gray-700">Category *</label>
+                <label for="category" class="block text-sm font-medium text-ink">Category *</label>
                 <select id="category" formControlName="category"
-                  class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                  class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                   <option value="">Select a category</option>
                   <option *ngFor="let cat of categoriesList" [value]="cat.displayName">{{ cat.displayName }}</option>
                 </select>
@@ -43,120 +43,120 @@
               <!-- Show if Consignment/Memo -->
               <ng-container *ngIf="productForm.get('inventoryOwnership')?.value === 'Consignment/Memo'">
                 <div class="col-span-6 sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Supplier Name</label>
-                  <input type="text" formControlName="supplierName" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  <label class="block text-sm font-medium text-ink">Supplier Name</label>
+                  <input type="text" formControlName="supplierName" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
                 </div>
                 <div class="col-span-6 sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Return Due Date</label>
-                  <input type="date" formControlName="returnDueDate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  <label class="block text-sm font-medium text-ink">Return Due Date</label>
+                  <input type="date" formControlName="returnDueDate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
                 </div>
                 <div class="col-span-6 sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Commission %</label>
-                  <input type="number" formControlName="commissionPercentage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  <label class="block text-sm font-medium text-ink">Commission %</label>
+                  <input type="number" formControlName="commissionPercentage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
                 </div>
               </ng-container>
 
               <div class="col-span-6 sm:col-span-2">
-                <label for="subCategory" class="block text-sm font-medium text-gray-700">Sub-Category</label>
+                <label for="subCategory" class="block text-sm font-medium text-ink">Sub-Category</label>
                 <select id="subCategory" formControlName="subCategory"
-                  class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                  class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                   <option value="">Select a sub-category</option>
                   <option *ngFor="let sub of availableSubCategories" [value]="sub.name">{{ sub.displayName }}</option>
                 </select>
               </div>
 
               <div class="col-span-6 sm:col-span-2" *ngIf="availableChildCategories.length > 0">
-                <label for="variety" class="block text-sm font-medium text-gray-700">Detailed Type</label>
+                <label for="variety" class="block text-sm font-medium text-ink">Detailed Type</label>
                 <select id="variety" formControlName="variety"
-                  class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                  class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                   <option value="">Select specific type</option>
                   <option *ngFor="let child of availableChildCategories" [value]="child.name">{{ child.displayName }}</option>
                 </select>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="sku" class="block text-sm font-medium text-gray-700">SKU (Optional)</label>
+                <label for="sku" class="block text-sm font-medium text-ink">SKU (Optional)</label>
                 <input type="text" formControlName="sku" id="sku" placeholder="Auto-generated if blank"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="price" class="block text-sm font-medium text-gray-700">Price *</label>
+                <label for="price" class="block text-sm font-medium text-ink">Price *</label>
                 <input type="number" formControlName="price" id="price"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="stock" class="block text-sm font-medium text-gray-700">Stock Quantity *</label>
+                <label for="stock" class="block text-sm font-medium text-ink">Stock Quantity *</label>
                 <input type="number" formControlName="stock" id="stock"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="inventoryOwnership" class="block text-sm font-medium text-gray-700">Inventory Ownership</label>
+                <label for="inventoryOwnership" class="block text-sm font-medium text-ink">Inventory Ownership</label>
                 <select id="inventoryOwnership" formControlName="inventoryOwnership"
-                  class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+                  class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                   <option value="Owned Stock">Owned Stock</option>
                   <option value="Consignment/Memo">Consignment / Memo</option>
                 </select>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Admin Verification</label>
+                <label class="block text-sm font-medium text-ink">Admin Verification</label>
                 <div class="mt-2 flex items-center">
                   <input id="isVerified" formControlName="isVerified" type="checkbox"
-                    class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
-                  <label for="isVerified" class="ml-2 block text-sm text-gray-900">
+                    class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-ink rounded">
+                  <label for="isVerified" class="ml-2 block text-sm text-ink">
                     Is Verified & Ready for Publication?
                   </label>
                 </div>
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="seoQualifiersStr" class="block text-sm font-medium text-gray-700">SEO Qualifiers (Comma separated)</label>
+                <label for="seoQualifiersStr" class="block text-sm font-medium text-ink">SEO Qualifiers (Comma separated)</label>
                 <input type="text" formControlName="seoQualifiersStr" id="seoQualifiersStr" placeholder="e.g. Handmade, Ethically Sourced"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="occasionKeywordsStr" class="block text-sm font-medium text-gray-700">Occasion Keywords (Comma separated)</label>
+                <label for="occasionKeywordsStr" class="block text-sm font-medium text-ink">Occasion Keywords (Comma separated)</label>
                 <input type="text" formControlName="occasionKeywordsStr" id="occasionKeywordsStr" placeholder="e.g. Wedding, Anniversary"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6">
                 <div *ngIf="uploadProgressMessage" class="mb-4 text-sm font-medium" [ngClass]="{'text-blue-600': uploadingMedia, 'text-green-600': !uploadingMedia}">
                   {{ uploadProgressMessage }}
                 </div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Existing Images</label>
+                <label class="block text-sm font-medium text-ink mb-2">Existing Images</label>
                 <div class="flex flex-wrap gap-4 mb-4" *ngIf="existingImages.length > 0">
                   <div *ngFor="let img of existingImages; let i = index" class="relative group">
-                    <img [src]="img" class="h-24 w-24 object-cover rounded-md border border-gray-200">
+                    <img [src]="img" class="h-24 w-24 object-cover rounded-md border border-ink">
                     <button type="button" (click)="removeExistingImage(i)"
-                      class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      class="absolute -top-2 -right-2 bg-red-500 text-surface rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       &times;
                     </button>
                   </div>
                 </div>
 
-                <label for="imageFile" class="block text-sm font-medium text-gray-700">Add Image Files</label>
+                <label for="imageFile" class="block text-sm font-medium text-ink">Add Image Files</label>
                 <input type="file" id="imageFile" (change)="onFileChange($event)" accept="image/*" multiple
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md p-2 border">
               </div>
 
               <div class="col-span-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Existing Video</label>
+                <label class="block text-sm font-medium text-ink mb-2">Existing Video</label>
                 <div class="relative inline-block mb-4" *ngIf="existingVideoUrl">
-                  <video [src]="existingVideoUrl" class="h-32 rounded-md border border-gray-200" controls></video>
+                  <video [src]="existingVideoUrl" class="h-32 rounded-md border border-ink" controls></video>
                   <button type="button" (click)="removeExistingVideo()"
-                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow">
+                    class="absolute -top-2 -right-2 bg-red-500 text-surface rounded-full w-6 h-6 flex items-center justify-center shadow">
                     &times;
                   </button>
                 </div>
 
-                <label for="videoFile" class="block text-sm font-medium text-gray-700">Upload New Video (Optional)</label>
+                <label for="videoFile" class="block text-sm font-medium text-ink">Upload New Video (Optional)</label>
                 <input type="file" id="videoFile" (change)="onVideoFileChange($event)" accept="video/*"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2 border">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md p-2 border">
               </div>
             </div>
           </div>
@@ -164,11 +164,11 @@
       </div>
 
       <!-- Price Breakup -->
-      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <div class="md:grid md:grid-cols-3 md:gap-6">
           <div class="md:col-span-1">
-            <h3 class="text-lg font-medium leading-6 text-gray-900">Price Breakup</h3>
-            <p class="mt-1 text-sm text-gray-500">
+            <h3 class="text-lg font-medium leading-6 text-ink">Price Breakup</h3>
+            <p class="mt-1 text-sm text-ink">
               Optional detailed cost breakdown. Used on the product detail page if provided.
             </p>
           </div>
@@ -176,33 +176,33 @@
             <div formGroupName="priceBreakup" class="grid grid-cols-6 gap-6">
 
               <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Metal Price</label>
+                <label class="block text-sm font-medium text-ink">Metal Price</label>
                 <input type="number" formControlName="metal"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Gemstone Price</label>
+                <label class="block text-sm font-medium text-ink">Gemstone Price</label>
                 <input type="number" formControlName="gemstone"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Making Charges</label>
+                <label class="block text-sm font-medium text-ink">Making Charges</label>
                 <input type="number" formControlName="makingCharges"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Tax</label>
+                <label class="block text-sm font-medium text-ink">Tax</label>
                 <input type="number" formControlName="tax"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Total / Subtotal</label>
+                <label class="block text-sm font-medium text-ink">Total / Subtotal</label>
                 <input type="number" formControlName="total"
-                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                  class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               </div>
 
             </div>
@@ -213,118 +213,118 @@
       <!-- Specific Categories Section -->
 
       <!-- 1. Finished Jewelry -->
-      <div *ngIf="selectedCategory === 'Jewelry' || selectedCategory === 'Settings'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Finished Jewelry Details</h3>
+      <div *ngIf="selectedCategory === 'Jewelry' || selectedCategory === 'Settings'" class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <h3 class="text-lg font-medium leading-6 text-ink mb-4">Finished Jewelry Details</h3>
         <div class="grid grid-cols-6 gap-6">
 
           <!-- Metal Details Group -->
           <div formGroupName="metalDetails" class="col-span-6 grid grid-cols-6 gap-6">
             <div class="col-span-6 sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Metal Type</label>
-              <select formControlName="metalType" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+              <label class="block text-sm font-medium text-ink">Metal Type</label>
+              <select formControlName="metalType" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                 <option value="">Select Metal</option>
                 <option *ngFor="let m of metalTypes" [value]="m">{{ m }}</option>
               </select>
             </div>
             <div class="col-span-6 sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Metal Purity</label>
-              <select formControlName="metalPurity" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+              <label class="block text-sm font-medium text-ink">Metal Purity</label>
+              <select formControlName="metalPurity" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
                 <option value="">Select Purity</option>
                 <option *ngFor="let p of metalPurities" [value]="p">{{ p }}</option>
               </select>
             </div>
             <div class="col-span-6 sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Net Weight (g)</label>
-              <input type="number" formControlName="netWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+              <label class="block text-sm font-medium text-ink">Net Weight (g)</label>
+              <input type="number" formControlName="netWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
             </div>
           </div>
 
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Metal Color</label>
-            <select formControlName="metalColor" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Metal Color</label>
+            <select formControlName="metalColor" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Color</option>
               <option *ngFor="let c of metalColors" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Gross Weight (g)</label>
-            <input type="number" formControlName="grossWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Gross Weight (g)</label>
+            <input type="number" formControlName="grossWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Total Carat Weight</label>
-            <input type="number" formControlName="totalCaratWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Total Carat Weight</label>
+            <input type="number" formControlName="totalCaratWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Dimensions</label>
-            <input type="text" formControlName="dimensions" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Dimensions</label>
+            <input type="text" formControlName="dimensions" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Current Location</label>
-            <input type="text" formControlName="currentLocation" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Current Location</label>
+            <input type="text" formControlName="currentLocation" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">HUID</label>
-            <input type="text" formControlName="huid" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">HUID</label>
+            <input type="text" formControlName="huid" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Hallmarking Date</label>
-            <input type="date" formControlName="hallmarkingDate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Hallmarking Date</label>
+            <input type="date" formControlName="hallmarkingDate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Design Style</label>
-            <input type="text" formControlName="designStyle" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Design Style</label>
+            <input type="text" formControlName="designStyle" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Manufacturing Terminology</label>
-            <select formControlName="manufacturingTerminology" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Manufacturing Terminology</label>
+            <select formControlName="manufacturingTerminology" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Style</option>
               <option *ngFor="let term of manufacturingTerms" [value]="term">{{ term }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2 flex items-center mt-6">
-            <input type="checkbox" formControlName="bisHallmark" id="bisHallmark" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
-            <label for="bisHallmark" class="ml-2 block text-sm text-gray-900">BIS Hallmark</label>
+            <input type="checkbox" formControlName="bisHallmark" id="bisHallmark" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-ink rounded">
+            <label for="bisHallmark" class="ml-2 block text-sm text-ink">BIS Hallmark</label>
           </div>
 
           <!-- Stone Details Array -->
           <div class="col-span-6 mt-6 border-t pt-4">
             <div class="flex justify-between items-center mb-4">
-              <h4 class="text-md font-medium text-gray-900">Stone Details</h4>
-              <button type="button" (click)="addStoneDetail()" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+              <h4 class="text-md font-medium text-ink">Stone Details</h4>
+              <button type="button" (click)="addStoneDetail()" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-surface bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
                 Add Stone
               </button>
             </div>
 
             <div formArrayName="stoneDetails">
-              <div *ngFor="let stone of stoneDetails.controls; let i=index" [formGroupName]="i" class="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200 relative">
-                <button type="button" (click)="removeStoneDetail(i)" class="absolute top-2 right-2 text-gray-400 hover:text-red-500">
+              <div *ngFor="let stone of stoneDetails.controls; let i=index" [formGroupName]="i" class="bg-surface p-4 rounded-md mb-4 border border-ink relative">
+                <button type="button" (click)="removeStoneDetail(i)" class="absolute top-2 right-2 text-ink hover:text-red-500">
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
                 <div class="grid grid-cols-5 gap-4">
                   <div class="col-span-5 sm:col-span-1">
-                    <label class="block text-xs font-medium text-gray-700">Type</label>
-                    <input type="text" formControlName="stoneType" placeholder="e.g. Diamond" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                    <label class="block text-xs font-medium text-ink">Type</label>
+                    <input type="text" formControlName="stoneType" placeholder="e.g. Diamond" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-ink rounded-md">
                   </div>
                   <div class="col-span-5 sm:col-span-1">
-                    <label class="block text-xs font-medium text-gray-700">Shape</label>
-                    <select formControlName="shape" class="mt-1 block w-full py-1.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-xs">
+                    <label class="block text-xs font-medium text-ink">Shape</label>
+                    <select formControlName="shape" class="mt-1 block w-full py-1.5 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-xs">
                       <option value="">Select Shape</option>
                       <option *ngFor="let sh of shapes" [value]="sh">{{ sh }}</option>
                     </select>
                   </div>
                   <div class="col-span-5 sm:col-span-1">
-                    <label class="block text-xs font-medium text-gray-700">Pieces</label>
-                    <input type="number" formControlName="pieceCount" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                    <label class="block text-xs font-medium text-ink">Pieces</label>
+                    <input type="number" formControlName="pieceCount" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-ink rounded-md">
                   </div>
                   <div class="col-span-5 sm:col-span-1">
-                    <label class="block text-xs font-medium text-gray-700">Total Carat</label>
-                    <input type="number" formControlName="totalCaratWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                    <label class="block text-xs font-medium text-ink">Total Carat</label>
+                    <input type="number" formControlName="totalCaratWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-ink rounded-md">
                   </div>
                   <div class="col-span-5 sm:col-span-1">
-                    <label class="block text-xs font-medium text-gray-700">Setting</label>
-                    <input type="text" formControlName="settingType" placeholder="e.g. Prong" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-gray-300 rounded-md">
+                    <label class="block text-xs font-medium text-ink">Setting</label>
+                    <input type="text" formControlName="settingType" placeholder="e.g. Prong" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-xs border-ink rounded-md">
                   </div>
                 </div>
               </div>
@@ -333,154 +333,154 @@
 
           <!-- Stone Linking for BOM -->
           <div class="col-span-6">
-            <label class="block text-sm font-medium text-gray-700">Stone Detail IDs (Comma separated)</label>
-            <p class="text-xs text-gray-500 mb-1">Enter SKUs of loose stones used in this piece (e.g., L-DIA-1234, L-RUB-5678)</p>
-            <input type="text" formControlName="stoneDetailIds" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Stone Detail IDs (Comma separated)</label>
+            <p class="text-xs text-ink mb-1">Enter SKUs of loose stones used in this piece (e.g., L-DIA-1234, L-RUB-5678)</p>
+            <input type="text" formControlName="stoneDetailIds" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
         </div>
       </div>
 
       <!-- 2. Loose Gemstones -->
-      <div *ngIf="selectedCategory === 'Gemstones'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Loose Gemstone Details</h3>
+      <div *ngIf="selectedCategory === 'Gemstones'" class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <h3 class="text-lg font-medium leading-6 text-ink mb-4">Loose Gemstone Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Stone SKU</label>
-            <input type="text" formControlName="stoneSku" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Stone SKU</label>
+            <input type="text" formControlName="stoneSku" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Species</label>
-            <select formControlName="species" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Species</label>
+            <select formControlName="species" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Species</option>
               <option *ngFor="let s of species" [value]="s">{{ s }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Variety</label>
-            <select formControlName="variety" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Variety</label>
+            <select formControlName="variety" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Variety</option>
               <option *ngFor="let v of varieties" [value]="v">{{ v }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Shape</label>
-            <select formControlName="shape" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Shape</label>
+            <select formControlName="shape" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Shape</option>
               <option *ngFor="let s of shapes" [value]="s">{{ s }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Cut</label>
-            <select formControlName="cut" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Cut</label>
+            <select formControlName="cut" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Cut</option>
               <option *ngFor="let c of cuts" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Carat Weight</label>
-            <input type="number" formControlName="caratWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Carat Weight</label>
+            <input type="number" formControlName="caratWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Color Intensity / Saturation</label>
-            <select formControlName="colorSaturation" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Color Intensity / Saturation</label>
+            <select formControlName="colorSaturation" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Intensity</option>
               <option *ngFor="let s of colorIntensities" [value]="s">{{ s }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Color Hue</label>
-            <input type="text" formControlName="colorHue" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Color Hue</label>
+            <input type="text" formControlName="colorHue" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Color Tone</label>
-            <input type="text" formControlName="colorTone" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Color Tone</label>
+            <input type="text" formControlName="colorTone" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Trade Color Term</label>
-            <select formControlName="colorTradeTerm" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Trade Color Term</label>
+            <select formControlName="colorTradeTerm" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Trade Term</option>
               <option *ngFor="let t of colorTradeTerms" [value]="t">{{ t }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Clarity</label>
-            <select formControlName="clarity" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Clarity</label>
+            <select formControlName="clarity" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Clarity</option>
               <option *ngFor="let c of clarities" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Measurements (LxWxD)</label>
-            <input type="text" formControlName="measurements" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Measurements (LxWxD)</label>
+            <input type="text" formControlName="measurements" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Treatment Status</label>
-            <select formControlName="treatmentStatus" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Treatment Status</label>
+            <select formControlName="treatmentStatus" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Treatment</option>
               <option *ngFor="let t of treatmentStatuses" [value]="t">{{ t }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Lab Report #</label>
-            <input type="text" formControlName="labReportNumber" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Lab Report #</label>
+            <input type="text" formControlName="labReportNumber" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Certificate Image URL</label>
-            <input type="text" formControlName="certificateImage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Certificate Image URL</label>
+            <input type="text" formControlName="certificateImage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Polish</label>
-            <select formControlName="polish" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Polish</label>
+            <select formControlName="polish" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Polish</option>
               <option *ngFor="let p of polishOptions" [value]="p">{{ p }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Symmetry</label>
-            <select formControlName="symmetry" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Symmetry</label>
+            <select formControlName="symmetry" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Symmetry</option>
               <option *ngFor="let s of symmetryOptions" [value]="s">{{ s }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Fluorescence</label>
-            <select formControlName="fluorescence" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Fluorescence</label>
+            <select formControlName="fluorescence" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Fluorescence</option>
               <option *ngFor="let f of fluorescences" [value]="f">{{ f }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Girdle</label>
-            <select formControlName="girdle" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Girdle</label>
+            <select formControlName="girdle" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Girdle</option>
               <option *ngFor="let g of girdles" [value]="g">{{ g }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Culet</label>
-            <select formControlName="culet" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Culet</label>
+            <select formControlName="culet" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Culet</option>
               <option *ngFor="let c of culets" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Table %</label>
-            <input type="number" formControlName="tablePercentage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Table %</label>
+            <input type="number" formControlName="tablePercentage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Depth %</label>
-            <input type="number" formControlName="depthPercentage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Depth %</label>
+            <input type="number" formControlName="depthPercentage" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Origin / Provenance</label>
-            <select formControlName="originProvenance" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Origin / Provenance</label>
+            <select formControlName="originProvenance" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Origin</option>
               <option *ngFor="let o of origins" [value]="o">{{ o }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Stock Status</label>
-            <select formControlName="stockStatus" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Stock Status</label>
+            <select formControlName="stockStatus" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
               <option value="Real">Real</option>
               <option value="Virtual">Virtual</option>
             </select>
@@ -489,55 +489,55 @@
       </div>
 
       <!-- 3. Religious Idols -->
-      <div *ngIf="selectedCategory === 'Spiritual Idols'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Religious Idols & Carvings Details</h3>
+      <div *ngIf="selectedCategory === 'Spiritual Idols'" class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <h3 class="text-lg font-medium leading-6 text-ink mb-4">Religious Idols & Carvings Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700">Subject / Deity Name</label>
-            <input type="text" formControlName="subjectDeityName" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Subject / Deity Name</label>
+            <input type="text" formControlName="subjectDeityName" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700">Gemstone Material</label>
-            <input type="text" formControlName="gemstoneMaterial" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Gemstone Material</label>
+            <input type="text" formControlName="gemstoneMaterial" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Carving Style</label>
-            <select formControlName="carvingStyle" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Carving Style</label>
+            <select formControlName="carvingStyle" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Style</option>
               <option *ngFor="let s of carvingStyles" [value]="s">{{ s }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Quality Description</label>
-            <input type="text" formControlName="qualityDescription" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Quality Description</label>
+            <input type="text" formControlName="qualityDescription" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Asana</label>
-            <input type="text" formControlName="asana" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Asana</label>
+            <input type="text" formControlName="asana" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Mudra</label>
-            <input type="text" formControlName="mudra" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Mudra</label>
+            <input type="text" formControlName="mudra" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Ayudha</label>
-            <input type="text" formControlName="ayudha" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Ayudha</label>
+            <input type="text" formControlName="ayudha" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Vahana</label>
-            <input type="text" formControlName="vahana" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Vahana</label>
+            <input type="text" formControlName="vahana" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Artist Name</label>
-            <input type="text" formControlName="artistName" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Artist Name</label>
+            <input type="text" formControlName="artistName" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Historical Context</label>
-            <input type="text" formControlName="historicalContext" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Historical Context</label>
+            <input type="text" formControlName="historicalContext" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Carving Technique</label>
-            <select formControlName="carvingTechnique" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Carving Technique</label>
+            <select formControlName="carvingTechnique" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Technique</option>
               <option *ngFor="let t of carvingTechniques" [value]="t">{{ t }}</option>
             </select>
@@ -546,56 +546,56 @@
       </div>
 
       <!-- 4. Manufacturing & Rough Materials -->
-      <div *ngIf="selectedCategory === 'Materials & Roughs'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Rough Material Details</h3>
+      <div *ngIf="selectedCategory === 'Materials & Roughs'" class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <h3 class="text-lg font-medium leading-6 text-ink mb-4">Rough Material Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Lot Number</label>
-            <input type="text" formControlName="lotNumber" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Lot Number</label>
+            <input type="text" formControlName="lotNumber" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Mine Origin</label>
-            <input type="text" formControlName="mineOrigin" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Mine Origin</label>
+            <input type="text" formControlName="mineOrigin" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Rough Material</label>
-            <input type="text" formControlName="roughMaterial" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Rough Material</label>
+            <input type="text" formControlName="roughMaterial" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Rough Weight (Carats/Grams)</label>
-            <input type="number" formControlName="roughWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Rough Weight (Carats/Grams)</label>
+            <input type="number" formControlName="roughWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Purchase Date</label>
-            <input type="date" formControlName="purchaseDate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Purchase Date</label>
+            <input type="date" formControlName="purchaseDate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Supplier Code</label>
-            <input type="text" formControlName="supplierCode" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Supplier Code</label>
+            <input type="text" formControlName="supplierCode" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Acquisition Cost</label>
-            <input type="number" formControlName="acquisitionCost" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Acquisition Cost</label>
+            <input type="number" formControlName="acquisitionCost" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Matrix / Parent Rock</label>
-            <input type="text" formControlName="matrixParentRock" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Matrix / Parent Rock</label>
+            <input type="text" formControlName="matrixParentRock" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Crystal Morphology</label>
-            <input type="text" formControlName="crystalMorphology" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Crystal Morphology</label>
+            <input type="text" formControlName="crystalMorphology" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Yield Estimate %</label>
-            <input type="number" formControlName="yieldEstimate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Yield Estimate %</label>
+            <input type="number" formControlName="yieldEstimate" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Wastage Log</label>
-            <input type="text" formControlName="wastageLog" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Wastage Log</label>
+            <input type="text" formControlName="wastageLog" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Manufacturing Stage</label>
-            <select formControlName="manufacturingStage" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Manufacturing Stage</label>
+            <select formControlName="manufacturingStage" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Stage</option>
               <option *ngFor="let m of manufacturingStages" [value]="m">{{ m }}</option>
             </select>
@@ -604,70 +604,70 @@
       </div>
 
       <!-- 5. Components & Materials -->
-      <div *ngIf="selectedCategory === 'Components'" class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Components & Materials Details</h3>
+      <div *ngIf="selectedCategory === 'Components'" class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
+        <h3 class="text-lg font-medium leading-6 text-ink mb-4">Components & Materials Details</h3>
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700">Component Type</label>
-            <select formControlName="componentType" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Component Type</label>
+            <select formControlName="componentType" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Component Type</option>
               <option *ngFor="let c of componentTypes" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700">Material</label>
-            <input type="text" formControlName="material" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Material</label>
+            <input type="text" formControlName="material" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Purity</label>
-            <select formControlName="purity" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Purity</label>
+            <select formControlName="purity" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Purity</option>
               <option *ngFor="let p of metalPurities" [value]="p">{{ p }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Quantity (PCS)</label>
-            <input type="number" formControlName="quantityPcs" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Quantity (PCS)</label>
+            <input type="number" formControlName="quantityPcs" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Weight per Piece</label>
-            <input type="number" formControlName="weightPerPiece" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Weight per Piece</label>
+            <input type="number" formControlName="weightPerPiece" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Total Weight</label>
-            <input type="number" formControlName="totalWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Total Weight</label>
+            <input type="number" formControlName="totalWeight" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Reorder Point Alert</label>
-            <input type="number" formControlName="reorderPointAlert" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Reorder Point Alert</label>
+            <input type="number" formControlName="reorderPointAlert" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Bead Style</label>
-            <select formControlName="beadStyle" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+            <label class="block text-sm font-medium text-ink">Bead Style</label>
+            <select formControlName="beadStyle" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
               <option value="">Select Bead Style</option>
               <option *ngFor="let b of beadStyles" [value]="b">{{ b }}</option>
             </select>
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Layout Pattern</label>
-            <input type="text" formControlName="layoutPattern" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Layout Pattern</label>
+            <input type="text" formControlName="layoutPattern" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Vendor Information</label>
-            <input type="text" formControlName="vendorInformation" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Vendor Information</label>
+            <input type="text" formControlName="vendorInformation" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
           <div class="col-span-6 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Minimum Order Quantity (MOQ)</label>
-            <input type="number" formControlName="minOrderQuantity" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            <label class="block text-sm font-medium text-ink">Minimum Order Quantity (MOQ)</label>
+            <input type="number" formControlName="minOrderQuantity" class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
           </div>
         </div>
       </div>
 
-      <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+      <div class="bg-surface shadow px-4 py-5 sm:rounded-lg sm:p-6">
         <div class="md:grid md:grid-cols-3 md:gap-6">
           <div class="md:col-span-1">
-            <h3 class="text-lg font-medium leading-6 text-gray-900">Customization Options</h3>
-            <p class="mt-1 text-sm text-gray-500">
+            <h3 class="text-lg font-medium leading-6 text-ink">Customization Options</h3>
+            <p class="mt-1 text-sm text-ink">
               Add options like Metal, Size, etc.
             </p>
           </div>
@@ -675,26 +675,26 @@
             <div formArrayName="customizationOptions">
               <div *ngFor="let option of customizationOptions.controls; let i=index" [formGroupName]="i" class="grid grid-cols-6 gap-4 mb-4 items-end border-b pb-4">
                 <div class="col-span-6 sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Type</label>
+                  <label class="block text-sm font-medium text-ink">Type</label>
                   <input type="text" formControlName="type" placeholder="e.g. METAL"
-                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
                 </div>
                 <div class="col-span-6 sm:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700">Name</label>
+                  <label class="block text-sm font-medium text-ink">Name</label>
                   <input type="text" formControlName="name" placeholder="e.g. 18k Gold"
-                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
                 </div>
                 <div class="col-span-6 sm:col-span-1">
-                  <label class="block text-sm font-medium text-gray-700">Price Modifier</label>
+                  <label class="block text-sm font-medium text-ink">Price Modifier</label>
                   <input type="number" formControlName="priceModifier"
-                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    class="mt-1 focus:ring-emerald-500 focus:border-emerald-500 block w-full shadow-sm sm:text-sm border-ink rounded-md">
                 </div>
                 <div class="col-span-6 sm:col-span-1 text-right">
                   <button type="button" (click)="removeCustomizationOption(i)" class="text-red-600 hover:text-red-900 font-medium text-sm">Remove</button>
                 </div>
               </div>
             </div>
-            <button type="button" (click)="addCustomizationOption()" class="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+            <button type="button" (click)="addCustomizationOption()" class="mt-2 inline-flex items-center px-3 py-2 border border-ink shadow-sm text-sm font-medium rounded-md text-ink bg-surface hover:bg-surface focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
               Add Option
             </button>
           </div>
@@ -703,11 +703,11 @@
 
       <div class="flex justify-end pb-8">
         <button type="button" routerLink="/products"
-          class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+          class="bg-surface py-2 px-4 border border-ink rounded-md shadow-sm text-sm font-medium text-ink hover:bg-surface focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
           Cancel
         </button>
         <button type="submit" [disabled]="loading || uploadingMedia"
-          class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50">
+          class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-surface bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50">
           {{ loading ? 'Saving...' : (uploadingMedia ? 'Uploading Media...' : 'Save Product') }}
         </button>
       </div>

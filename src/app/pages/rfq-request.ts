@@ -11,14 +11,14 @@ import { environment } from "../../environments/environment";
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-surface">
       <!-- Breadcrumb -->
       <div class="bg-diamond-50 border-b border-diamond-200">
         <div class="container-luxury py-4">
           <div class="flex items-center gap-2 text-sm">
             <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-gray-500">/</span>
-            <span class="text-gray-700">Request for Quote</span>
+            <span class="text-ink">/</span>
+            <span class="text-ink">Request for Quote</span>
           </div>
         </div>
       </div>
@@ -29,7 +29,7 @@ import { environment } from "../../environments/environment";
         >
           Request for Quote
         </h1>
-        <p class="text-xl text-gray-600 mb-12">
+        <p class="text-xl text-ink mb-12">
           For bulk orders and B2B inquiries, get personalized quotes from our
           team
         </p>
@@ -52,7 +52,7 @@ import { environment } from "../../environments/environment";
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label
-                        class="block text-sm font-semibold text-gray-900 mb-2"
+                        class="block text-sm font-semibold text-ink mb-2"
                       >
                         First Name
                       </label>
@@ -67,7 +67,7 @@ import { environment } from "../../environments/environment";
                     </div>
                     <div>
                       <label
-                        class="block text-sm font-semibold text-gray-900 mb-2"
+                        class="block text-sm font-semibold text-ink mb-2"
                       >
                         Last Name
                       </label>
@@ -84,7 +84,7 @@ import { environment } from "../../environments/environment";
 
                   <div class="mt-6">
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                     >
                       Email Address
                     </label>
@@ -100,7 +100,7 @@ import { environment } from "../../environments/environment";
 
                   <div class="mt-6">
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                     >
                       Company Name
                     </label>
@@ -116,7 +116,7 @@ import { environment } from "../../environments/environment";
 
                   <div class="mt-6">
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                     >
                       Phone Number
                     </label>
@@ -145,7 +145,7 @@ import { environment } from "../../environments/environment";
                         class="border border-diamond-200 rounded-lg p-4 space-y-4"
                       >
                         <div class="flex justify-between items-center">
-                          <span class="font-semibold text-gray-900"
+                          <span class="font-semibold text-ink"
                             >Item {{ i + 1 }}</span
                           >
                           <button
@@ -160,7 +160,7 @@ import { environment } from "../../environments/environment";
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label
-                              class="block text-sm font-semibold text-gray-900 mb-2"
+                              class="block text-sm font-semibold text-ink mb-2"
                             >
                               Product Category
                             </label>
@@ -193,7 +193,7 @@ import { environment } from "../../environments/environment";
                           </div>
                           <div>
                             <label
-                              class="block text-sm font-semibold text-gray-900 mb-2"
+                              class="block text-sm font-semibold text-ink mb-2"
                             >
                               Quantity
                             </label>
@@ -211,7 +211,7 @@ import { environment } from "../../environments/environment";
 
                         <div>
                           <label
-                            class="block text-sm font-semibold text-gray-900 mb-2"
+                            class="block text-sm font-semibold text-ink mb-2"
                           >
                             Specifications (Optional)
                           </label>
@@ -244,12 +244,12 @@ import { environment } from "../../environments/environment";
 
                   <div class="mb-6">
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                     >
                       Estimated Budget (Optional)
                     </label>
                     <div class="flex gap-2">
-                      <span class="text-gray-500 font-semibold">$</span>
+                      <span class="text-ink font-semibold">$</span>
                       <input
                         type="number"
                         [(ngModel)]="rfqData.estimatedBudget"
@@ -262,7 +262,7 @@ import { environment } from "../../environments/environment";
 
                   <div class="mb-6">
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                     >
                       Delivery Timeline
                     </label>
@@ -283,7 +283,7 @@ import { environment } from "../../environments/environment";
 
                   <div>
                     <label
-                      class="block text-sm font-semibold text-gray-900 mb-2"
+                      class="block text-sm font-semibold text-ink mb-2"
                     >
                       Additional Notes
                     </label>
@@ -328,17 +328,17 @@ import { environment } from "../../environments/environment";
               <h2 class="text-3xl font-display font-bold text-diamond-900 mb-4">
                 RFQ Submitted Successfully
               </h2>
-              <p class="text-gray-600 mb-4">
+              <p class="text-ink mb-4">
                 Thank you for your request. Our sales team will review your
                 requirements and send you a personalized quote within 24
                 business hours.
               </p>
-              <p class="text-sm text-gray-500 mb-8">
+              <p class="text-sm text-ink mb-8">
                 RFQ Number:
                 <span class="font-bold text-gold-600">{{ rfqNumber() }}</span>
               </p>
 
-              <p class="text-gray-600 mb-8">
+              <p class="text-ink mb-8">
                 A confirmation email has been sent to
                 <span class="font-semibold">{{ rfqData.email }}</span>
               </p>
@@ -359,25 +359,25 @@ import { environment } from "../../environments/environment";
               <div class="space-y-4">
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">
+                  <p class="text-sm text-ink">
                     Personalized quotes for bulk orders
                   </p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">Best price negotiation</p>
+                  <p class="text-sm text-ink">Best price negotiation</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">Flexible payment terms</p>
+                  <p class="text-sm text-ink">Flexible payment terms</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">Priority customer support</p>
+                  <p class="text-sm text-ink">Priority customer support</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-gray-700">
+                  <p class="text-sm text-ink">
                     Custom specifications available
                   </p>
                 </div>
@@ -391,7 +391,7 @@ import { environment } from "../../environments/environment";
               </h3>
               <div class="space-y-4">
                 <div>
-                  <p class="text-sm text-gray-600 mb-2">Phone</p>
+                  <p class="text-sm text-ink mb-2">Phone</p>
                   <a
                     [href]="'tel:+' + env.whatsappNumber"
                     class="text-gold-600 hover:text-gold-700 font-semibold"
@@ -400,7 +400,7 @@ import { environment } from "../../environments/environment";
                   </a>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-600 mb-2">Email</p>
+                  <p class="text-sm text-ink mb-2">Email</p>
                   <a
                     href="mailto:sales@gemsandjewelry.com"
                     class="text-gold-600 hover:text-gold-700 font-semibold"
@@ -409,7 +409,7 @@ import { environment } from "../../environments/environment";
                   </a>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-600 mb-2">WhatsApp</p>
+                  <p class="text-sm text-ink mb-2">WhatsApp</p>
                   <a
                     [href]="'https://wa.me/' + env.whatsappNumber"
                     target="_blank"

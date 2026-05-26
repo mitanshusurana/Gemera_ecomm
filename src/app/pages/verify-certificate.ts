@@ -10,14 +10,14 @@ import { CertificateDetail } from '../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-surface">
       <!-- Header -->
       <div class="bg-diamond-50 border-b border-diamond-200">
         <div class="container-luxury py-12 text-center">
           <h1 class="text-4xl md:text-5xl font-display font-bold text-diamond-900 mb-4">
             Verify Your Report
           </h1>
-          <p class="text-gray-600 max-w-2xl mx-auto">
+          <p class="text-ink max-w-2xl mx-auto">
             Enter your report number to verify the authenticity of your gemstone or jewellery.
             We verify reports from GIA, IGI, and our internal Caratloop Authenticity Certificates.
           </p>
@@ -28,7 +28,7 @@ import { CertificateDetail } from '../core/models';
       <div class="container-luxury section-padding">
         <div class="max-w-xl mx-auto">
           <div class="card p-8 shadow-lg">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Report / Certificate Number</label>
+            <label class="block text-sm font-bold text-ink mb-2">Report / Certificate Number</label>
             <div class="flex gap-2 mb-4">
               <input
                 type="text"
@@ -53,8 +53,8 @@ import { CertificateDetail } from '../core/models';
 
       <!-- Result Modal -->
       <div *ngIf="result()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden animate-fade-in-up">
-          <div class="bg-gold-500 p-6 text-white flex justify-between items-center">
+        <div class="bg-surface rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden animate-fade-in-up">
+          <div class="bg-gold-500 p-6 text-surface flex justify-between items-center">
             <div class="flex items-center gap-3">
               <span class="text-4xl">✓</span>
               <div>
@@ -62,52 +62,52 @@ import { CertificateDetail } from '../core/models';
                 <p class="text-gold-100 text-sm">Report #{{ result()?.reportNumber }}</p>
               </div>
             </div>
-            <button (click)="result.set(null)" class="text-white hover:bg-white/20 rounded-full p-2 transition">✕</button>
+            <button (click)="result.set(null)" class="text-surface hover:bg-surface/20 rounded-full p-2 transition">✕</button>
           </div>
 
           <div class="p-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h4 class="font-bold text-gray-900 mb-4 border-b pb-2">Report Details</h4>
+                <h4 class="font-bold text-ink mb-4 border-b pb-2">Report Details</h4>
                 <dl class="space-y-3 text-sm">
                   <div class="flex justify-between">
-                    <dt class="text-gray-500">Date Issued</dt>
+                    <dt class="text-ink">Date Issued</dt>
                     <dd class="font-medium">{{ result()?.dateIssued | date:'mediumDate' }}</dd>
                   </div>
                   <div class="flex justify-between">
-                    <dt class="text-gray-500">Laboratory</dt>
+                    <dt class="text-ink">Laboratory</dt>
                     <dd class="font-medium">{{ result()?.lab }}</dd>
                   </div>
                   <div class="flex justify-between">
-                    <dt class="text-gray-500">Shape</dt>
+                    <dt class="text-ink">Shape</dt>
                     <dd class="font-medium">{{ result()?.shape }}</dd>
                   </div>
                   <div class="flex justify-between">
-                    <dt class="text-gray-500">Carat Weight</dt>
+                    <dt class="text-ink">Carat Weight</dt>
                     <dd class="font-medium">{{ result()?.carat }} ct</dd>
                   </div>
                   <div class="flex justify-between">
-                    <dt class="text-gray-500">Color Grade</dt>
+                    <dt class="text-ink">Color Grade</dt>
                     <dd class="font-medium">{{ result()?.color }}</dd>
                   </div>
                   <div class="flex justify-between">
-                    <dt class="text-gray-500">Clarity Grade</dt>
+                    <dt class="text-ink">Clarity Grade</dt>
                     <dd class="font-medium">{{ result()?.clarity }}</dd>
                   </div>
                   <div class="flex justify-between">
-                    <dt class="text-gray-500">Cut Grade</dt>
+                    <dt class="text-ink">Cut Grade</dt>
                     <dd class="font-medium">{{ result()?.cut }}</dd>
                   </div>
                 </dl>
               </div>
 
-              <div class="bg-gray-50 p-6 rounded-lg text-center flex flex-col items-center justify-center border border-dashed border-gray-300">
-                <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 overflow-hidden">
+              <div class="bg-surface p-6 rounded-lg text-center flex flex-col items-center justify-center border border-dashed border-ink">
+                <div class="w-24 h-24 bg-surface rounded-full flex items-center justify-center shadow-sm mb-4 overflow-hidden">
                   <img *ngIf="result()?.imageUrl" [src]="result()?.imageUrl" alt="Certificate" class="w-full h-full object-cover">
                   <span *ngIf="!result()?.imageUrl" class="text-4xl">💎</span>
                 </div>
-                <p class="font-bold text-gray-900 mb-1">Digital Asset</p>
-                <p class="text-xs text-gray-500 mb-4">Secured on Blockchain</p>
+                <p class="font-bold text-ink mb-1">Digital Asset</p>
+                <p class="text-xs text-ink mb-4">Secured on Blockchain</p>
                 <button (click)="downloadPdf()" [disabled]="downloading()" class="text-gold-600 underline text-sm hover:text-gold-700 flex items-center justify-center gap-1">
                    <span *ngIf="downloading()" class="animate-spin h-3 w-3 border-2 border-gold-600 border-t-transparent rounded-full"></span>
                    {{ downloading() ? 'Downloading...' : 'Download Original PDF' }}
@@ -115,8 +115,8 @@ import { CertificateDetail } from '../core/models';
               </div>
             </div>
 
-            <div class="mt-8 pt-6 border-t border-gray-100 text-center">
-              <p class="text-sm text-gray-500">
+            <div class="mt-8 pt-6 border-t border-ink text-center">
+              <p class="text-sm text-ink">
                 This verification is provided by Caratloop Fine Jewels in partnership with {{ result()?.lab }}.
               </p>
             </div>

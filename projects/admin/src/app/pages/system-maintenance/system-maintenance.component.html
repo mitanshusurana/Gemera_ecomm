@@ -1,13 +1,13 @@
 <div class="relative flex min-h-screen flex-col">
   <!-- Header -->
-  <header class="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 dark:bg-background-dark/80 px-4 py-3 backdrop-blur-md">
+  <header class="sticky top-0 z-50 flex items-center justify-between border-b border-ink bg-surface/80 dark:bg-background-dark/80 px-4 py-3 backdrop-blur-md">
     <div class="flex items-center gap-3">
-      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
+      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-surface">
         <span class="material-symbols-outlined">settings_suggest</span>
       </div>
       <div>
         <h1 class="text-lg font-bold leading-tight">System Maintenance</h1>
-        <p class="text-xs text-slate-500">Jewelry Inventory & ERP Node</p>
+        <p class="text-xs text-ink">Jewelry Inventory & ERP Node</p>
       </div>
     </div>
   </header>
@@ -15,7 +15,7 @@
   <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
     <!-- Server Health Section -->
     <section class="mb-8 relative">
-      <div *ngIf="loadingHealth" class="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+      <div *ngIf="loadingHealth" class="absolute inset-0 bg-surface/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
         <span class="material-symbols-outlined animate-spin text-primary text-3xl">progress_activity</span>
       </div>
       <div class="mb-4 flex items-center justify-between">
@@ -27,44 +27,44 @@
         </span>
       </div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <div class="flex flex-col gap-3 rounded-xl border border-ink bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-slate-500">CPU Usage</span>
+            <span class="text-sm font-medium text-ink">CPU Usage</span>
             <span class="material-symbols-outlined text-primary">memory</span>
           </div>
           <div class="flex items-end gap-2">
             <span class="text-3xl font-bold">{{ health.cpuUsagePercent | number:'1.1-1' }}%</span>
-            <span class="mb-1 text-sm font-medium text-slate-400 flex items-center">
+            <span class="mb-1 text-sm font-medium text-ink flex items-center">
               Live avg
             </span>
           </div>
-          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface">
             <div class="h-full bg-primary transition-all duration-500" [style.width.%]="health.cpuUsagePercent"></div>
           </div>
         </div>
-        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <div class="flex flex-col gap-3 rounded-xl border border-ink bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-slate-500">RAM Usage</span>
+            <span class="text-sm font-medium text-ink">RAM Usage</span>
             <span class="material-symbols-outlined text-primary">memory_alt</span>
           </div>
           <div class="flex items-end gap-2">
             <span class="text-3xl font-bold">{{ health.memoryUsagePercent | number:'1.1-1' }}%</span>
-            <span class="mb-1 text-sm font-medium text-slate-400 flex items-center">
+            <span class="mb-1 text-sm font-medium text-ink flex items-center">
               Allocated
             </span>
           </div>
-          <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface">
             <div class="h-full bg-amber-500 transition-all duration-500" [style.width.%]="health.memoryUsagePercent"></div>
           </div>
         </div>
-        <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <div class="flex flex-col gap-3 rounded-xl border border-ink bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-slate-500">VM Status</span>
+            <span class="text-sm font-medium text-ink">VM Status</span>
             <span class="material-symbols-outlined text-primary">dns</span>
           </div>
           <div class="flex flex-col">
             <span class="text-3xl font-bold">{{ health.status === 'UP' ? 'Healthy' : 'Degraded' }}</span>
-            <span class="text-sm text-slate-500">Uptime: {{ health.uptimeHours | number:'1.1-1' }}h</span>
+            <span class="text-sm text-ink">Uptime: {{ health.uptimeHours | number:'1.1-1' }}h</span>
           </div>
           <div class="flex gap-1">
             <div class="h-1.5 flex-1 rounded-full bg-emerald-500"></div>
@@ -79,10 +79,10 @@
 
     <!-- Performance Graph (Mock) -->
     <section class="mb-8">
-      <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="rounded-xl border border-ink bg-surface p-6 shadow-sm">
         <div class="mb-6 flex flex-col gap-1">
-          <h3 class="font-bold text-slate-800">Server Performance History</h3>
-          <p class="text-sm text-slate-500">Average response time over the last 24 hours</p>
+          <h3 class="font-bold text-ink">Server Performance History</h3>
+          <p class="text-sm text-ink">Average response time over the last 24 hours</p>
         </div>
         <div class="relative h-48 w-full">
           <svg class="h-full w-full" preserveaspectratio="none" viewbox="0 0 400 100">
@@ -96,7 +96,7 @@
             <path d="M0,80 Q50,20 100,50 T200,30 T300,70 T400,10" fill="none" stroke="#115e59" stroke-width="2"></path>
           </svg>
         </div>
-        <div class="mt-4 flex justify-between text-[10px] font-bold text-slate-400">
+        <div class="mt-4 flex justify-between text-[10px] font-bold text-ink">
           <span>00:00</span>
           <span>06:00</span>
           <span>12:00</span>
@@ -113,32 +113,32 @@
           <h2 class="text-xl font-bold tracking-tight">Cloudflare R2 Storage</h2>
           <button class="text-sm font-semibold text-primary hover:underline">Manage Buckets</button>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="rounded-xl border border-ink bg-surface p-6 shadow-sm">
           <div class="flex items-start justify-between mb-4">
             <div class="flex items-center gap-3">
-              <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-50 border border-slate-100">
-                <span class="material-symbols-outlined text-slate-600">cloud_queue</span>
+              <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-surface border border-ink">
+                <span class="material-symbols-outlined text-ink">cloud_queue</span>
               </div>
               <div>
-                <p class="text-sm font-medium text-slate-500">Asset Storage Usage</p>
-                <h4 class="text-2xl font-bold text-slate-800">42.8 GB <span class="text-base font-normal text-slate-400">of 100 GB</span></h4>
+                <p class="text-sm font-medium text-ink">Asset Storage Usage</p>
+                <h4 class="text-2xl font-bold text-ink">42.8 GB <span class="text-base font-normal text-ink">of 100 GB</span></h4>
               </div>
             </div>
           </div>
-          <div class="mb-2 h-3 w-full overflow-hidden rounded-full bg-slate-100">
+          <div class="mb-2 h-3 w-full overflow-hidden rounded-full bg-surface">
             <div class="h-full bg-primary" style="width: 42.8%"></div>
           </div>
-          <div class="flex justify-between text-xs font-medium text-slate-500">
+          <div class="flex justify-between text-xs font-medium text-ink">
             <span>Used: 42.8%</span>
             <span>Remaining: 57.2 GB</span>
           </div>
           <div class="mt-6 space-y-3">
-            <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
-              <span class="text-sm text-slate-600">High-res Product Images</span>
+            <div class="flex items-center justify-between rounded-lg bg-surface p-3">
+              <span class="text-sm text-ink">High-res Product Images</span>
               <span class="text-sm font-bold">38.2 GB</span>
             </div>
-            <div class="flex items-center justify-between rounded-lg bg-slate-50 p-3">
-              <span class="text-sm text-slate-600">Invoice PDF Archives</span>
+            <div class="flex items-center justify-between rounded-lg bg-surface p-3">
+              <span class="text-sm text-ink">Invoice PDF Archives</span>
               <span class="text-sm font-bold">4.6 GB</span>
             </div>
           </div>
@@ -148,16 +148,16 @@
       <!-- Backups Section -->
       <section class="flex flex-col gap-4">
         <h2 class="text-xl font-bold tracking-tight">Database Backups</h2>
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col h-full">
+        <div class="rounded-xl border border-ink bg-surface p-6 shadow-sm flex flex-col h-full">
           <div class="mb-6 flex flex-1 flex-col justify-center text-center">
             <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
               <span class="material-symbols-outlined text-3xl">history</span>
             </div>
 
             <ng-container *ngIf="!backupResult">
-              <h4 class="text-sm font-medium text-slate-500 uppercase tracking-widest mb-1">Last Backup Completed</h4>
-              <p class="text-xl font-bold text-slate-800">Automatic Schedule</p>
-              <p class="text-xs text-slate-400 mt-2 flex items-center justify-center gap-1">
+              <h4 class="text-sm font-medium text-ink uppercase tracking-widest mb-1">Last Backup Completed</h4>
+              <p class="text-xl font-bold text-ink">Automatic Schedule</p>
+              <p class="text-xs text-ink mt-2 flex items-center justify-center gap-1">
                 <span class="material-symbols-outlined text-xs">verified</span>
                 System is running normally
               </p>
@@ -165,7 +165,7 @@
 
             <ng-container *ngIf="backupResult">
               <h4 class="text-sm font-medium text-emerald-600 uppercase tracking-widest mb-1">Backup Success</h4>
-              <p class="text-lg font-bold text-slate-800 truncate px-4">{{ backupResult.message }}</p>
+              <p class="text-lg font-bold text-ink truncate px-4">{{ backupResult.message }}</p>
               <a [href]="backupResult.fileUrl" class="text-xs text-primary font-bold mt-2 hover:underline flex items-center justify-center gap-1">
                 <span class="material-symbols-outlined text-xs">download</span> Download File
               </a>
@@ -173,12 +173,12 @@
           </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <button (click)="triggerBackup()" [disabled]="triggeringBackup" class="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 text-sm font-bold text-white shadow-sm hover:bg-primary/90 transition-all disabled:opacity-50">
+            <button (click)="triggerBackup()" [disabled]="triggeringBackup" class="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 text-sm font-bold text-surface shadow-sm hover:bg-primary/90 transition-all disabled:opacity-50">
               <span *ngIf="triggeringBackup" class="material-symbols-outlined text-sm animate-spin">progress_activity</span>
               <span *ngIf="!triggeringBackup" class="material-symbols-outlined text-sm">backup</span>
               Run Backup
             </button>
-            <button class="flex items-center justify-center gap-2 rounded-lg bg-slate-100 py-3 px-4 text-sm font-bold text-slate-700 hover:bg-slate-200 transition-all" [disabled]="!backupResult">
+            <button class="flex items-center justify-center gap-2 rounded-lg bg-surface py-3 px-4 text-sm font-bold text-ink hover:bg-surface transition-all" [disabled]="!backupResult">
               <span class="material-symbols-outlined text-sm">download</span>
               Download Last
             </button>

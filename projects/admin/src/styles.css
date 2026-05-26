@@ -16,7 +16,7 @@
 }
 
 body {
-  @apply bg-background-light font-display text-slate-900 antialiased;
+  @apply bg-background-light font-display text-ink antialiased;
   min-height: max(884px, 100dvh);
 }
 

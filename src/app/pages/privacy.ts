@@ -6,10 +6,10 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-surface">
       <div class="container-luxury section-padding">
         <h1 class="text-4xl font-display font-bold text-diamond-900 mb-8">Privacy Policy</h1>
-        <div class="prose max-w-none text-gray-700">
+        <div class="prose max-w-none text-ink">
             <p>Last updated: October 26, 2023</p>
             <p>At Caratloop, we take your privacy seriously. This Privacy Policy describes how your personal information is collected, used, and shared when you visit or make a purchase from our website.</p>
 

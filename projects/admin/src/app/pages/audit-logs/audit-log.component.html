@@ -1,39 +1,39 @@
 <div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
   <!-- Header Section -->
-  <div class="flex items-center bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-10 justify-between">
+  <div class="flex items-center bg-surface dark:bg-surface border-b border-ink dark:border-ink p-4 sticky top-0 z-10 justify-between">
     <div class="flex items-center gap-3">
       <div class="text-primary flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
         <span class="material-symbols-outlined">arrow_back</span>
       </div>
       <div>
-        <h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight">Audit Log</h2>
-        <p class="text-slate-500 dark:text-slate-400 text-xs">System events and activity</p>
+        <h2 class="text-ink dark:text-surface text-lg font-bold leading-tight tracking-tight">Audit Log</h2>
+        <p class="text-ink dark:text-ink text-xs">System events and activity</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <button class="flex size-10 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+      <button class="flex size-10 items-center justify-center rounded-lg border border-ink dark:border-ink bg-surface dark:bg-surface text-ink dark:text-ink hover:bg-surface transition-colors">
         <span class="material-symbols-outlined">search</span>
       </button>
-      <button class="flex size-10 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+      <button class="flex size-10 items-center justify-center rounded-lg border border-ink dark:border-ink bg-surface dark:bg-surface text-ink dark:text-ink hover:bg-surface transition-colors">
         <span class="material-symbols-outlined">download</span>
       </button>
     </div>
   </div>
 
   <!-- Filter Chips Section -->
-  <div class="flex gap-3 p-4 overflow-x-auto no-scrollbar bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
-    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary px-4 text-white shadow-sm shadow-primary/20">
+  <div class="flex gap-3 p-4 overflow-x-auto no-scrollbar bg-background-light dark:bg-background-dark border-b border-ink dark:border-ink">
+    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary px-4 text-surface shadow-sm shadow-primary/20">
       <span class="text-sm font-semibold">All Events</span>
     </button>
-    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full border border-ink dark:border-ink bg-surface dark:bg-surface px-4 text-ink dark:text-ink hover:bg-surface transition-colors">
       <span class="material-symbols-outlined text-[18px]">inventory_2</span>
       <span class="text-sm font-medium">Inventory</span>
     </button>
-    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full border border-ink dark:border-ink bg-surface dark:bg-surface px-4 text-ink dark:text-ink hover:bg-surface transition-colors">
       <span class="material-symbols-outlined text-[18px]">payments</span>
       <span class="text-sm font-medium">Transactions</span>
     </button>
-    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors">
+    <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full border border-ink dark:border-ink bg-surface dark:bg-surface px-4 text-ink dark:text-ink hover:bg-surface transition-colors">
       <span class="material-symbols-outlined text-[18px]">settings</span>
       <span class="text-sm font-medium">System</span>
     </button>
@@ -42,66 +42,66 @@
   <!-- Log Content Area -->
   <div class="flex-1 max-w-4xl mx-auto w-full px-4 py-6 pb-24">
     <div class="mb-8">
-      <h3 class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Today</h3>
+      <h3 class="text-ink dark:text-ink text-xs font-bold uppercase tracking-widest mb-4">Today</h3>
       <div class="space-y-3">
         <!-- Event Item -->
-        <div class="flex items-start gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-start gap-4 bg-surface dark:bg-surface p-4 rounded-xl border border-ink dark:border-ink shadow-sm">
           <div class="flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0 size-12">
             <span class="material-symbols-outlined">request_quote</span>
           </div>
           <div class="flex flex-col flex-1">
             <div class="flex justify-between items-start">
-              <p class="text-slate-900 dark:text-white text-base font-semibold">New RFQ Received</p>
-              <span class="text-slate-400 text-xs font-medium">10:45 AM</span>
+              <p class="text-ink dark:text-surface text-base font-semibold">New RFQ Received</p>
+              <span class="text-ink text-xs font-medium">10:45 AM</span>
             </div>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Request for Quote #882 created by user 'GoldSmith_UK' for 15 Custom Bands.</p>
+            <p class="text-ink dark:text-ink text-sm mt-0.5">Request for Quote #882 created by user 'GoldSmith_UK' for 15 Custom Bands.</p>
           </div>
         </div>
 
         <!-- Event Item -->
-        <div class="flex items-start gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-start gap-4 bg-surface dark:bg-surface p-4 rounded-xl border border-ink dark:border-ink shadow-sm">
           <div class="flex items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 shrink-0 size-12">
             <span class="material-symbols-outlined">database</span>
           </div>
           <div class="flex flex-col flex-1">
             <div class="flex justify-between items-start">
-              <p class="text-slate-900 dark:text-white text-base font-semibold">PostgreSQL Backup Successful</p>
-              <span class="text-slate-400 text-xs font-medium">04:00 AM</span>
+              <p class="text-ink dark:text-surface text-base font-semibold">PostgreSQL Backup Successful</p>
+              <span class="text-ink text-xs font-medium">04:00 AM</span>
             </div>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Automated system backup completed successfully. Storage: S3-London-Zone-1.</p>
+            <p class="text-ink dark:text-ink text-sm mt-0.5">Automated system backup completed successfully. Storage: S3-London-Zone-1.</p>
           </div>
         </div>
       </div>
     </div>
 
     <div class="mb-8">
-      <h3 class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Yesterday</h3>
+      <h3 class="text-ink dark:text-ink text-xs font-bold uppercase tracking-widest mb-4">Yesterday</h3>
       <div class="space-y-3">
         <!-- Event Item -->
-        <div class="flex items-start gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm opacity-80">
-          <div class="flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0 size-12">
+        <div class="flex items-start gap-4 bg-surface dark:bg-surface p-4 rounded-xl border border-ink dark:border-ink shadow-sm opacity-80">
+          <div class="flex items-center justify-center rounded-lg bg-surface dark:bg-surface text-ink dark:text-ink shrink-0 size-12">
             <span class="material-symbols-outlined">person</span>
           </div>
           <div class="flex flex-col flex-1">
             <div class="flex justify-between items-start">
-              <p class="text-slate-900 dark:text-white text-base font-semibold">Admin Login</p>
-              <span class="text-slate-400 text-xs font-medium">Yesterday, 09:15 AM</span>
+              <p class="text-ink dark:text-surface text-base font-semibold">Admin Login</p>
+              <span class="text-ink text-xs font-medium">Yesterday, 09:15 AM</span>
             </div>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Administrator 'Sarah J.' logged in from IP: 192.168.1.144.</p>
+            <p class="text-ink dark:text-ink text-sm mt-0.5">Administrator 'Sarah J.' logged in from IP: 192.168.1.144.</p>
           </div>
         </div>
 
         <!-- Event Item -->
-        <div class="flex items-start gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-start gap-4 bg-surface dark:bg-surface p-4 rounded-xl border border-ink dark:border-ink shadow-sm">
           <div class="flex items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 shrink-0 size-12">
             <span class="material-symbols-outlined">error</span>
           </div>
           <div class="flex flex-col flex-1">
             <div class="flex justify-between items-start">
-              <p class="text-slate-900 dark:text-white text-base font-semibold">Payment Failed</p>
-              <span class="text-slate-400 text-xs font-medium">Yesterday, 08:45 AM</span>
+              <p class="text-ink dark:text-surface text-base font-semibold">Payment Failed</p>
+              <span class="text-ink text-xs font-medium">Yesterday, 08:45 AM</span>
             </div>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Order #9924 failed authorization. Reason: Insufficient funds (Stripe Error 402).</p>
+            <p class="text-ink dark:text-ink text-sm mt-0.5">Order #9924 failed authorization. Reason: Insufficient funds (Stripe Error 402).</p>
           </div>
         </div>
       </div>
