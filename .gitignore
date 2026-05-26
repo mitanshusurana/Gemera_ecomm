@@ -50,3 +50,4 @@ backend/.settings/
 backend/.classpath
 backend/.project
 .env
+*.log

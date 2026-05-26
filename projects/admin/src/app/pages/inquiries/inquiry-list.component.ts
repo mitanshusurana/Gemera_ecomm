@@ -92,14 +92,14 @@ export class InquiryListComponent implements OnInit {
   }
 
   loadInquiries() {
-    this.http.get<CustomInquiry[]>(`${environment.apiUrl}/api/v1/inquiries`).subscribe({
+    this.http.get<CustomInquiry[]>(`${environment.apiUrl}/inquiries`).subscribe({
       next: (data) => this.inquiries.set(data),
       error: (err) => console.error('Failed to load inquiries', err)
     });
   }
 
   updateStatus(id: number, status: string) {
-    this.http.patch(`${environment.apiUrl}/api/v1/inquiries/${id}/status`, { status }).subscribe({
+    this.http.patch(`${environment.apiUrl}/inquiries/${id}/status`, { status }).subscribe({
       next: () => this.loadInquiries(),
       error: (err) => console.error('Failed to update status', err)
     });

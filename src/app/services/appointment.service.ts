@@ -20,7 +20,7 @@ export interface Appointment {
 })
 export class AppointmentService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/v1/appointments`;
+  private apiUrl = `${environment.apiUrl}/appointments`;
 
   createAppointment(appointment: Appointment): Observable<Appointment> {
     return this.http.post<Appointment>(this.apiUrl, appointment);

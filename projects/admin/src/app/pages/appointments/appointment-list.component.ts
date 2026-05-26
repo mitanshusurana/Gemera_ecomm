@@ -90,14 +90,14 @@ export class AppointmentListComponent implements OnInit {
   }
 
   loadAppointments() {
-    this.http.get<Appointment[]>(`${environment.apiUrl}/api/v1/appointments`).subscribe({
+    this.http.get<Appointment[]>(`${environment.apiUrl}/appointments`).subscribe({
       next: (data) => this.appointments.set(data),
       error: (err) => console.error('Failed to load appointments', err)
     });
   }
 
   updateStatus(id: number, status: string) {
-    this.http.patch(`${environment.apiUrl}/api/v1/appointments/${id}/status`, { status }).subscribe({
+    this.http.patch(`${environment.apiUrl}/appointments/${id}/status`, { status }).subscribe({
       next: () => this.loadAppointments(),
       error: (err) => console.error('Failed to update status', err)
     });
