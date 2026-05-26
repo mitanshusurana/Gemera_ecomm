@@ -22,14 +22,14 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-surface">
       <!-- Header -->
       <div class="bg-diamond-50 border-b border-diamond-200 section-padding">
         <div class="container-luxury">
           <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4">
             Our Collections
           </h1>
-          <p class="text-lg text-gray-600">
+          <p class="text-lg text-ink">
             Browse our complete selection of fine jewellery and gemstones
           </p>
         </div>
@@ -56,14 +56,14 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             <div *ngIf="isFilterOpen()" (click)="isFilterOpen.set(false)" class="absolute inset-0 bg-black/50 lg:hidden"></div>
 
             <!-- Drawer Content -->
-            <div class="relative h-full w-80 bg-white p-6 overflow-y-auto lg:h-auto lg:w-auto lg:p-0 lg:bg-transparent transition-transform duration-300"
+            <div class="relative h-full w-80 bg-surface p-6 overflow-y-auto lg:h-auto lg:w-auto lg:p-0 lg:bg-transparent transition-transform duration-300"
                  [class.translate-x-0]="isFilterOpen()"
                  [class.-translate-x-full]="!isFilterOpen() && false"> <!-- Note: lg:block handles desktop visibility -->
 
               <!-- Mobile Header -->
               <div class="flex items-center justify-between mb-6 lg:hidden">
                 <h3 class="font-display font-bold text-xl">Filters</h3>
-                <button (click)="isFilterOpen.set(false)" class="p-2 hover:bg-gray-100 rounded-full">
+                <button (click)="isFilterOpen.set(false)" class="p-2 hover:bg-surface rounded-full">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
@@ -73,7 +73,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <div class="space-y-6">
                 <!-- Category Filter -->
                 <div class="card p-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Categories</h3>
+                  <h3 class="font-semibold text-ink mb-4">Categories</h3>
                   <div class="space-y-4">
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input
@@ -82,7 +82,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                         [checked]="selectedCategories().length === 0"
                         (change)="toggleCategory('all')"
                       />
-                      <span class="text-sm font-semibold text-gray-800">All Collections</span>
+                      <span class="text-sm font-semibold text-ink">All Collections</span>
                     </label>
 
                     <div *ngFor="let category of categories" class="space-y-2">
@@ -91,21 +91,21 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                             type="checkbox"
                             [checked]="selectedCategories().includes(category.name)"
                             (change)="toggleCategory(category.name)"
-                            class="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
+                            class="w-4 h-4 text-ink rounded border-ink focus:ring-primary-500 cursor-pointer"
                           >
-                          <span class="text-sm text-gray-800 font-semibold group-hover:text-primary-800 transition-colors">{{category.displayName}}</span>
+                          <span class="text-sm text-ink font-semibold group-hover:text-ink transition-colors">{{category.displayName}}</span>
                         </label>
 
-                        <div *ngIf="category.subcategories?.length" class="pl-6 space-y-2 border-l border-gray-100 ml-2">
+                        <div *ngIf="category.subcategories?.length" class="pl-6 space-y-2 border-l border-ink ml-2">
                           <div *ngFor="let subcat of category.subcategories">
                              <label class="flex items-center gap-3 cursor-pointer group">
                               <input
                                 type="checkbox"
                                 [checked]="selectedCategories().includes(subcat.name)"
                                 (change)="toggleCategory(subcat.name)"
-                                class="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
+                                class="w-4 h-4 text-ink rounded border-ink focus:ring-primary-500 cursor-pointer"
                               >
-                              <span class="text-sm text-gray-700 group-hover:text-primary-800 transition-colors">{{subcat.displayName}}</span>
+                              <span class="text-sm text-ink group-hover:text-ink transition-colors">{{subcat.displayName}}</span>
                              </label>
                              <div *ngIf="subcat.subcategories?.length" class="pl-6 space-y-2 mt-2">
                                 <label *ngFor="let child of subcat.subcategories" class="flex items-center gap-3 cursor-pointer group">
@@ -113,9 +113,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                                     type="checkbox"
                                     [checked]="selectedCategories().includes(child.name)"
                                     (change)="toggleCategory(child.name)"
-                                    class="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500 cursor-pointer"
+                                    class="w-4 h-4 text-ink rounded border-ink focus:ring-primary-500 cursor-pointer"
                                   >
-                                  <span class="text-sm text-gray-500 group-hover:text-primary-800 transition-colors">- {{child.displayName}}</span>
+                                  <span class="text-sm text-ink group-hover:text-ink transition-colors">- {{child.displayName}}</span>
                                 </label>
                              </div>
                           </div>
@@ -126,7 +126,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
                 <!-- Price Filter -->
                 <div class="card p-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Price Range</h3>
+                  <h3 class="font-semibold text-ink mb-4">Price Range</h3>
                   <div class="space-y-3">
                     <label *ngFor="let range of priceRanges" class="flex items-center gap-3 cursor-pointer">
                         <input
@@ -135,82 +135,82 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                             [checked]="selectedPriceRanges().includes(range.id)"
                             (change)="togglePriceRange(range.id)"
                         />
-                        <span class="text-sm text-gray-700">{{ range.label }}</span>
+                        <span class="text-sm text-ink">{{ range.label }}</span>
                     </label>
                   </div>
                 </div>
 
                 <!-- Metal Filter -->
                 <div class="card p-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Metal Type</h3>
+                  <h3 class="font-semibold text-ink mb-4">Metal Type</h3>
                   <div class="space-y-3">
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-gray-700">Gold</span>
+                      <span class="text-sm text-ink">Gold</span>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-gray-700">Platinum</span>
+                      <span class="text-sm text-ink">Platinum</span>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-gray-700">Silver</span>
+                      <span class="text-sm text-ink">Silver</span>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-gray-700">White Gold</span>
+                      <span class="text-sm text-ink">White Gold</span>
                     </label>
                   </div>
                 </div>
 
                 <!-- Certification Filter -->
                 <div class="card p-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Certification</h3>
+                  <h3 class="font-semibold text-ink mb-4">Certification</h3>
                   <div class="space-y-3">
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-gray-700">GIA</span>
+                      <span class="text-sm text-ink">GIA</span>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-gray-700">IGI</span>
+                      <span class="text-sm text-ink">IGI</span>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-gray-700">AGS</span>
+                      <span class="text-sm text-ink">AGS</span>
                     </label>
                   </div>
                 </div>
 
                 <!-- Gemstone Filter -->
                 <div class="card p-6" *ngIf="isGemstoneCategorySelected() || selectedCategories().length === 0">
-                  <h3 class="font-semibold text-gray-900 mb-4">Gemstone Type</h3>
+                  <h3 class="font-semibold text-ink mb-4">Gemstone Type</h3>
                   <div class="space-y-3">
                     <label *ngFor="let gemstone of gemstoneTypes" class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" [checked]="selectedGemstones().includes(gemstone)" (change)="toggleFilter('gemstone', gemstone)" />
-                      <span class="text-sm text-gray-700">{{ gemstone }}</span>
+                      <span class="text-sm text-ink">{{ gemstone }}</span>
                     </label>
                   </div>
                 </div>
 
                 <!-- Occasion Filter (New) -->
                 <div class="card p-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Occasion</h3>
+                  <h3 class="font-semibold text-ink mb-4">Occasion</h3>
                   <div class="space-y-3">
                     <label *ngFor="let occasion of occasionsList" class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes(occasion)" (change)="toggleFilter('occasion', occasion)" />
-                      <span class="text-sm text-gray-700">{{ occasion }}</span>
+                      <span class="text-sm text-ink">{{ occasion }}</span>
                     </label>
                   </div>
                 </div>
 
                 <!-- Style Filter (New) -->
                 <div class="card p-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Shop by Look</h3>
+                  <h3 class="font-semibold text-ink mb-4">Shop by Look</h3>
                   <div class="space-y-3">
                     <label *ngFor="let style of stylesList" class="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes(style)" (change)="toggleFilter('style', style)" />
-                      <span class="text-sm text-gray-700">{{ style }}</span>
+                      <span class="text-sm text-ink">{{ style }}</span>
                     </label>
                   </div>
                 </div>
@@ -229,7 +229,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             <!-- Top Bar -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-6 border-b border-diamond-200">
               <div>
-                <p class="text-gray-600">
+                <p class="text-ink">
                   Showing <span class="font-semibold">{{ paginationInfo().start }}-{{ paginationInfo().end }}</span> of
                   <span class="font-semibold">{{ pagination().totalItems }}</span> products
                 </p>
@@ -267,15 +267,15 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <div *ngIf="!product.imageUrl && !product.images?.[0]" class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
                     <span class="text-4xl">{{ getProductEmoji(product.category) }}</span>
                   </div>
-                  <button (click)="$event.preventDefault(); $event.stopPropagation()" class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300">
+                  <button (click)="$event.preventDefault(); $event.stopPropagation()" class="absolute top-4 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
                   </button>
-                  <button (click)="handleAddToCompare($event, product)" class="absolute top-16 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300" title="Compare">
+                  <button (click)="handleAddToCompare($event, product)" class="absolute top-16 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300" title="Compare">
                     <span class="text-lg">⚖️</span>
                   </button>
-                  <button (click)="openQuickView($event, product.id)" class="absolute top-28 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300" title="Quick View">
+                  <button (click)="openQuickView($event, product.id)" class="absolute top-28 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300" title="Quick View">
                     <span class="text-lg">👁️</span>
                   </button>
                 </div>
@@ -285,7 +285,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <p class="text-xs text-gold-600 font-semibold uppercase tracking-wider mb-1">
                     {{ product.category }}
                   </p>
-                  <h3 class="font-semibold text-gray-900 mb-3 line-clamp-2">
+                  <h3 class="font-semibold text-ink mb-3 line-clamp-2">
                     {{ product.name }}
                   </h3>
 
@@ -294,7 +294,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                     <div class="flex gap-1">
                       <span *ngFor="let _ of [1,2,3,4,5]" class="text-gold-500 text-xs">★</span>
                     </div>
-                    <span class="text-xs text-gray-600">({{ product.reviewCount }})</span>
+                    <span class="text-xs text-ink">({{ product.reviewCount }})</span>
                   </div>
 
                   <!-- Price -->
@@ -335,11 +335,11 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
             <!-- Empty State -->
             <div *ngIf="!isLoading() && products().length === 0" class="text-center py-16">
-              <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-16 h-16 mx-auto text-ink mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
               </svg>
-              <h3 class="text-2xl font-semibold text-gray-900 mb-2">No products found</h3>
-              <p class="text-gray-600 mb-6">Try adjusting your filters or search terms</p>
+              <h3 class="text-2xl font-semibold text-ink mb-2">No products found</h3>
+              <p class="text-ink mb-6">Try adjusting your filters or search terms</p>
               <button (click)="clearFilters()" class="btn-primary">Clear Filters</button>
             </div>
 
@@ -347,7 +347,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             <div *ngIf="!isLoading() && products().length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4">
               <!-- Page Size Selector -->
               <div class="flex items-center gap-2">
-                <label class="text-sm text-gray-700">Items per page:</label>
+                <label class="text-sm text-ink">Items per page:</label>
                 <select [(ngModel)]="pagination().pageSize" (change)="onPageSizeChange()" class="input-field max-w-xs">
                   <option value="12">12</option>
                   <option value="24">24</option>
@@ -363,7 +363,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   [disabled]="pagination().currentPage === 1"
                   [class.opacity-50]="pagination().currentPage === 1"
                   [class.cursor-not-allowed]="pagination().currentPage === 1"
-                  class="w-10 h-10 border border-diamond-300 rounded-lg hover:bg-gold-50 transition-colors duration-300 disabled:hover:bg-white"
+                  class="w-10 h-10 border border-diamond-300 rounded-lg hover:bg-gold-50 transition-colors duration-300 disabled:hover:bg-surface"
                 >
                   ‹
                 </button>
@@ -375,9 +375,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                     *ngFor="let page of visiblePages()"
                     (click)="goToPage(page)"
                     [class.bg-gold-500]="pagination().currentPage === page"
-                    [class.text-white]="pagination().currentPage === page"
+                    [class.text-surface]="pagination().currentPage === page"
                     [class.border-diamond-300]="pagination().currentPage !== page"
-                    [class.text-gray-700]="pagination().currentPage !== page"
+                    [class.text-ink]="pagination().currentPage !== page"
                     class="w-10 h-10 border rounded-lg transition-colors duration-300 font-semibold"
                     [class.hover:bg-gold-50]="pagination().currentPage !== page"
                   >
@@ -385,7 +385,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   </button>
 
                   <!-- Ellipsis -->
-                  <span *ngIf="shouldShowEllipsis()" class="px-2 text-gray-500">...</span>
+                  <span *ngIf="shouldShowEllipsis()" class="px-2 text-ink">...</span>
                 </div>
 
                 <!-- Next Button -->
@@ -394,14 +394,14 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   [disabled]="pagination().currentPage >= pagination().totalPages"
                   [class.opacity-50]="pagination().currentPage >= pagination().totalPages"
                   [class.cursor-not-allowed]="pagination().currentPage >= pagination().totalPages"
-                  class="w-10 h-10 border border-diamond-300 rounded-lg hover:bg-gold-50 transition-colors duration-300 disabled:hover:bg-white"
+                  class="w-10 h-10 border border-diamond-300 rounded-lg hover:bg-gold-50 transition-colors duration-300 disabled:hover:bg-surface"
                 >
                   ›
                 </button>
               </div>
 
               <!-- Page Info -->
-              <div class="text-sm text-gray-600">
+              <div class="text-sm text-ink">
                 Page {{ pagination().currentPage }} of {{ pagination().totalPages }}
               </div>
             </div>

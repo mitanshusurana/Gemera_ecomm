@@ -1,7 +1,7 @@
 <div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
   <!-- Header / Logo Section -->
   <div class="flex items-center bg-background-light dark:bg-background-dark p-6 pb-2 justify-between border-b border-primary/10">
-    <h2 class="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
+    <h2 class="text-ink dark:text-ink text-xl font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
       AURELIUS ADMIN
     </h2>
   </div>
@@ -16,29 +16,29 @@
 
   <!-- Welcome Text -->
   <div class="px-6 pt-8">
-    <h2 class="text-slate-900 dark:text-slate-100 tracking-light text-[28px] font-bold leading-tight text-center">Welcome Back</h2>
-    <p class="text-slate-600 dark:text-slate-400 text-base font-normal leading-normal pb-6 pt-2 text-center">Admin Secure Portal</p>
+    <h2 class="text-ink dark:text-ink tracking-light text-[28px] font-bold leading-tight text-center">Welcome Back</h2>
+    <p class="text-ink dark:text-ink text-base font-normal leading-normal pb-6 pt-2 text-center">Admin Secure Portal</p>
   </div>
 
   <!-- Form Section -->
   <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4 px-6 py-3 max-w-[480px] mx-auto w-full">
     <!-- Email Input -->
     <label class="flex flex-col w-full">
-      <p class="text-slate-900 dark:text-slate-100 text-sm font-semibold leading-normal pb-2 px-1">Email Address</p>
+      <p class="text-ink dark:text-ink text-sm font-semibold leading-normal pb-2 px-1">Email Address</p>
       <div class="relative">
-        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
-        <input formControlName="email" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-14 placeholder:text-slate-400 pl-12 pr-4 text-base font-normal leading-normal" placeholder="admin@aurelia.com" type="email"/>
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink">mail</span>
+        <input formControlName="email" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-ink dark:text-ink focus:outline-0 focus:ring-2 focus:ring-primary border border-ink dark:border-ink bg-surface dark:bg-surface h-14 placeholder:text-ink pl-12 pr-4 text-base font-normal leading-normal" placeholder="admin@aurelia.com" type="email"/>
       </div>
     </label>
 
     <!-- Password Input -->
     <label class="flex flex-col w-full">
       <div class="flex justify-between items-center pb-2 px-1">
-        <p class="text-slate-900 dark:text-slate-100 text-sm font-semibold leading-normal">Password</p>
+        <p class="text-ink dark:text-ink text-sm font-semibold leading-normal">Password</p>
       </div>
       <div class="relative">
-        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
-        <input formControlName="password" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-2 focus:ring-primary border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-14 placeholder:text-slate-400 pl-12 pr-12 text-base font-normal leading-normal" placeholder="••••••••" type="password"/>
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink">lock</span>
+        <input formControlName="password" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-ink dark:text-ink focus:outline-0 focus:ring-2 focus:ring-primary border border-ink dark:border-ink bg-surface dark:bg-surface h-14 placeholder:text-ink pl-12 pr-12 text-base font-normal leading-normal" placeholder="••••••••" type="password"/>
       </div>
     </label>
 
@@ -48,7 +48,7 @@
 
     <!-- Login Button -->
     <div class="pt-4">
-      <button type="submit" [disabled]="loading" class="w-full h-14 bg-primary text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+      <button type="submit" [disabled]="loading" class="w-full h-14 bg-primary text-surface rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
         <span>{{ loading ? 'Signing In...' : 'Sign In' }}</span>
         <span class="material-symbols-outlined text-xl">login</span>
       </button>
@@ -57,7 +57,7 @@
     <!-- Security Footer -->
     <div class="flex items-center justify-center gap-2 pt-10 pb-6 opacity-60">
       <span class="material-symbols-outlined text-sm">verified_user</span>
-      <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-widest">Secure Admin Access Only</p>
+      <p class="text-ink dark:text-ink text-xs font-medium uppercase tracking-widest">Secure Admin Access Only</p>
     </div>
   </form>
 

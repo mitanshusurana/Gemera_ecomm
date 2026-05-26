@@ -17,14 +17,14 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   imports: [CommonModule, RouterLink, QuickViewModalComponent, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-surface">
       <!-- Header -->
       <div class="bg-diamond-50 border-b border-diamond-200 section-padding">
         <div class="container-luxury">
           <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4">
             My Wishlist
           </h1>
-          <p class="text-lg text-gray-600">
+          <p class="text-lg text-ink">
             {{ wishlistService.count() }} items saved for later
           </p>
         </div>
@@ -35,11 +35,11 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
         <!-- Empty State -->
         <div *ngIf="wishlistService.items().length === 0" class="text-center py-16">
-          <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-16 h-16 mx-auto text-ink mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
           </svg>
-          <h3 class="text-2xl font-semibold text-gray-900 mb-2">Your wishlist is empty</h3>
-          <p class="text-gray-600 mb-6">Save items you love to view them here later.</p>
+          <h3 class="text-2xl font-semibold text-ink mb-2">Your wishlist is empty</h3>
+          <p class="text-ink mb-6">Save items you love to view them here later.</p>
           <a routerLink="/products" class="btn-primary inline-block">Start Shopping</a>
         </div>
 
@@ -54,13 +54,13 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               </div>
 
               <!-- Remove Button -->
-              <button (click)="handleRemove($event, product.id)" class="absolute top-4 left-4 w-10 h-10 bg-white/90 hover:bg-rose-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 z-10" title="Remove">
+              <button (click)="handleRemove($event, product.id)" class="absolute top-4 left-4 w-10 h-10 bg-surface/90 hover:bg-rose-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300 z-10" title="Remove">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                 </svg>
               </button>
 
-              <button (click)="openQuickView($event, product.id)" class="absolute top-16 left-4 w-10 h-10 bg-white/90 hover:bg-gold-500 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300" title="Quick View">
+              <button (click)="openQuickView($event, product.id)" class="absolute top-16 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300" title="Quick View">
                 <span class="text-lg">👁️</span>
               </button>
             </div>
@@ -70,7 +70,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <p class="text-xs text-gold-600 font-semibold uppercase tracking-wider mb-1">
                 {{ product.category }}
               </p>
-              <h3 class="font-semibold text-gray-900 mb-3 line-clamp-2">
+              <h3 class="font-semibold text-ink mb-3 line-clamp-2">
                 {{ product.name }}
               </h3>
 

@@ -6,10 +6,10 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-surface">
       <div class="container-luxury section-padding">
         <h1 class="text-4xl font-display font-bold text-diamond-900 mb-8">Terms & Conditions</h1>
-        <div class="prose max-w-none text-gray-700">
+        <div class="prose max-w-none text-ink">
             <p>Welcome to Caratloop. By accessing or using our website, you agree to be bound by these Terms and Conditions.</p>
 
             <h3>1. General Conditions</h3>

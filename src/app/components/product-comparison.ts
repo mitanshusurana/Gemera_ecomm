@@ -28,7 +28,7 @@ interface ComparisonProduct {
   template: `
     <div class="min-h-screen bg-gradient-to-br from-diamond-50 to-white">
       <!-- Header -->
-      <div class="bg-white border-b border-diamond-200 sticky top-0 z-40">
+      <div class="bg-surface border-b border-diamond-200 sticky top-0 z-40">
         <div class="container-luxury py-6">
           <div class="flex items-center justify-between">
             <h1 class="text-3xl font-display font-bold text-diamond-900">
@@ -36,7 +36,7 @@ interface ComparisonProduct {
             </h1>
             <button
               (click)="closeComparison.emit()"
-              class="text-gray-500 hover:text-gray-700 transition-colors"
+              class="text-ink hover:text-ink transition-colors"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -48,7 +48,7 @@ interface ComparisonProduct {
               </svg>
             </button>
           </div>
-          <p class="text-gray-600 mt-2">Compare up to 3 products to make an informed decision</p>
+          <p class="text-ink mt-2">Compare up to 3 products to make an informed decision</p>
         </div>
       </div>
 
@@ -56,7 +56,7 @@ interface ComparisonProduct {
       <div class="container-luxury section-padding">
         <!-- Empty State -->
         <div *ngIf="selectedProducts().length === 0" class="text-center py-16">
-          <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-16 h-16 mx-auto text-ink mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -64,8 +64,8 @@ interface ComparisonProduct {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             ></path>
           </svg>
-          <h3 class="text-2xl font-semibold text-gray-900 mb-2">No products selected</h3>
-          <p class="text-gray-600 mb-6">Add products from the products page to start comparing</p>
+          <h3 class="text-2xl font-semibold text-ink mb-2">No products selected</h3>
+          <p class="text-ink mb-6">Add products from the products page to start comparing</p>
           <button (click)="closeComparison.emit()" class="btn-primary">
             Continue Shopping
           </button>
@@ -84,7 +84,7 @@ interface ComparisonProduct {
                   *ngFor="let product of selectedProducts()"
                   class="p-4 min-w-72 border-l border-diamond-200"
                 >
-                  <div class="card p-6 bg-white">
+                  <div class="card p-6 bg-surface">
                     <!-- Product Image -->
                     <div class="w-full h-48 bg-gradient-to-br from-gold-100 to-diamond-100 rounded-lg flex items-center justify-center mb-4">
                       <span class="text-5xl">{{ getProductEmoji(product.category) }}</span>
@@ -94,7 +94,7 @@ interface ComparisonProduct {
                     <p class="text-xs text-gold-600 font-bold uppercase tracking-wider mb-2">
                       {{ product.category }}
                     </p>
-                    <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 class="font-semibold text-ink mb-2 line-clamp-2">
                       {{ product.name }}
                     </h3>
 
@@ -103,7 +103,7 @@ interface ComparisonProduct {
                       <p class="text-2xl font-bold text-diamond-900">
                         {{ formatPrice(product.price) }}
                       </p>
-                      <p *ngIf="product.originalPrice" class="text-sm text-gray-500 line-through">
+                      <p *ngIf="product.originalPrice" class="text-sm text-ink line-through">
                         {{ formatPrice(product.originalPrice) }}
                       </p>
                     </div>
@@ -113,7 +113,7 @@ interface ComparisonProduct {
                       <div class="flex gap-0.5">
                         <span *ngFor="let i of [1,2,3,4,5]" class="text-gold-500">★</span>
                       </div>
-                      <span class="text-xs text-gray-600">({{ product.reviews }})</span>
+                      <span class="text-xs text-ink">({{ product.reviews }})</span>
                     </div>
 
                     <!-- Stock Status -->
@@ -147,7 +147,7 @@ interface ComparisonProduct {
             <tbody>
               <!-- Price Row -->
               <tr class="border-b border-diamond-200">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Price</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Price</td>
                 <td *ngFor="let product of selectedProducts()" class="p-4 border-l border-diamond-200 text-center">
                   <p class="text-lg font-bold text-diamond-900">{{ formatPrice(product.price) }}</p>
                 </td>
@@ -155,91 +155,91 @@ interface ComparisonProduct {
 
               <!-- Carat Weight Row -->
               <tr class="border-b border-diamond-200" *ngIf="hasSpec('carat')">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Carat Weight</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Carat Weight</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications && product.specifications.carat" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.carat" class="text-ink font-semibold">
                     {{ product.specifications.carat }} ct
                   </p>
-                  <p *ngIf="!product.specifications || !product.specifications.carat" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.carat" class="text-ink">N/A</p>
                 </td>
               </tr>
 
               <!-- Clarity Row -->
               <tr class="border-b border-diamond-200" *ngIf="hasSpec('clarity')">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Clarity</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Clarity</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications && product.specifications.clarity" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.clarity" class="text-ink font-semibold">
                     {{ product.specifications.clarity }}
                   </p>
-                  <p *ngIf="!product.specifications || !product.specifications.clarity" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.clarity" class="text-ink">N/A</p>
                 </td>
               </tr>
 
               <!-- Color Row -->
               <tr class="border-b border-diamond-200" *ngIf="hasSpec('color')">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Color</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Color</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications && product.specifications.color" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.color" class="text-ink font-semibold">
                     {{ product.specifications.color }}
                   </p>
-                  <p *ngIf="!product.specifications || !product.specifications.color" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.color" class="text-ink">N/A</p>
                 </td>
               </tr>
 
               <!-- Cut Row -->
               <tr class="border-b border-diamond-200" *ngIf="hasSpec('cut')">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Cut</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Cut</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications && product.specifications.cut" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.cut" class="text-ink font-semibold">
                     {{ product.specifications.cut }}
                   </p>
-                  <p *ngIf="!product.specifications || !product.specifications.cut" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.cut" class="text-ink">N/A</p>
                 </td>
               </tr>
 
               <!-- Metal Row -->
               <tr class="border-b border-diamond-200" *ngIf="hasSpec('metal')">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Metal</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Metal</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications && product.specifications.metal" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.metal" class="text-ink font-semibold">
                     {{ product.specifications.metal }}
                   </p>
-                  <p *ngIf="!product.specifications || !product.specifications.metal" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.metal" class="text-ink">N/A</p>
                 </td>
               </tr>
 
               <!-- Weight Row -->
               <tr class="border-b border-diamond-200" *ngIf="hasSpec('weight')">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Weight</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Weight</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
                 >
-                  <p *ngIf="product.specifications && product.specifications.weight" class="text-gray-900 font-semibold">
+                  <p *ngIf="product.specifications && product.specifications.weight" class="text-ink font-semibold">
                     {{ product.specifications.weight }}g
                   </p>
-                  <p *ngIf="!product.specifications || !product.specifications.weight" class="text-gray-400">N/A</p>
+                  <p *ngIf="!product.specifications || !product.specifications.weight" class="text-ink">N/A</p>
                 </td>
               </tr>
 
               <!-- Rating Row -->
               <tr class="border-b border-diamond-200">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Rating</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Rating</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200 text-center"
@@ -248,14 +248,14 @@ interface ComparisonProduct {
                     <div class="flex gap-0.5">
                       <span *ngFor="let i of [1,2,3,4,5]" class="text-gold-500">★</span>
                     </div>
-                    <span class="text-sm text-gray-600">{{ product.rating || 'N/A' }}</span>
+                    <span class="text-sm text-ink">{{ product.rating || 'N/A' }}</span>
                   </div>
                 </td>
               </tr>
 
               <!-- Features Row -->
               <tr class="border-b border-diamond-200" *ngIf="hasFeatures()">
-                <td class="p-4 bg-diamond-50 font-semibold text-gray-900">Features</td>
+                <td class="p-4 bg-diamond-50 font-semibold text-ink">Features</td>
                 <td
                   *ngFor="let product of selectedProducts()"
                   class="p-4 border-l border-diamond-200"
@@ -263,7 +263,7 @@ interface ComparisonProduct {
                   <ul class="space-y-2">
                     <li *ngFor="let feature of product.features" class="flex items-start gap-2">
                       <span class="text-gold-600 font-bold">✓</span>
-                      <span class="text-gray-700">{{ feature }}</span>
+                      <span class="text-ink">{{ feature }}</span>
                     </li>
                   </ul>
                 </td>

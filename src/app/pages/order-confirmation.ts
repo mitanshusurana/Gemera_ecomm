@@ -17,8 +17,8 @@ import { environment } from "../../environments/environment";
         <div class="container-luxury py-4">
           <div class="flex items-center gap-2 text-sm">
             <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-gray-500">/</span>
-            <span class="text-gray-700">Order Confirmation</span>
+            <span class="text-ink">/</span>
+            <span class="text-ink">Order Confirmation</span>
           </div>
         </div>
       </div>
@@ -39,15 +39,15 @@ import { environment } from "../../environments/environment";
           >
             Thank You!
           </h1>
-          <p class="text-xl text-gray-600 mb-8">
+          <p class="text-xl text-ink mb-8">
             Your order has been confirmed successfully
           </p>
 
           <!-- Order Number -->
           <div
-            class="inline-block bg-white border-2 border-gold-500 rounded-lg px-8 py-4 mb-12"
+            class="inline-block bg-surface border-2 border-gold-500 rounded-lg px-8 py-4 mb-12"
           >
-            <p class="text-sm text-gray-600 mb-2">Order Number</p>
+            <p class="text-sm text-ink mb-2">Order Number</p>
             <p class="text-3xl font-bold text-gold-600">{{ orderNumber() }}</p>
           </div>
         </div>
@@ -64,14 +64,14 @@ import { environment } from "../../environments/environment";
               <div class="space-y-6">
                 <!-- Order Status -->
                 <div>
-                  <h3 class="font-semibold text-gray-900 mb-4">Status</h3>
+                  <h3 class="font-semibold text-ink mb-4">Status</h3>
                   <div
                     class="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg"
                   >
                     <span class="w-3 h-3 rounded-full bg-blue-500"></span>
                     <span class="font-semibold text-blue-900">Processing</span>
                   </div>
-                  <p class="text-sm text-gray-600 mt-2">
+                  <p class="text-sm text-ink mt-2">
                     Your order is being prepared for shipment. We'll notify you
                     when it ships.
                   </p>
@@ -79,14 +79,14 @@ import { environment } from "../../environments/environment";
 
                 <!-- Estimated Delivery -->
                 <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">
+                  <h3 class="font-semibold text-ink mb-4">
                     Estimated Delivery
                   </h3>
                   <div class="bg-diamond-50 rounded-lg p-4">
-                    <p class="text-lg font-bold text-gray-900">
+                    <p class="text-lg font-bold text-ink">
                       {{ estimatedDelivery() }}
                     </p>
-                    <p class="text-sm text-gray-600 mt-2">
+                    <p class="text-sm text-ink mt-2">
                       Free insured shipping worldwide
                     </p>
                   </div>
@@ -94,11 +94,11 @@ import { environment } from "../../environments/environment";
 
                 <!-- Shipping Address -->
                 <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">
+                  <h3 class="font-semibold text-ink mb-4">
                     Shipping Address
                   </h3>
                   <div
-                    class="bg-diamond-50 rounded-lg p-4 text-sm text-gray-700 space-y-1"
+                    class="bg-diamond-50 rounded-lg p-4 text-sm text-ink space-y-1"
                   >
                     <p>
                       {{ shippingAddress().firstName }}
@@ -116,7 +116,7 @@ import { environment } from "../../environments/environment";
 
                 <!-- Order Items -->
                 <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-gray-900 mb-4">Items</h3>
+                  <h3 class="font-semibold text-ink mb-4">Items</h3>
                   <div class="space-y-4">
                     <ng-container *ngFor="let item of orderItems()">
                       <div
@@ -131,18 +131,18 @@ import { environment } from "../../environments/environment";
                           *ngIf="item.product.imageUrl || item.product.images?.[0]"
                         />
                         <div class="flex-1">
-                          <p class="font-semibold text-gray-900">
+                          <p class="font-semibold text-ink">
                             {{ item.product.name }}
                           </p>
-                          <p class="text-sm text-gray-600">
+                          <p class="text-sm text-ink">
                             SKU: {{ item.product.sku || 'N/A' }}
                           </p>
-                          <p class="text-sm text-gray-600">
+                          <p class="text-sm text-ink">
                             Qty: {{ item.quantity }}
                           </p>
                         </div>
                         <div class="text-right">
-                          <p class="font-semibold text-gray-900">
+                          <p class="font-semibold text-ink">
                             {{ (item.price * item.quantity) | currencyConvert }}
                           </p>
                         </div>
@@ -163,15 +163,15 @@ import { environment } from "../../environments/environment";
               <div class="space-y-4">
                 <div class="flex gap-4">
                   <span
-                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold"
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-surface flex items-center justify-center font-bold"
                   >
                     1
                   </span>
                   <div>
-                    <p class="font-semibold text-gray-900">
+                    <p class="font-semibold text-ink">
                       Confirmation Email
                     </p>
-                    <p class="text-sm text-gray-600">
+                    <p class="text-sm text-ink">
                       Check your email for order confirmation and tracking
                       details.
                     </p>
@@ -179,15 +179,15 @@ import { environment } from "../../environments/environment";
                 </div>
                 <div class="flex gap-4">
                   <span
-                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold"
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-surface flex items-center justify-center font-bold"
                   >
                     2
                   </span>
                   <div>
-                    <p class="font-semibold text-gray-900">
+                    <p class="font-semibold text-ink">
                       Quality Inspection
                     </p>
-                    <p class="text-sm text-gray-600">
+                    <p class="text-sm text-ink">
                       Our team will inspect your items for quality and
                       authenticity.
                     </p>
@@ -195,13 +195,13 @@ import { environment } from "../../environments/environment";
                 </div>
                 <div class="flex gap-4">
                   <span
-                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-white flex items-center justify-center font-bold"
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-surface flex items-center justify-center font-bold"
                   >
                     3
                   </span>
                   <div>
-                    <p class="font-semibold text-gray-900">Shipment</p>
-                    <p class="text-sm text-gray-600">
+                    <p class="font-semibold text-ink">Shipment</p>
+                    <p class="text-sm text-ink">
                       Your items will be shipped with tracking number within 2-3
                       business days.
                     </p>
@@ -220,17 +220,17 @@ import { environment } from "../../environments/environment";
 
               <div class="space-y-4 mb-4 pb-4 border-b border-diamond-200">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Subtotal</span>
+                  <span class="text-ink">Subtotal</span>
                   <span class="font-semibold">{{
                     orderSummary().subtotal | currencyConvert
                   }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Shipping</span>
+                  <span class="text-ink">Shipping</span>
                   <span class="font-semibold">FREE</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Tax</span>
+                  <span class="text-ink">Tax</span>
                   <span class="font-semibold">{{
                     orderSummary().tax | currencyConvert
                   }}</span>
@@ -238,7 +238,7 @@ import { environment } from "../../environments/environment";
               </div>
 
               <div class="flex justify-between mb-6 text-xl">
-                <span class="font-bold text-gray-900">Total</span>
+                <span class="font-bold text-ink">Total</span>
                 <span class="font-bold text-2xl text-gold-600">{{
                   orderSummary().total | currencyConvert
                 }}</span>
@@ -247,17 +247,17 @@ import { environment } from "../../environments/environment";
               <div class="space-y-3 mb-6">
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">Free insured shipping</p>
+                  <p class="text-sm text-ink">Free insured shipping</p>
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-ink">
                     30-day money-back guarantee
                   </p>
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-ink">
                     Lifetime warranty included
                   </p>
                 </div>
@@ -273,7 +273,7 @@ import { environment } from "../../environments/environment";
         <!-- Help Section -->
         <div class="mt-16 bg-diamond-50 rounded-lg p-8 text-center">
           <h3 class="text-xl font-bold text-diamond-900 mb-4">Need Help?</h3>
-          <p class="text-gray-600 mb-6">
+          <p class="text-ink mb-6">
             Have questions about your order? Our customer support team is here
             to help.
           </p>

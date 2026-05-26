@@ -51,22 +51,22 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
   encapsulation: ViewEncapsulation.None,
   template: `
     <div [innerHTML]="productSchema()"></div>
-    <div class="min-h-screen bg-white font-sans text-primary-900">
+    <div class="min-h-screen bg-surface font-sans text-ink">
       <!-- Breadcrumb -->
-      <nav class="bg-white border-b border-gray-100">
+      <nav class="bg-surface border-b border-ink">
         <div class="container mx-auto px-4 lg:px-12 py-3">
-          <div class="flex items-center gap-2 text-xs text-gray-500">
-            <a routerLink="/" class="hover:text-secondary-600 transition-colors"
+          <div class="flex items-center gap-2 text-xs text-ink">
+            <a routerLink="/" class="hover:text-accent transition-colors"
               >Home</a
             >
             <span>/</span>
             <a
               routerLink="/products"
-              class="hover:text-secondary-600 transition-colors"
+              class="hover:text-accent transition-colors"
               >Products</a
             >
             <span>/</span>
-            <span class="text-gray-900 font-medium truncate max-w-[200px]">{{
+            <span class="text-ink font-medium truncate max-w-[200px]">{{
               product()?.name
             }}</span>
           </div>
@@ -79,42 +79,42 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
           <div class="lg:w-[58%] flex flex-col gap-12">
             <div class="flex flex-col gap-4">
               <!-- Main Image -->
-              <div class="w-full h-[500px] bg-gray-200 rounded-lg"></div>
+              <div class="w-full h-[500px] bg-surface rounded-lg"></div>
               <!-- Thumbnails -->
               <div class="grid grid-cols-2 gap-4">
-                <div class="h-[300px] bg-gray-200 rounded-lg"></div>
-                <div class="h-[300px] bg-gray-200 rounded-lg"></div>
+                <div class="h-[300px] bg-surface rounded-lg"></div>
+                <div class="h-[300px] bg-surface rounded-lg"></div>
               </div>
             </div>
             <!-- Details -->
-            <div class="border-t border-gray-200 pt-8 space-y-4">
-              <div class="h-8 w-1/3 bg-gray-200 rounded"></div>
-              <div class="h-4 w-full bg-gray-200 rounded"></div>
-              <div class="h-4 w-full bg-gray-200 rounded"></div>
-              <div class="h-4 w-2/3 bg-gray-200 rounded"></div>
+            <div class="border-t border-ink pt-8 space-y-4">
+              <div class="h-8 w-1/3 bg-surface rounded"></div>
+              <div class="h-4 w-full bg-surface rounded"></div>
+              <div class="h-4 w-full bg-surface rounded"></div>
+              <div class="h-4 w-2/3 bg-surface rounded"></div>
             </div>
           </div>
 
           <!-- Right Column Skeleton -->
           <div class="lg:w-[42%] relative">
-            <div class="sticky top-24 p-6 rounded-2xl border border-gray-100">
-              <div class="h-4 w-1/4 bg-gray-200 rounded mb-4"></div>
+            <div class="sticky top-24 p-6 rounded-2xl border border-ink">
+              <div class="h-4 w-1/4 bg-surface rounded mb-4"></div>
               <!-- SKU -->
-              <div class="h-10 w-3/4 bg-gray-200 rounded mb-6"></div>
+              <div class="h-10 w-3/4 bg-surface rounded mb-6"></div>
               <!-- Title -->
-              <div class="h-8 w-1/2 bg-gray-200 rounded mb-6"></div>
+              <div class="h-8 w-1/2 bg-surface rounded mb-6"></div>
               <!-- Price -->
 
               <!-- Configurator Skeleton -->
               <div class="space-y-4 mb-8">
-                <div class="h-10 w-full bg-gray-200 rounded"></div>
-                <div class="h-10 w-full bg-gray-200 rounded"></div>
+                <div class="h-10 w-full bg-surface rounded"></div>
+                <div class="h-10 w-full bg-surface rounded"></div>
               </div>
 
               <!-- Buttons -->
               <div class="flex gap-3 h-14">
-                <div class="flex-1 bg-gray-200 rounded-lg"></div>
-                <div class="flex-1 bg-gray-200 rounded-lg"></div>
+                <div class="flex-1 bg-surface rounded-lg"></div>
+                <div class="flex-1 bg-surface rounded-lg"></div>
               </div>
             </div>
           </div>
@@ -134,7 +134,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   <div
                     *ngIf="product()?.videoUrl"
                     (click)="scrollToMedia(0)"
-                    class="snap-start relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-gray-100 flex items-center justify-center"
+                    class="snap-start relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-surface flex items-center justify-center"
                     [class.border-primary-800]="selectedMediaIndex() === 0"
                     [class.border-transparent]="selectedMediaIndex() !== 0"
                   >
@@ -142,7 +142,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       class="absolute inset-0 bg-black/20 flex items-center justify-center z-10"
                     >
                       <svg
-                        class="w-8 h-8 text-white drop-shadow-md"
+                        class="w-8 h-8 text-surface drop-shadow-md"
                         fill="currentColor"
                         viewBox="0 0 24 24"
                       >
@@ -168,7 +168,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       let i = index
                     "
                     (click)="scrollToMedia(product()?.videoUrl ? i + 1 : i)"
-                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-gray-50 rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
+                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-surface rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
                     [class.border-primary-800]="
                       selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)
                     "
@@ -191,7 +191,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   #scrollContainer
                   (scroll)="onGalleryScroll($event)"
                   id="main-media-scroll"
-                  class="scroll-smooth order-1 md:order-2 flex-1 relative bg-white rounded-lg overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-gray-100 aspect-square md:aspect-auto"
+                  class="scroll-smooth order-1 md:order-2 flex-1 relative bg-surface rounded-lg overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-ink aspect-square md:aspect-auto"
                 >
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
                     <!-- Stock Warning (Warm/Amber Glass) -->
@@ -253,8 +253,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 
             <ng-template #productDetailsTpl>
               <!-- PRODUCT DETAILS (Moved Below Images) -->
-              <div class="border-t border-gray-200 pt-8 mt-8 lg:mt-0">
-                <h3 class="text-xl font-bold text-primary-800 mb-6 font-serif">
+              <div class="border-t border-ink pt-8 mt-8 lg:mt-0">
+                <h3 class="text-xl font-bold text-ink mb-6 font-serif">
                   Product Details
                 </h3>
 
@@ -271,7 +271,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                         "
                       >
                         <h4
-                          class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3"
+                          class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3"
                         >
                           Product Specifications
                         </h4>
@@ -280,8 +280,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.grossWeight"
                           >
-                            <span class="text-gray-500">Gross Weight</span
-                            ><span class="font-medium text-gray-900"
+                            <span class="text-ink">Gross Weight</span
+                            ><span class="font-medium text-ink"
                               >{{ product()?.grossWeight }} g</span
                             >
                           </div>
@@ -289,8 +289,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.metalDetails?.metalType"
                           >
-                            <span class="text-gray-500">Metal Type</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Metal Type</span
+                            ><span class="font-medium text-ink">{{
                               product()?.metalDetails?.metalType
                             }}</span>
                           </div>
@@ -298,8 +298,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.metalDetails?.metalPurity"
                           >
-                            <span class="text-gray-500">Purity</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Purity</span
+                            ><span class="font-medium text-ink">{{
                               product()?.metalDetails?.metalPurity
                             }}</span>
                           </div>
@@ -307,8 +307,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.metalColor"
                           >
-                            <span class="text-gray-500">Metal Color</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Metal Color</span
+                            ><span class="font-medium text-ink">{{
                               product()?.metalColor
                             }}</span>
                           </div>
@@ -316,8 +316,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.metalDetails?.netWeight"
                           >
-                            <span class="text-gray-500">Net Weight</span
-                            ><span class="font-medium text-gray-900"
+                            <span class="text-ink">Net Weight</span
+                            ><span class="font-medium text-ink"
                               >{{ product()?.metalDetails?.netWeight }} g</span
                             >
                           </div>
@@ -325,8 +325,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.dimensions"
                           >
-                            <span class="text-gray-500">Dimensions</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Dimensions</span
+                            ><span class="font-medium text-ink">{{
                               product()?.dimensions
                             }}</span>
                           </div>
@@ -334,48 +334,48 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.bisHallmark"
                           >
-                            <span class="text-gray-500">BIS Hallmark</span
-                            ><span class="font-medium text-gray-900">Yes</span>
+                            <span class="text-ink">BIS Hallmark</span
+                            ><span class="font-medium text-ink">Yes</span>
                           </div>
                         </div>
 
                         <ng-container *ngIf="product()?.stoneDetails?.length">
                           <h5
-                            class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3 mt-4"
+                            class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3 mt-4"
                           >
                             Stone Details
                           </h5>
                           <div class="space-y-3">
                             <div
                               *ngFor="let stone of product()?.stoneDetails"
-                              class="bg-gray-50 p-3 rounded-md text-sm border border-gray-100"
+                              class="bg-surface p-3 rounded-md text-sm border border-ink"
                             >
                               <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                  <span class="text-gray-500 block text-xs"
+                                  <span class="text-ink block text-xs"
                                     >Type</span
-                                  ><span class="font-medium text-gray-900">{{
+                                  ><span class="font-medium text-ink">{{
                                     stone.stoneType || 'N/A'
                                   }}</span>
                                 </div>
                                 <div>
-                                  <span class="text-gray-500 block text-xs"
+                                  <span class="text-ink block text-xs"
                                     >Shape</span
-                                  ><span class="font-medium text-gray-900">{{
+                                  ><span class="font-medium text-ink">{{
                                     stone.shape || 'N/A'
                                   }}</span>
                                 </div>
                                 <div>
-                                  <span class="text-gray-500 block text-xs"
+                                  <span class="text-ink block text-xs"
                                     >Pieces</span
-                                  ><span class="font-medium text-gray-900">{{
+                                  ><span class="font-medium text-ink">{{
                                     stone.pieceCount || '0'
                                   }}</span>
                                 </div>
                                 <div>
-                                  <span class="text-gray-500 block text-xs"
+                                  <span class="text-ink block text-xs"
                                     >Carat Weight</span
-                                  ><span class="font-medium text-gray-900"
+                                  ><span class="font-medium text-ink"
                                     >{{
                                       stone.totalCaratWeight || '0'
                                     }}
@@ -393,7 +393,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     <ng-container *ngSwitchCase="'Gemstones'">
                       <div *ngIf="product()?.shape || product()?.caratWeight">
                         <h4
-                          class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3"
+                          class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3"
                         >
                           Gemstone Details
                         </h4>
@@ -402,8 +402,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.species"
                           >
-                            <span class="text-gray-500">Species</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Species</span
+                            ><span class="font-medium text-ink">{{
                               product()?.species
                             }}</span>
                           </div>
@@ -411,8 +411,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.variety"
                           >
-                            <span class="text-gray-500">Variety</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Variety</span
+                            ><span class="font-medium text-ink">{{
                               product()?.variety
                             }}</span>
                           </div>
@@ -420,8 +420,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.shape"
                           >
-                            <span class="text-gray-500">Shape</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Shape</span
+                            ><span class="font-medium text-ink">{{
                               product()?.shape
                             }}</span>
                           </div>
@@ -429,8 +429,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.cut"
                           >
-                            <span class="text-gray-500">Cut</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Cut</span
+                            ><span class="font-medium text-ink">{{
                               product()?.cut
                             }}</span>
                           </div>
@@ -438,8 +438,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.caratWeight"
                           >
-                            <span class="text-gray-500">Carat Weight</span
-                            ><span class="font-medium text-gray-900"
+                            <span class="text-ink">Carat Weight</span
+                            ><span class="font-medium text-ink"
                               >{{ product()?.caratWeight }} ct</span
                             >
                           </div>
@@ -447,8 +447,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.colorHue"
                           >
-                            <span class="text-gray-500">Color Hue</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Color Hue</span
+                            ><span class="font-medium text-ink">{{
                               product()?.colorHue
                             }}</span>
                           </div>
@@ -456,8 +456,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.colorTradeTerm"
                           >
-                            <span class="text-gray-500">Trade Color</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Trade Color</span
+                            ><span class="font-medium text-ink">{{
                               product()?.colorTradeTerm
                             }}</span>
                           </div>
@@ -465,8 +465,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.clarity"
                           >
-                            <span class="text-gray-500">Clarity</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Clarity</span
+                            ><span class="font-medium text-ink">{{
                               product()?.clarity
                             }}</span>
                           </div>
@@ -474,8 +474,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.measurements"
                           >
-                            <span class="text-gray-500">Measurements</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Measurements</span
+                            ><span class="font-medium text-ink">{{
                               product()?.measurements
                             }}</span>
                           </div>
@@ -483,8 +483,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.treatmentStatus"
                           >
-                            <span class="text-gray-500">Treatment</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Treatment</span
+                            ><span class="font-medium text-ink">{{
                               product()?.treatmentStatus
                             }}</span>
                           </div>
@@ -492,8 +492,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.originProvenance"
                           >
-                            <span class="text-gray-500">Origin</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Origin</span
+                            ><span class="font-medium text-ink">{{
                               product()?.originProvenance
                             }}</span>
                           </div>
@@ -501,8 +501,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.labReportNumber"
                           >
-                            <span class="text-gray-500">Lab Report</span
-                            ><span class="font-medium text-gray-900">{{
+                            <span class="text-ink">Lab Report</span
+                            ><span class="font-medium text-ink">{{
                               product()?.labReportNumber
                             }}</span>
                           </div>
@@ -514,7 +514,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     <ng-container *ngSwitchDefault>
                       <div *ngIf="productSpecs().length > 0">
                         <h4
-                          class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3"
+                          class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3"
                         >
                           Product Specifications
                         </h4>
@@ -523,11 +523,11 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngFor="let spec of productSpecs()"
                           >
-                            <span class="text-gray-500 capitalize">{{
+                            <span class="text-ink capitalize">{{
                               spec.key
                             }}</span>
                             <span
-                              class="font-medium text-gray-900 text-right w-1/2"
+                              class="font-medium text-ink text-right w-1/2"
                               >{{ spec.value }}</span
                             >
                           </div>
@@ -543,15 +543,15 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   class="mt-8"
                 >
                   <h4
-                    class="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-4"
+                    class="text-sm font-bold text-ink border-b border-ink pb-2 mb-4"
                   >
                     Diamond Specifications
                   </h4>
                   <div
-                    class="overflow-hidden border border-gray-200 rounded-lg"
+                    class="overflow-hidden border border-ink rounded-lg"
                   >
                     <table class="w-full text-sm text-left">
-                      <thead class="bg-gray-50 text-gray-600 font-medium">
+                      <thead class="bg-surface text-ink font-medium">
                         <tr>
                           <th class="px-4 py-3">Type</th>
                           <th class="px-4 py-3">Shape</th>
@@ -562,17 +562,17 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       </thead>
                       <tbody class="divide-y divide-gray-100">
                         <tr *ngFor="let d of dd">
-                          <td class="px-4 py-3 font-medium text-gray-900">
+                          <td class="px-4 py-3 font-medium text-ink">
                             {{ d.type }}
                           </td>
-                          <td class="px-4 py-3 text-gray-600">{{ d.shape }}</td>
-                          <td class="px-4 py-3 text-gray-600">
+                          <td class="px-4 py-3 text-ink">{{ d.shape }}</td>
+                          <td class="px-4 py-3 text-ink">
                             {{ d.carat }} ct
                           </td>
-                          <td class="px-4 py-3 text-gray-600">
+                          <td class="px-4 py-3 text-ink">
                             {{ d.color }} / {{ d.clarity }}
                           </td>
-                          <td class="px-4 py-3 text-gray-600">
+                          <td class="px-4 py-3 text-ink">
                             {{ d.settingType }}
                           </td>
                         </tr>
@@ -594,18 +594,18 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
           <!-- RIGHT COLUMN: Sticky Buy Box -->
           <div class="lg:w-[42%] relative">
             <div
-              class="sticky top-24 bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] max-h-[calc(100vh-8rem)] overflow-y-auto hide-scrollbar"
+              class="sticky top-24 bg-surface p-6 rounded-2xl border border-ink shadow-[0_8px_30px_rgb(0,0,0,0.04)] max-h-[calc(100vh-8rem)] overflow-y-auto hide-scrollbar"
             >
               <!-- Product Header -->
               <div class="mb-4">
                 <div class="flex items-center justify-between mb-1">
                   <div class="flex items-center gap-1">
                     <span class="text-orange-400">★★★★☆</span>
-                    <span class="text-xs text-gray-500"
+                    <span class="text-xs text-ink"
                       >({{ product()?.reviewCount }} Reviews)</span
                     >
                   </div>
-                  <span class="text-xs text-gray-400"
+                  <span class="text-xs text-ink"
                     >SKU:
                     {{
                       product()?.specifications?.productDetails?.sku ||
@@ -614,22 +614,22 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   >
                 </div>
                 <h1
-                  class="text-2xl font-serif font-bold text-primary-900 leading-snug"
+                  class="text-2xl font-serif font-bold text-ink leading-snug"
                 >
                   {{ product()?.name }}
                 </h1>
               </div>
 
               <!-- Price Section -->
-              <div class="mb-6 pb-6 border-b border-gray-100">
+              <div class="mb-6 pb-6 border-b border-ink">
                 <div class="flex items-baseline gap-3 mb-1">
-                  <span class="text-3xl font-bold text-gray-900">{{
+                  <span class="text-3xl font-bold text-ink">{{
                     currentPriceBreakup()?.total || currentPrice()
                       | currencyConvert
                   }}</span>
                   <span
                     *ngIf="product()?.originalPrice"
-                    class="text-lg text-gray-400 line-through"
+                    class="text-lg text-ink line-through"
                     >{{ product()?.originalPrice || 0 | currencyConvert }}</span
                   >
                 </div>
@@ -641,7 +641,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <button
                   *ngIf="hasPriceBreakup()"
                   (click)="togglePriceBreakup()"
-                  class="text-xs font-bold text-secondary-600 hover:text-secondary-800 flex items-center gap-1 uppercase tracking-wide mt-2"
+                  class="text-xs font-bold text-accent hover:text-accent flex items-center gap-1 uppercase tracking-wide mt-2"
                 >
                   View Price Breakup
                   <span
@@ -654,10 +654,10 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <!-- Transparent Price Breakdown Accordion -->
                 <div
                   *ngIf="showPriceBreakup() && hasPriceBreakup()"
-                  class="mt-4 bg-white border border-gray-200 shadow-sm p-4 rounded-lg text-sm text-gray-700 animate-fade-in transition-all duration-300"
+                  class="mt-4 bg-surface border border-ink shadow-sm p-4 rounded-lg text-sm text-ink animate-fade-in transition-all duration-300"
                 >
                   <h4
-                    class="font-semibold text-gray-900 mb-3 border-b border-gray-100 pb-2"
+                    class="font-semibold text-ink mb-3 border-b border-ink pb-2"
                   >
                     Price Breakdown
                   </h4>
@@ -665,7 +665,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     <div class="flex justify-between items-center">
                       <span class="flex items-center gap-2"
                         ><svg
-                          class="w-4 h-4 text-gray-400"
+                          class="w-4 h-4 text-ink"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -686,7 +686,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     <div class="flex justify-between items-center">
                       <span class="flex items-center gap-2"
                         ><svg
-                          class="w-4 h-4 text-gray-400"
+                          class="w-4 h-4 text-ink"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -707,7 +707,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     <div class="flex justify-between items-center">
                       <span class="flex items-center gap-2"
                         ><svg
-                          class="w-4 h-4 text-gray-400"
+                          class="w-4 h-4 text-ink"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -734,7 +734,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     <div class="flex justify-between items-center">
                       <span class="flex items-center gap-2"
                         ><svg
-                          class="w-4 h-4 text-gray-400"
+                          class="w-4 h-4 text-ink"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -753,12 +753,12 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       }}</span>
                     </div>
                     <div
-                      class="flex justify-between items-center pt-3 border-t border-gray-200 mt-2"
+                      class="flex justify-between items-center pt-3 border-t border-ink mt-2"
                     >
-                      <span class="font-bold text-gray-900 text-base"
+                      <span class="font-bold text-ink text-base"
                         >Grand Total</span
                       >
-                      <span class="font-bold text-secondary-600 text-lg">{{
+                      <span class="font-bold text-accent text-lg">{{
                         currentPriceBreakup()!.total | currencyConvert
                       }}</span>
                     </div>
@@ -771,7 +771,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <!-- Metal -->
                 <div *ngIf="hasOption('metal')">
                   <span
-                    class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2"
+                    class="text-xs font-bold text-ink uppercase tracking-wider block mb-2"
                     >Metal Color & Purity</span
                   >
                   <div class="flex flex-wrap gap-2">
@@ -779,14 +779,14 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       *ngFor="let opt of getOptions('metal')"
                       (click)="selectedMetal.set(opt)"
                       class="px-4 py-2 rounded-full border text-sm font-medium transition-all"
-                      [class.bg-primary-800]="selectedMetal()?.id === opt.id"
-                      [class.text-white]="selectedMetal()?.id === opt.id"
+                      [class.bg-primary]="selectedMetal()?.id === opt.id"
+                      [class.text-surface]="selectedMetal()?.id === opt.id"
                       [class.border-primary-800]="
                         selectedMetal()?.id === opt.id
                       "
-                      [class.bg-white]="selectedMetal()?.id !== opt.id"
-                      [class.text-gray-700]="selectedMetal()?.id !== opt.id"
-                      [class.border-gray-200]="selectedMetal()?.id !== opt.id"
+                      [class.bg-surface]="selectedMetal()?.id !== opt.id"
+                      [class.text-ink]="selectedMetal()?.id !== opt.id"
+                      [class.border-ink]="selectedMetal()?.id !== opt.id"
                     >
                       {{ opt.name }}
                     </button>
@@ -797,10 +797,10 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <div *ngIf="hasOption('diamond')">
                   <div class="flex justify-between mb-2">
                     <span
-                      class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+                      class="text-xs font-bold text-ink uppercase tracking-wider"
                       >Diamond Quality</span
                     >
-                    <button class="text-xs text-secondary-600 underline">
+                    <button class="text-xs text-accent underline">
                       Guide
                     </button>
                   </div>
@@ -812,16 +812,16 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       [class.border-primary-800]="
                         selectedDiamondQuality()?.id === opt.id
                       "
-                      [class.text-primary-800]="
+                      [class.text-ink]="
                         selectedDiamondQuality()?.id === opt.id
                       "
                       [class.bg-primary-50]="
                         selectedDiamondQuality()?.id === opt.id
                       "
-                      [class.border-gray-200]="
+                      [class.border-ink]="
                         selectedDiamondQuality()?.id !== opt.id
                       "
-                      [class.text-gray-600]="
+                      [class.text-ink]="
                         selectedDiamondQuality()?.id !== opt.id
                       "
                     >
@@ -834,12 +834,12 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <div *ngIf="isRingCategory()">
                   <div class="flex justify-between mb-2">
                     <span
-                      class="text-xs font-bold text-gray-500 uppercase tracking-wider"
+                      class="text-xs font-bold text-ink uppercase tracking-wider"
                       >Ring Size</span
                     >
                     <button
                       (click)="sizeGuideOpen.set(true)"
-                      class="text-xs text-secondary-600 underline"
+                      class="text-xs text-accent underline"
                     >
                       Size Guide
                     </button>
@@ -847,7 +847,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   <select
                     [ngModel]="selectedSize()"
                     (ngModelChange)="selectedSize.set($event)"
-                    class="w-full p-3 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-800 outline-none"
+                    class="w-full p-3 border border-ink rounded-lg bg-surface text-sm focus:border-primary-800 outline-none"
                   >
                     <option [ngValue]="null">Select Size</option>
                     <option
@@ -873,11 +873,11 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     [ngModel]="pincode()"
                     (ngModelChange)="pincode.set($event)"
                     placeholder="Enter Pincode for Delivery"
-                    class="w-full pl-4 pr-20 py-3 border border-gray-200 rounded-lg text-sm focus:border-primary-800 outline-none"
+                    class="w-full pl-4 pr-20 py-3 border border-ink rounded-lg text-sm focus:border-primary-800 outline-none"
                   />
                   <button
                     (click)="checkDelivery()"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-primary-800 px-3 py-1.5 hover:bg-gray-50 rounded"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-ink px-3 py-1.5 hover:bg-surface rounded"
                   >
                     CHECK
                   </button>
@@ -896,7 +896,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   <button
                     (click)="handleAddToCart()"
                     [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-gradient-to-r from-primary-800 to-primary-600 text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-gradient-to-r from-primary-800 to-primary-600 text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {{
                       product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
@@ -905,7 +905,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   <button
                     (click)="handleBuyNow()"
                     [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-white border-2 border-primary-800 text-primary-800 font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-surface border-2 border-primary-800 text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Buy Now
                   </button>
@@ -913,20 +913,20 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <div class="grid grid-cols-2 gap-2 w-full mb-2">
                   <button
                     (click)="openTryAtHome()"
-                    class="w-full border border-secondary-600 text-primary-800 font-bold py-3 rounded-lg hover:bg-secondary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
+                    class="w-full border border-secondary-600 text-ink font-bold py-3 rounded-lg hover:bg-secondary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
                   >
                     <span>🏠</span> Try at Home
                   </button>
                   <button
                     (click)="openStoreVisit()"
-                    class="w-full border border-primary-600 text-primary-800 font-bold py-3 rounded-lg hover:bg-primary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
+                    class="w-full border border-primary-600 text-ink font-bold py-3 rounded-lg hover:bg-primary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
                   >
                     <span>🏢</span> Store Visit
                   </button>
                 </div>
                 <button
                   (click)="openVideoConsult()"
-                  class="w-full bg-[#25D366] text-white font-bold py-3 rounded-lg hover:bg-[#128C7E] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2"
+                  class="w-full bg-[#25D366] text-surface font-bold py-3 rounded-lg hover:bg-[#128C7E] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
                     <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
@@ -938,34 +938,34 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
               <!-- Trust Badges (Moved to Buy Box) -->
               <div class="flex flex-wrap gap-2 mt-6">
                 <div
-                  class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg w-full sm:w-auto"
+                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto"
                 >
                   <span class="text-lg">🛡️</span> 15-Day Money Back
                 </div>
                 <div
-                  class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg w-full sm:w-auto"
+                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto"
                 >
                   <span class="text-lg">💎</span> Lifetime Exchange
                 </div>
                 <div
-                  class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg w-full sm:w-auto"
+                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto"
                 >
                   <span class="text-lg">📜</span> BIS Hallmarked
                 </div>
               </div>
 
               <div
-                class="mt-6 pt-4 border-t border-gray-100 flex justify-center gap-6 text-xs font-medium text-gray-500"
+                class="mt-6 pt-4 border-t border-ink flex justify-center gap-6 text-xs font-medium text-ink"
               >
                 <a
                   routerLink="/contact"
-                  class="hover:text-primary-800 transition-colors"
+                  class="hover:text-ink transition-colors"
                   >Contact Us</a
                 >
                 <span>|</span>
                 <button
                   (click)="openWhatsApp()"
-                  class="hover:text-primary-800 transition-colors"
+                  class="hover:text-ink transition-colors"
                 >
                   Chat on WhatsApp
                 </button>
@@ -980,13 +980,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 
           <!-- Sticky Mobile Add to Cart Bar -->
           <div
-            class="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-[0_-4px_10px_rgb(0,0,0,0.05)] z-40 flex items-center justify-between gap-4 animate-fade-in-up"
+            class="lg:hidden fixed bottom-0 left-0 w-full bg-surface border-t border-ink p-4 shadow-[0_-4px_10px_rgb(0,0,0,0.05)] z-40 flex items-center justify-between gap-4 animate-fade-in-up"
           >
             <div>
-              <p class="text-xs text-gray-500 mb-0.5 truncate max-w-[150px]">
+              <p class="text-xs text-ink mb-0.5 truncate max-w-[150px]">
                 {{ product()?.name }}
               </p>
-              <p class="font-bold text-gray-900 text-lg leading-none">
+              <p class="font-bold text-ink text-lg leading-none">
                 {{
                   currentPriceBreakup()?.total || currentPrice()
                     | currencyConvert
@@ -996,7 +996,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
             <button
               (click)="handleAddToCart()"
               [disabled]="product()?.stock === 0"
-              class="bg-gradient-to-r from-primary-800 to-primary-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0"
+              class="bg-gradient-to-r from-primary-800 to-primary-600 text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0"
             >
               {{ product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
             </button>
@@ -1016,35 +1016,35 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
       >
         <div
-          class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative"
+          class="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative"
         >
           <button
             (click)="tryAtHomeOpen.set(false)"
-            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl z-10"
+            class="absolute top-4 right-4 text-ink hover:text-ink text-xl z-10"
           >
             &times;
           </button>
           <div
-            class="bg-gradient-to-r from-primary-800 to-primary-950 text-white p-6 text-center"
+            class="bg-gradient-to-r from-primary-800 to-primary-950 text-surface p-6 text-center"
           >
             <h3 class="font-serif font-bold text-xl">Book {{ appointmentType() === 'TRY_AT_HOME' ? 'Try at Home' : (appointmentType() === 'STORE_VISIT' ? 'Store Visit' : 'Video Consult') }}</h3>
           </div>
           <form [formGroup]="appointmentForm" (ngSubmit)="confirmTryAtHome()" class="p-6 space-y-4">
-            <p class="text-sm text-gray-600 text-center mb-4">
+            <p class="text-sm text-ink text-center mb-4">
               {{ appointmentType() === 'TRY_AT_HOME' ? 'Our consultant will bring this jewellery to your doorstep.' : (appointmentType() === 'STORE_VISIT' ? 'Book a VIP consultation at our store.' : 'Our expert will guide you via WhatsApp Video call.') }}
             </p>
 
             <div class="space-y-3">
-              <input type="text" formControlName="name" placeholder="Your Name" class="w-full p-2 border rounded border-gray-300" required />
-              <input type="email" formControlName="email" placeholder="Email Address" class="w-full p-2 border rounded border-gray-300" required />
-              <input type="tel" formControlName="phone" placeholder="Phone Number" class="w-full p-2 border rounded border-gray-300" required />
-              <input type="date" formControlName="requestedDate" class="w-full p-2 border rounded border-gray-300" required />
+              <input type="text" formControlName="name" placeholder="Your Name" class="w-full p-2 border rounded border-ink" required />
+              <input type="email" formControlName="email" placeholder="Email Address" class="w-full p-2 border rounded border-ink" required />
+              <input type="tel" formControlName="phone" placeholder="Phone Number" class="w-full p-2 border rounded border-ink" required />
+              <input type="date" formControlName="requestedDate" class="w-full p-2 border rounded border-ink" required />
             </div>
 
             <button
               type="submit"
               [disabled]="appointmentForm.invalid || submittingAppointment()"
-              class="w-full bg-primary-800 text-white py-3 rounded font-bold disabled:opacity-50"
+              class="w-full bg-primary text-surface py-3 rounded font-bold disabled:opacity-50"
             >
               {{ submittingAppointment() ? 'Booking...' : 'Confirm' }}
             </button>

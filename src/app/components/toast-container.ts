@@ -12,9 +12,9 @@ import { ToastService } from '../services/toast.service';
       <div *ngFor="let toast of toastService.toasts()"
            class="pointer-events-auto min-w-[300px] max-w-sm rounded-lg shadow-lg p-4 flex items-start gap-3 transform transition-all duration-300 animate-slide-in-right"
            [ngClass]="{
-             'bg-white border-l-4 border-emerald-500': toast.type === 'success',
-             'bg-white border-l-4 border-red-500': toast.type === 'error',
-             'bg-white border-l-4 border-blue-500': toast.type === 'info'
+             'bg-surface border-l-4 border-emerald-500': toast.type === 'success',
+             'bg-surface border-l-4 border-red-500': toast.type === 'error',
+             'bg-surface border-l-4 border-blue-500': toast.type === 'info'
            }">
 
         <!-- Icon -->
@@ -26,11 +26,11 @@ import { ToastService } from '../services/toast.service';
 
         <!-- Content -->
         <div class="flex-1 pt-0.5">
-          <p class="text-sm font-medium text-gray-900">{{ toast.message }}</p>
+          <p class="text-sm font-medium text-ink">{{ toast.message }}</p>
         </div>
 
         <!-- Close -->
-        <button (click)="toastService.remove(toast.id)" class="text-gray-400 hover:text-gray-600">
+        <button (click)="toastService.remove(toast.id)" class="text-ink hover:text-ink">
           ✕
         </button>
       </div>
