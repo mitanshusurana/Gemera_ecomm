@@ -13,7 +13,7 @@ import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyService } from '../services/currency.service';
-import { OCCASIONS_LIST, STYLES_LIST, SUB_CATEGORIES_MAP, ProductCategory } from '../core/constants';
+import { OCCASIONS_LIST, STYLES_LIST } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
@@ -505,18 +505,14 @@ export class ProductsComponent implements OnInit {
 
     this.productService.getCategories().subscribe((res: any) => {
       this.categories = res.categories;
-      this.gemstoneTypes = SUB_CATEGORIES_MAP[ProductCategory.LOOSE_GEMSTONES] || [
-        'Diamond',
-        'Emerald',
-        'Ruby',
-        'Blue Sapphire',
-        'Yellow Sapphire',
-        'Pearl',
-        'Coral',
-        "Cat's Eye",
-        'Gomedak',
-        'Other Colored Gemstones'
-      ];
+
+      // Find category with showGemstoneFields = true and use its subcategories
+      const gemstoneCat = this.categories.find(c => c.showGemstoneFields);
+      if (gemstoneCat && gemstoneCat.subcategories) {
+          this.gemstoneTypes = gemstoneCat.subcategories.map((sc: any) => sc.displayName);
+      } else {
+          this.gemstoneTypes = [];
+      }
     });
 
     this.activatedRoute.queryParams
