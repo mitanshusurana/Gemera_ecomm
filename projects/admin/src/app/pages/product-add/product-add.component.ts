@@ -4,7 +4,9 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { ProductService } from '../../services/product.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
-import { OCCASIONS_LIST, STYLES_LIST, ProductCategory, SUB_CATEGORIES_MAP } from '../../core/constants';
+import { OCCASIONS_LIST, STYLES_LIST } from '../../core/constants';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-product-add',
@@ -20,7 +22,8 @@ export class ProductAddComponent implements OnInit {
     private fb: FormBuilder,
     private productService: ProductService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private http: HttpClient
   ) {}
 
   categoriesList: any[] = [];
@@ -113,19 +116,8 @@ export class ProductAddComponent implements OnInit {
     const categoryName = this.selectedCategory;
     if (!categoryName) return [];
 
-    // First try static mapping if it's Gemstones or others to guarantee they appear
-    let staticList: string[] = [];
-    if (categoryName === 'Jewelry') staticList = SUB_CATEGORIES_MAP[ProductCategory.FINISHED_JEWELRY];
-    if (categoryName === 'Gemstones') staticList = SUB_CATEGORIES_MAP[ProductCategory.LOOSE_GEMSTONES];
-    if (categoryName === 'Spiritual Idols') staticList = SUB_CATEGORIES_MAP[ProductCategory.RELIGIOUS_IDOLS];
-    if (categoryName === 'Materials & Roughs') staticList = SUB_CATEGORIES_MAP[ProductCategory.ROUGH_MATERIALS];
-    if (categoryName === 'Components') staticList = SUB_CATEGORIES_MAP[ProductCategory.COMPONENTS_MATERIALS];
-
-    if (staticList && staticList.length > 0) {
-        return staticList.map(name => ({ name, displayName: name, subcategories: [] }));
-    }
-
-    const category = this.categoriesList.find((c: any) => c.displayName === categoryName);
+    // selectedCategory was holding displayName earlier, let's just match value/displayName
+    const category = this.categoriesList.find((c: any) => c.displayName === categoryName || c.value === categoryName);
     return category && category.subcategories ? category.subcategories : [];
   }
 
@@ -137,8 +129,11 @@ export class ProductAddComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.productService.getCategories().subscribe((res: any) => {
-      this.categoriesList = res.categories;
+    this.http.get<{categories: any[]}>(environment.apiUrl + '/admin/categories').subscribe(res => {
+      this.categoriesList = res.categories.map(c => ({
+        ...c,
+        value: c.name // Map backend name to 'value' used by UI dropdowns
+      }));
     });
 
     this.productId = this.route.snapshot.paramMap.get('id');

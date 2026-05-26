@@ -73,11 +73,22 @@ public class ProductService {
 
     public CategoryResponse getCategories() {
         List<Category> allCategories = categoryRepository.findAll();
-        // Return only root categories to avoid duplication (children are included in parents)
+        // Return only active root categories to avoid duplication (children are included in parents)
         List<Category> roots = allCategories.stream()
-                .filter(c -> c.getParent() == null)
+                .filter(c -> c.getParent() == null && c.isActive())
                 .collect(Collectors.toList());
-        return new CategoryResponse(roots.stream().map(entityMapper::toCategoryDTO).collect(Collectors.toList()));
+        return new CategoryResponse(roots.stream().map(c -> filterInactiveSubcategoriesDTO(entityMapper.toCategoryDTO(c))).collect(Collectors.toList()));
+    }
+
+    private com.jewelry.backend.dto.CategoryDTO filterInactiveSubcategoriesDTO(com.jewelry.backend.dto.CategoryDTO dto) {
+        if (dto.getSubcategories() != null) {
+            List<com.jewelry.backend.dto.CategoryDTO> activeSubcategories = dto.getSubcategories().stream()
+                    .filter(com.jewelry.backend.dto.CategoryDTO::isActive)
+                    .map(this::filterInactiveSubcategoriesDTO)
+                    .collect(Collectors.toList());
+            dto.setSubcategories(activeSubcategories);
+        }
+        return dto;
     }
 
     // Admin only - strictly for seeding/testing

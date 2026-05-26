@@ -10,5 +10,14 @@ public class CategoryDTO {
     private String name;
     private String displayName;
     private String image;
+
+    private boolean isActive = true;
+    private boolean showJewelryFields;
+    private boolean showGemstoneFields;
+    private boolean showComponentFields;
+    private boolean showIdolFields;
+    private boolean showRoughFields;
+    private UUID parentId;
+
     private List<CategoryDTO> subcategories;
 }

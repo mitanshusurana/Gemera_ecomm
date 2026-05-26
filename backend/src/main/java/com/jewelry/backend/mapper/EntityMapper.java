@@ -670,6 +670,23 @@ public class EntityMapper {
     }
 
     // --- Category ---
+
+    public Category toCategoryEntity(CategoryDTO dto) {
+        if (dto == null) return null;
+        Category category = new Category();
+        category.setId(dto.getId());
+        category.setName(dto.getName());
+        category.setDisplayName(dto.getDisplayName());
+        category.setImage(dto.getImage());
+        category.setActive(dto.isActive());
+        category.setShowJewelryFields(dto.isShowJewelryFields());
+        category.setShowGemstoneFields(dto.isShowGemstoneFields());
+        category.setShowComponentFields(dto.isShowComponentFields());
+        category.setShowIdolFields(dto.isShowIdolFields());
+        category.setShowRoughFields(dto.isShowRoughFields());
+        return category;
+    }
+
     public CategoryDTO toCategoryDTO(Category category) {
         if (category == null) return null;
         CategoryDTO dto = new CategoryDTO();
@@ -677,6 +694,15 @@ public class EntityMapper {
         dto.setName(category.getName());
         dto.setDisplayName(category.getDisplayName());
         dto.setImage(category.getImage());
+        dto.setActive(category.isActive());
+        dto.setShowJewelryFields(category.isShowJewelryFields());
+        dto.setShowGemstoneFields(category.isShowGemstoneFields());
+        dto.setShowComponentFields(category.isShowComponentFields());
+        dto.setShowIdolFields(category.isShowIdolFields());
+        dto.setShowRoughFields(category.isShowRoughFields());
+        if (category.getParent() != null) {
+            dto.setParentId(category.getParent().getId());
+        }
         if (category.getSubcategories() != null) {
             dto.setSubcategories(category.getSubcategories().stream()
                     .map(this::toCategoryDTO)

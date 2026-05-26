@@ -19,6 +19,25 @@ public class Category extends BaseEntity {
     private String displayName; // UI name
     private String image;
 
+    @Column(columnDefinition = "boolean default true")
+    private boolean isActive = true;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean showJewelryFields;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean showGemstoneFields;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean showComponentFields;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean showIdolFields;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean showRoughFields;
+
+
     @ManyToOne
     @JoinColumn(name = "parent_id")
     @JsonBackReference
