@@ -77,7 +77,7 @@ import { environment } from "../../environments/environment";
               <li><a routerLink="/rfq" class="text-sm font-bold text-accent hover:text-surface transition-colors flex items-center gap-1">📋 Request for Quote</a></li>
               <li><a routerLink="/treasure" class="text-sm font-bold text-accent hover:text-surface transition-colors flex items-center gap-1">✨ Treasure Plan</a></li>
               <li *ngFor="let cat of categories.slice(0, 5)">
-                <a [routerLink]="['/products']" [queryParams]="{category: cat.name}" class="text-sm text-surface hover:text-accent transition-colors">{{ cat.displayName }}</a>
+                <a [routerLink]="['/products']" [queryParams]="{category: cat.name}" class="text-sm font-bold text-surface hover:text-accent transition-colors">{{ cat.displayName }}</a>
               </li>
             </ul>
           </div>
@@ -86,10 +86,10 @@ import { environment } from "../../environments/environment";
           <div>
             <h4 class="font-bold mb-6 font-display text-lg text-surface">Customer Care</h4>
             <ul class="space-y-3">
-              <li><a routerLink="/contact" class="text-sm text-surface hover:text-accent transition-colors">Contact Us</a></li>
-              <li><a routerLink="/about" class="text-sm text-surface hover:text-accent transition-colors">Shipping & Returns</a></li>
-              <li><a routerLink="/account" class="text-sm text-surface hover:text-accent transition-colors">Track Order</a></li>
-              <li><a routerLink="/verify-certificate" class="text-sm text-surface hover:text-accent transition-colors">Certifications</a></li>
+              <li><a routerLink="/contact" class="text-sm font-bold text-surface hover:text-accent transition-colors">Contact Us</a></li>
+              <li><a routerLink="/about" class="text-sm font-bold text-surface hover:text-accent transition-colors">Shipping & Returns</a></li>
+              <li><a routerLink="/account" class="text-sm font-bold text-surface hover:text-accent transition-colors" aria-label="Track Order Footer Menu">Track Order</a></li>
+              <li><a routerLink="/verify-certificate" class="text-sm font-bold text-surface hover:text-accent transition-colors">Certifications</a></li>
             </ul>
           </div>
 

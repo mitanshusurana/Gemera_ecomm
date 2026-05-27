@@ -15,6 +15,8 @@ import { SystemMaintenanceComponent } from './pages/system-maintenance/system-ma
 import { AppointmentListComponent } from './pages/appointments/appointment-list.component';
 import { InquiryListComponent } from './pages/inquiries/inquiry-list.component';
 import { authGuard } from './guards/auth.guard';
+import { CategoriesComponent } from './pages/categories/categories.component';
+
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -27,6 +29,7 @@ export const routes: Routes = [
       { path: 'appointments', component: AppointmentListComponent },
       { path: 'inquiries', component: InquiryListComponent },
       { path: 'customers', component: CustomerListComponent },
+      { path: 'categories', component: CategoriesComponent },
       { path: 'products', component: ProductListComponent },
       { path: 'products/new', component: ProductAddComponent },
       { path: 'products/edit/:id', component: ProductAddComponent },

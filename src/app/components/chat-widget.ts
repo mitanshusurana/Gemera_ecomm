@@ -17,7 +17,7 @@ import { Router } from '@angular/router';
             <span class="text-2xl">🤖</span>
             <div>
               <h3 class="font-bold text-sm">Caratloop Concierge</h3>
-              <p class="text-xs text-accent">Always here to help</p>
+              <p class="text-xs font-bold text-accent">Always here to help</p>
             </div>
           </div>
           <button (click)="toggleChat()" class="text-surface hover:text-accent">&times;</button>

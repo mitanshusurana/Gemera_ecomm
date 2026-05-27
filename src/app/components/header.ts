@@ -33,7 +33,7 @@ import { CurrencyService } from '../services/currency.service';
             <a routerLink="/rfq" class="hidden md:inline hover:text-surface transition-colors font-bold text-accent">Bulk Orders</a>
             <a routerLink="/stores" class="hidden lg:inline hover:text-surface transition-colors">Find a Store</a>
             <a href="#" class="hover:text-surface transition-colors">Help</a>
-            <a routerLink="/track-order" class="hover:text-surface transition-colors">Track Order</a>
+            <a routerLink="/track-order" class="hover:text-surface transition-colors" aria-label="Track Order Header Menu">Track Order</a>
 
             <!-- Currency Selector -->
             <div class="relative group ml-2" (mouseenter)="isCurrencyDropdownOpen = true" (mouseleave)="isCurrencyDropdownOpen = false">
@@ -66,7 +66,7 @@ import { CurrencyService } from '../services/currency.service';
 
           <!-- Mobile Menu & Logo -->
           <div class="flex items-center gap-4">
-            <button class="lg:hidden text-ink" (click)="toggleMobileMenu()">
+            <button class="lg:hidden text-ink" (click)="toggleMobileMenu()" aria-label="Toggle Mobile Menu">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
@@ -90,7 +90,7 @@ import { CurrencyService } from '../services/currency.service';
                 placeholder="Search for Rings, Earrings, Gemstones..."
                 class="w-full pl-4 pr-10 py-2.5 bg-surface border border-primary-200 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-sm placeholder-gray-400 text-ink"
               >
-              <button class="absolute right-0 top-0 h-full px-4 bg-primary text-surface rounded-r-lg hover:bg-primary transition-colors">
+              <button aria-label="Submit search" class="absolute right-0 top-0 h-full px-4 bg-primary text-surface rounded-r-lg hover:bg-primary transition-colors">
                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
@@ -139,7 +139,7 @@ import { CurrencyService } from '../services/currency.service';
                   <div class="px-4 py-2 border-b border-ink text-xs text-ink">Hello, {{ user()?.firstName }}</div>
                   <a routerLink="/account" class="block px-4 py-2 text-sm text-ink hover:bg-primary-50 hover:text-ink">My Account</a>
                   <a [routerLink]="['/account']" [queryParams]="{tab: 'orders'}" class="block px-4 py-2 text-sm text-ink hover:bg-primary-50 hover:text-ink">My Orders</a>
-                  <a routerLink="/treasure" class="block px-4 py-2 text-sm text-accent font-semibold hover:bg-secondary-50">My Treasure Plan</a>
+                  <a routerLink="/treasure" class="block px-4 py-2 text-sm font-extrabold text-accent hover:bg-secondary-50">My Treasure Plan</a>
                   <button (click)="logout()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
                 </div>
               </div>
