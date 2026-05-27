@@ -59,7 +59,7 @@ interface CollectionUI {
                 <img ngSrc="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry">
                 <div class="absolute inset-0 bg-gradient-to-t from-primary-950/80 to-transparent"></div>
                 <div class="absolute bottom-8 left-8 text-surface">
-                   <p class="text-sm uppercase tracking-widest mb-1 text-accent">Featured</p>
+                   <p class="text-sm uppercase tracking-widest mb-1 text-accent font-bold">Featured</p>
                    <p class="font-display text-2xl">The Executive Edit</p>
                 </div>
              </div>
@@ -78,7 +78,7 @@ interface CollectionUI {
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
              <!-- Card 1 -->
              <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img src="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
+                <img ngSrc="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
@@ -87,7 +87,7 @@ interface CollectionUI {
              </a>
              <!-- Card 2 -->
              <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img src="https://images.pexels.com/photos/2735970/pexels-photo-2735970.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
+                <img ngSrc="https://images.pexels.com/photos/2735970/pexels-photo-2735970.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
@@ -96,7 +96,7 @@ interface CollectionUI {
              </a>
              <!-- Card 3 -->
              <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img src="https://images.pexels.com/photos/177332/pexels-photo-177332.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
+                <img ngSrc="https://images.pexels.com/photos/177332/pexels-photo-177332.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Party Wear</h3>
@@ -105,7 +105,7 @@ interface CollectionUI {
              </a>
              <!-- Card 4 -->
              <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img src="https://images.pexels.com/photos/872838/pexels-photo-872838.jpeg?auto=compress&cs=tinysrgb&w=600" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
+                <img ngSrc="https://images.pexels.com/photos/872838/pexels-photo-872838.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>
@@ -200,8 +200,8 @@ interface CollectionUI {
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">S</div>
                   <div>
-                     <h4 class="font-bold text-surface">Sneha Kapoor</h4>
-                     <p class="text-xs uppercase tracking-wider text-accent">Marketing Head</p>
+                     <h3 class="font-bold text-surface text-lg">Sneha Kapoor</h3>
+                     <p class="text-xs uppercase tracking-wider text-accent font-bold">Marketing Head</p>
                   </div>
                </div>
             </div>
@@ -213,8 +213,8 @@ interface CollectionUI {
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">A</div>
                   <div>
-                     <h4 class="font-bold text-surface">Ankit Sharma</h4>
-                     <p class="text-xs uppercase tracking-wider text-accent">Entrepreneur</p>
+                     <h3 class="font-bold text-surface text-lg">Ankit Sharma</h3>
+                     <p class="text-xs uppercase tracking-wider text-accent font-bold">Entrepreneur</p>
                   </div>
                </div>
             </div>
@@ -226,8 +226,8 @@ interface CollectionUI {
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">P</div>
                   <div>
-                     <h4 class="font-bold text-surface">Priya Menon</h4>
-                     <p class="text-xs uppercase tracking-wider text-accent">Doctor</p>
+                     <h3 class="font-bold text-surface text-lg">Priya Menon</h3>
+                     <p class="text-xs uppercase tracking-wider text-accent font-bold">Doctor</p>
                   </div>
                </div>
             </div>
@@ -245,7 +245,7 @@ interface CollectionUI {
                The smartest way to buy jewellery. Pay for 10 months, and we pay the 11th installment for you.
              </p>
              <div class="flex gap-4">
-                <a routerLink="/treasure" class="btn-primary">Learn More</a>
+                <a routerLink="/treasure" class="btn-primary">Learn more about the Caratloop Treasure Plan</a>
              </div>
           </div>
           <div class="flex-1 flex justify-center">

@@ -15,7 +15,7 @@ import { environment } from "../../environments/environment";
       target="_blank"
       rel="noopener noreferrer"
       class="fixed bottom-36 right-4 md:right-6 md:bottom-28 z-40 group"
-      [attr.aria-label]="'Contact us on WhatsApp'"
+      aria-label="Contact us on WhatsApp"
     >
       <!-- Main Button -->
       <button
