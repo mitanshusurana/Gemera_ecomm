@@ -144,7 +144,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               </div>
 
               <!-- High Value Optimization -->
-              <div *ngIf="total() > 50000" class="mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
+              <div *ngIf="total() > 50000" class="mb-4 p-4 bg-primary rounded-lg border border-primary">
                 <p class="text-sm text-ink font-semibold mb-2">Need help checking out?</p>
                 <a href="https://wa.me/1234567890" target="_blank" class="w-full bg-[#25D366] text-surface font-bold py-2 rounded-lg hover:bg-[#128C7E] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">

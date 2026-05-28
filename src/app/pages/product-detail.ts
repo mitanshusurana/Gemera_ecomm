@@ -135,7 +135,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     *ngIf="product()?.videoUrl"
                     (click)="scrollToMedia(0)"
                     class="snap-start relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-surface flex items-center justify-center"
-                    [class.border-primary-800]="selectedMediaIndex() === 0"
+                    [class.border-primary]="selectedMediaIndex() === 0"
                     [class.border-transparent]="selectedMediaIndex() !== 0"
                   >
                     <div
@@ -169,7 +169,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     "
                     (click)="scrollToMedia(product()?.videoUrl ? i + 1 : i)"
                     class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-surface rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
-                    [class.border-primary-800]="
+                    [class.border-primary]="
                       selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)
                     "
                     [class.border-transparent]="
@@ -781,7 +781,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       class="px-4 py-2 rounded-full border text-sm font-medium transition-all"
                       [class.bg-primary]="selectedMetal()?.id === opt.id"
                       [class.text-surface]="selectedMetal()?.id === opt.id"
-                      [class.border-primary-800]="
+                      [class.border-primary]="
                         selectedMetal()?.id === opt.id
                       "
                       [class.bg-surface]="selectedMetal()?.id !== opt.id"
@@ -809,13 +809,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       *ngFor="let opt of getOptions('diamond')"
                       (click)="selectedDiamondQuality.set(opt)"
                       class="flex-1 px-3 py-2 rounded border text-center text-xs font-medium transition-all"
-                      [class.border-primary-800]="
+                      [class.border-primary]="
                         selectedDiamondQuality()?.id === opt.id
                       "
                       [class.text-ink]="
                         selectedDiamondQuality()?.id === opt.id
                       "
-                      [class.bg-primary-50]="
+                      [class.bg-primary]="
                         selectedDiamondQuality()?.id === opt.id
                       "
                       [class.border-ink]="
@@ -847,7 +847,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   <select
                     [ngModel]="selectedSize()"
                     (ngModelChange)="selectedSize.set($event)"
-                    class="w-full p-3 border border-ink rounded-lg bg-surface text-sm focus:border-primary-800 outline-none"
+                    class="w-full p-3 border border-ink rounded-lg bg-surface text-sm focus:border-primary outline-none"
                   >
                     <option [ngValue]="null">Select Size</option>
                     <option
@@ -873,7 +873,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     [ngModel]="pincode()"
                     (ngModelChange)="pincode.set($event)"
                     placeholder="Enter Pincode for Delivery"
-                    class="w-full pl-4 pr-20 py-3 border border-ink rounded-lg text-sm focus:border-primary-800 outline-none"
+                    class="w-full pl-4 pr-20 py-3 border border-ink rounded-lg text-sm focus:border-primary outline-none"
                   />
                   <button
                     (click)="checkDelivery()"
@@ -896,7 +896,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   <button
                     (click)="handleAddToCart()"
                     [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-gradient-to-r from-primary-800 to-primary-600 text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-gradient-to-r from-primary to-primary text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {{
                       product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
@@ -905,7 +905,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   <button
                     (click)="handleBuyNow()"
                     [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-surface border-2 border-primary-800 text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-surface border-2 border-primary text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Buy Now
                   </button>
@@ -919,7 +919,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   </button>
                   <button
                     (click)="openStoreVisit()"
-                    class="w-full border border-primary-600 text-ink font-bold py-3 rounded-lg hover:bg-primary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
+                    class="w-full border border-primary text-ink font-bold py-3 rounded-lg hover:bg-primary transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
                   >
                     <span>🏢</span> Store Visit
                   </button>
@@ -996,7 +996,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
             <button
               (click)="handleAddToCart()"
               [disabled]="product()?.stock === 0"
-              class="bg-gradient-to-r from-primary-800 to-primary-600 text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0"
+              class="bg-gradient-to-r from-primary to-primary text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0"
             >
               {{ product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
             </button>
@@ -1025,7 +1025,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
             &times;
           </button>
           <div
-            class="bg-gradient-to-r from-primary-800 to-primary-950 text-surface p-6 text-center"
+            class="bg-gradient-to-r from-primary to-primary text-surface p-6 text-center"
           >
             <h3 class="font-serif font-bold text-xl">Book {{ appointmentType() === 'TRY_AT_HOME' ? 'Try at Home' : (appointmentType() === 'STORE_VISIT' ? 'Store Visit' : 'Video Consult') }}</h3>
           </div>

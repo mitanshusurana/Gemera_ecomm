@@ -91,7 +91,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                             type="checkbox"
                             [checked]="selectedCategories().includes(category.name)"
                             (change)="toggleCategory(category.name)"
-                            class="w-4 h-4 text-ink rounded border-ink focus:ring-primary-500 cursor-pointer"
+                            class="w-4 h-4 text-ink rounded border-ink focus:ring-primary cursor-pointer"
                           >
                           <span class="text-sm text-ink font-semibold group-hover:text-ink transition-colors">{{category.displayName}}</span>
                         </label>
@@ -103,7 +103,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                                 type="checkbox"
                                 [checked]="selectedCategories().includes(subcat.name)"
                                 (change)="toggleCategory(subcat.name)"
-                                class="w-4 h-4 text-ink rounded border-ink focus:ring-primary-500 cursor-pointer"
+                                class="w-4 h-4 text-ink rounded border-ink focus:ring-primary cursor-pointer"
                               >
                               <span class="text-sm text-ink group-hover:text-ink transition-colors">{{subcat.displayName}}</span>
                              </label>
@@ -113,7 +113,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                                     type="checkbox"
                                     [checked]="selectedCategories().includes(child.name)"
                                     (change)="toggleCategory(child.name)"
-                                    class="w-4 h-4 text-ink rounded border-ink focus:ring-primary-500 cursor-pointer"
+                                    class="w-4 h-4 text-ink rounded border-ink focus:ring-primary cursor-pointer"
                                   >
                                   <span class="text-sm text-ink group-hover:text-ink transition-colors">- {{child.displayName}}</span>
                                 </label>

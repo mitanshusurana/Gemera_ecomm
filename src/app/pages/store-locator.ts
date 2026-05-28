@@ -20,7 +20,7 @@ import { StoreService, Store } from '../services/store.service';
           <!-- Store List -->
           <div class="lg:col-span-1 space-y-4 h-[600px] overflow-y-auto pr-2">
              <div *ngIf="isLoading()" class="text-center py-8">
-                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-900 mx-auto"></div>
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
                 <p class="text-ink mt-2">Loading stores...</p>
              </div>
 
@@ -30,9 +30,9 @@ import { StoreService, Store } from '../services/store.service';
 
              <div *ngFor="let store of stores()"
                   (click)="selectedStore.set(store)"
-                  [class.border-primary-500]="selectedStore()?.id === store.id"
+                  [class.border-primary]="selectedStore()?.id === store.id"
                   [class.ring-2]="selectedStore()?.id === store.id"
-                  [class.ring-primary-100]="selectedStore()?.id === store.id"
+                  [class.ring-primary]="selectedStore()?.id === store.id"
                   class="bg-surface p-6 rounded-lg border border-ink cursor-pointer hover:shadow-md transition-all">
                 <h3 class="font-bold text-ink text-lg mb-2">{{ store.name }}</h3>
                 <p class="text-sm text-ink mb-3">{{ store.address }}</p>

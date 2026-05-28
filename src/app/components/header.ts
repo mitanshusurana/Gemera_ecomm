@@ -48,9 +48,9 @@ import { CurrencyService } from '../services/currency.service';
                 <div class="bg-surface text-ink rounded-md shadow-xl py-1 border border-ink min-w-[100px] transform origin-top-right transition-all">
                   <button *ngFor="let code of availableCurrencies"
                           (click)="setCurrency(code)"
-                          class="block w-full text-left px-4 py-1.5 text-xs hover:bg-primary-50 hover:text-ink font-medium"
+                          class="block w-full text-left px-4 py-1.5 text-xs hover:bg-primary hover:text-surface font-medium"
                           [class.text-ink]="currentCurrency() === code"
-                          [class.bg-primary-50]="currentCurrency() === code">
+                          [class.bg-primary]="currentCurrency() === code">
                     {{ code }}
                   </button>
                 </div>
@@ -88,7 +88,7 @@ import { CurrencyService } from '../services/currency.service';
                 (focus)="isSearchFocused = true"
                 (blur)="onSearchBlur()"
                 placeholder="Search for Rings, Earrings, Gemstones..."
-                class="w-full pl-4 pr-10 py-2.5 bg-surface border border-primary-200 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-sm placeholder-gray-400 text-ink"
+                class="w-full pl-4 pr-10 py-2.5 bg-surface border border-primary rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm placeholder-gray-400 text-ink"
               >
               <button aria-label="Submit search" class="absolute right-0 top-0 h-full px-4 bg-primary text-surface rounded-r-lg hover:bg-primary transition-colors">
                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +102,7 @@ import { CurrencyService } from '../services/currency.service';
               <a
                 *ngFor="let result of searchResults"
                 [routerLink]="['/products', result.id]"
-                class="block px-4 py-2 hover:bg-primary-50 flex items-center gap-3 transition-colors"
+                class="block px-4 py-2 hover:bg-primary hover:text-surface flex items-center gap-3 transition-colors"
               >
                 <div class="w-10 h-10 bg-surface rounded flex-shrink-0 overflow-hidden border border-ink">
                   <img *ngIf="result.imageUrl" [src]="result.imageUrl" class="w-full h-full object-cover">
@@ -137,8 +137,8 @@ import { CurrencyService } from '../services/currency.service';
               <div *ngIf="user()" class="absolute right-0 top-full pt-2 hidden group-hover:block w-48 z-50">
                 <div class="bg-surface shadow-lg rounded-lg py-2 border border-ink">
                   <div class="px-4 py-2 border-b border-ink text-xs text-ink">Hello, {{ user()?.firstName }}</div>
-                  <a routerLink="/account" class="block px-4 py-2 text-sm text-ink hover:bg-primary-50 hover:text-ink">My Account</a>
-                  <a [routerLink]="['/account']" [queryParams]="{tab: 'orders'}" class="block px-4 py-2 text-sm text-ink hover:bg-primary-50 hover:text-ink">My Orders</a>
+                  <a routerLink="/account" class="block px-4 py-2 text-sm text-ink hover:bg-primary hover:text-surface">My Account</a>
+                  <a [routerLink]="['/account']" [queryParams]="{tab: 'orders'}" class="block px-4 py-2 text-sm text-ink hover:bg-primary hover:text-surface">My Orders</a>
                   <a routerLink="/treasure" class="block px-4 py-2 text-sm font-extrabold text-accent hover:bg-secondary-50">My Treasure Plan</a>
                   <button (click)="logout()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
                 </div>
@@ -218,7 +218,7 @@ import { CurrencyService } from '../services/currency.service';
                 [(ngModel)]="searchQuery"
                 (input)="onSearchInput()"
                 placeholder="Search..."
-                class="w-full px-4 py-2 border border-ink rounded-lg focus:outline-none focus:border-primary-500"
+                class="w-full px-4 py-2 border border-ink rounded-lg focus:outline-none focus:border-primary"
               >
           </div>
           <a routerLink="/" (click)="toggleMobileMenu()" class="font-medium text-ink py-2 border-b border-ink">Home</a>

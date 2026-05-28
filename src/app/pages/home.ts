@@ -30,7 +30,7 @@ interface CollectionUI {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Hero Slider (Modern Corporate) -->
-    <section class="relative w-full h-[550px] md:h-[650px] bg-gradient-to-br from-primary-950 to-primary-900 overflow-hidden flex items-center text-surface">
+    <section class="relative w-full h-[550px] md:h-[650px] bg-gradient-to-br from-primary to-primary overflow-hidden flex items-center text-surface">
        <!-- Abstract Background Shapes -->
        <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-surface/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
        <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"></div>
@@ -57,7 +57,7 @@ interface CollectionUI {
              <!-- Hero Image Placeholder -->
              <div class="w-[450px] h-[550px] bg-surface rounded-t-[10rem] rounded-b-3xl relative overflow-hidden shadow-2xl border-4 border-white/10">
                 <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.png" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry" ngSrcset="400w, 800w, 1200w">
-                <div class="absolute inset-0 bg-gradient-to-t from-primary-950/80 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
                 <div class="absolute bottom-8 left-8 text-surface">
                    <p class="text-sm uppercase tracking-widest mb-1 text-accent font-extrabold">Featured</p>
                    <p class="font-display text-2xl">The Executive Edit</p>
@@ -194,7 +194,7 @@ interface CollectionUI {
 
          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Testimonial 1 -->
-            <div class="bg-primary p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
+            <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
                <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
                <div class="flex items-center gap-4">
@@ -207,7 +207,7 @@ interface CollectionUI {
             </div>
 
             <!-- Testimonial 2 -->
-            <div class="bg-primary p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
+            <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
                <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
                <div class="flex items-center gap-4">
@@ -220,7 +220,7 @@ interface CollectionUI {
             </div>
 
             <!-- Testimonial 3 -->
-            <div class="bg-primary p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
+            <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
                <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
                <div class="flex items-center gap-4">
