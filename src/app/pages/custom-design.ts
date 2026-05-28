@@ -20,22 +20,22 @@ import { ToastService } from '../services/toast.service';
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-ink mb-1">Name *</label>
-              <input type="text" formControlName="name" class="w-full p-3 border border-ink rounded-lg focus:ring-primary-500 focus:border-primary-500" required />
+              <input type="text" formControlName="name" class="w-full p-3 border border-ink rounded-lg focus:ring-primary focus:border-primary" required />
             </div>
             <div>
               <label class="block text-sm font-medium text-ink mb-1">Email *</label>
-              <input type="email" formControlName="email" class="w-full p-3 border border-ink rounded-lg focus:ring-primary-500 focus:border-primary-500" required />
+              <input type="email" formControlName="email" class="w-full p-3 border border-ink rounded-lg focus:ring-primary focus:border-primary" required />
             </div>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-ink mb-1">Phone *</label>
-            <input type="tel" formControlName="phone" class="w-full p-3 border border-ink rounded-lg focus:ring-primary-500 focus:border-primary-500" required />
+            <input type="tel" formControlName="phone" class="w-full p-3 border border-ink rounded-lg focus:ring-primary focus:border-primary" required />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-ink mb-1">Design Concept *</label>
-            <textarea formControlName="concept" rows="4" class="w-full p-3 border border-ink rounded-lg focus:ring-primary-500 focus:border-primary-500" placeholder="Describe the type of jewelry, metal preference, stone shapes, etc." required></textarea>
+            <textarea formControlName="concept" rows="4" class="w-full p-3 border border-ink rounded-lg focus:ring-primary focus:border-primary" placeholder="Describe the type of jewelry, metal preference, stone shapes, etc." required></textarea>
           </div>
 
           <div>
@@ -46,7 +46,7 @@ import { ToastService } from '../services/toast.service';
                   <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <div class="flex text-sm text-ink justify-center">
-                  <label for="file-upload" class="relative cursor-pointer bg-surface rounded-md font-medium text-ink hover:text-ink focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                  <label for="file-upload" class="relative cursor-pointer bg-surface rounded-md font-medium text-ink hover:text-ink focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary">
                     <span>Upload a file</span>
                     <input id="file-upload" type="file" class="sr-only" (change)="onFileSelected($event)" accept="image/*">
                   </label>

@@ -50,7 +50,7 @@ import { RouterLink } from '@angular/router';
                            <span class="text-2xl font-bold text-ink">₹</span>
                            <input type="number" id="installmentAmount" aria-label="Installment Amount" [ngModel]="installment()" (ngModelChange)="updateInstallment($event)"
                                   min="1000" max="50000" step="500"
-                                  class="w-full text-3xl font-bold text-ink border-b-2 border-primary-200 focus:border-secondary-500 outline-none pb-2 bg-transparent">
+                                  class="w-full text-3xl font-bold text-ink border-b-2 border-primary focus:border-secondary-500 outline-none pb-2 bg-transparent">
                         </div>
                         <input type="range" aria-label="Installment Amount Slider" [ngModel]="installment()" (ngModelChange)="updateInstallment($event)"
                                min="1000" max="50000" step="500"
@@ -72,15 +72,15 @@ import { RouterLink } from '@angular/router';
                   </div>
 
                   <!-- Right: Summary -->
-                  <div class="bg-primary-50 p-8 md:p-12 flex flex-col justify-center">
+                  <div class="bg-primary p-8 md:p-12 flex flex-col justify-center">
                      <h3 class="font-bold text-ink mb-6">Plan Summary</h3>
 
                      <div class="space-y-4 mb-8">
-                        <div class="flex justify-between items-center pb-4 border-b border-primary-100">
+                        <div class="flex justify-between items-center pb-4 border-b border-primary">
                            <span class="text-ink">You Pay (9 Months)</span>
                            <span class="font-bold text-ink">{{ currencyService.format(summary().youPay) }}</span>
                         </div>
-                        <div class="flex justify-between items-center pb-4 border-b border-primary-100">
+                        <div class="flex justify-between items-center pb-4 border-b border-primary">
                            <span class="text-accent font-bold">Caratloop Adds (1 Month)</span>
                            <span class="font-bold text-accent">+ {{ currencyService.format(summary().weAdd) }}</span>
                         </div>
@@ -90,7 +90,7 @@ import { RouterLink } from '@angular/router';
                         </div>
                      </div>
 
-                     <div class="bg-surface p-4 rounded-lg border border-primary-100">
+                     <div class="bg-surface p-4 rounded-lg border border-primary">
                         <p class="text-sm text-ink mb-2"><strong>🎉 Bonus:</strong> Use this amount to buy any jewellery from our store after 10 months.</p>
                      </div>
                   </div>
@@ -109,14 +109,14 @@ import { RouterLink } from '@angular/router';
 
                <!-- Step 1 -->
                <div class="relative z-10">
-                  <div class="w-24 h-24 bg-surface border-2 border-primary-100 text-ink rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-sm">1</div>
+                  <div class="w-24 h-24 bg-surface border-2 border-primary text-ink rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-sm">1</div>
                   <h3 class="font-bold text-xl mb-3">Enroll Online</h3>
                   <p class="text-ink">Choose your monthly installment amount starting from just ₹1,000.</p>
                </div>
 
                <!-- Step 2 -->
                <div class="relative z-10">
-                  <div class="w-24 h-24 bg-surface border-2 border-primary-100 text-ink rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-sm">2</div>
+                  <div class="w-24 h-24 bg-surface border-2 border-primary text-ink rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-sm">2</div>
                   <h3 class="font-bold text-xl mb-3">Pay Monthly</h3>
                   <p class="text-ink">Pay 9 easy installments online securely via UPI, Card, or Netbanking.</p>
                </div>

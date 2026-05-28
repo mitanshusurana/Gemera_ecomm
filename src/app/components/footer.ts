@@ -15,9 +15,9 @@ import { environment } from "../../environments/environment";
   imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <footer *ngIf="settings" class="bg-primary-950 text-surface w-full overflow-hidden border-t-4 border-secondary-500">
+    <footer *ngIf="settings" class="bg-primary text-surface w-full overflow-hidden border-t-4 border-secondary-500">
       <!-- Newsletter Section -->
-      <div class="bg-primary border-b border-primary-800">
+      <div class="bg-primary border-b border-primary">
           <div class="container-luxury py-8 md:py-12 flex flex-col md:flex-row items-center justify-between gap-6">
              <div class="text-center md:text-left">
                 <h3 class="font-display font-bold text-2xl mb-1">Join the Caratloop Family</h3>
@@ -115,7 +115,7 @@ import { environment } from "../../environments/environment";
 
         <!-- Bottom Footer -->
         <div
-          class="border-t border-primary-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-ink"
+          class="border-t border-primary pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-surface"
         >
           <div class="text-center md:text-left">&copy; 2026 Caratloop Fine Jewels. All rights reserved.</div>
           <div class="flex flex-wrap justify-center gap-6">

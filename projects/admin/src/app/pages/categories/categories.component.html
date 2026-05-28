@@ -1,7 +1,7 @@
 <div class="max-w-7xl mx-auto space-y-6">
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-semibold text-gray-900">Categories Management</h1>
-    <button (click)="openAddCategoryModal()" class="bg-primary-600 text-white px-4 py-2 rounded shadow hover:bg-primary-700">
+    <button (click)="openAddCategoryModal()" class="bg-primary text-white px-4 py-2 rounded shadow hover:bg-primary">
       Add Root Category
     </button>
   </div>
@@ -72,37 +72,37 @@
               <div class="mt-4 space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Name (System)</label>
-                  <input type="text" formControlName="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                  <input type="text" formControlName="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Display Name (UI)</label>
-                  <input type="text" formControlName="displayName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                  <input type="text" formControlName="displayName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                 </div>
                 <div class="flex items-center">
-                  <input type="checkbox" formControlName="isActive" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                  <input type="checkbox" formControlName="isActive" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                   <label class="ml-2 block text-sm text-gray-900">Active</label>
                 </div>
                 <div class="space-y-2 border-t pt-2">
                   <span class="text-sm font-medium text-gray-700">UI Form Fields (Used in Admin & Frontend)</span>
                   <div class="grid grid-cols-2 gap-2">
                     <div class="flex items-center">
-                      <input type="checkbox" formControlName="showJewelryFields" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                      <input type="checkbox" formControlName="showJewelryFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                       <label class="ml-2 block text-sm text-gray-900">Jewelry Fields</label>
                     </div>
                     <div class="flex items-center">
-                      <input type="checkbox" formControlName="showGemstoneFields" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                      <input type="checkbox" formControlName="showGemstoneFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                       <label class="ml-2 block text-sm text-gray-900">Gemstone Fields</label>
                     </div>
                     <div class="flex items-center">
-                      <input type="checkbox" formControlName="showComponentFields" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                      <input type="checkbox" formControlName="showComponentFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                       <label class="ml-2 block text-sm text-gray-900">Component Fields</label>
                     </div>
                     <div class="flex items-center">
-                      <input type="checkbox" formControlName="showIdolFields" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                      <input type="checkbox" formControlName="showIdolFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                       <label class="ml-2 block text-sm text-gray-900">Idol Fields</label>
                     </div>
                     <div class="flex items-center">
-                      <input type="checkbox" formControlName="showRoughFields" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                      <input type="checkbox" formControlName="showRoughFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                       <label class="ml-2 block text-sm text-gray-900">Rough Fields</label>
                     </div>
                   </div>
@@ -112,10 +112,10 @@
           </div>
         </div>
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button type="submit" [disabled]="categoryForm.invalid" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+          <button type="submit" [disabled]="categoryForm.invalid" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
             Save
           </button>
-          <button type="button" (click)="closeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+          <button type="button" (click)="closeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
             Cancel
           </button>
         </div>
