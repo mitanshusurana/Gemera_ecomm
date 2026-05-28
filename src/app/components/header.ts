@@ -66,7 +66,7 @@ import { CurrencyService } from '../services/currency.service';
 
           <!-- Mobile Menu & Logo -->
           <div class="flex items-center gap-4">
-            <button class="lg:hidden text-ink" (click)="toggleMobileMenu()" aria-label="Toggle Mobile Menu">
+            <button class="lg:hidden text-ink" (click)="toggleMobileMenu()" aria-label="Toggle mobile menu">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
@@ -109,7 +109,7 @@ import { CurrencyService } from '../services/currency.service';
                 </div>
                 <div>
                   <div class="text-sm font-medium text-ink">{{result.name}}</div>
-                  <div class="text-xs text-accent font-semibold uppercase">{{result.category}}</div>
+                  <div class="text-xs text-accent font-extrabold uppercase">{{result.category}}</div>
                 </div>
               </a>
             </div>
@@ -203,7 +203,7 @@ import { CurrencyService } from '../services/currency.service';
             <a routerLink="/custom-design" class="text-sm font-bold text-ink hover:text-ink uppercase tracking-wide px-2 py-3 relative group/menu flex items-center gap-1">
                 <span class="text-lg">🎨</span> Custom Design
             </a>
-            <a routerLink="/treasure" class="text-sm font-bold text-accent hover:text-accent uppercase tracking-wide px-2 py-3 relative group/menu flex items-center gap-1">
+            <a routerLink="/treasure" class="text-sm font-extrabold text-accent hover:text-accent uppercase tracking-wide px-2 py-3 relative group/menu flex items-center gap-1">
                 <span class="text-lg">💎</span> Treasure Plan
             </a>
         </nav>
@@ -247,6 +247,7 @@ import { CurrencyService } from '../services/currency.service';
           </div>
           <a routerLink="/custom-design" (click)="toggleMobileMenu()" class="font-bold text-ink py-2 border-b border-ink flex items-center gap-2">🎨 Custom Design</a>
           <a routerLink="/treasure" (click)="toggleMobileMenu()" class="font-bold text-accent py-2 border-b border-ink flex items-center gap-2">💎 Treasure Plan</a>
+          <a routerLink="/track-order" (click)="toggleMobileMenu()" class="font-medium text-ink py-2 border-b border-ink flex items-center gap-2" aria-label="Track Order from Mobile Menu">Track Order</a>
         </div>
       </div>
     </header>
