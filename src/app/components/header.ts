@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterLink, Router, NavigationEnd, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../services/auth.service';
@@ -14,7 +14,7 @@ import { CurrencyService } from '../services/currency.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="bg-surface sticky top-0 z-50 shadow-sm font-sans">
@@ -74,7 +74,7 @@ import { CurrencyService } from '../services/currency.service';
 
             <!-- Logo -->
             <a routerLink="/" class="flex items-center">
-              <img src="/logo-with-name.png" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain" width="163" height="80" />
+              <img ngSrc="/logo-with-name.webp" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain" width="163" height="80" />
             </a>
           </div>
 

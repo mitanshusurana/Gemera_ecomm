@@ -1,7 +1,7 @@
 import { ProductService } from "../services/product.service";
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from "@angular/core";
 import { SettingService } from '../services/setting.service';
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink } from "@angular/router";
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from "@angular/forms";
 
@@ -12,7 +12,7 @@ import { environment } from "../../environments/environment";
 @Component({
   selector: "app-footer",
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <footer *ngIf="settings" class="bg-primary text-surface w-full overflow-hidden border-t-4 border-secondary-500">
@@ -53,7 +53,7 @@ import { environment } from "../../environments/environment";
           <!-- Brand -->
           <div class="col-span-1">
             <div class="flex items-center gap-2 mb-6">
-              <img src="/logo-with-name-light.png" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain rounded-md" width="140" height="80" />
+              <img ngSrc="/logo-with-name-light.webp" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain rounded-md" width="140" height="80" />
             </div>
             <p class="text-sm mb-6 leading-relaxed" style="color: var(--color-text-muted-light, #d1fae5);">
               Elegance for the everyday. We craft lightweight, premium designer jewelry for the modern corporate lifestyle.

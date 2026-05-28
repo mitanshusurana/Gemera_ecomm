@@ -19,7 +19,7 @@ import { environment } from "../../environments/environment";
     >
       <!-- Main Button -->
       <button
-        class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
+        aria-label="Contact us on WhatsApp" class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all duration-300 flex items-center justify-center transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
       >
         <svg class="w-7 h-7 md:w-10 md:h-10 text-surface" fill="currentColor" viewBox="0 0 24 24">
           <path

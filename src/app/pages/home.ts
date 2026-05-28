@@ -56,7 +56,7 @@ interface CollectionUI {
           <div class="relative h-full w-full flex items-center justify-center hidden md:flex">
              <!-- Hero Image Placeholder -->
              <div class="w-[450px] h-[550px] bg-surface rounded-t-[10rem] rounded-b-3xl relative overflow-hidden shadow-2xl border-4 border-white/10">
-                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.png" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry" ngSrcset="400w, 800w, 1200w">
+                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.webp" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry" ngSrcset="400w, 800w, 1200w">
                 <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
                 <div class="absolute bottom-8 left-8 text-surface">
                    <p class="text-sm uppercase tracking-widest mb-1 text-accent font-extrabold">Featured</p>
@@ -78,20 +78,20 @@ interface CollectionUI {
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
              <!-- Card 1 -->
              <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.png" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
+                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
-                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
              </a>
              <!-- Card 2 -->
              <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="Daily%20Wear%20Elevated%20Essentials.png" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
+                <img ngSrc="Daily%20Wear%20Elevated%20Essentials.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
-                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
              </a>
              <!-- Card 3 -->
@@ -100,16 +100,16 @@ interface CollectionUI {
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Party Wear</h3>
-                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
              </a>
              <!-- Card 4 -->
              <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="Gifting%20The%20Unboxing%20Experience.png" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
+                <img ngSrc="Gifting%20The%20Unboxing%20Experience.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>
-                   <span class="text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
+                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
              </a>
           </div>
