@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, ErrorHandler, isDevMode, APP_INITIALIZER } from '@angular/core';
-import { provideRouter, withInMemoryScrolling, withPreloading, PreloadAllModules } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
@@ -17,7 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideAnimations(),
-    provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' }), withPreloading(PreloadAllModules)),
+    provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
     provideClientHydration(),
     provideHttpClient(withInterceptorsFromDi()),
     {
@@ -27,10 +27,14 @@ export const appConfig: ApplicationConfig = {
         // If config.src is already absolute, return it.
         // Some users mention images don't load. If it's returning empty, handle it.
         if (!config.src) return '';
-        if (config.src.startsWith('http://') || config.src.startsWith('https://')) {
-          return config.src;
+        let url = config.src;
+        if (!config.src.startsWith('http://') && !config.src.startsWith('https://')) {
+          url = `https://pub-edd8f524b4784df1b5961ce0d431f767.r2.dev/${config.src}`;
         }
-        return `https://pub-edd8f524b4784df1b5961ce0d431f767.r2.dev/${config.src}`;
+        if (config.width) {
+          url += (url.includes('?') ? '&' : '?') + 'width=' + config.width;
+        }
+        return url;
       }
     },
     provideServiceWorker('ngsw-worker.js', {

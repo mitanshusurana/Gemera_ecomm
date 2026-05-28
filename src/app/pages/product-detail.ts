@@ -641,7 +641,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <button
                   *ngIf="hasPriceBreakup()"
                   (click)="togglePriceBreakup()"
-                  class="text-xs font-bold text-accent hover:text-accent flex items-center gap-1 uppercase tracking-wide mt-2"
+                  class="text-xs font-extrabold text-accent hover:text-accent flex items-center gap-1 uppercase tracking-wide mt-2"
                 >
                   View Price Breakup
                   <span
@@ -800,7 +800,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       class="text-xs font-bold text-ink uppercase tracking-wider"
                       >Diamond Quality</span
                     >
-                    <button class="text-xs text-accent underline">
+                    <button class="text-xs font-extrabold text-accent underline">
                       Guide
                     </button>
                   </div>
@@ -839,7 +839,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                     >
                     <button
                       (click)="sizeGuideOpen.set(true)"
-                      class="text-xs text-accent underline"
+                      class="text-xs font-extrabold text-accent underline"
                     >
                       Size Guide
                     </button>

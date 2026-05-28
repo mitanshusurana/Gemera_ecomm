@@ -72,10 +72,10 @@ import { environment } from "../../environments/environment";
 
           <!-- Quick Links -->
           <div>
-            <h4 class="font-bold mb-6 font-display text-lg text-surface">Collections</h4>
+            <h3 class="font-bold mb-6 font-display text-lg text-surface">Collections</h3>
             <ul class="space-y-3">
-              <li><a routerLink="/rfq" class="text-sm font-bold text-accent hover:text-surface transition-colors flex items-center gap-1">📋 Request for Quote</a></li>
-              <li><a routerLink="/treasure" class="text-sm font-bold text-accent hover:text-surface transition-colors flex items-center gap-1">✨ Treasure Plan</a></li>
+              <li><a routerLink="/rfq" class="text-sm font-extrabold text-accent hover:text-surface transition-colors flex items-center gap-1">📋 Request for Quote</a></li>
+              <li><a routerLink="/treasure" class="text-sm font-extrabold text-accent hover:text-surface transition-colors flex items-center gap-1">✨ Treasure Plan</a></li>
               <li *ngFor="let cat of categories.slice(0, 5)">
                 <a [routerLink]="['/products']" [queryParams]="{category: cat.name}" class="text-sm font-bold text-surface hover:text-accent transition-colors">{{ cat.displayName }}</a>
               </li>
@@ -84,7 +84,7 @@ import { environment } from "../../environments/environment";
 
           <!-- Customer Service -->
           <div>
-            <h4 class="font-bold mb-6 font-display text-lg text-surface">Customer Care</h4>
+            <h3 class="font-bold mb-6 font-display text-lg text-surface">Customer Care</h3>
             <ul class="space-y-3">
               <li><a routerLink="/contact" class="text-sm font-bold text-surface hover:text-accent transition-colors">Contact Us</a></li>
               <li><a routerLink="/about" class="text-sm font-bold text-surface hover:text-accent transition-colors">Shipping & Returns</a></li>
@@ -95,7 +95,7 @@ import { environment } from "../../environments/environment";
 
           <!-- Contact Info -->
           <div>
-            <h4 class="font-bold mb-6 font-display text-lg text-surface">Contact Us</h4>
+            <h3 class="font-bold mb-6 font-display text-lg text-surface">Contact Us</h3>
              <ul class="space-y-4">
                <li class="flex items-start gap-3 text-sm text-surface">
                  <span class="text-accent mt-1">📍</span>

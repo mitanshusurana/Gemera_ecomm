@@ -37,7 +37,7 @@ interface CollectionUI {
 
        <div class="container-luxury grid grid-cols-1 md:grid-cols-2 gap-12 items-center h-full px-6 md:px-12 relative z-10">
           <div class="animate-fade-in-up text-center md:text-left">
-            <span class="inline-block py-1 px-3 border border-secondary-400 text-accent text-xs font-bold tracking-[0.2em] uppercase mb-6 rounded-full">New Season Collection</span>
+            <span class="inline-block py-1 px-3 border border-secondary-400 text-accent text-xs font-extrabold tracking-[0.2em] uppercase mb-6 rounded-full">New Season Collection</span>
             <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
               Elevate Your <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-secondary-200 to-secondary-500">Everyday</span>
             </h1>
@@ -56,10 +56,10 @@ interface CollectionUI {
           <div class="relative h-full w-full flex items-center justify-center hidden md:flex">
              <!-- Hero Image Placeholder -->
              <div class="w-[450px] h-[550px] bg-surface rounded-t-[10rem] rounded-b-3xl relative overflow-hidden shadow-2xl border-4 border-white/10">
-                <img ngSrc="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry">
+                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.png" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry" ngSrcset="400w, 800w, 1200w">
                 <div class="absolute inset-0 bg-gradient-to-t from-primary-950/80 to-transparent"></div>
                 <div class="absolute bottom-8 left-8 text-surface">
-                   <p class="text-sm uppercase tracking-widest mb-1 text-accent font-bold">Featured</p>
+                   <p class="text-sm uppercase tracking-widest mb-1 text-accent font-extrabold">Featured</p>
                    <p class="font-display text-2xl">The Executive Edit</p>
                 </div>
              </div>
@@ -78,7 +78,7 @@ interface CollectionUI {
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
              <!-- Card 1 -->
              <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
+                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.png" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
@@ -87,7 +87,7 @@ interface CollectionUI {
              </a>
              <!-- Card 2 -->
              <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="https://images.pexels.com/photos/2735970/pexels-photo-2735970.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
+                <img ngSrc="Daily%20Wear%20Elevated%20Essentials.png" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
@@ -105,7 +105,7 @@ interface CollectionUI {
              </a>
              <!-- Card 4 -->
              <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="https://images.pexels.com/photos/872838/pexels-photo-872838.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
+                <img ngSrc="Gifting%20The%20Unboxing%20Experience.png" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
                 <div class="absolute bottom-6 left-6 text-surface">
                    <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>
@@ -195,39 +195,39 @@ interface CollectionUI {
          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Testimonial 1 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
-               <div class="flex gap-1 text-accent mb-4 text-sm">★★★★★</div>
+               <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
                <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">S</div>
                   <div>
                      <h3 class="font-bold text-surface text-lg">Sneha Kapoor</h3>
-                     <p class="text-xs uppercase tracking-wider text-accent font-bold">Marketing Head</p>
+                     <p class="text-xs uppercase tracking-wider text-accent font-extrabold">Marketing Head</p>
                   </div>
                </div>
             </div>
 
             <!-- Testimonial 2 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
-               <div class="flex gap-1 text-accent mb-4 text-sm">★★★★★</div>
+               <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
                <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">A</div>
                   <div>
                      <h3 class="font-bold text-surface text-lg">Ankit Sharma</h3>
-                     <p class="text-xs uppercase tracking-wider text-accent font-bold">Entrepreneur</p>
+                     <p class="text-xs uppercase tracking-wider text-accent font-extrabold">Entrepreneur</p>
                   </div>
                </div>
             </div>
 
             <!-- Testimonial 3 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary-700 shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
-               <div class="flex gap-1 text-accent mb-4 text-sm">★★★★★</div>
+               <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
                <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">P</div>
                   <div>
                      <h3 class="font-bold text-surface text-lg">Priya Menon</h3>
-                     <p class="text-xs uppercase tracking-wider text-accent font-bold">Doctor</p>
+                     <p class="text-xs uppercase tracking-wider text-accent font-extrabold">Doctor</p>
                   </div>
                </div>
             </div>
@@ -239,7 +239,7 @@ interface CollectionUI {
     <section class="py-20 bg-secondary-50">
        <div class="container-luxury flex flex-col md:flex-row items-center justify-between gap-12 px-6">
           <div class="flex-1">
-             <span class="text-accent font-bold uppercase tracking-widest text-xs mb-2 block">Smart Investment</span>
+             <span class="text-accent font-extrabold uppercase tracking-widest text-xs mb-2 block">Smart Investment</span>
              <h2 class="text-3xl md:text-5xl font-display font-bold text-ink mb-6">Caratloop <span class="text-accent">Treasure Plan</span></h2>
              <p class="text-ink text-lg mb-8 max-w-xl">
                The smartest way to buy jewellery. Pay for 10 months, and we pay the 11th installment for you.

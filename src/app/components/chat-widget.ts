@@ -17,7 +17,7 @@ import { Router } from '@angular/router';
             <span class="text-2xl">🤖</span>
             <div>
               <h3 class="font-bold text-sm">Caratloop Concierge</h3>
-              <p class="text-xs font-bold text-accent">Always here to help</p>
+              <p class="text-xs font-extrabold text-accent">Always here to help</p>
             </div>
           </div>
           <button (click)="toggleChat()" class="text-surface hover:text-accent">&times;</button>
@@ -57,7 +57,7 @@ import { Router } from '@angular/router';
           <div class="flex flex-wrap gap-2 justify-end" *ngIf="!showInput()">
             <button *ngFor="let option of currentOptions()"
                     (click)="handleOption(option)"
-                    class="px-3 py-2 bg-secondary-50 hover:bg-accent text-accent text-xs font-semibold rounded-full border border-secondary-200 transition-colors">
+                    class="px-3 py-2 bg-secondary-50 hover:bg-accent text-accent text-xs font-extrabold rounded-full border border-secondary-200 transition-colors">
               {{ option.label }}
             </button>
           </div>
