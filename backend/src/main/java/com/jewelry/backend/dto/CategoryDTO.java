@@ -1,5 +1,6 @@
 package com.jewelry.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.util.List;
 import java.util.UUID;
@@ -11,6 +12,7 @@ public class CategoryDTO {
     private String displayName;
     private String image;
 
+    @JsonProperty("isActive")
     private boolean isActive = true;
     private boolean showJewelryFields;
     private boolean showGemstoneFields;

@@ -19,6 +19,7 @@ public class Category extends BaseEntity {
     private String displayName; // UI name
     private String image;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("isActive")
     @Column(columnDefinition = "boolean default true")
     private boolean isActive = true;
 
