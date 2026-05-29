@@ -58,3 +58,23 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
 # Force rebuild with SSR fixes
+
+---
+
+## Production Deployment (Multi-VM Split)
+
+To resolve memory constraints, the production architecture is split across two Virtual Machines (VMs).
+
+**1. Original VM (Backend, Admin, & DB)**
+This machine hosts the Spring Boot backend, the PostgreSQL database, and the NGINX-served Angular Admin app.
+*   **Deployment file:** `docker-compose.prod.backend.yml`
+*   **Command:** `docker-compose --env-file .env -f docker-compose.prod.backend.yml up -d`
+
+**2. New VM (Frontend SSR)**
+This machine is dedicated entirely to the Angular Server-Side Rendered (SSR) Node.js application.
+*   **Deployment file:** `docker-compose.prod.frontend.yml`
+*   **Command:** `docker-compose --env-file .env -f docker-compose.prod.frontend.yml up -d`
+
+**Configuration (`.env`)**
+*   Copy `.env.template` to `.env` on both machines.
+*   Crucially, on the **New VM**, ensure `FRONTEND_API_URL` points to the public IP or domain of the **Original VM** (where the backend runs).
