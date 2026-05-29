@@ -28,9 +28,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.io.File;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -124,19 +121,57 @@ public class ProductController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Upload image to Cloudflare R2")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+        Path tempInputFile = null;
         Path tempWebpFile = null;
         try {
             String contentType = file.getContentType();
             if (contentType != null && contentType.startsWith("image/") && !contentType.equals("image/webp")) {
-                BufferedImage originalImage = ImageIO.read(file.getInputStream());
-                if (originalImage != null) {
-                    tempWebpFile = Files.createTempFile("image_out_", ".webp");
-                    boolean success = ImageIO.write(originalImage, "webp", tempWebpFile.toFile());
-                    if (success) {
+
+                String originalExtension = ".jpg";
+                if (file.getOriginalFilename() != null && file.getOriginalFilename().contains(".")) {
+                    originalExtension = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
+                }
+                tempInputFile = Files.createTempFile("image_in_", originalExtension);
+                tempWebpFile = Files.createTempFile("image_out_", ".webp");
+                file.transferTo(tempInputFile.toFile());
+
+                // Execute ImageMagick to optimize and convert to WebP
+                // Using parameters to preserve quality, natural lighting, and enhance jewelry sparkle
+                ProcessBuilder processBuilder = new ProcessBuilder(
+                        "convert", tempInputFile.toAbsolutePath().toString(),
+                        "-quality", "85",
+                        "-auto-level",
+                        "-enhance",
+                        tempWebpFile.toAbsolutePath().toString()
+                );
+                processBuilder.redirectErrorStream(true);
+                Process process = processBuilder.start();
+
+                // Consume process output to prevent deadlocks
+                java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+                executor.submit(() -> {
+                    try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+                        String line;
+                        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ProductController.class.getName());
+                        while ((line = reader.readLine()) != null) {
+                            logger.fine("imagemagick: " + line);
+                        }
+                    } catch (IOException e) {
+                        java.util.logging.Logger.getLogger(ProductController.class.getName()).severe("Error reading imagemagick output: " + e.getMessage());
+                    }
+                });
+
+                try {
+                    int exitCode = process.waitFor();
+                    executor.shutdown();
+                    if (exitCode == 0 && Files.exists(tempWebpFile) && Files.size(tempWebpFile) > 0) {
                         CustomMultipartFile customFile = new CustomMultipartFile(tempWebpFile, "image/webp");
                         String fileUrl = storageService.uploadFile(customFile);
                         return ResponseEntity.ok(Map.of("url", fileUrl));
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return ResponseEntity.internalServerError().body(Map.of("error", "Image processing interrupted"));
                 }
             }
 
@@ -146,6 +181,11 @@ public class ProductController {
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Failed to upload file"));
         } finally {
+            if (tempInputFile != null) {
+                try {
+                    Files.deleteIfExists(tempInputFile);
+                } catch (IOException ignored) {}
+            }
             if (tempWebpFile != null) {
                 try {
                     Files.deleteIfExists(tempWebpFile);
