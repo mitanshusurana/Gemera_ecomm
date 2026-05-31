@@ -138,7 +138,7 @@ public class ProductController {
                 // Execute ImageMagick to optimize and convert to WebP
                 // Using parameters to preserve quality, natural lighting, and enhance jewelry sparkle
                 ProcessBuilder processBuilder = new ProcessBuilder(
-                        "convert", tempInputFile.toAbsolutePath().toString(),
+                        "magick", tempInputFile.toAbsolutePath().toString(),
                         "-quality", "85",
                         "-auto-level",
                         "-enhance",
