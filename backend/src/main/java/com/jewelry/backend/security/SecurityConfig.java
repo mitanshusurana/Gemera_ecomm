@@ -119,6 +119,7 @@ public class SecurityConfig {
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/orders/track/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/email/subscribe").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/appointments").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/inquiries").permitAll()
           .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
           .requestMatchers("/actuator/**").permitAll()
           .anyRequest().authenticated()
