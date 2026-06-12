@@ -59,13 +59,21 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   }
 
   startScanner() {
-    setTimeout(() => {
+    setTimeout(async () => {
       if (this.scannerVideo && this.scannerVideo.nativeElement) {
-        this.codeReader.listVideoInputDevices()
-          .then((videoInputDevices) => {
-            if (videoInputDevices.length > 0) {
-              // Try to find the back camera, fallback to the first one available
-              let selectedDeviceId = videoInputDevices[0].deviceId;
+        try {
+          // Explicitly request camera permission first
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+          // Stop the initial stream immediately, we just needed it to trigger the permission prompt
+          // and allow listVideoInputDevices to see the labels.
+          stream.getTracks().forEach(track => track.stop());
+
+          this.codeReader.listVideoInputDevices()
+            .then((videoInputDevices) => {
+              if (videoInputDevices.length > 0) {
+                // Try to find the back camera, fallback to the first one available
+                let selectedDeviceId = videoInputDevices[0].deviceId;
               const backCamera = videoInputDevices.find((device) =>
                 device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')
               );
@@ -84,14 +92,19 @@ export class ProductListComponent implements OnInit, AfterViewInit {
               }).catch(console.error);
             } else {
               alert('No camera devices found.');
+                this.isScannerOpen = false;
+              }
+            })
+            .catch((err) => {
+              console.error('Error listing camera devices:', err);
+              alert('Could not list camera devices.');
               this.isScannerOpen = false;
-            }
-          })
-          .catch((err) => {
-            console.error('Error accessing camera devices:', err);
-            alert('Could not access the camera. Please ensure permissions are granted.');
-            this.isScannerOpen = false;
-          });
+            });
+        } catch (err) {
+          console.error('Error accessing camera permissions:', err);
+          alert('Could not access the camera. Please ensure permissions are granted.');
+          this.isScannerOpen = false;
+        }
       }
     }, 100);
   }
