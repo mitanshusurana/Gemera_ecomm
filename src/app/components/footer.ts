@@ -21,7 +21,7 @@ import { environment } from "../../environments/environment";
           <div class="container-luxury py-8 md:py-12 flex flex-col md:flex-row items-center justify-between gap-6">
              <div class="text-center md:text-left">
                 <h3 class="font-display font-bold text-2xl mb-1">Join the Caratloop Family</h3>
-                <p class="text-surface text-sm">Be the first to know about new collections & exclusive offers.</p>
+                <p class="text-[#FAFAFA] text-sm">Be the first to know about new collections & exclusive offers.</p>
              </div>
              <div class="flex flex-col w-full md:w-auto max-w-md">
                 <div class="flex w-full gap-0">
@@ -35,7 +35,7 @@ import { environment } from "../../environments/environment";
                    <button
                      (click)="subscribe()"
                      [disabled]="isSubscribing"
-                     class="bg-accent hover:bg-accent text-surface font-bold px-6 py-3 rounded-r-lg transition-colors whitespace-nowrap disabled:opacity-50"
+                     class="bg-accent hover:bg-accent text-primary font-bold px-6 py-3 rounded-r-lg transition-colors whitespace-nowrap disabled:opacity-50"
                    >
                       {{ isSubscribing ? 'Signing Up...' : 'Sign Up' }}
                    </button>

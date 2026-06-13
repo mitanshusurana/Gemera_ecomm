@@ -189,14 +189,14 @@ interface CollectionUI {
       <div class="container-luxury px-6 relative z-10">
          <div class="text-center mb-16">
             <h2 class="text-3xl md:text-5xl font-display font-bold mb-4">Client Diaries</h2>
-            <p class="text-surface" style="color: var(--color-text-muted-light, #d1fae5);">Stories of sparkle from our cherished customers</p>
+            <p class="text-[#FAFAFA]">Stories of sparkle from our cherished customers</p>
          </div>
 
          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Testimonial 1 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light text-[#FAFAFA]">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">S</div>
                   <div>
@@ -209,7 +209,7 @@ interface CollectionUI {
             <!-- Testimonial 2 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
+               <p class="text-lg leading-relaxed mb-6 font-light text-[#FAFAFA]">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">A</div>
                   <div>
@@ -222,7 +222,7 @@ interface CollectionUI {
             <!-- Testimonial 3 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-surface" style="color: var(--color-text-muted-light, #d1fae5);">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light text-[#FAFAFA]">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
                <div class="flex items-center gap-4">
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">P</div>
                   <div>
