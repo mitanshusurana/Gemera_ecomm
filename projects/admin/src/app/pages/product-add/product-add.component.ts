@@ -17,6 +17,7 @@ import { environment } from '../../../environments/environment';
 export class ProductAddComponent implements OnInit {
   productId: string | null = null;
   isEditMode = false;
+  currentStep = 1;
 
   constructor(
     private fb: FormBuilder,
@@ -143,7 +144,7 @@ export class ProductAddComponent implements OnInit {
       name: ['', Validators.required],
       description: ['', Validators.required],
       price: [null, [Validators.required, Validators.min(0)]],
-      stock: [null, [Validators.required, Validators.min(0)]],
+      stockQuantity: [1, [Validators.required, Validators.min(0)]],
       category: ['', Validators.required],
       subCategory: [''],
       sku: [''], // Auto-generated if empty
@@ -627,6 +628,29 @@ export class ProductAddComponent implements OnInit {
 
   removeExistingVideo() {
     this.existingVideoUrl = null;
+  }
+
+
+  get totalSteps(): number {
+    return this.selectedCategory === 'Gemstones' ? 6 : 5;
+  }
+
+  nextStep() {
+    if (this.currentStep < this.totalSteps) {
+      this.currentStep++;
+    }
+  }
+
+  prevStep() {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+
+  goToStep(step: number) {
+    if (step >= 1 && step <= this.totalSteps) {
+      this.currentStep = step;
+    }
   }
 
   onSubmit() {
