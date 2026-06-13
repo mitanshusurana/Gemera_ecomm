@@ -269,8 +269,22 @@ export class ProductAddComponent implements OnInit {
       this.generateNameAndDescription();
     });
 
+    // Auto-calculate Price Breakup Total
+    this.productForm.get('priceBreakup')?.valueChanges.subscribe((breakup) => {
+      const metal = parseFloat(breakup.metal) || 0;
+      const gemstone = parseFloat(breakup.gemstone) || 0;
+      const makingCharges = parseFloat(breakup.makingCharges) || 0;
+      const tax = parseFloat(breakup.tax) || 0;
+      const total = metal + gemstone + makingCharges + tax;
+
+      if (breakup.total !== total) {
+        this.productForm.get('priceBreakup.total')?.setValue(total, { emitEvent: false });
+        this.productForm.get('price')?.setValue(total, { emitEvent: false });
+      }
+    });
+
     // Auto-generate triggers
-    ['category', 'subCategory', 'caratWeight', 'cut', 'colorHue', 'colorTradeTerm', 'variety'].forEach(field => {
+    ['category', 'subCategory', 'caratWeight', 'totalCaratWeight', 'cut', 'colorHue', 'colorTradeTerm', 'variety'].forEach(field => {
       this.productForm.get(field)?.valueChanges.subscribe(() => {
         this.generateNameAndDescription();
       });
@@ -483,16 +497,22 @@ export class ProductAddComponent implements OnInit {
     if (!this.selectedCategory) return;
 
     const v = this.productForm.value;
-    const carat = v.caratWeight ? `${v.caratWeight} ct` : '';
+    // Determine the relevant carat weight field based on category
+    const weightVal = this.selectedCategory === 'Gemstones' ? v.caratWeight : v.totalCaratWeight;
+    const carat = weightVal ? `${weightVal} ct` : '';
+
     const cut = v.cut || '';
     const color = v.colorTradeTerm && v.colorTradeTerm !== 'None' ? v.colorTradeTerm : v.colorHue || '';
     const variety = v.variety || v.subCategory || '';
 
-    // E.g. "1.5 ct Brilliant Cut Royal Blue Sapphire"
-    let parts = [carat, cut, color, variety].filter(p => p.trim() !== '');
-    if (this.selectedCategory !== 'Gemstones') {
+    let parts = [];
+    if (this.selectedCategory === 'Gemstones') {
+      // E.g. "1.5 ct Brilliant Cut Royal Blue Sapphire"
+      parts = [carat, cut, color, variety].filter(p => p.trim() !== '');
+    } else {
+      // E.g. "1.5 ct Solitaire Ring"
       const type = v.variety || v.subCategory || this.selectedCategory || '';
-      parts = [type].filter(p => p.trim() !== '');
+      parts = [carat, type].filter(p => p.trim() !== '');
     }
     const generatedName = parts.join(' ');
 
