@@ -2,6 +2,12 @@
 
 @import "tailwindcss";
 @config "../tailwind.config.js";
+@source "./app";
+@theme {
+  --color-accent-light: #FDE68A;
+  --color-accent-dark: #B45309;
+  --color-accent: #C0A062;
+}
 @plugin "@tailwindcss/typography";
 
 /* Root Variables */

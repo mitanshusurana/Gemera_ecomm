@@ -7,6 +7,8 @@ module.exports = {
       black: '#000000',
       primary: '#0A1128',
       accent: '#C0A062',
+      'accent-light': '#c0a062',
+      'accent-dark': '#8a6d3b',
       surface: '#FAFAFA',
       ink: '#1C2331',
       transparent: 'transparent',

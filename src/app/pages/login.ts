@@ -112,8 +112,8 @@ import { ToastService } from "../services/toast.service";
             </p>
 
             <form
-              (ngSubmit)="register()"
               #registerForm="ngForm"
+              (ngSubmit)="register()"
               class="space-y-6"
             >
               <div class="grid grid-cols-2 gap-4">

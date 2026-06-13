@@ -201,7 +201,7 @@ interface CollectionUI {
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">S</div>
                   <div>
                      <h3 class="font-bold text-surface text-lg">Sneha Kapoor</h3>
-                     <p class="text-xs uppercase tracking-wider text-accent font-extrabold">Marketing Head</p>
+                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold">Marketing Head</p>
                   </div>
                </div>
             </div>
@@ -214,7 +214,7 @@ interface CollectionUI {
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">A</div>
                   <div>
                      <h3 class="font-bold text-surface text-lg">Ankit Sharma</h3>
-                     <p class="text-xs uppercase tracking-wider text-accent font-extrabold">Entrepreneur</p>
+                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold">Entrepreneur</p>
                   </div>
                </div>
             </div>
@@ -227,7 +227,7 @@ interface CollectionUI {
                   <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">P</div>
                   <div>
                      <h3 class="font-bold text-surface text-lg">Priya Menon</h3>
-                     <p class="text-xs uppercase tracking-wider text-accent font-extrabold">Doctor</p>
+                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold">Doctor</p>
                   </div>
                </div>
             </div>
@@ -239,8 +239,8 @@ interface CollectionUI {
     <section class="py-20 bg-secondary-50">
        <div class="container-luxury flex flex-col md:flex-row items-center justify-between gap-12 px-6">
           <div class="flex-1">
-             <span class="text-accent font-extrabold uppercase tracking-widest text-xs mb-2 block">Smart Investment</span>
-             <h2 class="text-3xl md:text-5xl font-display font-bold text-ink mb-6">Caratloop <span class="text-accent">Treasure Plan</span></h2>
+             <span class="text-[#B45309] font-extrabold uppercase tracking-widest text-xs mb-2 block">Smart Investment</span>
+             <h2 class="text-3xl md:text-5xl font-display font-bold text-ink mb-6">Caratloop <span class="text-[#B45309]">Treasure Plan</span></h2>
              <p class="text-ink text-lg mb-8 max-w-xl">
                The smartest way to buy jewellery. Pay for 10 months, and we pay the 11th installment for you.
              </p>
