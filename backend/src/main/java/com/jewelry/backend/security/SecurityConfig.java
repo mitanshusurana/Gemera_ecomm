@@ -59,6 +59,8 @@ public class SecurityConfig {
       "http://129.159.18.63",       // Deployed frontend
       "http://129.159.18.63/",      // Deployed frontend explicitly trailing slash
       "http://129.159.18.63:4300",  // Deployed admin panel
+      "http://68.233.96.36",        // New deployed frontend
+      "http://68.233.96.36/",       // New deployed frontend explicitly trailing slash
       "https://yourdomain.com"      // Update with your production domain
     ));
 
