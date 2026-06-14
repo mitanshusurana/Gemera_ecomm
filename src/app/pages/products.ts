@@ -24,9 +24,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   template: `
     <div class="min-h-screen bg-surface">
       <!-- Header -->
-      <div class="bg-diamond-50 border-b border-diamond-200 section-padding">
+      <div class="bg-diamond-50 border-b border-diamond-200 py-6 md:py-8">
         <div class="container-luxury">
-          <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4">
+          <h1 class="text-3xl md:text-4xl font-display font-bold text-diamond-900 mb-4">
             Our Collections
           </h1>
           <p class="text-lg text-ink">
@@ -36,7 +36,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
       </div>
 
       <!-- Main Content -->
-      <div class="container-luxury section-padding">
+      <div class="container-luxury py-8">
         <!-- Mobile Filter Toggle -->
         <div class="lg:hidden mb-6">
           <button (click)="isFilterOpen.set(true)" class="flex items-center gap-2 btn-outline w-full justify-center">
