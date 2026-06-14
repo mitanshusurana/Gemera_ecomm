@@ -271,7 +271,7 @@ export class ProductAddComponent implements OnInit {
 
     // Auto-select variety based on subCategory for Loose Gemstones
     this.productForm.get('subCategory')?.valueChanges.subscribe((subCategoryVal) => {
-      if (this.selectedCategory === 'Gemstones' && subCategoryVal) {
+      if ((this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones') && subCategoryVal) {
         if (this.varieties.includes(subCategoryVal)) {
           this.productForm.get('variety')?.setValue(subCategoryVal);
         }
@@ -508,7 +508,7 @@ export class ProductAddComponent implements OnInit {
 
     const v = this.productForm.value;
     // Determine the relevant carat weight field based on category
-    const weightVal = this.selectedCategory === 'Gemstones' ? v.caratWeight : v.totalCaratWeight;
+    const weightVal = (this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones') ? v.caratWeight : v.totalCaratWeight;
     const carat = weightVal ? `${weightVal} ct` : '';
 
     const cut = v.cut || '';
@@ -516,7 +516,7 @@ export class ProductAddComponent implements OnInit {
     const variety = v.variety || v.subCategory || '';
 
     let parts = [];
-    if (this.selectedCategory === 'Gemstones') {
+    if ((this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones')) {
       // E.g. "1.5 ct Brilliant Cut Royal Blue Sapphire"
       parts = [carat, cut, color, variety].filter(p => p.trim() !== '');
     } else {
@@ -640,7 +640,7 @@ export class ProductAddComponent implements OnInit {
   }
 
   get totalSteps(): number {
-    return this.selectedCategory === 'Gemstones' ? 6 : 5;
+    return (this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones') ? 6 : 5;
   }
 
   nextStep() {
