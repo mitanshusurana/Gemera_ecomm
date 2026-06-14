@@ -2,7 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChang
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import { provideClientHydration } from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
 import { IMAGE_LOADER, ImageLoaderConfig, provideImgixLoader } from '@angular/common';
 
@@ -37,10 +37,6 @@ export const appConfig: ApplicationConfig = {
         return url;
       }
     },
-    provideServiceWorker('ngsw-worker.js', {
-        enabled: !isDevMode(),
-        registrationStrategy: 'registerWhenStable:30000'
-    }),
     { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
@@ -49,6 +45,6 @@ export const appConfig: ApplicationConfig = {
       useFactory: (treasureService: TreasureService) => () => treasureService.loadConfig(),
       deps: [TreasureService],
       multi: true
-    }, provideClientHydration(withEventReplay())
+    }
   ]
 };
