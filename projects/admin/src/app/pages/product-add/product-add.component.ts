@@ -46,6 +46,10 @@ export class ProductAddComponent implements OnInit {
   colorTradeTerms = ['Pigeon’s Blood', 'Royal Blue', 'Cornflower Blue', 'Muzo Green', 'Jedi Spinel', 'Padparadscha', 'Canary Yellow', 'None'];
   origins = ['Zambia', 'Colombia', 'Brazil', 'Ethiopia', 'Ceylon (Sri Lanka)', 'Burma (Myanmar)', 'Madagascar', 'Tanzania', 'Mozambique', 'Afghanistan', 'Pakistan', 'Kenya', 'Nigeria', 'Tajikistan', 'Russia', 'Australia', 'Unknown'];
   clarities = ['Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Eye Clean', 'Included', 'Opaque'];
+  polishes = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  symmetries = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  fluorescences = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
+
   treatmentStatuses = [
     'None (No Indications of Enhancement)',
     'F1 (Minor Clarity Enhancement)',
@@ -63,7 +67,6 @@ export class ProductAddComponent implements OnInit {
   ];
   polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'Abr (Abrasion)', 'Brn (Burn mark)'];
   symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'T/oc (Table Off-Center)', 'OR (Out-of-Round)'];
-  fluorescences = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
   girdles = ['Extremely Thin', 'Very Thin', 'Thin', 'Medium', 'Slightly Thick', 'Thick', 'Very Thick', 'Extremely Thick'];
   culets = ['None', 'Very Small', 'Small', 'Medium', 'Slightly Large', 'Large', 'Very Large'];
 
@@ -186,12 +189,18 @@ export class ProductAddComponent implements OnInit {
       cut: [''],
       caratWeight: [null],
       colorHue: [''],
+
+      colorIntensity: [''],
+      tradeColorTerm: [''],
+      origin: [''],
+      certificateUrl: [''],
+
       colorTone: [''],
       colorSaturation: [''],
       colorTradeTerm: [''],
       clarity: [''],
       measurements: [''],
-      treatmentStatus: [''],
+      treatmentStatus: ['None (No Indications of Enhancement)'],
       labReportNumber: [''],
       certificateImage: [''],
       polish: [''],
@@ -630,7 +639,6 @@ export class ProductAddComponent implements OnInit {
     this.existingVideoUrl = null;
   }
 
-
   get totalSteps(): number {
     return this.selectedCategory === 'Gemstones' ? 6 : 5;
   }
@@ -650,6 +658,20 @@ export class ProductAddComponent implements OnInit {
   goToStep(step: number) {
     if (step >= 1 && step <= this.totalSteps) {
       this.currentStep = step;
+    }
+  }
+
+
+  updatePriceBreakupTotal() {
+    const breakup = this.productForm.get('priceBreakup');
+    if (breakup) {
+      const metal = breakup.get('metal')?.value || 0;
+      const gemstone = breakup.get('gemstone')?.value || 0;
+      const making = breakup.get('makingCharges')?.value || 0;
+      const tax = breakup.get('tax')?.value || 0;
+
+      const total = metal + gemstone + making + tax;
+      breakup.get('total')?.setValue(total, { emitEvent: false });
     }
   }
 
