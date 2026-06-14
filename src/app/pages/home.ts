@@ -30,7 +30,7 @@ interface CollectionUI {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Hero Slider (Modern Corporate) -->
-    <section class="relative w-full h-[550px] md:h-[650px] bg-gradient-to-br from-primary to-primary overflow-hidden flex items-center text-surface">
+    <section class="relative w-full h-[550px] md:h-[650px] bg-gradient-to-br from-primary to-primary overflow-hidden flex items-center text-white">
        <!-- Abstract Background Shapes -->
        <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-surface/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
        <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"></div>
@@ -41,14 +41,14 @@ interface CollectionUI {
             <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
               Elevate Your <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-secondary-200 to-secondary-500">Everyday</span>
             </h1>
-            <p class="text-surface text-lg mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed font-light" style="color: var(--color-text-muted-light, #d1fae5);">
+            <p class="text-white text-lg mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed font-light" style="color: var(--color-text-muted-light, #d1fae5);">
                Lightweight, premium designer jewelry crafted for the modern professional. Seamlessly transition from the boardroom to the ballroom.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-               <a routerLink="/products" class="btn-primary bg-accent hover:bg-accent border-none text-surface px-8 py-4 text-lg">
+               <a routerLink="/products" class="btn-primary bg-accent hover:bg-accent border-none text-white px-8 py-4 text-lg">
                  Shop Collection
                </a>
-               <a routerLink="/treasure" class="px-8 py-4 rounded-lg border border-white/30 hover:bg-surface/10 transition-colors font-semibold text-surface text-lg">
+               <a routerLink="/treasure" class="px-8 py-4 rounded-lg border border-white/30 hover:bg-surface/10 transition-colors font-semibold text-white text-lg">
                  Start Treasure Plan
                </a>
             </div>
@@ -58,7 +58,7 @@ interface CollectionUI {
              <div class="w-[450px] h-[550px] bg-surface rounded-t-[10rem] rounded-b-3xl relative overflow-hidden shadow-2xl border-4 border-white/10">
                 <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.webp" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry" ngSrcset="400w, 800w, 1200w">
                 <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
-                <div class="absolute bottom-8 left-8 text-surface">
+                <div class="absolute bottom-8 left-8 text-white">
                    <p class="text-sm uppercase tracking-widest mb-1 text-accent font-extrabold">Featured</p>
                    <p class="font-display text-2xl">The Executive Edit</p>
                 </div>
@@ -80,7 +80,7 @@ interface CollectionUI {
              <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
                 <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-surface">
+                <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
                    <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
@@ -89,7 +89,7 @@ interface CollectionUI {
              <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
                 <img ngSrc="Daily%20Wear%20Elevated%20Essentials.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-surface">
+                <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
                    <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
@@ -98,7 +98,7 @@ interface CollectionUI {
              <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
                 <img ngSrc="https://images.pexels.com/photos/177332/pexels-photo-177332.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-surface">
+                <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Party Wear</h3>
                    <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
@@ -107,7 +107,7 @@ interface CollectionUI {
              <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
                 <img ngSrc="Gifting%20The%20Unboxing%20Experience.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
                 <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-surface">
+                <div class="absolute bottom-6 left-6 text-white">
                    <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>
                    <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
                 </div>
@@ -156,7 +156,7 @@ interface CollectionUI {
               <!-- Quick Add Overlay -->
               <button
                 (click)="handleAddToCart($event, product)"
-                class="absolute bottom-0 left-0 w-full bg-primary text-surface font-bold py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-sm uppercase tracking-widest"
+                class="absolute bottom-0 left-0 w-full bg-primary text-white font-bold py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-sm uppercase tracking-widest"
               >
                 Add to Cart
               </button>
@@ -179,7 +179,7 @@ interface CollectionUI {
     </section>
 
     <!-- Client Diaries (Testimonials) -->
-    <section class="py-24 bg-primary text-surface overflow-hidden relative">
+    <section class="py-24 bg-primary text-white overflow-hidden relative">
       <!-- Decor -->
       <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
          <div class="absolute top-10 left-10 text-9xl">❝</div>
@@ -189,19 +189,19 @@ interface CollectionUI {
       <div class="container-luxury px-6 relative z-10">
          <div class="text-center mb-16">
             <h2 class="text-3xl md:text-5xl font-display font-bold mb-4">Client Diaries</h2>
-            <p class="text-[#FAFAFA]">Stories of sparkle from our cherished customers</p>
+            <p class="text-white opacity-90"><span class="text-[#FAFAFA]">Stories of sparkle from our cherished customers</span></p>
          </div>
 
          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Testimonial 1 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-[#FAFAFA]">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light !text-white opacity-90">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
                <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">S</div>
+                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-white">S</div>
                   <div>
-                     <h3 class="font-bold text-surface text-lg">Sneha Kapoor</h3>
-                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold">Marketing Head</p>
+                     <h3 class="font-bold text-white text-lg">Sneha Kapoor</h3>
+                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold !text-[#FDE68A]">Marketing Head</p>
                   </div>
                </div>
             </div>
@@ -209,12 +209,12 @@ interface CollectionUI {
             <!-- Testimonial 2 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-[#FAFAFA]">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
+               <p class="text-lg leading-relaxed mb-6 font-light !text-white opacity-90">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
                <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">A</div>
+                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-white">A</div>
                   <div>
-                     <h3 class="font-bold text-surface text-lg">Ankit Sharma</h3>
-                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold">Entrepreneur</p>
+                     <h3 class="font-bold text-white text-lg">Ankit Sharma</h3>
+                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold !text-[#FDE68A]">Entrepreneur</p>
                   </div>
                </div>
             </div>
@@ -222,12 +222,12 @@ interface CollectionUI {
             <!-- Testimonial 3 -->
             <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
                <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light text-[#FAFAFA]">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
+               <p class="text-lg leading-relaxed mb-6 font-light !text-white opacity-90">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
                <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-surface">P</div>
+                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-white">P</div>
                   <div>
-                     <h3 class="font-bold text-surface text-lg">Priya Menon</h3>
-                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold">Doctor</p>
+                     <h3 class="font-bold text-white text-lg">Priya Menon</h3>
+                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold !text-[#FDE68A]">Doctor</p>
                   </div>
                </div>
             </div>
@@ -251,7 +251,7 @@ interface CollectionUI {
           <div class="flex-1 flex justify-center">
              <div class="relative w-64 h-64 md:w-80 md:h-80 bg-surface rounded-full flex items-center justify-center shadow-2xl border-8 border-white">
                 <span class="text-8xl">💎</span>
-                <div class="absolute bottom-4 bg-primary text-surface px-4 py-1 rounded-full text-xs font-bold shadow-lg">10 + 1 Plan</div>
+                <div class="absolute bottom-4 bg-primary text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg">10 + 1 Plan</div>
              </div>
           </div>
        </div>
