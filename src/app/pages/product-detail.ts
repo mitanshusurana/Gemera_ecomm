@@ -13,6 +13,7 @@ import {
   ViewChildren,
   QueryList,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
@@ -892,24 +893,27 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 
               <!-- Actions -->
               <div class="flex flex-col gap-3">
-                <div class="flex gap-3">
+                <div class="flex gap-3" *ngIf="product()?.stock !== 0">
                   <button
                     (click)="handleAddToCart()"
-                    [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-gradient-to-r from-primary to-primary text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-gradient-to-r from-primary to-primary text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm"
                   >
-                    {{
-                      product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
-                    }}
+                    Add to Cart
                   </button>
                   <button
                     (click)="handleBuyNow()"
-                    [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-surface border-2 border-primary text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-surface border-2 border-primary text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm"
                   >
                     Buy Now
                   </button>
                 </div>
+                <button
+                  *ngIf="product()?.stock === 0"
+                  (click)="notifyMe()"
+                  class="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm flex items-center justify-center gap-2"
+                >
+                  <span>🔔</span> Notify Me When Available
+                </button>
                 <div class="grid grid-cols-2 gap-2 w-full mb-2">
                   <button
                     (click)="openTryAtHome()"
@@ -955,20 +959,29 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
               </div>
 
               <div
-                class="mt-6 pt-4 border-t border-ink flex justify-center gap-6 text-xs font-medium text-ink"
+                class="mt-6 pt-4 border-t border-ink flex flex-col justify-center gap-4 text-xs font-medium text-ink text-center"
               >
+                <div class="flex justify-center gap-6">
+                  <a
+                    routerLink="/contact"
+                    class="hover:text-ink transition-colors"
+                    >Contact Us</a
+                  >
+                  <span>|</span>
+                  <button
+                    (click)="openWhatsApp()"
+                    class="hover:text-ink transition-colors"
+                  >
+                    Chat on WhatsApp
+                  </button>
+                </div>
                 <a
-                  routerLink="/contact"
-                  class="hover:text-ink transition-colors"
-                  >Contact Us</a
+                  routerLink="/rfq"
+                  [queryParams]="{ product: product()?.id }"
+                  class="text-gold-600 hover:text-gold-700 font-semibold transition-colors text-sm"
                 >
-                <span>|</span>
-                <button
-                  (click)="openWhatsApp()"
-                  class="hover:text-ink transition-colors"
-                >
-                  Chat on WhatsApp
-                </button>
+                  Need bulk quantities? Request a Quote &rarr;
+                </a>
               </div>
             </div>
           </div>
@@ -994,11 +1007,18 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
               </p>
             </div>
             <button
+              *ngIf="product()?.stock !== 0"
               (click)="handleAddToCart()"
-              [disabled]="product()?.stock === 0"
               class="bg-gradient-to-r from-primary to-primary text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0"
             >
-              {{ product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+              Add to Cart
+            </button>
+            <button
+              *ngIf="product()?.stock === 0"
+              (click)="notifyMe()"
+              class="bg-gradient-to-r from-gold-500 to-gold-600 text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0 flex items-center gap-2"
+            >
+              <span>🔔</span> Notify Me
             </button>
           </div>
         </div>
@@ -1138,7 +1158,7 @@ export class ProductDetailComponent
   selectedImage = signal<string | null>(null);
   selectedMediaIndex = signal<number>(0);
   sizeGuideOpen = signal(false);
-  showPriceBreakup = signal(false);
+  showPriceBreakup = signal(true);
   tryAtHomeOpen = signal(false);
 
   // Customization
@@ -1389,6 +1409,27 @@ export class ProductDetailComponent
 
   togglePriceBreakup() {
     this.showPriceBreakup.set(!this.showPriceBreakup());
+  }
+
+  private http = inject(HttpClient);
+
+  notifyMe(): void {
+    const email = prompt('Please enter your email to be notified when back in stock:');
+    if (email && email.includes('@')) {
+      this.http.post(`${environment.apiUrl}/notifications/stock`, {
+        email: email,
+        productId: this.product()?.id
+      }).subscribe({
+        next: () => {
+          this.toastService.show('We will notify you when this item is back in stock!', 'success');
+        },
+        error: () => {
+          this.toastService.show('Failed to subscribe. Please try again.', 'error');
+        }
+      });
+    } else if (email) {
+      this.toastService.show('Please enter a valid email address.', 'error');
+    }
   }
   openTryAtHome() {
     this.appointmentType.set('TRY_AT_HOME');

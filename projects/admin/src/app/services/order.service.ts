@@ -29,4 +29,12 @@ export class OrderService {
   updateOrderStatus(id: string, status: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}/status`, { status });
   }
+
+  updateTrackingNumber(id: string, trackingNumber: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/tracking`, { trackingNumber });
+  }
+
+  updateNotes(id: string, notes: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/notes`, { notes });
+  }
 }

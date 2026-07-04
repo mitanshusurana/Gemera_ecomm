@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class SettingService {
-  private apiUrl = environment.apiUrl + '/settings';
+  private apiUrl = environment.apiUrl + '/admin/settings';
 
   constructor(private http: HttpClient) {}
 
@@ -16,6 +16,6 @@ export class SettingService {
   }
 
   updateSettings(settings: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl, settings);
+    return this.http.put<any>(this.apiUrl, settings);
   }
 }

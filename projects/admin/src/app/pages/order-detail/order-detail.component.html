@@ -69,6 +69,21 @@
              </select>
           </dd>
         </div>
+        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-ink">Tracking Number</dt>
+          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2 flex items-center gap-2">
+             <input type="text" #trackingInput [value]="order.trackingNumber || ''" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="Enter tracking number">
+             <button (click)="updateTracking(trackingInput.value)" class="mt-1 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">Save</button>
+          </dd>
+        </div>
+
+        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-ink">Internal Notes</dt>
+          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2 flex items-start gap-2">
+             <textarea #notesInput [value]="order.internalNotes || ''" rows="3" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="Add internal notes..."></textarea>
+             <button (click)="updateNotes(notesInput.value)" class="mt-1 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">Save</button>
+          </dd>
+        </div>
       </dl>
     </div>
   </div>

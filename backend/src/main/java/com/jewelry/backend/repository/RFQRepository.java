@@ -14,4 +14,5 @@ public interface RFQRepository extends JpaRepository<RFQ, UUID> {
     Page<RFQ> findByUserAndStatus(User user, String status, Pageable pageable);
     Optional<RFQ> findByRfqNumber(String rfqNumber);
     long countByStatusIn(List<String> statuses);
+    long countByStatus(String status);
 }

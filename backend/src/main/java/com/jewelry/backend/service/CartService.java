@@ -7,6 +7,8 @@ import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.entity.User;
 import com.jewelry.backend.repository.*;
 import com.jewelry.backend.entity.Wishlist;
+import com.jewelry.backend.entity.Coupon;
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,9 @@ public class CartService {
 
     @Autowired
     WishlistRepository wishlistRepository;
+
+    @Autowired
+    CouponRepository couponRepository;
 
     @Transactional
     public Cart getCart(String userEmail) {
@@ -173,14 +178,24 @@ public class CartService {
     @Transactional
     public Cart applyCoupon(String userEmail, String code) {
         Cart cart = getCart(userEmail);
-        if ("DISCOUNT10".equalsIgnoreCase(code)) {
-            cart.setAppliedCoupon(code);
+        
+        if (code == null || code.isEmpty()) {
+            cart.setAppliedCoupon(null);
         } else {
-             if (code == null || code.isEmpty()) {
-                 cart.setAppliedCoupon(null);
-             } else {
-                 throw new RuntimeException("Invalid coupon code");
-             }
+            Coupon coupon = couponRepository.findByCodeIgnoreCase(code)
+                .orElseThrow(() -> new RuntimeException("Invalid coupon code"));
+                
+            if (!coupon.getActive()) {
+                throw new RuntimeException("Coupon is no longer active");
+            }
+            if (coupon.getExpiryDate() != null && coupon.getExpiryDate().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Coupon has expired");
+            }
+            if (coupon.getUsageLimit() != null && coupon.getTimesUsed() >= coupon.getUsageLimit()) {
+                throw new RuntimeException("Coupon usage limit reached");
+            }
+            
+            cart.setAppliedCoupon(coupon.getCode());
         }
         recalculateCart(cart);
         cart.setAbandonmentEmailSent(false);
@@ -196,8 +211,26 @@ public class CartService {
         cart.setSubtotal(subtotal);
 
         BigDecimal discount = BigDecimal.ZERO;
-        if ("DISCOUNT10".equalsIgnoreCase(cart.getAppliedCoupon())) {
-             discount = subtotal.multiply(new BigDecimal("0.10"));
+        if (cart.getAppliedCoupon() != null) {
+            Coupon coupon = couponRepository.findByCodeIgnoreCase(cart.getAppliedCoupon()).orElse(null);
+            if (coupon != null && coupon.getActive() && 
+               (coupon.getExpiryDate() == null || !coupon.getExpiryDate().isBefore(LocalDateTime.now())) &&
+               (coupon.getUsageLimit() == null || coupon.getTimesUsed() < coupon.getUsageLimit())) {
+               
+                if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
+                    discount = subtotal.multiply(coupon.getDiscountValue().divide(new BigDecimal("100")));
+                } else if ("FLAT".equalsIgnoreCase(coupon.getDiscountType())) {
+                    discount = coupon.getDiscountValue();
+                }
+                
+                // Cap discount at subtotal
+                if (discount.compareTo(subtotal) > 0) {
+                    discount = subtotal;
+                }
+            } else {
+                // Invalid or expired, remove it
+                cart.setAppliedCoupon(null);
+            }
         }
         cart.setDiscount(discount);
 

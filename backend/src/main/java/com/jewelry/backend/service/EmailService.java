@@ -38,6 +38,9 @@ public class EmailService {
     @Autowired
     private EmailSubscriptionRepository subscriptionRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:mitanshusurana@gmail.com}")
+    private String fromEmail;
+
     public EmailNotification sendEmail(EmailNotification notification) {
         notification.setSentAt(LocalDateTime.now());
 
@@ -45,8 +48,10 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-            helper.setTo(notification.getEmail());
-            helper.setSubject(notification.getSubject());
+            helper.setFrom(fromEmail);
+            // Override To address as requested by the user
+            helper.setTo("mitanshusurana@gmail.com");
+            helper.setSubject(notification.getSubject() + " (Intended for: " + notification.getEmail() + ")");
 
             String htmlContent = "";
 

@@ -46,9 +46,16 @@ import { ToastService } from "../services/toast.service";
                   [(ngModel)]="email"
                   name="email"
                   required
+                  email
+                  #loginEmail="ngModel"
                   class="input-field"
+                  [ngClass]="{'border-red-500': loginEmail.invalid && (loginEmail.dirty || loginEmail.touched)}"
                   placeholder="you@example.com"
                 />
+                <div *ngIf="loginEmail.invalid && (loginEmail.dirty || loginEmail.touched)" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="loginEmail.errors?.['required']">Email is required.</span>
+                  <span *ngIf="loginEmail.errors?.['email']">Please enter a valid email address.</span>
+                </div>
               </div>
 
               <div>
@@ -60,21 +67,28 @@ import { ToastService } from "../services/toast.service";
                   [(ngModel)]="password"
                   name="password"
                   required
+                  #loginPassword="ngModel"
                   class="input-field"
+                  [ngClass]="{'border-red-500': loginPassword.invalid && (loginPassword.dirty || loginPassword.touched)}"
                   placeholder="••••••••"
                 />
+                <div *ngIf="loginPassword.invalid && (loginPassword.dirty || loginPassword.touched)" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="loginPassword.errors?.['required']">Password is required.</span>
+                </div>
               </div>
 
               <div class="flex items-center justify-between text-sm">
                 <label class="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    [(ngModel)]="rememberMe"
+                    name="rememberMe"
                     class="w-4 h-4 rounded border-diamond-300"
                   />
                   <span class="text-ink">Remember me</span>
                 </label>
                 <a
-                  href="#"
+                  routerLink="/forgot-password"
                   class="text-gold-600 hover:text-gold-700 font-semibold"
                 >
                   Forgot password?
@@ -118,87 +132,48 @@ import { ToastService } from "../services/toast.service";
             >
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    [(ngModel)]="firstName"
-                    name="firstName"
-                    required
-                    class="input-field"
-                    placeholder="John"
-                  />
+                  <label class="block text-sm font-semibold text-ink mb-2">First Name</label>
+                  <input type="text" [(ngModel)]="firstName" name="firstName" required #regFirstName="ngModel" class="input-field" [ngClass]="{'border-red-500': regFirstName.invalid && (regFirstName.dirty || regFirstName.touched)}" placeholder="John" />
+                  <div *ngIf="regFirstName.invalid && (regFirstName.dirty || regFirstName.touched)" class="text-red-500 text-xs mt-1">First name is required.</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    [(ngModel)]="lastName"
-                    name="lastName"
-                    required
-                    class="input-field"
-                    placeholder="Doe"
-                  />
+                  <label class="block text-sm font-semibold text-ink mb-2">Last Name</label>
+                  <input type="text" [(ngModel)]="lastName" name="lastName" required #regLastName="ngModel" class="input-field" [ngClass]="{'border-red-500': regLastName.invalid && (regLastName.dirty || regLastName.touched)}" placeholder="Doe" />
+                  <div *ngIf="regLastName.invalid && (regLastName.dirty || regLastName.touched)" class="text-red-500 text-xs mt-1">Last name is required.</div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  [(ngModel)]="email"
-                  name="email"
-                  required
-                  class="input-field"
-                  placeholder="you@example.com"
-                />
+                <label class="block text-sm font-semibold text-ink mb-2">Email Address</label>
+                <input type="email" [(ngModel)]="email" name="email" required email #regEmail="ngModel" class="input-field" [ngClass]="{'border-red-500': regEmail.invalid && (regEmail.dirty || regEmail.touched)}" placeholder="you@example.com" />
+                <div *ngIf="regEmail.invalid && (regEmail.dirty || regEmail.touched)" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="regEmail.errors?.['required']">Email is required.</span>
+                  <span *ngIf="regEmail.errors?.['email']">Please enter a valid email address.</span>
+                </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  [(ngModel)]="phone"
-                  name="phone"
-                  required
-                  class="input-field"
-                  placeholder="+1 (555) 000-0000"
-                />
+                <label class="block text-sm font-semibold text-ink mb-2">Phone Number</label>
+                <input type="tel" [(ngModel)]="phone" name="phone" required #regPhone="ngModel" class="input-field" [ngClass]="{'border-red-500': regPhone.invalid && (regPhone.dirty || regPhone.touched)}" placeholder="+1 (555) 000-0000" />
+                <div *ngIf="regPhone.invalid && (regPhone.dirty || regPhone.touched)" class="text-red-500 text-xs mt-1">Phone number is required.</div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  [(ngModel)]="password"
-                  name="password"
-                  required
-                  class="input-field"
-                  placeholder="••••••••"
-                />
+                <label class="block text-sm font-semibold text-ink mb-2">Password</label>
+                <input type="password" [(ngModel)]="password" name="password" required minlength="8" #regPassword="ngModel" class="input-field" [ngClass]="{'border-red-500': regPassword.invalid && (regPassword.dirty || regPassword.touched)}" placeholder="••••••••" />
+                <div *ngIf="regPassword.invalid && (regPassword.dirty || regPassword.touched)" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="regPassword.errors?.['required']">Password is required.</span>
+                  <span *ngIf="regPassword.errors?.['minlength']">Password must be at least 8 characters.</span>
+                </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  [(ngModel)]="confirmPassword"
-                  name="confirmPassword"
-                  required
-                  class="input-field"
-                  placeholder="••••••••"
-                />
+                <label class="block text-sm font-semibold text-ink mb-2">Confirm Password</label>
+                <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required #regConfirm="ngModel" class="input-field" [ngClass]="{'border-red-500': (regConfirm.invalid || password !== confirmPassword) && (regConfirm.dirty || regConfirm.touched)}" placeholder="••••••••" />
+                <div *ngIf="(regConfirm.invalid || password !== confirmPassword) && (regConfirm.dirty || regConfirm.touched)" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="regConfirm.errors?.['required']">Please confirm your password.</span>
+                  <span *ngIf="!regConfirm.errors?.['required'] && password !== confirmPassword">Passwords do not match.</span>
+                </div>
               </div>
 
               <label class="flex items-start gap-2">
@@ -273,6 +248,7 @@ export class LoginComponent {
   lastName = "";
   phone = "";
   confirmPassword = "";
+  rememberMe = false;
 
   private authService = inject(AuthService);
   private router = inject(Router);

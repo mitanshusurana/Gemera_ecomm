@@ -121,7 +121,7 @@ import { COUNTRIES } from '../core/countries';
                   <p class="text-ink text-xs mt-2">Current Tier: {{ loyalty().tier }}</p>
                 </div>
                 <div class="text-right">
-                  <button class="bg-gold-500 hover:bg-gold-600 text-surface px-4 py-2 rounded-lg font-semibold text-sm transition-colors mb-2">
+                  <button (click)="redeemPoints()" class="bg-gold-500 hover:bg-gold-600 text-surface px-4 py-2 rounded-lg font-semibold text-sm transition-colors mb-2">
                     Redeem Points
                   </button>
                   <p class="text-xs text-ink">Expires: Dec 31, 2025</p>
@@ -182,41 +182,42 @@ import { COUNTRIES } from '../core/countries';
                     </div>
 
                     <!-- Tracking Timeline -->
-                    <div class="relative flex justify-between items-center mb-6 px-4">
-                      <!-- Progress Bar -->
-                      <div class="absolute top-1/2 left-0 w-full h-1 bg-surface -z-10"></div>
-                      <div class="absolute top-1/2 left-0 h-1 bg-gold-500 -z-10 transition-all duration-1000"
-                           [style.width]="order.status === 'DELIVERED' ? '100%' : (order.status === 'SHIPPED' ? '75%' : (order.status === 'PROCESSING' ? '50%' : '25%'))">
+                    <div class="relative flex items-center justify-between mb-6">
+                      <!-- Progress Bar Background -->
+                      <div class="absolute top-4 left-8 right-8 h-1 bg-surface -translate-y-1/2 z-0"></div>
+                      <!-- Progress Bar Active -->
+                      <div class="absolute top-4 left-8 h-1 bg-gold-500 -translate-y-1/2 z-0 transition-all duration-1000"
+                           [style.width]="order.status === 'DELIVERED' ? 'calc(100% - 4rem)' : (order.status === 'SHIPPED' ? 'calc(66.6% - 2.6rem)' : (order.status === 'PROCESSING' ? 'calc(33.3% - 1.3rem)' : '0%'))">
                       </div>
 
                       <!-- Step 1: Confirmed -->
-                      <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-gold-500 text-surface flex items-center justify-center text-xs font-bold">✓</div>
-                        <span class="text-xs font-semibold text-ink">Confirmed</span>
+                      <div class="flex flex-col items-center gap-2 z-10 w-16">
+                        <div class="w-8 h-8 rounded-full bg-gold-500 text-surface flex items-center justify-center text-xs font-bold ring-4 ring-white">✓</div>
+                        <span class="text-xs font-semibold text-ink text-center">Confirmed</span>
                       </div>
                       <!-- Step 2: Processing -->
-                      <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                      <div class="flex flex-col items-center gap-2 z-10 w-16">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-white"
                              [ngClass]="['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-gold-500 text-surface' : 'bg-surface text-ink'">
                              {{ ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? '✓' : '2' }}
                         </div>
-                        <span class="text-xs font-semibold" [ngClass]="['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? 'text-ink' : 'text-ink'">Processing</span>
+                        <span class="text-xs font-semibold text-ink text-center">Processing</span>
                       </div>
                       <!-- Step 3: Shipped -->
-                      <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                      <div class="flex flex-col items-center gap-2 z-10 w-16">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-white"
                              [ngClass]="['SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-gold-500 text-surface' : 'bg-surface text-ink'">
                              {{ ['SHIPPED', 'DELIVERED'].includes(order.status) ? '✓' : '3' }}
                         </div>
-                        <span class="text-xs font-semibold" [ngClass]="['SHIPPED', 'DELIVERED'].includes(order.status) ? 'text-ink' : 'text-ink'">Shipped</span>
+                        <span class="text-xs font-semibold text-ink text-center">Shipped</span>
                       </div>
                       <!-- Step 4: Delivered -->
-                      <div class="flex flex-col items-center gap-2">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                      <div class="flex flex-col items-center gap-2 z-10 w-16">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-white"
                              [ngClass]="order.status === 'DELIVERED' ? 'bg-gold-500 text-surface' : 'bg-surface text-ink'">
                              {{ order.status === 'DELIVERED' ? '✓' : '4' }}
                         </div>
-                        <span class="text-xs font-semibold" [ngClass]="order.status === 'DELIVERED' ? 'text-ink' : 'text-ink'">Delivered</span>
+                        <span class="text-xs font-semibold text-ink text-center">Delivered</span>
                       </div>
                     </div>
 
@@ -227,8 +228,9 @@ import { COUNTRIES } from '../core/countries';
                     </div>
                   </div>
 
-                  <div *ngIf="orders().content?.length === 0" class="text-center py-8 text-ink">
-                      No orders found.
+                  <div *ngIf="orders().content?.length === 0" class="text-center py-8 text-ink flex flex-col items-center">
+                      <p class="mb-4">No orders found.</p>
+                      <a routerLink="/products" class="btn-primary inline-block">Back to Shopping</a>
                   </div>
                 </div>
               </div>
@@ -310,8 +312,9 @@ import { COUNTRIES } from '../core/countries';
                       <a [routerLink]="['/products', item.id]" class="block w-full btn-primary mt-4 text-center">View Details</a>
                     </div>
                   </div>
-                  <div *ngIf="wishlistService.items().length === 0" class="col-span-full text-center py-12 text-ink">
-                    Your wishlist is empty.
+                  <div *ngIf="wishlistService.items().length === 0" class="col-span-full text-center py-12 text-ink flex flex-col items-center">
+                    <p class="mb-4">Your wishlist is empty.</p>
+                    <a routerLink="/products" class="btn-primary inline-block">Back to Shopping</a>
                   </div>
                 </div>
               </div>
@@ -496,6 +499,10 @@ export class AccountComponent implements OnInit {
             }
         });
     }
+  }
+
+  redeemPoints(): void {
+    this.toastService.show('Points redemption feature coming soon!', 'success');
   }
 
   logout(): void {

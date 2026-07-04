@@ -117,6 +117,19 @@ export class AuthService {
     this.user$.next(null);
   }
 
+  // Password Management
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/reset-password`, { token, newPassword });
+  }
+
+  changePassword(oldPassword: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.usersUrl}/change-password`, { oldPassword, newPassword });
+  }
+
   // Helper to fetch user if token exists but user is null (page reload)
   private refreshUser() {
     this.http.get<User>(`${this.usersUrl}/me`).subscribe({

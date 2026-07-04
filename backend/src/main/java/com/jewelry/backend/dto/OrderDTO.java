@@ -12,9 +12,16 @@ public class OrderDTO {
     private String orderNumber;
     private List<OrderItemDTO> items;
     private BigDecimal total;
+    private BigDecimal subtotal;
+    private BigDecimal tax;
+    private BigDecimal shipping;
+    private BigDecimal discount;
+    private String appliedCoupon;
+    
     private String status;
     private LocalDate estimatedDelivery;
     private String trackingNumber;
+    private String internalNotes;
     private AddressDTO shippingAddress;
     private AddressDTO billingAddress;
     private String paymentMethod;

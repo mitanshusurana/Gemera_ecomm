@@ -104,6 +104,10 @@ public class RFQService {
 
     @Transactional
     public RFQQuote createQuote(UUID id, java.math.BigDecimal proposedPrice, String notes) {
+        if (proposedPrice == null || proposedPrice.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Proposed price must be greater than zero");
+        }
+        
         RFQ rfq = getRequest(id);
 
         RFQQuote quote = new RFQQuote();
@@ -151,5 +155,13 @@ public class RFQService {
             rfq.setAdditionalNotes(rfq.getAdditionalNotes() + "\nNegotiation: " + request.getNotes());
         }
         rfqRepository.save(rfq);
+    }
+
+    public long getTotalCount() {
+        return rfqRepository.count();
+    }
+
+    public long getCountByStatus(String status) {
+        return rfqRepository.countByStatus(status);
     }
 }
