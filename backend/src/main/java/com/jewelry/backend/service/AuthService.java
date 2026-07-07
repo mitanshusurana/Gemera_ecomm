@@ -34,6 +34,9 @@ public class AuthService {
     EntityMapper entityMapper;
 
     @Autowired
+    RefreshTokenService refreshTokenService;
+
+    @Autowired
     org.springframework.mail.javamail.JavaMailSender mailSender;
 
     @org.springframework.beans.factory.annotation.Value("${frontend.url:http://localhost:4200}")
@@ -59,7 +62,8 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword()));
 
         String jwt = jwtUtils.generateJwtToken(authentication);
-        return new AuthResponse(jwt, entityMapper.toUserDTO(savedUser));
+        com.jewelry.backend.entity.RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getId());
+        return new AuthResponse(jwt, refreshToken.getToken(), entityMapper.toUserDTO(savedUser));
     }
 
     public AuthResponse login(LoginRequest loginRequest) {
@@ -70,17 +74,19 @@ public class AuthService {
         String jwt = jwtUtils.generateJwtToken(authentication);
 
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow();
-        return new AuthResponse(jwt, entityMapper.toUserDTO(user));
+        com.jewelry.backend.entity.RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        return new AuthResponse(jwt, refreshToken.getToken(), entityMapper.toUserDTO(user));
     }
 
-    public AuthResponse refreshToken(String refreshToken) {
-        if (jwtUtils.validateJwtToken(refreshToken)) {
-            String email = jwtUtils.getUserNameFromJwtToken(refreshToken);
-            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-            String newToken = jwtUtils.generateTokenFromEmail(email);
-            return new AuthResponse(newToken, entityMapper.toUserDTO(user));
-        }
-        throw new RuntimeException("Invalid Refresh Token");
+    public AuthResponse refreshToken(String requestRefreshToken) {
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(com.jewelry.backend.entity.RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtils.generateTokenFromEmail(user.getEmail());
+                    return new AuthResponse(token, requestRefreshToken, entityMapper.toUserDTO(user));
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 
     public void forgotPassword(String email) {

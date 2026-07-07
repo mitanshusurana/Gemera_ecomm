@@ -40,6 +40,9 @@ public class OrderService {
     @Autowired
     ObjectMapper objectMapper;
 
+    @Autowired
+    PaymentService paymentService;
+
     @Transactional
     public Order createOrder(String userEmail, CreateOrderRequest request) {
         if (request.getPaymentDetails() != null && request.getPaymentDetails().getRazorpay_order_id() != null) {
@@ -83,8 +86,19 @@ public class OrderService {
             order.setRazorpayOrderId(request.getPaymentDetails().getRazorpay_order_id());
             order.setRazorpayPaymentId(request.getPaymentDetails().getRazorpay_payment_id());
             order.setRazorpaySignature(request.getPaymentDetails().getRazorpay_signature());
-            // Assume payment is successful if details are provided (for now)
-            order.setStatus("PAID");
+
+            // Cryptographically verify the payment signature
+            com.jewelry.backend.dto.VerifyPaymentRequest verifyReq = new com.jewelry.backend.dto.VerifyPaymentRequest();
+            verifyReq.setOrderId(request.getPaymentDetails().getRazorpay_order_id());
+            verifyReq.setPaymentId(request.getPaymentDetails().getRazorpay_payment_id());
+            verifyReq.setPaymentToken(request.getPaymentDetails().getRazorpay_signature());
+            
+            try {
+                paymentService.verifyPayment(verifyReq);
+                order.setStatus("PAID");
+            } catch (Exception e) {
+                order.setStatus("PAYMENT_FAILED");
+            }
         } else if ("COD".equalsIgnoreCase(request.getPaymentMethod()) || "CASH_ON_DELIVERY".equalsIgnoreCase(request.getPaymentMethod())) {
             // Cash on delivery is considered confirmed but not paid yet
             order.setStatus("CONFIRMED");

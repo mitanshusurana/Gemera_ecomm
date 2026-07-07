@@ -112,6 +112,7 @@ public class SecurityConfig {
       // Authorization rules
       .authorizeHttpRequests(auth ->
         auth.requestMatchers("/api/v1/auth/**").permitAll()
+          .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/settings").permitAll()

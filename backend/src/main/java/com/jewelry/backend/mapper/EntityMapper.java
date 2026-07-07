@@ -695,4 +695,22 @@ public class EntityMapper {
         }
         return dto;
     }
+
+    // --- Review ---
+    public ReviewDTO toReviewDTO(Review review) {
+        if (review == null) return null;
+        ReviewDTO dto = new ReviewDTO();
+        dto.setId(review.getId());
+        dto.setRating(review.getRating());
+        dto.setComment(review.getComment());
+        if (review.getProduct() != null) {
+            dto.setProductId(review.getProduct().getId());
+        }
+        if (review.getUser() != null) {
+            dto.setUserId(review.getUser().getId());
+            dto.setUserName(review.getUser().getFirstName() + " " + review.getUser().getLastName());
+        }
+        dto.setCreatedAt(review.getCreatedAt());
+        return dto;
+    }
 }

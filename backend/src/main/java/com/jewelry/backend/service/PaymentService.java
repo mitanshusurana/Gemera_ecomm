@@ -84,15 +84,15 @@ public class PaymentService {
         return "Payment initialized for " + request.getPaymentMethod();
     }
 
-    public Object verifyPayment(VerifyPaymentRequest request) {
+    public boolean verifyPayment(VerifyPaymentRequest request) {
         // Verify signature
         try {
-            String signature = request.getPaymentToken(); // Assuming this holds signature
+            String signature = request.getPaymentToken();
             String paymentId = request.getPaymentId();
-            String orderId = request.getOrderId(); // Needed for verification
+            String orderId = request.getOrderId();
 
             // If mocking (no secret), always true
-            if ("mock_secret".equals(razorpayKeySecret)) return "Payment Verified";
+            if ("mock_secret".equals(razorpayKeySecret)) return true;
 
             JSONObject options = new JSONObject();
             options.put("razorpay_order_id", orderId);
@@ -100,10 +100,13 @@ public class PaymentService {
             options.put("razorpay_signature", signature);
 
             boolean status = Utils.verifyPaymentSignature(options, razorpayKeySecret);
-            return status ? "Payment Verified" : "Verification Failed";
+            if (!status) {
+                throw new RuntimeException("Invalid Razorpay signature");
+            }
+            return true;
         } catch (Exception e) {
              LOGGER.severe("Payment verification failed: " + e.getMessage());
-             return "Verification Error: " + e.getMessage();
+             throw new RuntimeException("Payment verification failed", e);
         }
     }
 

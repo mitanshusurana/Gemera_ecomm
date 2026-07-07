@@ -25,7 +25,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         java.util.List<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = new ArrayList<>();
         if (user.getRole() != null) {
-            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(user.getRole()));
+            String roleName = user.getRole();
+            if (!roleName.startsWith("ROLE_")) {
+                roleName = "ROLE_" + roleName;
+            }
+            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(roleName));
         }
 
         return new org.springframework.security.core.userdetails.User(

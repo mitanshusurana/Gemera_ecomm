@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.security.Principal;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -72,6 +73,25 @@ public class ProductController {
                 .header("Link", "<https://www.caratloop.com/products/" + id + ">; rel=\"canonical\"")
                 .header("X-Robots-Tag", "index, follow")
                 .body(productDTO);
+    }
+
+    @PostMapping("/{id}/view")
+    @Operation(summary = "Log product view for recommendations")
+    public ResponseEntity<Void> logProductView(@PathVariable UUID id, Principal principal) {
+        if (principal != null) {
+            productService.logProductView(principal.getName(), id);
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/similar")
+    @Operation(summary = "Get similar products")
+    public ResponseEntity<Page<ProductDTO>> getSimilarProducts(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size) {
+        Page<Product> products = productService.getSimilarProducts(id, PageRequest.of(page, size));
+        return ResponseEntity.ok(products.map(entityMapper::toProductDTO));
     }
 
     @GetMapping("/categories")
