@@ -45,19 +45,22 @@
       <div *ngFor="let customer of customers" class="flex flex-col gap-4 bg-surface dark:bg-surface p-5 rounded-xl shadow-sm border border-ink dark:border-ink hover:shadow-md transition-shadow">
         <div class="flex justify-between items-start">
           <div class="flex items-start gap-4">
-            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-14 border-2 border-primary/20" [ngStyle]="{'background-image': 'url(' + customer.avatar + ')'}"></div>
+            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-14 border-2 border-primary/20 flex items-center justify-center bg-gray-200">
+               <span class="text-xl font-bold text-gray-600">{{ customer.firstName ? customer.firstName.charAt(0) : 'U' }}</span>
+            </div>
             <div class="flex flex-col">
               <div class="flex items-center gap-2">
-                <p class="text-ink dark:text-ink text-lg font-bold">{{ customer.name }}</p>
+                <p class="text-ink dark:text-ink text-lg font-bold">{{ customer.firstName }} {{ customer.lastName }}</p>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                       [ngClass]="{
-                        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': customer.tier === 'VIP',
-                        'bg-surface text-ink dark:bg-surface dark:text-ink': customer.tier !== 'VIP'
+                        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': customer.tier === 'VIP' || customer.tier === 'Gold',
+                        'bg-surface text-ink dark:bg-surface dark:text-ink': customer.tier !== 'VIP' && customer.tier !== 'Gold'
                       }">
-                  {{ customer.tier }}
+                  {{ customer.tier || 'Standard' }}
                 </span>
               </div>
-              <p class="text-ink dark:text-ink text-sm">Last Active: {{ customer.lastActive }}</p>
+              <p class="text-ink dark:text-ink text-sm">{{ customer.email }}</p>
+              <p class="text-ink dark:text-ink text-xs">{{ customer.phoneNumber || 'No phone' }}</p>
             </div>
           </div>
           <div class="text-right">
@@ -68,11 +71,8 @@
 
         <div class="flex flex-col gap-2">
           <div class="flex justify-between items-end">
-            <p class="text-ink dark:text-ink text-sm font-semibold">Treasure Plan</p>
-            <p class="text-ink dark:text-ink text-xs">{{ customer.planProgress }}% Complete</p>
-          </div>
-          <div class="w-full bg-surface dark:bg-surface rounded-full h-2.5">
-            <div class="bg-primary h-2.5 rounded-full" [ngStyle]="{'width': customer.planProgress + '%'}"></div>
+            <p class="text-ink dark:text-ink text-sm font-semibold">CRM Status</p>
+            <p class="text-ink dark:text-ink text-xs">{{ customer.role || 'USER' }}</p>
           </div>
         </div>
 
@@ -84,6 +84,24 @@
           <button class="flex-1 flex items-center justify-center gap-2 bg-surface dark:bg-surface hover:bg-surface dark:hover:bg-surface text-ink dark:text-ink py-2.5 rounded-lg font-semibold text-sm transition-colors">
             <span class="material-symbols-outlined text-lg">visibility</span>
             Profile
+          </button>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="mt-4 flex items-center justify-between pb-8">
+        <div class="hidden sm:block">
+          <p class="text-sm text-ink">
+            Showing page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
+            (<span class="font-semibold">{{ totalElements }}</span> total customers)
+          </p>
+        </div>
+        <div class="flex flex-1 justify-between sm:justify-end gap-2">
+          <button (click)="prevPage()" [disabled]="currentPage === 0" [class.opacity-50]="currentPage === 0" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            Previous
+          </button>
+          <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1" [class.opacity-50]="currentPage >= totalPages - 1" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            Next
           </button>
         </div>
       </div>

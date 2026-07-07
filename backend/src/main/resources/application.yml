@@ -1,32 +1,35 @@
 app:
   admin:
-    email: ${ADMIN_EMAIL:admin@gemara.com}
+    email: ${ADMIN_EMAIL:admin@caratloop.com}
     password: ${ADMIN_PASSWORD:admin123}
   cart:
     tax-rate: ${CART_TAX_RATE:0.10}
     shipping-threshold: ${CART_SHIPPING_THRESHOLD:1000}
     standard-shipping-fee: ${CART_STANDARD_SHIPPING_FEE:50}
     gift-wrap-fee: ${CART_GIFT_WRAP_FEE:5}
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
 spring:
   application:
     name: jewelry-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:jewelry_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jewelry_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.postgresql.Driver}
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
+        dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:user@example.com}
-    password: ${MAIL_PASSWORD:password}
+    username: ${MAIL_USERNAME:mitanshusurana@gmail.com}
+    password: ${MAIL_PASSWORD:changeme}
+    from: ${MAIL_FROM:mitanshusurana@gmail.com}
     properties:
       mail:
         smtp:
@@ -35,16 +38,22 @@ spring:
             enable: true
   security:
     jwt:
-      secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      secret: ${JWT_SECRET:b8c3a9f2e4d7601f5c82a3b9e6d4f10c7a5b2e8d0f9c6a3b7e4d2f8c0a5b9e3d6}
       expiration-ms: 86400000 # 24 hours
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+
 management:
   health:
     mail:
       enabled: false
+
+goldapi:
+  key: ${GOLDAPI_KEY:demo}
+  base-url: https://www.goldapi.io/api
+  cache-minutes: 15
 
 cloudflare:
   r2:

@@ -27,6 +27,9 @@ public class UserController {
     UserService userService;
 
     @Autowired
+    com.jewelry.backend.service.CartService cartService;
+
+    @Autowired
     EntityMapper entityMapper;
 
     @GetMapping("/me")
@@ -72,5 +75,33 @@ public class UserController {
     public ResponseEntity<UserDTO> deleteAddress(@PathVariable UUID id, Principal principal) {
         User user = userService.deleteAddress(principal.getName(), id);
         return ResponseEntity.ok(entityMapper.toUserDTO(user));
+    }
+
+    @Autowired
+    com.jewelry.backend.service.AuthService authService;
+
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password")
+    public ResponseEntity<Map<String, String>> changePassword(@RequestBody Map<String, String> request, Principal principal) {
+        authService.changePassword(principal.getName(), request.get("oldPassword"), request.get("newPassword"));
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
+    }
+
+    @GetMapping("/wishlist")
+    @Operation(summary = "Get user wishlist")
+    public ResponseEntity<com.jewelry.backend.dto.CartDTO> getWishlist(Principal principal) {
+        return ResponseEntity.ok(entityMapper.toCartDTO(cartService.getCart(principal.getName())));
+    }
+
+    @PostMapping("/wishlist")
+    @Operation(summary = "Add item to wishlist")
+    public ResponseEntity<com.jewelry.backend.dto.CartDTO> addToWishlist(@RequestBody com.jewelry.backend.dto.WishlistRequest request, Principal principal) {
+        return ResponseEntity.ok(entityMapper.toCartDTO(cartService.addToWishlist(principal.getName(), UUID.fromString(request.getProductId()))));
+    }
+
+    @DeleteMapping("/wishlist/{productId}")
+    @Operation(summary = "Remove item from wishlist")
+    public ResponseEntity<com.jewelry.backend.dto.CartDTO> removeFromWishlist(@PathVariable UUID productId, Principal principal) {
+        return ResponseEntity.ok(entityMapper.toCartDTO(cartService.removeFromWishlist(principal.getName(), productId)));
     }
 }

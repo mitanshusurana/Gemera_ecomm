@@ -54,7 +54,7 @@ ENV PORT=4000 \
 
 # Copy environment substitution script
 COPY env-subst.sh ./
-RUN chmod +x ./env-subst.sh
+RUN sed -i 's/\r$//' ./env-subst.sh && chmod +x ./env-subst.sh
 
 # Verify the final file structure
 RUN echo "Final dist structure:" && \

@@ -15,6 +15,14 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 
+import com.jewelry.backend.entity.UserProductView;
+import com.jewelry.backend.repository.UserProductViewRepository;
+import com.jewelry.backend.repository.UserRepository;
+import com.jewelry.backend.entity.User;
+import java.time.LocalDateTime;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+
 import java.math.BigDecimal;
 import java.beans.PropertyDescriptor;
 import java.util.HashSet;
@@ -35,6 +43,12 @@ public class ProductService {
 
     @Autowired
     EntityMapper entityMapper;
+
+    @Autowired
+    UserProductViewRepository userProductViewRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
 
@@ -197,5 +211,32 @@ public class ProductService {
 
     public void deleteProduct(UUID id) {
         productRepository.deleteById(id);
+    }
+
+    public void logProductView(String email, UUID productId) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        Product product = getProductById(productId);
+
+        UserProductView view = userProductViewRepository.findByUserIdAndProductId(user.getId(), productId)
+            .orElse(new UserProductView());
+            
+        view.setUser(user);
+        view.setProduct(product);
+        view.setViewedAt(LocalDateTime.now());
+        
+        userProductViewRepository.save(view);
+    }
+
+    public Page<Product> getSimilarProducts(UUID productId, Pageable pageable) {
+        Product product = getProductById(productId);
+        if (product.getPrice() == null) {
+             return Page.empty(); // Or fallback logic
+        }
+        
+        BigDecimal minPrice = product.getPrice().multiply(new BigDecimal("0.8")); // -20%
+        BigDecimal maxPrice = product.getPrice().multiply(new BigDecimal("1.2")); // +20%
+        
+        return productRepository.findSimilarProducts(product.getCategory(), productId, minPrice, maxPrice, pageable);
     }
 }

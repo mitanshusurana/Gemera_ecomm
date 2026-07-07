@@ -9,5 +9,5 @@ FROM nginx:alpine
 COPY --from=build /app/dist/admin/browser /usr/share/nginx/html
 COPY nginx-custom.conf /etc/nginx/conf.d/default.conf
 COPY admin-env-subst.sh /docker-entrypoint.d/99-env-subst.sh
-RUN chmod +x /docker-entrypoint.d/99-env-subst.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.d/99-env-subst.sh && chmod +x /docker-entrypoint.d/99-env-subst.sh
 EXPOSE 80

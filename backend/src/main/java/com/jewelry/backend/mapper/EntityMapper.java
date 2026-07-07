@@ -191,17 +191,6 @@ public class EntityMapper {
             }).collect(Collectors.toList()));
         }
 
-        if (dto.getPriceBreakup() != null) {
-            Product.PriceBreakup pb = new Product.PriceBreakup();
-            pb.setMetal(dto.getPriceBreakup().getMetal());
-            pb.setGemstone(dto.getPriceBreakup().getGemstone());
-            pb.setMakingCharges(dto.getPriceBreakup().getMakingCharges());
-            pb.setTax(dto.getPriceBreakup().getTax());
-            pb.setTotal(dto.getPriceBreakup().getTotal());
-            pb.setDiscount(dto.getPriceBreakup().getDiscount());
-            pb.setGrandTotal(dto.getPriceBreakup().getGrandTotal());
-            product.setPriceBreakup(pb);
-        }
 
         return product;
     }
@@ -393,17 +382,6 @@ public class EntityMapper {
             }).collect(Collectors.toList()));
         }
 
-        if (product.getPriceBreakup() != null) {
-            ProductDTO.PriceBreakupDTO pbDto = new ProductDTO.PriceBreakupDTO();
-            pbDto.setMetal(product.getPriceBreakup().getMetal());
-            pbDto.setGemstone(product.getPriceBreakup().getGemstone());
-            pbDto.setMakingCharges(product.getPriceBreakup().getMakingCharges());
-            pbDto.setTax(product.getPriceBreakup().getTax());
-            pbDto.setTotal(product.getPriceBreakup().getTotal());
-            pbDto.setDiscount(product.getPriceBreakup().getDiscount());
-            pbDto.setGrandTotal(product.getPriceBreakup().getGrandTotal());
-            dto.setPriceBreakup(pbDto);
-        }
 
         return dto;
     }
@@ -487,6 +465,13 @@ public class EntityMapper {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
+
+        dto.setSubtotal(order.getSubtotal());
+        dto.setTax(order.getTax());
+        dto.setShipping(order.getShipping());
+        dto.setDiscount(order.getDiscount());
+        dto.setAppliedCoupon(order.getAppliedCoupon());
+        dto.setInternalNotes(order.getInternalNotes());
 
         return dto;
     }
@@ -708,6 +693,24 @@ public class EntityMapper {
                     .map(this::toCategoryDTO)
                     .collect(Collectors.toList()));
         }
+        return dto;
+    }
+
+    // --- Review ---
+    public ReviewDTO toReviewDTO(Review review) {
+        if (review == null) return null;
+        ReviewDTO dto = new ReviewDTO();
+        dto.setId(review.getId());
+        dto.setRating(review.getRating());
+        dto.setComment(review.getComment());
+        if (review.getProduct() != null) {
+            dto.setProductId(review.getProduct().getId());
+        }
+        if (review.getUser() != null) {
+            dto.setUserId(review.getUser().getId());
+            dto.setUserName(review.getUser().getFirstName() + " " + review.getUser().getLastName());
+        }
+        dto.setCreatedAt(review.getCreatedAt());
         return dto;
     }
 }

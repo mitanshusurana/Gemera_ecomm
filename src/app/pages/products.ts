@@ -71,6 +71,17 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               </div>
 
               <div class="space-y-6">
+                <!-- Search Filter -->
+                <div class="card p-6">
+                  <h3 class="font-semibold text-ink mb-4">Search</h3>
+                  <div class="relative">
+                    <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="loadProducts()" placeholder="Search products..." class="input-field pl-10 w-full" />
+                    <span class="absolute left-3 top-3.5 text-gray-400">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                  </div>
+                </div>
+
                 <!-- Category Filter -->
                 <div class="card p-6">
                   <h3 class="font-semibold text-ink mb-4">Categories</h3>
@@ -144,21 +155,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 <div class="card p-6">
                   <h3 class="font-semibold text-ink mb-4">Metal Type</h3>
                   <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-ink">Gold</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-ink">Platinum</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-ink">Silver</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-ink">White Gold</span>
+                    <label *ngFor="let metal of metalTypes" class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedMetals().includes(metal)" (change)="toggleFilter('metal', metal)" />
+                      <span class="text-sm text-ink">{{ metal }}</span>
                     </label>
                   </div>
                 </div>
@@ -167,17 +166,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 <div class="card p-6">
                   <h3 class="font-semibold text-ink mb-4">Certification</h3>
                   <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-ink">GIA</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-ink">IGI</span>
-                    </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" />
-                      <span class="text-sm text-ink">AGS</span>
+                    <label *ngFor="let cert of certificationsList" class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" class="w-4 h-4" [checked]="selectedCertifications().includes(cert)" (change)="toggleFilter('certification', cert)" />
+                      <span class="text-sm text-ink">{{ cert }}</span>
                     </label>
                   </div>
                 </div>
@@ -267,7 +258,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <div *ngIf="!product.imageUrl && !product.images?.[0]" class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
                     <span class="text-4xl">{{ getProductEmoji(product.category) }}</span>
                   </div>
-                  <button (click)="$event.preventDefault(); $event.stopPropagation()" class="absolute top-4 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300">
+                  <button (click)="handleWishlist($event, product.id)" class="absolute top-4 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
@@ -282,9 +273,12 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
                 <!-- Product Info -->
                 <div class="p-6">
-                  <p class="text-xs text-gold-600 font-semibold uppercase tracking-wider mb-1">
-                    {{ product.category }}
-                  </p>
+                  <div class="flex justify-between items-start mb-1">
+                    <p class="text-xs text-gold-600 font-semibold uppercase tracking-wider">
+                      {{ product.category }}
+                    </p>
+                    <span *ngIf="product.isBestSeller || (product.reviewCount && product.reviewCount > 50)" class="bg-gold-100 text-gold-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Best Seller</span>
+                  </div>
                   <h3 class="font-semibold text-ink mb-3 line-clamp-2">
                     {{ product.name }}
                   </h3>
@@ -292,7 +286,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <!-- Rating -->
                   <div class="flex items-center gap-2 mb-4">
                     <div class="flex gap-1">
-                      <span *ngFor="let _ of [1,2,3,4,5]" class="text-gold-500 text-xs">★</span>
+                      <span *ngFor="let i of [1,2,3,4,5]" [ngClass]="{'text-gold-500': i <= (product.rating || 5), 'text-diamond-300': i > (product.rating || 5)}" class="text-xs">★</span>
                     </div>
                     <span class="text-xs text-ink">({{ product.reviewCount }})</span>
                   </div>
@@ -425,6 +419,8 @@ export class ProductsComponent implements OnInit {
   occasionsList = OCCASIONS_LIST;
   stylesList = STYLES_LIST;
   gemstoneTypes: any[] = [];
+  metalTypes = ['Gold', 'Platinum', 'Silver', 'White Gold'];
+  certificationsList = ['GIA', 'IGI', 'AGS', 'BIS'];
 
   private productService = inject(ProductService);
   private cartService = inject(CartService);
@@ -445,6 +441,9 @@ export class ProductsComponent implements OnInit {
   selectedStyles = signal<string[]>([]);
   selectedGemstones = signal<string[]>([]);
   selectedPriceRanges = signal<string[]>([]);
+  selectedMetals = signal<string[]>([]);
+  selectedCertifications = signal<string[]>([]);
+  searchQuery = signal<string>('');
   products = signal<Product[]>([]);
   sortBy = "newest";
   isLoading = signal(false);
@@ -539,7 +538,10 @@ export class ProductsComponent implements OnInit {
         // Pass custom filters to API (mock service will likely ignore but good for structure)
         occasions: this.selectedOccasions().join(','),
         styles: this.selectedStyles().join(','),
-        subCategory: this.selectedGemstones().length > 0 ? this.selectedGemstones().join(',') : undefined
+        subCategory: this.selectedGemstones().length > 0 ? this.selectedGemstones().join(',') : undefined,
+        metals: this.selectedMetals().join(','),
+        certifications: this.selectedCertifications().join(','),
+        search: this.searchQuery() || undefined
     };
 
     // API uses 0-indexed pages
@@ -576,7 +578,7 @@ export class ProductsComponent implements OnInit {
     this.loadProducts();
   }
 
-  toggleFilter(type: 'occasion' | 'style' | 'gemstone', value: string): void {
+  toggleFilter(type: 'occasion' | 'style' | 'gemstone' | 'metal' | 'certification', value: string): void {
       if (type === 'occasion') {
           const current = this.selectedOccasions();
           if (current.includes(value)) {
@@ -597,6 +599,20 @@ export class ProductsComponent implements OnInit {
               this.selectedGemstones.set(current.filter(v => v !== value));
           } else {
               this.selectedGemstones.set([...current, value]);
+          }
+      } else if (type === 'metal') {
+          const current = this.selectedMetals();
+          if (current.includes(value)) {
+              this.selectedMetals.set(current.filter(v => v !== value));
+          } else {
+              this.selectedMetals.set([...current, value]);
+          }
+      } else if (type === 'certification') {
+          const current = this.selectedCertifications();
+          if (current.includes(value)) {
+              this.selectedCertifications.set(current.filter(v => v !== value));
+          } else {
+              this.selectedCertifications.set([...current, value]);
           }
       }
       this.pagination.update(p => ({ ...p, currentPage: 1 }));
@@ -623,6 +639,12 @@ export class ProductsComponent implements OnInit {
     this.sortBy = "newest";
     this.pagination.update(p => ({ ...p, currentPage: 1 }));
     this.loadProducts();
+  }
+
+  handleWishlist(event: Event, productId: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.toastService.show('Added to Wishlist', 'success');
   }
 
   handleAddToCart(event: Event, product: Product): void {

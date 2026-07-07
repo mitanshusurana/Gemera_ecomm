@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService } from '../services/cart.service';
+import { ToastService } from '../services/toast.service';
 import { Cart, CartItem } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
@@ -175,10 +176,24 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <span class="text-green-600 font-bold mt-0.5">🔒</span>
                   <p class="text-sm text-ink font-semibold">Secure SSL encrypted checkout</p>
                 </div>
-                <!-- Stock Reservation Timer -->
-                <div class="mt-4 p-3 bg-red-50 text-red-700 text-sm font-semibold rounded flex items-center justify-center gap-2">
-                  <span>⏳</span>
-                  <span>Stock reserved for {{ timerString() }}</span>
+                <!-- Trust Badges -->
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
+                    <span class="text-lg">🛡️</span>
+                    <span class="text-xs font-semibold text-diamond-800">Fully Insured Shipping</span>
+                  </div>
+                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
+                    <span class="text-lg">💎</span>
+                    <span class="text-xs font-semibold text-diamond-800">Lifetime Exchange Policy</span>
+                  </div>
+                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
+                    <span class="text-lg">🔒</span>
+                    <span class="text-xs font-semibold text-diamond-800">Secure Checkout</span>
+                  </div>
+                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
+                    <span class="text-lg">✅</span>
+                    <span class="text-xs font-semibold text-diamond-800">Certificate of Authenticity</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -188,9 +203,11 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
     </div>
   `,
 })
-export class CartComponent implements OnInit, OnDestroy {
+export class CartComponent implements OnInit {
   cartService = inject(CartService);
   private currencyService = inject(CurrencyService);
+  private toastService = inject(ToastService);
+  private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
 
   cart = signal<Cart | null>(null);
@@ -204,18 +221,9 @@ export class CartComponent implements OnInit, OnDestroy {
   discount = computed(() => this.cart()?.discount || 0);
   total = computed(() => this.cart()?.total || 0);
 
-  // Timer Signal
-  timeLeft = signal(600); // 10 minutes in seconds
-  timerString = computed(() => {
-    const minutes = Math.floor(this.timeLeft() / 60);
-    const seconds = this.timeLeft() % 60;
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  });
 
-  private timerInterval: ReturnType<typeof setInterval> | undefined;
 
   ngOnInit(): void {
-    this.startTimer();
     this.cartService.cart()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((cart) => {
@@ -228,12 +236,6 @@ export class CartComponent implements OnInit, OnDestroy {
         }
     });
     this.cartService.getCart().subscribe();
-  }
-
-  ngOnDestroy(): void {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-    }
   }
 
   removeItem(itemId: string): void {
@@ -259,15 +261,20 @@ export class CartComponent implements OnInit, OnDestroy {
     this.cartService.updateCartOptions({ giftWrap: checked }).subscribe();
   }
 
-  startTimer(): void {
-    this.timerInterval = setInterval(() => {
-      if (this.timeLeft() > 0) {
-        this.timeLeft.set(this.timeLeft() - 1);
-      }
-    }, 1000);
-  }
-
   applyCoupon(code: string): void {
-      this.cartService.applyCoupon(code).subscribe();
+      if (!code) {
+          this.toastService.show('Please enter a coupon code.', 'error');
+          return;
+      }
+      this.cartService.applyCoupon(code).subscribe({
+          next: () => this.toastService.show('Coupon applied successfully.', 'success'),
+          error: (err) => {
+              if (err.status === 401 || err.status === 403) {
+                  this.toastService.show('Please log in to use coupons.', 'error');
+              } else {
+                  this.toastService.show('Invalid or expired coupon code.', 'error');
+              }
+          }
+      });
   }
 }

@@ -72,4 +72,12 @@ export class ProductService {
     const params = new HttpParams().set('pincode', pincode);
     return this.http.get<DeliveryAvailability>(`${this.baseUrl}/delivery-availability`, { params });
   }
+
+  getSimilarProducts(productId: string): Observable<PaginatedResponse<Product>> {
+    return this.http.get<PaginatedResponse<Product>>(`${this.baseUrl}/${productId}/similar`);
+  }
+
+  logProductView(productId: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${productId}/view`, {});
+  }
 }

@@ -4,23 +4,23 @@
     <div class="flex flex-wrap gap-4">
       <div class="flex min-w-[160px] flex-1 flex-col gap-1 rounded-xl p-5 bg-surface dark:bg-surface border border-ink dark:border-ink shadow-sm">
         <p class="text-ink dark:text-ink text-sm font-medium">Total Sales</p>
-        <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">$128,450</p>
+        <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">{{ stats ? (stats.totalSales | currency) : '...' }}</p>
         <p class="text-emerald-600 text-xs font-bold mt-1 flex items-center">
-          <span class="material-symbols-outlined text-xs mr-1">arrow_upward</span>12% vs last month
+          <span class="text-xs mr-1 text-ink">Total Orders: {{ stats ? stats.totalOrders : '...' }}</span>
         </p>
       </div>
       <div class="flex min-w-[160px] flex-1 flex-col gap-1 rounded-xl p-5 bg-surface dark:bg-surface border border-ink dark:border-ink shadow-sm">
         <p class="text-ink dark:text-ink text-sm font-medium">Active RFQs</p>
-        <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">42</p>
+        <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">{{ stats ? stats.totalRfqs : '...' }}</p>
         <p class="text-emerald-600 text-xs font-bold mt-1 flex items-center">
-          <span class="material-symbols-outlined text-xs mr-1">arrow_upward</span>5% vs yesterday
+          <span class="text-xs mr-1 text-amber-600">{{ stats ? stats.unreadRfqs : '...' }} Unread</span>
         </p>
       </div>
       <div class="flex min-w-[160px] flex-1 flex-col gap-1 rounded-xl p-5 bg-surface dark:bg-surface border border-ink dark:border-ink shadow-sm">
-        <p class="text-ink dark:text-ink text-sm font-medium">New Customers</p>
-        <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">156</p>
+        <p class="text-ink dark:text-ink text-sm font-medium">Total Customers</p>
+        <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">{{ stats ? stats.totalCustomers : '...' }}</p>
         <p class="text-emerald-600 text-xs font-bold mt-1 flex items-center">
-          <span class="material-symbols-outlined text-xs mr-1">arrow_upward</span>18% vs last week
+          <span class="material-symbols-outlined text-xs mr-1">arrow_upward</span>{{ stats ? stats.newCustomersThisMonth : '...' }} this month
         </p>
       </div>
     </div>
@@ -29,7 +29,7 @@
   <!-- Quick Actions -->
   <section>
     <h3 class="text-ink dark:text-ink text-lg font-bold mb-4">Quick Actions</h3>
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-4 gap-3">
       <button routerLink="/products/new" class="flex flex-col items-center justify-center gap-2 rounded-xl p-4 bg-primary text-surface shadow-lg shadow-primary/20">
         <span class="material-symbols-outlined">add_circle</span>
         <span class="text-xs font-semibold">Add Product</span>
@@ -41,6 +41,10 @@
       <button routerLink="/logs" class="flex flex-col items-center justify-center gap-2 rounded-xl p-4 bg-surface dark:bg-surface border border-ink dark:border-ink">
         <span class="material-symbols-outlined text-primary">health_metrics</span>
         <span class="text-xs font-semibold">Health</span>
+      </button>
+      <button (click)="triggerBackup()" class="flex flex-col items-center justify-center gap-2 rounded-xl p-4 bg-surface dark:bg-surface border border-ink dark:border-ink hover:bg-gray-50">
+        <span class="material-symbols-outlined text-amber-500">backup</span>
+        <span class="text-xs font-semibold">DB Backup</span>
       </button>
     </div>
   </section>

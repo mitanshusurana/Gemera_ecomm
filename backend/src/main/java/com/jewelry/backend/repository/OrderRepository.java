@@ -20,10 +20,14 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findByUserAndStatus(User user, String status, Pageable pageable);
     Page<Order> findByStatus(String status, Pageable pageable);
     Optional<Order> findByOrderNumber(String orderNumber);
+    Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 
     @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.status IN :statuses")
     BigDecimal sumTotalByStatusIn(@Param("statuses") List<String> statuses);
 
     @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.user = :user AND o.status IN :statuses")
     BigDecimal sumTotalByUserAndStatusIn(@Param("user") User user, @Param("statuses") List<String> statuses);
+
+    @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END FROM Order o JOIN o.items i WHERE o.user.id = :userId AND o.status = :status AND i.product.id = :productId")
+    boolean existsByUserIdAndStatusAndItemsProductId(@Param("userId") UUID userId, @Param("status") String status, @Param("productId") UUID productId);
 }

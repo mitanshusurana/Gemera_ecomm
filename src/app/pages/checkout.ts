@@ -107,7 +107,7 @@ import { COUNTRIES } from '../core/countries';
               </p>
             </div>
           </div>
-          <a routerLink="/login" class="btn-outline text-sm px-4 py-2"
+          <a routerLink="/login" [queryParams]="{returnUrl: '/checkout'}" class="btn-outline text-sm px-4 py-2"
             >Sign In</a
           >
         </div>
@@ -115,8 +115,21 @@ import { COUNTRIES } from '../core/countries';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Main Content -->
           <div class="lg:col-span-2">
+            <!-- Recovery State -->
+            <div *ngIf="isRecovering()" class="card p-8 animate-slideUp text-center mb-8">
+               <div class="flex justify-center mb-6">
+                 <div class="w-12 h-12 border-4 border-gold-200 border-t-gold-500 rounded-full animate-spin"></div>
+               </div>
+               <h2 class="text-2xl font-bold text-diamond-900 mb-3">Finalizing Your Order</h2>
+               <p class="text-ink mb-2">Your payment was received successfully. We're placing your order now.</p>
+               <p class="text-sm text-gold-600 font-semibold mb-8">Please do not refresh or close this page.</p>
+               <button *ngIf="!isProcessing()" (click)="retryOrderPlacement()" class="text-sm text-ink hover:text-gold-600 underline transition-colors">
+                 Try again manually
+               </button>
+            </div>
+
             <!-- Step 1: Shipping Address -->
-            <div *ngIf="currentStep() === 1" class="card p-8 animate-slideUp">
+            <div *ngIf="currentStep() === 1 && !isRecovering()" class="card p-8 animate-slideUp">
               <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-diamond-900">
                   Shipping Address
@@ -230,14 +243,14 @@ import { COUNTRIES } from '../core/countries';
 
                 <div *ngIf="!isAuthenticated()">
                   <div
-                    class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-2"
+                    class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-2 space-y-2"
                   >
-                    <p
-                      class="text-sm text-blue-800 font-medium flex items-center gap-2"
-                    >
-                      <span>✨</span> We will automatically create an account
-                      for you to track your order. Your login details will be
-                      emailed to you!
+                    <label class="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" [(ngModel)]="createAccountForGuest" name="createAccountForGuest" class="w-4 h-4 text-blue-600 rounded">
+                      <span class="text-sm text-blue-800 font-bold">Create an account for faster checkout next time</span>
+                    </label>
+                    <p class="text-xs text-blue-700 ml-7">
+                      Your login details will be emailed to you!
                     </p>
                   </div>
                 </div>
@@ -369,7 +382,7 @@ import { COUNTRIES } from '../core/countries';
             </div>
 
             <!-- Step 2: Order Review & Pay -->
-            <div *ngIf="currentStep() === 2" class="space-y-6 animate-slideUp">
+            <div *ngIf="currentStep() === 2 && !isRecovering()" class="space-y-6 animate-slideUp">
               <div class="card p-8">
                 <h2 class="text-2xl font-bold text-diamond-900 mb-6">
                   Review & Pay
@@ -475,6 +488,16 @@ import { COUNTRIES } from '../core/countries';
                       </label>
                     </div>
                   </div>
+
+                  <div class="border-t border-diamond-200 pt-6">
+                    <h3 class="font-semibold text-ink mb-4">
+                      Have a Coupon?
+                    </h3>
+                    <div class="flex gap-2">
+                      <input type="text" [(ngModel)]="couponCode" name="couponCode" placeholder="Enter coupon code" class="input-field flex-1" />
+                      <button type="button" (click)="applyCoupon()" class="btn-outline px-4 py-2 text-sm">Apply</button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -535,7 +558,7 @@ import { COUNTRIES } from '../core/countries';
                 </div>
                 <div class="flex justify-between">
                   <span class="text-ink">Shipping</span>
-                  <span class="font-semibold">FREE</span>
+                  <span class="font-semibold text-emerald-600">FREE</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-ink">Tax</span>
@@ -561,24 +584,27 @@ import { COUNTRIES } from '../core/countries';
                 }}</span>
               </div>
 
-              <div class="space-y-3">
-                <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">
-                    Free insured shipping worldwide
-                  </p>
+              <div class="space-y-4">
+                <div class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                  <span class="text-lg">🛡️</span>
+                  <div>
+                    <p class="text-sm font-bold text-diamond-900">Free Insured Shipping</p>
+                    <p class="text-xs text-ink mt-0.5">Your package is fully insured until delivery</p>
+                  </div>
                 </div>
-                <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">
-                    30-day money-back guarantee
-                  </p>
+                <div class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                  <span class="text-lg">🔄</span>
+                  <div>
+                    <p class="text-sm font-bold text-diamond-900">30-Day Returns</p>
+                    <p class="text-xs text-ink mt-0.5">No questions asked return policy</p>
+                  </div>
                 </div>
-                <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">
-                    Lifetime warranty included
-                  </p>
+                <div class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                  <span class="text-lg">💎</span>
+                  <div>
+                    <p class="text-sm font-bold text-diamond-900">Lifetime Warranty</p>
+                    <p class="text-xs text-ink mt-0.5">Guaranteed quality and craftsmanship</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -596,6 +622,11 @@ export class CheckoutComponent implements OnInit {
   cartTax = signal(0);
   cartDiscount = signal(0);
   isProcessing = signal(false);
+  isRecovering = signal(false);
+  pendingOrderData: any = null;
+  private recoveryTimeout: ReturnType<typeof setTimeout> | undefined;
+  createAccountForGuest = true;
+  couponCode = '';
 
   countriesList = COUNTRIES;
 
@@ -618,8 +649,6 @@ export class CheckoutComponent implements OnInit {
 
   // Address Selection
   savedAddresses = computed(() => {
-    let addrs: Address[] = [];
-    this.authService.user().subscribe((u) => (addrs = u?.addresses || []));
     return this.userAddresses();
   });
 
@@ -640,6 +669,17 @@ export class CheckoutComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const pending = sessionStorage.getItem('pendingOrderData');
+      if (pending) {
+        this.pendingOrderData = JSON.parse(pending);
+        this.isRecovering.set(true);
+        // Auto-retry order placement after 2 seconds
+        this.recoveryTimeout = setTimeout(() => {
+          this.retryOrderPlacement();
+        }, 2000);
+      }
+    }
     this.checkAuth();
     this.loadCartData();
     this.loadRazorpayScript();
@@ -972,7 +1012,7 @@ export class CheckoutComponent implements OnInit {
       key: environment.razorpayKey,
       amount: orderData.amount,
       currency: orderData.currency,
-      name: 'LuxeGems',
+      name: 'Caratloop',
       description: 'Jewellery Purchase',
       order_id: orderData.id,
       prefill: {
@@ -1056,10 +1096,34 @@ export class CheckoutComponent implements OnInit {
       error: (error) => {
         this.isProcessing.set(false);
         this.toastService.show(
-          'Payment successful but order placement failed. Please contact support.',
+          'Payment successful but order placement failed. We saved your payment details, please try again.',
           'error',
         );
+        this.pendingOrderData = orderData;
+        sessionStorage.setItem('pendingOrderData', JSON.stringify(orderData));
+        this.isRecovering.set(true);
       },
     });
+  }
+
+  retryOrderPlacement() {
+    if (!this.pendingOrderData) return;
+    this.isProcessing.set(true);
+    this.orderService.createOrder(this.pendingOrderData).subscribe({
+      next: (order) => {
+        sessionStorage.removeItem('pendingOrderData');
+        sessionStorage.setItem('lastOrderId', order.id);
+        this.router.navigate(['/order-confirmation']);
+      },
+      error: (error) => {
+        this.isProcessing.set(false);
+        this.toastService.show('Still unable to place order. Please contact support with your payment ID.', 'error');
+      }
+    });
+  }
+
+  applyCoupon() {
+    if (!this.couponCode) return;
+    this.toastService.show('Invalid or expired coupon code.', 'error');
   }
 }

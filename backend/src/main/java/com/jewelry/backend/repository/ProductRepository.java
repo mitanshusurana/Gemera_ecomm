@@ -35,4 +35,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     @Query("SELECT DISTINCT p.category FROM Product p")
     List<String> findAllCategories();
+
+    @Query("SELECT p FROM Product p WHERE p.category = :category AND p.id != :excludeId AND p.price BETWEEN :minPrice AND :maxPrice")
+    Page<Product> findSimilarProducts(
+        @Param("category") String category, 
+        @Param("excludeId") UUID excludeId, 
+        @Param("minPrice") BigDecimal minPrice, 
+        @Param("maxPrice") BigDecimal maxPrice, 
+        Pageable pageable);
 }

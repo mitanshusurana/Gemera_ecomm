@@ -5,28 +5,13 @@
     </div>
   </div>
 
-  <!-- Wizard Progress Bar -->
-  <nav aria-label="Progress" class="mb-8">
-    <ol role="list" class="flex items-center">
-      <li *ngFor="let step of [1, 2, 3, 4, 5, 6]; let i = index" [class.hidden]="step === 6 && (selectedCategory !== 'Gemstones' && selectedCategory !== 'gemstones')" class="relative pr-8 sm:pr-20">
-        <div class="absolute inset-0 flex items-center" aria-hidden="true">
-          <div class="h-0.5 w-full" [ngClass]="currentStep > step ? 'bg-emerald-500' : 'bg-gray-200'"></div>
-        </div>
-        <button type="button" (click)="goToStep(step)"
-                class="relative flex h-8 w-8 items-center justify-center rounded-full"
-                [ngClass]="currentStep === step ? 'bg-emerald-500 ring-2 ring-emerald-500 ring-offset-2' : (currentStep > step ? 'bg-emerald-500' : 'bg-white border-2 border-gray-300')">
-          <span *ngIf="currentStep > step" class="text-white">✓</span>
-          <span *ngIf="currentStep <= step" [ngClass]="currentStep === step ? 'text-white font-bold' : 'text-gray-500'">{{ step }}</span>
-        </button>
-      </li>
-    </ol>
-  </nav>
+  <!-- Single Page Form (Streamlined from Wizard) -->
 
   <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="space-y-6 bg-surface shadow sm:rounded-lg p-6">
 
     <!-- Step 1: Basic Information -->
-    <div *ngIf="currentStep === 1">
-      <h3 class="text-lg font-medium leading-6 text-ink mb-4">Step 1: Basic Information</h3>
+    <div class="border-b border-gray-200 pb-8 mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-4">1. Basic Information</h3>
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
         <div class="sm:col-span-6">
           <label class="block text-sm font-medium text-ink">Category *</label>
@@ -67,8 +52,8 @@
     </div>
 
     <!-- Step 2: Inventory & Verification -->
-    <div *ngIf="currentStep === 2">
-      <h3 class="text-lg font-medium leading-6 text-ink mb-4">Step 2: Inventory & Verification</h3>
+    <div class="border-b border-gray-200 pb-8 mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-4">2. Inventory & Verification</h3>
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
         <div class="sm:col-span-3">
           <label class="block text-sm font-medium text-ink">Inventory Ownership</label>
@@ -101,8 +86,8 @@
     </div>
 
     <!-- Step 3: Media Uploads -->
-    <div *ngIf="currentStep === 3">
-      <h3 class="text-lg font-medium leading-6 text-ink mb-4">Step 3: Media Uploads</h3>
+    <div class="border-b border-gray-200 pb-8 mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-4">3. Media Uploads</h3>
       <div class="space-y-6">
         <div>
           <label class="block text-sm font-medium text-ink">Add Image Files</label>
@@ -132,8 +117,8 @@
     </div>
 
     <!-- Step 4: Price Breakup -->
-    <div *ngIf="currentStep === 4" formGroupName="priceBreakup">
-      <h3 class="text-lg font-medium leading-6 text-ink mb-4">Step 4: Price Breakup <span class="text-sm font-normal text-gray-500">(Optional breakdown)</span></h3>
+    <div formGroupName="priceBreakup" class="border-b border-gray-200 pb-8 mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-4">4. Price Breakup <span class="text-sm font-normal text-gray-500">(Optional breakdown)</span></h3>
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
         <div class="sm:col-span-3">
           <label class="block text-sm font-medium text-ink">Metal Price</label>
@@ -159,8 +144,8 @@
     </div>
 
     <!-- Step 5: Loose Gemstone Details -->
-    <div *ngIf="currentStep === 5 && (selectedCategory === 'Gemstones' || selectedCategory === 'gemstones')">
-      <h3 class="text-lg font-medium leading-6 text-ink mb-4">Step 5: Loose Gemstone Details</h3>
+    <div *ngIf="selectedCategory === 'Gemstones' || selectedCategory === 'gemstones'" class="border-b border-gray-200 pb-8 mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-4">5. Loose Gemstone Details</h3>
 
       <!-- Identification -->
       <div class="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
@@ -309,8 +294,8 @@
     </div>
 
     <!-- Final Step: Customization Options -->
-    <div *ngIf="(currentStep === 5 && (selectedCategory !== 'Gemstones' && selectedCategory !== 'gemstones')) || currentStep === 6">
-      <h3 class="text-lg font-medium leading-6 text-ink mb-4">Final Step: Customization Options</h3>
+    <div *ngIf="selectedCategory !== 'Gemstones' && selectedCategory !== 'gemstones'" class="mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-4">Final Step: Customization Options</h3>
       <p class="text-sm text-gray-500 mb-4">Add custom variations like metal color, sizing, or personalization.</p>
 
       <button type="button" (click)="addCustomizationOption()" class="mb-4 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-ink bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
@@ -344,15 +329,9 @@
         <button type="button" routerLink="/products" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
           Cancel
         </button>
-        <button type="button" (click)="prevStep()" [disabled]="currentStep === 1" class="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md shadow-sm text-sm font-medium hover:bg-gray-200 disabled:opacity-50">
-          Previous
-        </button>
       </div>
 
       <div class="flex space-x-3">
-        <button type="button" *ngIf="currentStep < totalSteps" (click)="nextStep()" class="px-4 py-2 bg-emerald-600 text-white border border-transparent rounded-md shadow-sm text-sm font-bold hover:bg-emerald-700">
-          Next Step
-        </button>
         <button type="button" class="px-4 py-2 border border-emerald-300 text-emerald-700 bg-emerald-50 rounded-md shadow-sm text-sm font-medium hover:bg-emerald-100">
           Save as Draft
         </button>

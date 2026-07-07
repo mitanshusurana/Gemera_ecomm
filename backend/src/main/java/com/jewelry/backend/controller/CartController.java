@@ -62,15 +62,4 @@ public class CartController {
         return ResponseEntity.ok(entityMapper.toCartDTO(cartService.updateCartOptions(principal.getName(), request.isGiftWrap())));
     }
 
-    @PostMapping("/wishlist")
-    @Operation(summary = "Add item to wishlist")
-    public ResponseEntity<CartDTO> addToWishlist(@RequestBody WishlistRequest request, Principal principal) {
-        return ResponseEntity.ok(entityMapper.toCartDTO(cartService.addToWishlist(principal.getName(), UUID.fromString(request.getProductId()))));
-    }
-
-    @DeleteMapping("/wishlist/{productId}")
-    @Operation(summary = "Remove item from wishlist")
-    public ResponseEntity<CartDTO> removeFromWishlist(@PathVariable UUID productId, Principal principal) {
-        return ResponseEntity.ok(entityMapper.toCartDTO(cartService.removeFromWishlist(principal.getName(), productId)));
-    }
 }

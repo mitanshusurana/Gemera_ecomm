@@ -24,7 +24,6 @@ interface CollectionUI {
     CommonModule,
     NgOptimizedImage,
     RouterLink,
-    QuickViewModalComponent,
     CurrencyConvertPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -258,17 +257,6 @@ interface CollectionUI {
     </section>
 
 
-
-    <!-- Quick View Modal -->
-    <app-quick-view-modal
-      [isOpen]="quickViewOpen()"
-      [product]="selectedProduct()"
-      (close)="closeQuickView()"
-      (addToCart)="handleAddToCartFromModal($event)"
-      (viewDetails)="handleViewDetails($event)"
-    ></app-quick-view-modal>
-
-
   `,
 })
 export class HomeComponent implements OnInit {
@@ -279,10 +267,6 @@ export class HomeComponent implements OnInit {
   private toastService = inject(ToastService);
   private router = inject(Router);
 
-  quickViewOpen = signal(false);
-  selectedProduct = signal<ProductDetail | null>(null);
-
-  collections = signal<CollectionUI[]>([]);
   featuredProducts = signal<Product[]>([]);
 
   ngOnInit() {
@@ -295,16 +279,6 @@ export class HomeComponent implements OnInit {
         this.featuredProducts.set(res.content);
     });
 
-    // Fetch categories dynamically
-    this.productService.getCategories().subscribe(res => {
-        const mappedCollections: CollectionUI[] = res.categories.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            title: cat.displayName,
-            icon: this.getProductEmoji(cat.name)
-        }));
-        this.collections.set(mappedCollections);
-    });
   }
 
   getProductEmoji(category: string): string {
@@ -334,24 +308,6 @@ export class HomeComponent implements OnInit {
     return emojiMap[category] || "✦";
   }
 
-  getBadge(product: Product): string | undefined {
-    if (product.stock <= 3) return 'LOW STOCK';
-    if (product.price > 40000) return 'EXCLUSIVE';
-    return undefined;
-  }
-
-  openQuickView(product: Product): void {
-    this.productService.getProductById(product.id).subscribe(details => {
-        this.selectedProduct.set(details);
-        this.quickViewOpen.set(true);
-    });
-  }
-
-  closeQuickView(): void {
-    this.quickViewOpen.set(false);
-    this.selectedProduct.set(null);
-  }
-
   handleAddToCart(event: Event, product: any): void {
     event.preventDefault();
     event.stopPropagation();
@@ -359,24 +315,5 @@ export class HomeComponent implements OnInit {
     this.cartService.addToCart(product.id, 1, options).subscribe(() => {
         this.toastService.show('Added to cart!', 'success');
     });
-  }
-
-  handleWishlist(event: Event, productId: string): void {
-      event.preventDefault();
-      event.stopPropagation();
-      this.toastService.show('Added to Wishlist', 'success');
-  }
-
-  handleAddToCartFromModal(event: { productId: string; quantity: number; product?: any }): void {
-    const options = event.product ? { product: event.product, price: event.product.price } : {};
-    this.cartService.addToCart(event.productId, event.quantity, options).subscribe(() => {
-        this.toastService.show(`Added ${event.quantity} item(s) to cart`, 'success');
-        this.closeQuickView();
-    });
-  }
-
-  handleViewDetails(productId: string): void {
-    this.router.navigate(['/products', productId]);
-    this.closeQuickView();
   }
 }

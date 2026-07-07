@@ -13,9 +13,12 @@ import {
   ViewChildren,
   QueryList,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
+import { ReviewService, Review } from '../services/review.service';
+import { AuthService } from '../services/auth.service';
 import { CartService } from '../services/cart.service';
 import {
   ProductDetail,
@@ -892,24 +895,27 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 
               <!-- Actions -->
               <div class="flex flex-col gap-3">
-                <div class="flex gap-3">
+                <div class="flex gap-3" *ngIf="product()?.stock !== 0">
                   <button
                     (click)="handleAddToCart()"
-                    [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-gradient-to-r from-primary to-primary text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-gradient-to-r from-primary to-primary text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm"
                   >
-                    {{
-                      product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
-                    }}
+                    Add to Cart
                   </button>
                   <button
                     (click)="handleBuyNow()"
-                    [disabled]="product()?.stock === 0"
-                    class="flex-1 bg-surface border-2 border-primary text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 bg-surface border-2 border-primary text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm"
                   >
                     Buy Now
                   </button>
                 </div>
+                <button
+                  *ngIf="product()?.stock === 0"
+                  (click)="notifyMe()"
+                  class="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm flex items-center justify-center gap-2"
+                >
+                  <span>🔔</span> Notify Me When Available
+                </button>
                 <div class="grid grid-cols-2 gap-2 w-full mb-2">
                   <button
                     (click)="openTryAtHome()"
@@ -955,20 +961,29 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
               </div>
 
               <div
-                class="mt-6 pt-4 border-t border-ink flex justify-center gap-6 text-xs font-medium text-ink"
+                class="mt-6 pt-4 border-t border-ink flex flex-col justify-center gap-4 text-xs font-medium text-ink text-center"
               >
+                <div class="flex justify-center gap-6">
+                  <a
+                    routerLink="/contact"
+                    class="hover:text-ink transition-colors"
+                    >Contact Us</a
+                  >
+                  <span>|</span>
+                  <button
+                    (click)="openWhatsApp()"
+                    class="hover:text-ink transition-colors"
+                  >
+                    Chat on WhatsApp
+                  </button>
+                </div>
                 <a
-                  routerLink="/contact"
-                  class="hover:text-ink transition-colors"
-                  >Contact Us</a
+                  routerLink="/rfq"
+                  [queryParams]="{ product: product()?.id }"
+                  class="text-gold-600 hover:text-gold-700 font-semibold transition-colors text-sm"
                 >
-                <span>|</span>
-                <button
-                  (click)="openWhatsApp()"
-                  class="hover:text-ink transition-colors"
-                >
-                  Chat on WhatsApp
-                </button>
+                  Need bulk quantities? Request a Quote &rarr;
+                </a>
               </div>
             </div>
           </div>
@@ -994,13 +1009,63 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
               </p>
             </div>
             <button
+              *ngIf="product()?.stock !== 0"
               (click)="handleAddToCart()"
-              [disabled]="product()?.stock === 0"
               class="bg-gradient-to-r from-primary to-primary text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0"
             >
-              {{ product()?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+              Add to Cart
+            </button>
+            <button
+              *ngIf="product()?.stock === 0"
+              (click)="notifyMe()"
+              class="bg-gradient-to-r from-gold-500 to-gold-600 text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0 flex items-center gap-2"
+            >
+              <span>🔔</span> Notify Me
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Reviews Section -->
+      <div *ngIf="!loading() && product()" class="mt-16 border-t border-ink pt-12">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-2xl font-serif font-bold text-ink">Customer Reviews</h3>
+          <button *ngIf="isAuthenticated()" (click)="showReviewModal.set(true)" class="bg-primary text-surface px-6 py-2 rounded-lg font-bold hover:bg-opacity-90 transition-all">
+            Write a Review
+          </button>
+        </div>
+        
+        <div *ngIf="reviews().length === 0" class="text-center py-8 text-ink bg-surface rounded-xl border border-ink">
+          <p>No reviews yet. Be the first to review this product!</p>
+        </div>
+        
+        <div *ngIf="reviews().length > 0" class="space-y-6">
+          <div *ngFor="let review of reviews()" class="bg-surface p-6 rounded-xl border border-ink">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-ink">{{ review.userName || 'Customer' }}</span>
+                <span class="text-xs text-ink/70">{{ review.createdAt | date }}</span>
+              </div>
+              <div class="text-orange-400 font-bold">
+                 {{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}
+              </div>
+            </div>
+            <p class="text-ink leading-relaxed">{{ review.comment }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Similar Products Carousel -->
+      <div *ngIf="!loading() && similarProducts().length > 0" class="mt-16 border-t border-ink pt-12">
+        <h3 class="text-2xl font-serif font-bold text-ink mb-8">You May Also Like</h3>
+        <div class="flex overflow-x-auto gap-6 pb-6 snap-x hide-scrollbar">
+          <a *ngFor="let prod of similarProducts()" [routerLink]="['/products', prod.id]" class="snap-start shrink-0 w-64 group">
+            <div class="bg-surface rounded-xl border border-ink overflow-hidden aspect-square relative mb-3">
+              <img [ngSrc]="prod.images?.[0] || prod.imageUrl || ''" fill class="object-cover group-hover:scale-105 transition-transform duration-500" />
+            </div>
+            <h4 class="font-bold text-ink truncate">{{ prod.name }}</h4>
+            <p class="text-ink font-medium">{{ prod.price | currencyConvert }}</p>
+          </a>
         </div>
       </div>
 
@@ -1049,6 +1114,34 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
               {{ submittingAppointment() ? 'Booking...' : 'Confirm' }}
             </button>
           </form>
+        </div>
+      </div>
+
+      <!-- Write a Review Modal -->
+      <div *ngIf="showReviewModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+        <div class="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative p-6">
+          <button (click)="showReviewModal.set(false)" class="absolute top-4 right-4 text-ink hover:text-ink text-xl z-10">&times;</button>
+          <h3 class="font-serif font-bold text-xl mb-4 text-ink">Write a Review</h3>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-bold text-ink mb-2">Rating</label>
+              <div class="flex gap-2">
+                <button *ngFor="let star of [1,2,3,4,5]" (click)="reviewRating.set(star)" class="text-2xl" [class.text-orange-400]="star <= reviewRating()" [class.text-ink]="star > reviewRating()">
+                  ★
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold text-ink mb-2">Comment</label>
+              <textarea [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)" rows="4" class="w-full p-3 border rounded border-ink bg-transparent text-ink" placeholder="Share your experience..."></textarea>
+            </div>
+            
+            <button (click)="submitReview()" [disabled]="submittingReview() || !reviewComment()" class="w-full bg-primary text-surface py-3 rounded-lg font-bold disabled:opacity-50">
+              {{ submittingReview() ? 'Submitting...' : 'Submit Review' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1134,11 +1227,25 @@ export class ProductDetailComponent
   product = signal<ProductDetail | null>(null);
   productSchema = signal<SafeHtml>('');
 
+  // Reviews & Recommendations
+  private authService = inject(AuthService);
+  private reviewService = inject(ReviewService);
+  
+  reviews = signal<Review[]>([]);
+  similarProducts = signal<Product[]>([]);
+  
+  showReviewModal = signal(false);
+  reviewRating = signal(5);
+  reviewComment = signal('');
+  submittingReview = signal(false);
+  
+  isAuthenticated = computed(() => !!this.authService.currentUser());
+
   // UI State
   selectedImage = signal<string | null>(null);
   selectedMediaIndex = signal<number>(0);
   sizeGuideOpen = signal(false);
-  showPriceBreakup = signal(false);
+  showPriceBreakup = signal(true);
   tryAtHomeOpen = signal(false);
 
   // Customization
@@ -1276,7 +1383,60 @@ export class ProductDetailComponent
     this.route.params.subscribe((p) => {
       if (p['id']) {
         this.loadProduct(p['id']);
+        this.loadReviews(p['id']);
+        this.loadSimilarProducts(p['id']);
+        
+        // Log view if authenticated
+        if (this.isAuthenticated()) {
+           this.productService.logProductView(p['id']).subscribe();
+        }
       }
+    });
+
+    this.route.queryParams.subscribe((q) => {
+      if (q['size']) {
+        this.selectedSize.set(Number(q['size']));
+      }
+    });
+  }
+
+  loadReviews(productId: string) {
+    this.reviewService.getProductReviews(productId, 0, 10).subscribe({
+      next: (res) => this.reviews.set(res.content),
+      error: (err) => console.error('Failed to load reviews', err)
+    });
+  }
+
+  loadSimilarProducts(productId: string) {
+    this.productService.getSimilarProducts(productId).subscribe({
+      next: (res) => this.similarProducts.set(res.content),
+      error: (err) => console.error('Failed to load similar products', err)
+    });
+  }
+
+  submitReview() {
+    if (!this.product()) return;
+    this.submittingReview.set(true);
+    
+    const newReview: Review = {
+       rating: this.reviewRating(),
+       comment: this.reviewComment(),
+       productId: this.product()!.id!
+    };
+    
+    this.reviewService.submitReview(newReview).subscribe({
+       next: (res) => {
+           this.reviews.update(curr => [res, ...curr]);
+           this.showReviewModal.set(false);
+           this.reviewComment.set('');
+           this.reviewRating.set(5);
+           this.toastService.show('Review submitted successfully!', 'success');
+           this.submittingReview.set(false);
+       },
+       error: (err) => {
+           this.toastService.show(err.error?.message || 'Failed to submit review.', 'error');
+           this.submittingReview.set(false);
+       }
     });
   }
 
@@ -1389,6 +1549,27 @@ export class ProductDetailComponent
 
   togglePriceBreakup() {
     this.showPriceBreakup.set(!this.showPriceBreakup());
+  }
+
+  private http = inject(HttpClient);
+
+  notifyMe(): void {
+    const email = prompt('Please enter your email to be notified when back in stock:');
+    if (email && email.includes('@')) {
+      this.http.post(`${environment.apiUrl}/notifications/stock`, {
+        email: email,
+        productId: this.product()?.id
+      }).subscribe({
+        next: () => {
+          this.toastService.show('We will notify you when this item is back in stock!', 'success');
+        },
+        error: () => {
+          this.toastService.show('Failed to subscribe. Please try again.', 'error');
+        }
+      });
+    } else if (email) {
+      this.toastService.show('Please enter a valid email address.', 'error');
+    }
   }
   openTryAtHome() {
     this.appointmentType.set('TRY_AT_HOME');

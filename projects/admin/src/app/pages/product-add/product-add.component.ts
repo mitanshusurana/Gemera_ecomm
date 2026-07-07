@@ -142,6 +142,7 @@ export class ProductAddComponent implements OnInit {
 
     this.productId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.productId;
+    const duplicateId = this.route.snapshot.queryParamMap.get('duplicateId');
 
     this.productForm = this.fb.group({
       name: ['', Validators.required],
@@ -310,6 +311,26 @@ export class ProductAddComponent implements OnInit {
         error: (err) => {
           console.error('Error fetching product for edit', err);
           this.errorMessage = 'Failed to load product details for editing.';
+          this.loading = false;
+        }
+      });
+    } else if (duplicateId) {
+      this.loading = true;
+      this.productService.getProduct(duplicateId).subscribe({
+        next: (product) => {
+          // Clear ID for duplicate to ensure it creates a new product
+          product.id = null;
+          this.patchProductForm(product);
+          // Modify name slightly to indicate it's a copy
+          this.productForm.patchValue({
+             name: product.name ? product.name + ' (Copy)' : '',
+             sku: '' // Clear SKU so a new one is generated
+          });
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Error fetching product for duplicate', err);
+          this.errorMessage = 'Failed to load product details for duplication.';
           this.loading = false;
         }
       });
@@ -639,29 +660,7 @@ export class ProductAddComponent implements OnInit {
     this.existingVideoUrl = null;
   }
 
-  get totalSteps(): number {
-    return (this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones') ? 6 : 5;
-  }
-
-  nextStep() {
-    if (this.currentStep < this.totalSteps) {
-      this.currentStep++;
-    }
-  }
-
-  prevStep() {
-    if (this.currentStep > 1) {
-      this.currentStep--;
-    }
-  }
-
-  goToStep(step: number) {
-    if (step >= 1 && step <= this.totalSteps) {
-      this.currentStep = step;
-    }
-  }
-
-
+  // Removed unused step navigation methods
   updatePriceBreakupTotal() {
     const breakup = this.productForm.get('priceBreakup');
     if (breakup) {

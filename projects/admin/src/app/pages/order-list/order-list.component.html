@@ -55,4 +55,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Pagination Controls -->
+  <div class="mt-4 flex items-center justify-between px-4 sm:px-0">
+    <div class="hidden sm:block">
+      <p class="text-sm text-ink">
+        Showing page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
+        (<span class="font-semibold">{{ totalElements }}</span> total orders)
+      </p>
+    </div>
+    <div class="flex flex-1 justify-between sm:justify-end gap-2">
+      <button (click)="prevPage()" [disabled]="currentPage === 0" [class.opacity-50]="currentPage === 0" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        Previous
+      </button>
+      <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1" [class.opacity-50]="currentPage >= totalPages - 1" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        Next
+      </button>
+    </div>
+  </div>
 </div>

@@ -11,11 +11,13 @@ import com.jewelry.backend.repository.OrderRepository;
 import com.jewelry.backend.repository.RFQRepository;
 import com.jewelry.backend.repository.GlobalSettingRepository;
 import com.jewelry.backend.repository.AuditLogRepository;
+import com.jewelry.backend.service.MetalPriceService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -26,7 +28,7 @@ import java.lang.management.OperatingSystemMXBean;
 
 @RestController
 @RequestMapping("/api/v1/admin")
-
+@PreAuthorize("hasAuthority('ADMIN')")
 public class AdminController {
 
     @Autowired
@@ -46,6 +48,9 @@ public class AdminController {
 
     @Autowired
     EntityMapper entityMapper;
+
+    @Autowired
+    MetalPriceService metalPriceService;
 
     @GetMapping("/users")
     @Operation(summary = "Get all users with CRM stats")
@@ -80,13 +85,10 @@ public class AdminController {
     }
 
     @GetMapping("/market/prices")
-    @Operation(summary = "Get Market Prices for Dashboard")
+    @Operation(summary = "Get Live Market Prices for Dashboard")
     public ResponseEntity<Map<String, Object>> getMarketPrices() {
-        return ResponseEntity.ok(Map.of(
-                "gold", 2350.50,
-                "silver", 31.25,
-                "platinum", 1020.00
-        ));
+        Map<String, Object> prices = metalPriceService.getMetalPricesWithMeta();
+        return ResponseEntity.ok(prices);
     }
 
     @GetMapping("/settings")

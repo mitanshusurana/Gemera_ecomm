@@ -57,7 +57,7 @@
   <div class="mt-6 flex flex-col no-print">
     <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
       <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+        <div class="overflow-visible shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
           <table class="min-w-full divide-y divide-gray-300">
             <thead class="bg-surface">
               <tr>
@@ -103,8 +103,9 @@
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ product.price | currency }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ product.stock }}</td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex justify-end space-x-4">
-                  <a [routerLink]="['/products/edit', product.id]" class="text-indigo-600 hover:text-indigo-900">Edit<span class="sr-only">, {{ product.name }}</span></a>
-                  <button (click)="deleteProduct(product.id)" class="text-red-600 hover:text-red-900">Delete<span class="sr-only">, {{ product.name }}</span></button>
+                  <a [routerLink]="['/products/edit', product.id]" class="text-indigo-600 hover:text-indigo-900" title="Edit">Edit<span class="sr-only">, {{ product.name }}</span></a>
+                  <a [routerLink]="['/products/new']" [queryParams]="{duplicateId: product.id}" class="text-emerald-600 hover:text-emerald-900" title="Duplicate">Duplicate<span class="sr-only">, {{ product.name }}</span></a>
+                  <button (click)="deleteProduct(product.id)" class="text-red-600 hover:text-red-900" title="Delete">Delete<span class="sr-only">, {{ product.name }}</span></button>
                 </td>
               </tr>
               <tr *ngIf="products.length === 0 && !loading">

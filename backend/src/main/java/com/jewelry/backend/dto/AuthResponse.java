@@ -8,9 +8,9 @@ public class AuthResponse {
     private String refreshToken;
     private UserDTO user;
 
-    public AuthResponse(String token, UserDTO user) {
+    public AuthResponse(String token, String refreshToken, UserDTO user) {
         this.token = token;
+        this.refreshToken = refreshToken;
         this.user = user;
-        this.refreshToken = "dummy-refresh-token";
     }
 }

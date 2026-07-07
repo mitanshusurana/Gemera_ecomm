@@ -51,11 +51,40 @@ export class OrderDetailComponent implements OnInit {
 
     this.orderService.updateOrderStatus(this.order.id, status).subscribe({
       next: () => {
+        alert('Order status updated successfully');
         this.loadOrder(this.order.id);
       },
       error: (err) => {
         console.error('Failed to update status', err);
         alert('Failed to update status');
+      }
+    });
+  }
+
+  updateTracking(trackingNumber: string) {
+    if (!this.order) return;
+    this.orderService.updateTrackingNumber(this.order.id, trackingNumber).subscribe({
+      next: () => {
+        alert('Tracking number updated successfully');
+        this.loadOrder(this.order.id);
+      },
+      error: (err) => {
+        console.error('Failed to update tracking', err);
+        alert('Failed to update tracking');
+      }
+    });
+  }
+
+  updateNotes(notes: string) {
+    if (!this.order) return;
+    this.orderService.updateNotes(this.order.id, notes).subscribe({
+      next: () => {
+        alert('Internal notes updated successfully');
+        this.loadOrder(this.order.id);
+      },
+      error: (err) => {
+        console.error('Failed to update notes', err);
+        alert('Failed to update notes');
       }
     });
   }

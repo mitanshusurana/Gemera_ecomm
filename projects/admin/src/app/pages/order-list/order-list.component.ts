@@ -17,6 +17,11 @@ export class OrderListComponent implements OnInit {
   loading = true;
   currentStatus = 'ALL';
   statusOptions = ['ALL', 'PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+  
+  currentPage = 0;
+  pageSize = 12;
+  totalPages = 0;
+  totalElements = 0;
 
   ngOnInit() {
     this.loadOrders();
@@ -24,14 +29,17 @@ export class OrderListComponent implements OnInit {
 
   onFilterChange(event: any) {
     this.currentStatus = event.target.value;
+    this.currentPage = 0;
     this.loadOrders();
   }
 
   loadOrders() {
     this.loading = true;
-    this.orderService.getOrders(0, 50, this.currentStatus).subscribe({
+    this.orderService.getOrders(this.currentPage, this.pageSize, this.currentStatus).subscribe({
       next: (data: any) => {
         this.orders = data.content;
+        this.totalPages = data.totalPages;
+        this.totalElements = data.totalElements;
         this.loading = false;
       },
       error: (err: any) => {
@@ -39,5 +47,19 @@ export class OrderListComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.loadOrders();
+    }
+  }
+
+  prevPage() {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.loadOrders();
+    }
   }
 }

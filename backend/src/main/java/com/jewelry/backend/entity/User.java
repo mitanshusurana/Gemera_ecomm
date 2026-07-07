@@ -26,6 +26,9 @@ public class User extends BaseEntity {
 
     private Integer loyaltyPoints = 0;
 
+    private String resetToken;
+    private java.time.LocalDateTime resetTokenExpiry;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     @ToString.Exclude

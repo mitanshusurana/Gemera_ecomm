@@ -44,21 +44,7 @@ public class PaymentService {
         if (razorpayClient != null) {
             try {
                 JSONObject orderRequest = new JSONObject();
-                orderRequest.put("amount", request.getAmount() * 100); // amount in paisa if integer is rupees? Usually API expects amount in subunits.
-                // But wait, CreateRazorpayOrderRequest `amount` is Integer. Is it already subunits?
-                // Spec says "Create Razorpay Order ID... amount: number". Usually client sends amount in currency unit (INR) or subunits (paisa).
-                // Existing code (mock) returns passed amount.
-                // Razorpay API expects amount in subunits (paisa).
-                // If the request `amount` is Rupees, I should multiply by 100.
-                // I will assume input is Rupees for consistency with `InitializePaymentRequest` which is generic.
-                // Actually, let's just pass what is given, or if I changed it to BigDecimal in InitializePaymentRequest, I need to convert.
-
-                // Let's assume request.getAmount() is in subunits (paisa) if it comes from frontend for razorpay-order specifically,
-                // BUT initializePayment uses BigDecimal (likely base unit).
-
-                // If I use `request.getAmount()` directly in `orderRequest.put("amount", request.getAmount())`,
-                // I am assuming the request has correct subunits.
-
+                // Frontend explicitly sends amount in subunits (paise)
                 orderRequest.put("amount", request.getAmount());
                 orderRequest.put("currency", request.getCurrency());
                 orderRequest.put("receipt", "txn_" + UUID.randomUUID().toString().substring(0, 8));
@@ -98,15 +84,15 @@ public class PaymentService {
         return "Payment initialized for " + request.getPaymentMethod();
     }
 
-    public Object verifyPayment(VerifyPaymentRequest request) {
+    public boolean verifyPayment(VerifyPaymentRequest request) {
         // Verify signature
         try {
-            String signature = request.getPaymentToken(); // Assuming this holds signature
+            String signature = request.getPaymentToken();
             String paymentId = request.getPaymentId();
-            String orderId = request.getOrderId(); // Needed for verification
+            String orderId = request.getOrderId();
 
             // If mocking (no secret), always true
-            if ("mock_secret".equals(razorpayKeySecret)) return "Payment Verified";
+            if ("mock_secret".equals(razorpayKeySecret)) return true;
 
             JSONObject options = new JSONObject();
             options.put("razorpay_order_id", orderId);
@@ -114,10 +100,13 @@ public class PaymentService {
             options.put("razorpay_signature", signature);
 
             boolean status = Utils.verifyPaymentSignature(options, razorpayKeySecret);
-            return status ? "Payment Verified" : "Verification Failed";
+            if (!status) {
+                throw new RuntimeException("Invalid Razorpay signature");
+            }
+            return true;
         } catch (Exception e) {
              LOGGER.severe("Payment verification failed: " + e.getMessage());
-             return "Verification Error: " + e.getMessage();
+             throw new RuntimeException("Payment verification failed", e);
         }
     }
 

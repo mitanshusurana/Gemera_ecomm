@@ -40,8 +40,18 @@ public class OrderService {
     @Autowired
     ObjectMapper objectMapper;
 
+    @Autowired
+    PaymentService paymentService;
+
     @Transactional
     public Order createOrder(String userEmail, CreateOrderRequest request) {
+        if (request.getPaymentDetails() != null && request.getPaymentDetails().getRazorpay_order_id() != null) {
+            java.util.Optional<Order> existingOrder = orderRepository.findByRazorpayOrderId(request.getPaymentDetails().getRazorpay_order_id());
+            if (existingOrder.isPresent()) {
+                return existingOrder.get(); // Idempotency check: return existing order to avoid duplicates
+            }
+        }
+
         User user = userRepository.findByEmail(userEmail).orElseThrow();
         Cart cart = cartService.getCart(userEmail);
 
@@ -53,7 +63,13 @@ public class OrderService {
         order.setUser(user);
         order.setTotal(cart.getTotal());
         order.setStatus("PENDING_PAYMENT");
-        order.setOrderNumber("ORD-" + (int)(Math.random() * 1000000));
+        order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        
+        order.setSubtotal(cart.getSubtotal());
+        order.setTax(cart.getTax());
+        order.setShipping(cart.getShipping());
+        order.setDiscount(cart.getDiscount());
+        order.setAppliedCoupon(cart.getAppliedCoupon());
 
         try {
             order.setShippingAddress(objectMapper.writeValueAsString(request.getShippingAddress()));
@@ -70,11 +86,22 @@ public class OrderService {
             order.setRazorpayOrderId(request.getPaymentDetails().getRazorpay_order_id());
             order.setRazorpayPaymentId(request.getPaymentDetails().getRazorpay_payment_id());
             order.setRazorpaySignature(request.getPaymentDetails().getRazorpay_signature());
-            // Assume payment is successful if details are provided (for now)
-            order.setStatus("PAID");
+
+            // Cryptographically verify the payment signature
+            com.jewelry.backend.dto.VerifyPaymentRequest verifyReq = new com.jewelry.backend.dto.VerifyPaymentRequest();
+            verifyReq.setOrderId(request.getPaymentDetails().getRazorpay_order_id());
+            verifyReq.setPaymentId(request.getPaymentDetails().getRazorpay_payment_id());
+            verifyReq.setPaymentToken(request.getPaymentDetails().getRazorpay_signature());
+            
+            try {
+                paymentService.verifyPayment(verifyReq);
+                order.setStatus("PAID");
+            } catch (Exception e) {
+                order.setStatus("PAYMENT_FAILED");
+            }
         } else if ("COD".equalsIgnoreCase(request.getPaymentMethod()) || "CASH_ON_DELIVERY".equalsIgnoreCase(request.getPaymentMethod())) {
-            // Cash on delivery is considered placed/paid immediately for order creation purposes
-            order.setStatus("COMPLETED");
+            // Cash on delivery is considered confirmed but not paid yet
+            order.setStatus("CONFIRMED");
         }
 
         Order savedOrder = orderRepository.save(order);
@@ -145,12 +172,21 @@ public class OrderService {
         return tracking;
     }
 
-    public Order updateStatus(UUID orderId, String status, String trackingNumber) {
+    public Order updateOrderStatus(UUID orderId, String status) {
         Order order = getOrder(orderId);
         order.setStatus(status);
-        if (trackingNumber != null) {
-            order.setTrackingNumber(trackingNumber);
-        }
+        return orderRepository.save(order);
+    }
+
+    public Order updateOrderTracking(UUID orderId, String trackingNumber) {
+        Order order = getOrder(orderId);
+        order.setTrackingNumber(trackingNumber);
+        return orderRepository.save(order);
+    }
+
+    public Order updateOrderNotes(UUID orderId, String notes) {
+        Order order = getOrder(orderId);
+        order.setInternalNotes(notes);
         return orderRepository.save(order);
     }
 }
