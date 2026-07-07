@@ -37,7 +37,8 @@ import { CurrencyService } from '../services/currency.service';
 
             <!-- Currency Selector -->
             <div class="relative group ml-2" (mouseenter)="isCurrencyDropdownOpen = true" (mouseleave)="isCurrencyDropdownOpen = false">
-              <button class="flex items-center gap-1 hover:text-surface transition-colors font-bold text-accent uppercase cursor-pointer"
+              <button aria-haspopup="true" [attr.aria-expanded]="isCurrencyDropdownOpen" aria-label="Currency Selector"
+                      class="flex items-center gap-1 hover:text-surface transition-colors font-bold text-accent uppercase cursor-pointer"
                       (click)="isCurrencyDropdownOpen = !isCurrencyDropdownOpen"
                       (focus)="isCurrencyDropdownOpen = true"
                       (blur)="closeCurrencyDropdownWithDelay()">
@@ -73,7 +74,7 @@ import { CurrencyService } from '../services/currency.service';
             </button>
 
             <!-- Logo -->
-            <a routerLink="/" class="flex items-center">
+            <a routerLink="/" class="flex items-center" aria-label="Home">
               <img ngSrc="/logo-with-name.webp" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain" width="163" height="80" />
             </a>
           </div>
@@ -87,6 +88,7 @@ import { CurrencyService } from '../services/currency.service';
                 (input)="onSearchInput()"
                 (focus)="isSearchFocused = true"
                 (blur)="onSearchBlur()"
+                aria-label="Search for products"
                 placeholder="Search for Rings, Earrings, Gemstones..."
                 class="w-full pl-4 pr-10 py-2.5 bg-surface border border-primary rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm placeholder-gray-400 text-ink"
               >
@@ -170,7 +172,7 @@ import { CurrencyService } from '../services/currency.service';
         </div>
 
         <!-- Navigation Categories (Desktop) -->
-        <nav class="hidden lg:flex justify-center items-center gap-8 mt-4 border-t border-ink pt-3 relative">
+        <nav class="hidden lg:flex justify-center items-center gap-8 mt-4 border-t border-ink pt-3 relative" role="navigation" aria-label="Main Navigation">
             <div *ngFor="let cat of categories" class="group/menu">
               <a [routerLink]="['/products']"
                  [queryParams]="{category: cat.name}"

@@ -45,6 +45,7 @@ export interface Product {
   reviewCount?: number;
   imageUrl?: string;
   videoUrl?: string;
+  model3dUrl?: string;
   isBestSeller?: boolean;
   category: string;
   subcategory?: string;

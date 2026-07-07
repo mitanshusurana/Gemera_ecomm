@@ -7,6 +7,7 @@ import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.service.ProductService;
 import com.jewelry.backend.service.StorageService;
+import com.jewelry.backend.service.Product3DGenerationService;
 import com.jewelry.backend.util.CustomMultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,6 +45,9 @@ public class ProductController {
 
     @Autowired
     StorageService storageService;
+
+    @Autowired
+    Product3DGenerationService product3DGenerationService;
 
     @GetMapping
     @Operation(summary = "Get paginated products")
@@ -283,6 +287,31 @@ public class ProductController {
                     Files.deleteIfExists(tempOutputFile);
                 } catch (IOException ignored) {}
             }
+        }
+    }
+
+    @PostMapping("/generate-3d")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Generate 3D model locally and upload to R2")
+    public ResponseEntity<Map<String, String>> generate3DModel(@RequestParam("file") MultipartFile file) {
+        try {
+            // 1. Generate 3D Model locally
+            byte[] glbData = product3DGenerationService.generate3DModel(file);
+
+            // 2. Write to temp file
+            Path tempGlbFile = Files.createTempFile("model_out_", ".glb");
+            Files.write(tempGlbFile, glbData);
+
+            // 3. Upload to Cloudflare R2
+            CustomMultipartFile customFile = new CustomMultipartFile(tempGlbFile, "model/gltf-binary");
+            String fileUrl = storageService.uploadFile(customFile);
+
+            Files.deleteIfExists(tempGlbFile);
+
+            return ResponseEntity.ok(Map.of("url", fileUrl));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to generate 3D model: " + e.getMessage()));
         }
     }
 }

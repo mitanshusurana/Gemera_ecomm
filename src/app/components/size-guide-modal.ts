@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
       <div (click)="close.emit()" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
 
       <!-- Modal Content -->
-      <div class="relative bg-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+      <div #modalContainer class="relative bg-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
         <!-- Header -->
         <div class="sticky top-0 bg-surface border-b border-diamond-200 p-6 flex justify-between items-center z-10">
           <h2 class="text-2xl font-display font-bold text-diamond-900">Ring Size Guide</h2>
@@ -198,5 +198,40 @@ export class SizeGuideModalComponent {
   submitKitRequest() {
     this.kitSent.set(true);
     // Mock API call would go here
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onKeydownHandler(event: Event) {
+    if (this.isOpen) {
+      this.close.emit();
+    }
+  }
+
+  @ViewChild('modalContainer') modalContainer?: ElementRef;
+
+  @HostListener('document:keydown.tab', ['$event'])
+  onTabHandler(event: KeyboardEvent) {
+    if (!this.isOpen || !this.modalContainer) return;
+    
+    const focusableElements = this.modalContainer.nativeElement.querySelectorAll(
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    if (focusableElements.length === 0) return;
+    
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+    if (event.shiftKey) {
+      if (document.activeElement === firstElement) {
+        lastElement.focus();
+        event.preventDefault();
+      }
+    } else {
+      if (document.activeElement === lastElement) {
+        firstElement.focus();
+        event.preventDefault();
+      }
+    }
   }
 }

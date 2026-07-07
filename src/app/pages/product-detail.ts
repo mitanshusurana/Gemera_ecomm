@@ -12,6 +12,7 @@ import {
   ElementRef,
   ViewChildren,
   QueryList,
+  CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
@@ -37,6 +38,7 @@ import { environment } from '../../environments/environment';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AppointmentService } from '../services/appointment.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { SeoService } from '../services/seo.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -50,6 +52,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
     SizeGuideModalComponent,
     CurrencyConvertPipe,
   ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -132,11 +135,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                 <!-- Thumbnails -->
                 <div
                   class="order-2 md:order-1 flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 md:pr-2 hide-scrollbar snap-x snap-mandatory shrink-0"
+                  role="tablist" aria-label="Product Media Thumbnails"
                 >
                   <!-- Video Thumbnail -->
                   <div
                     *ngIf="product()?.videoUrl"
                     (click)="scrollToMedia(0)"
+                    role="tab" [attr.aria-selected]="selectedMediaIndex() === 0" aria-label="View Video"
                     class="snap-start relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-surface flex items-center justify-center"
                     [class.border-primary]="selectedMediaIndex() === 0"
                     [class.border-transparent]="selectedMediaIndex() !== 0"
@@ -171,6 +176,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       let i = index
                     "
                     (click)="scrollToMedia(product()?.videoUrl ? i + 1 : i)"
+                    role="tab" [attr.aria-selected]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)" [attr.aria-label]="'View Image ' + (i + 1)"
                     class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-surface rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
                     [class.border-primary]="
                       selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)
@@ -194,6 +200,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                   #scrollContainer
                   (scroll)="onGalleryScroll($event)"
                   id="main-media-scroll"
+                  role="region" aria-label="Main Product Media"
                   class="scroll-smooth order-1 md:order-2 flex-1 relative bg-surface rounded-lg overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-ink aspect-square md:aspect-auto"
                 >
                   <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
@@ -233,6 +240,22 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                       playsinline
                       class="w-full h-full object-contain"
                     ></video>
+                  </div>
+
+                  <!-- 3D Model Item -->
+                  <div
+                    *ngIf="product()?.model3dUrl"
+                    class="w-full h-full shrink-0 snap-center relative bg-surface flex items-center justify-center"
+                  >
+                    <model-viewer
+                      [src]="product()?.model3dUrl"
+                      auto-rotate
+                      camera-controls
+                      ar
+                      shadow-intensity="1"
+                      class="w-full h-full"
+                      style="--poster-color: transparent;"
+                    ></model-viewer>
                   </div>
 
                   <!-- Image Items -->
@@ -432,8 +455,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.cut"
                           >
-                            <span class="text-ink">Cut</span
-                            ><span class="font-medium text-ink">{{
+                            <span class="text-ink flex items-center gap-1 group relative cursor-help">
+                              Cut
+                              <svg class="w-3 h-3 text-ink/70" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                              <div class="hidden group-hover:block absolute bottom-full left-0 w-48 bg-ink text-surface text-xs p-2 rounded shadow-lg z-10 mb-1">
+                                Indicates the quality of the gemstone's proportions and finish.
+                              </div>
+                            </span><span class="font-medium text-ink">{{
                               product()?.cut
                             }}</span>
                           </div>
@@ -468,8 +496,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
                             class="flex justify-between"
                             *ngIf="product()?.clarity"
                           >
-                            <span class="text-ink">Clarity</span
-                            ><span class="font-medium text-ink">{{
+                            <span class="text-ink flex items-center gap-1 group relative cursor-help">
+                              Clarity
+                              <svg class="w-3 h-3 text-ink/70" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                              <div class="hidden group-hover:block absolute bottom-full left-0 w-48 bg-ink text-surface text-xs p-2 rounded shadow-lg z-10 mb-1">
+                                Assesses the presence of internal inclusions and external blemishes.
+                              </div>
+                            </span><span class="font-medium text-ink">{{
                               product()?.clarity
                             }}</span>
                           </div>
@@ -944,19 +977,19 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
               <!-- Trust Badges (Moved to Buy Box) -->
               <div class="flex flex-wrap gap-2 mt-6">
                 <div
-                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto"
+                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto border border-ink shadow-sm font-bold uppercase tracking-wide"
                 >
-                  <span class="text-lg">🛡️</span> 15-Day Money Back
+                  <span class="text-lg">💎</span> GIA Certified
                 </div>
                 <div
-                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto"
+                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto border border-ink shadow-sm font-bold uppercase tracking-wide"
                 >
-                  <span class="text-lg">💎</span> Lifetime Exchange
+                  <span class="text-lg">📜</span> IGI Certified
                 </div>
                 <div
-                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto"
+                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto border border-ink shadow-sm font-bold uppercase tracking-wide"
                 >
-                  <span class="text-lg">📜</span> BIS Hallmarked
+                  <span class="text-lg">🛡️</span> BIS Hallmarked
                 </div>
               </div>
 
@@ -1210,6 +1243,7 @@ export class ProductDetailComponent
   private historyService = inject(HistoryService);
   private currencyService = inject(CurrencyService);
   private sanitizer = inject(DomSanitizer);
+  private seoService = inject(SeoService);
 
   private appointmentService = inject(AppointmentService);
   private fb = inject(FormBuilder);
@@ -1445,19 +1479,28 @@ export class ProductDetailComponent
   private loadProduct(id: string): void {
     this.loading.set(true);
     this.productService.getProductById(id).subscribe({
-      next: (p) => {
-        this.product.set(p);
-        this.historyService.add(p);
+      next: (data) => {
+        this.product.set(data);
+        this.historyService.add(data);
         this.loading.set(false);
         this.selectedImage.set(null);
-        if (p.customizationOptions) {
+
+        // Update SEO Tags
+        this.seoService.updateTags({
+          title: `${data.name} | Gemera`,
+          description: data.description || `Buy ${data.name} online at Gemera.`,
+          image: data.imageUrl || (data.images && data.images.length > 0 ? data.images[0] : ''),
+          url: `https://www.gemera.com/products/${data.id}`
+        });
+
+        if (data.customizationOptions) {
           this.selectedMetal.set(
-            p.customizationOptions.find(
+            data.customizationOptions.find(
               (o) => o.type === 'metal' && o.priceModifier === 0,
             ) || null,
           );
           this.selectedDiamondQuality.set(
-            p.customizationOptions.find(
+            data.customizationOptions.find(
               (o) => o.type === 'diamond' && o.priceModifier === 0,
             ) || null,
           );

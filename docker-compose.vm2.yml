@@ -45,44 +45,5 @@ services:
     depends_on:
       - postgres
 
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend.Dockerfile
-      # Ensure fresh build without Docker layer cache
-      cache_from: []
-    container_name: jewelry-frontend
-    restart: always
-    environment:
-      API_URL: http://localhost:8080/api/v1
-      RAZORPAY_KEY: rzp_test_S5goGHXLEuP6hP
-      NG_ALLOWED_HOSTS: localhost,127.0.0.1,129.159.18.63
-      PORT: 4000
-      NODE_ENV: production
-    ports:
-      - "80:4000"
-      - "4200:4000"
-    depends_on:
-      - backend
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  admin:
-    build:
-      context: .
-      dockerfile: admin.Dockerfile
-    container_name: jewelry-admin
-    restart: always
-    environment:
-      API_URL: http://localhost:8080/api/v1
-    ports:
-      - "4300:80"
-    depends_on:
-      - backend
-
 volumes:
   postgres_data:

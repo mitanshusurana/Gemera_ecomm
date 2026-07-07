@@ -91,6 +91,8 @@ export class ProductAddComponent implements OnInit {
 
   existingImages: string[] = [];
   existingVideoUrl: string | null = null;
+  existingModel3dUrl: string | null = null;
+  selected3DMediaFile: File | null = null;
 
   // Background Upload States
   uploadingMedia = false;
@@ -341,6 +343,7 @@ export class ProductAddComponent implements OnInit {
     // Media
     this.existingImages = product.images || [];
     this.existingVideoUrl = product.videoUrl || null;
+    this.existingModel3dUrl = product.model3dUrl || null;
 
     // Basic fields
     this.productForm.patchValue({
@@ -660,6 +663,51 @@ export class ProductAddComponent implements OnInit {
     this.existingVideoUrl = null;
   }
 
+  on3DFileChange(event: any) {
+    if (event.target.files.length > 0) {
+      this.selected3DMediaFile = event.target.files[0];
+      this.generate3DModel();
+    }
+  }
+
+  generate3DModel() {
+    this.uploadingMedia = true;
+    this.uploadProgressMessage = 'Generating 3D model (this may take a few minutes)...';
+    this.errorMessage = '';
+
+    if (this.selected3DMediaFile) {
+      this.productService.generate3DModel(this.selected3DMediaFile).pipe(
+        catchError(err => {
+          console.error('Failed to generate 3D model', err);
+          throw err;
+        })
+      ).subscribe({
+        next: (response) => {
+          if (response) {
+            this.existingModel3dUrl = response.url;
+          }
+          this.selected3DMediaFile = null;
+
+          this.uploadingMedia = false;
+          this.uploadProgressMessage = '3D Model generated successfully.';
+        },
+        error: (err) => {
+          this.errorMessage = 'Failed to generate 3D model. Check logs.';
+          this.uploadingMedia = false;
+          this.uploadProgressMessage = '';
+          this.selected3DMediaFile = null;
+        }
+      });
+    } else {
+      this.uploadingMedia = false;
+      this.uploadProgressMessage = '';
+    }
+  }
+
+  removeExisting3DModel() {
+    this.existingModel3dUrl = null;
+  }
+
   // Removed unused step navigation methods
   updatePriceBreakupTotal() {
     const breakup = this.productForm.get('priceBreakup');
@@ -698,6 +746,7 @@ export class ProductAddComponent implements OnInit {
       stoneDetailIds,
       images: this.existingImages,
       videoUrl: this.existingVideoUrl,
+      model3dUrl: this.existingModel3dUrl,
       specifications: null
     };
 

@@ -49,6 +49,7 @@ public class EntityMapper {
         product.setIsVerified(dto.getIsVerified());
         product.setStock(dto.getStock());
         product.setVideoUrl(dto.getVideoUrl());
+        product.setModel3dUrl(dto.getModel3dUrl());
 
         product.setSeoTitle(dto.getSeoTitle());
         product.setSeoDescription(dto.getSeoDescription());
@@ -240,6 +241,7 @@ public class EntityMapper {
         dto.setIsVerified(product.getIsVerified());
         dto.setStock(product.getStock());
         dto.setVideoUrl(product.getVideoUrl());
+        dto.setModel3dUrl(product.getModel3dUrl());
 
         dto.setSeoTitle(product.getSeoTitle());
         dto.setSeoDescription(product.getSeoDescription());

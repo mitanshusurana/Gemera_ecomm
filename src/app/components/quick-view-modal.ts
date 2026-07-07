@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy } from "@angular/core";
+import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy, HostListener, ViewChild, ElementRef } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ProductDetail } from "../core/models";
 import { CurrencyService } from "../services/currency.service";
@@ -21,6 +21,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
       class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200"
     >
       <div
+        #modalContainer
         class="bg-surface rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
@@ -251,5 +252,40 @@ export class QuickViewModalComponent {
     if (this.product.stock > 0)
       return `⚠ Only ${this.product.stock} left in stock`;
     return "✗ Out of Stock";
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onKeydownHandler(event: Event) {
+    if (this.isOpen) {
+      this.close.emit();
+    }
+  }
+
+  @ViewChild('modalContainer') modalContainer?: ElementRef;
+
+  @HostListener('document:keydown.tab', ['$event'])
+  onTabHandler(event: KeyboardEvent) {
+    if (!this.isOpen || !this.modalContainer) return;
+    
+    const focusableElements = this.modalContainer.nativeElement.querySelectorAll(
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    if (focusableElements.length === 0) return;
+    
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+    if (event.shiftKey) {
+      if (document.activeElement === firstElement) {
+        lastElement.focus();
+        event.preventDefault();
+      }
+    } else {
+      if (document.activeElement === lastElement) {
+        firstElement.focus();
+        event.preventDefault();
+      }
+    }
   }
 }

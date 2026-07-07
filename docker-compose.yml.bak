@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jewelry-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: jewelry_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jewelry-backend
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/jewelry_db}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-${POSTGRES_USER:-postgres}}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-${POSTGRES_PASSWORD:-password}}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: ${JWT_SECRET:-b8c3a9f2e4d7601f5c82a3b9e6d4f10c7a5b2e8d0f9c6a3b7e4d2f8c0a5b9e3d6}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@caratloop.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-mitanshusurana@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-changeme}
+      MAIL_FROM: ${MAIL_FROM:-mitanshusurana@gmail.com}
+      FRONTEND_URL: ${FRONTEND_URL:-http://129.159.18.63}
+      GOLDAPI_KEY: ${GOLDAPI_KEY:-demo}
+      R2_ACCESS_KEY: ${R2_ACCESS_KEY:-default-key}
+      R2_SECRET_KEY: ${R2_SECRET_KEY:-default-secret}
+      R2_ENDPOINT: ${R2_ENDPOINT:-https://default.r2.cloudflarestorage.com}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-jewelry-assets}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-https://pub-default.r2.dev}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+      # Ensure fresh build without Docker layer cache
+      cache_from: []
+    container_name: jewelry-frontend
+    restart: always
+    environment:
+      API_URL: http://localhost:8080/api/v1
+      RAZORPAY_KEY: rzp_test_S5goGHXLEuP6hP
+      NG_ALLOWED_HOSTS: localhost,127.0.0.1,129.159.18.63
+      PORT: 4000
+      NODE_ENV: production
+    ports:
+      - "80:4000"
+      - "4200:4000"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  admin:
+    build:
+      context: .
+      dockerfile: admin.Dockerfile
+    container_name: jewelry-admin
+    restart: always
+    environment:
+      API_URL: http://localhost:8080/api/v1
+    ports:
+      - "4300:80"
+    depends_on:
+      - backend
+
+  3d-service:
+    build:
+      context: ./3d-service
+      dockerfile: Dockerfile
+    container_name: jewelry-3d-service
+    restart: always
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
