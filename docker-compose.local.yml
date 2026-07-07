@@ -1,0 +1,21 @@
+services:
+  admin:
+    build:
+      context: .
+      dockerfile: admin.Dockerfile
+    container_name: jewelry-admin
+    restart: always
+    environment:
+      # This points the admin panel to the VM2 backend API
+      API_URL: ${API_URL:-https://api.gemera.com/api/v1}
+    ports:
+      - "4300:80"
+
+  3d-service:
+    build:
+      context: ./3d-service
+      dockerfile: Dockerfile
+    container_name: jewelry-3d-service
+    restart: always
+    ports:
+      - "8000:8000"
