@@ -1,4 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { SettingService } from './setting.service';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR';
@@ -8,6 +9,7 @@ export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR';
 })
 export class CurrencyService {
   private settingService = inject(SettingService);
+  private http = inject(HttpClient);
 
   currentCurrency = signal<CurrencyCode>(this.getStoredCurrency());
 
@@ -39,6 +41,19 @@ export class CurrencyService {
       },
       error: (err) => console.error('Failed to load currency rates from settings', err)
     });
+
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && !localStorage.getItem('currency')) {
+      this.http.get('https://ipapi.co/currency/', { responseType: 'text' }).subscribe({
+        next: (currency) => {
+          if (this.availableCurrencies.includes(currency.trim() as CurrencyCode)) {
+            this.setCurrency(currency.trim() as CurrencyCode);
+          } else {
+            this.setCurrency('USD'); // Default for unknown international
+          }
+        },
+        error: () => console.log('IP currency detection failed.')
+      });
+    }
   }
 
   private getStoredCurrency(): CurrencyCode {

@@ -27,6 +27,7 @@ public class ProductDTO {
     @Min(value = 0, message = "Stock cannot be negative")
     private Integer stock;
     private String videoUrl;
+    private String model3dUrl;
 
     private String seoTitle;
     private String seoDescription;

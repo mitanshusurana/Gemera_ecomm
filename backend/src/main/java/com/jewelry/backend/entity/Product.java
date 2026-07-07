@@ -24,6 +24,7 @@ public class Product extends BaseEntity {
     private Boolean isVerified; // Added for Admin Verification Step
     private Integer stock;
     private String videoUrl;
+    private String model3dUrl; // Added for 3D model path/URL
 
     // SEO Metadata
     private String seoTitle;

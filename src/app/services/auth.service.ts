@@ -4,6 +4,7 @@ import { HttpClient, HttpBackend } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { tap, catchError, finalize } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthResponse, User, Address } from '../core/models';
 import { LoginRequest, RegisterRequest } from '../core/dtos';
 import { ApiConfigService } from './api-config.service';
@@ -21,6 +22,7 @@ export class AuthService {
   private usersUrl = this.apiConfig.getEndpoint('users');
   private authToken$ = new BehaviorSubject<string | null>(null);
   private user$ = new BehaviorSubject<User | null>(null);
+  currentUser = toSignal(this.user$, { initialValue: null });
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
