@@ -1,21 +1,67 @@
+version: '3.8'
+
+# LOCAL DEV — All services running locally
+# Usage: docker compose -f docker-compose.local.yml up --build
+
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jewelry-postgres-local
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jewelry-backend-local
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    container_name: jewelry-frontend-local
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "4200:4000"
+    depends_on:
+      - backend
+
   admin:
     build:
       context: .
       dockerfile: admin.Dockerfile
-    container_name: jewelry-admin
-    restart: always
-    environment:
-      # This points the admin panel to the VM2 backend API
-      API_URL: ${API_URL:-https://api.gemera.com/api/v1}
+    container_name: jewelry-admin-local
+    restart: unless-stopped
+    env_file:
+      - .env.local
     ports:
       - "4300:80"
+    depends_on:
+      - backend
 
   3d-service:
     build:
       context: ./3d-service
       dockerfile: Dockerfile
-    container_name: jewelry-3d-service
-    restart: always
+    container_name: jewelry-3d-service-local
+    restart: unless-stopped
     ports:
       - "8000:8000"
+
+volumes:
+  postgres_data_local:
