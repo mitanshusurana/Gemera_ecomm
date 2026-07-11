@@ -49,4 +49,7 @@ public class Order extends BaseEntity {
     private String razorpayOrderId;
     private String razorpayPaymentId;
     private String razorpaySignature;
+    
+    @Column(unique = true)
+    private String idempotencyKey;
 }

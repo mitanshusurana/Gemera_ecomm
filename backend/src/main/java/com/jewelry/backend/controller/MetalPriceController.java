@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/metal-prices")
+@RequestMapping("/api/v1/metal-prices")
 public class MetalPriceController {
 
     @Autowired

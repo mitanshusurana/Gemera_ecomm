@@ -72,9 +72,17 @@ public class OrderController {
     }
 
     @GetMapping("/track/{id}")
-    @Operation(summary = "Track order (Public)")
-    public ResponseEntity<OrderTracking> trackOrder(@PathVariable String id) {
-        return ResponseEntity.ok(orderService.trackOrder(id));
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Track order")
+    public ResponseEntity<OrderTracking> trackOrder(@PathVariable String id, Principal principal) {
+        OrderTracking tracking = orderService.trackOrder(id);
+        Order order = orderService.getOrderByIdentifier(id);
+        User requestingUser = userRepository.findByEmail(principal.getName()).orElseThrow();
+        if (!"ADMIN".equals(requestingUser.getRole()) &&
+                !order.getUser().getId().equals(requestingUser.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(tracking);
     }
 
     @PutMapping("/{id}/status")

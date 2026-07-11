@@ -51,6 +51,10 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/verify-certificate").then(m => m.VerifyCertificateComponent),
   },
   {
+    path: "gift-card",
+    loadComponent: () => import("./pages/gift-card").then(m => m.GiftCardComponent)
+  },
+  {
     path: "wishlist",
     loadComponent: () => import("./pages/wishlist").then(m => m.WishlistComponent)
   },

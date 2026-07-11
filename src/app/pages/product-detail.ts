@@ -39,6 +39,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AppointmentService } from '../services/appointment.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SeoService } from '../services/seo.service';
+import { EmiCalculatorComponent } from '../components/emi-calculator';
+import { VirtualTryOnComponent } from '../components/virtual-try-on';
 
 @Component({
   selector: 'app-product-detail',
@@ -51,12 +53,13 @@ import { SeoService } from '../services/seo.service';
     ReactiveFormsModule,
     SizeGuideModalComponent,
     CurrencyConvertPipe,
+    EmiCalculatorComponent,
+    VirtualTryOnComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
-    <div [innerHTML]="productSchema()"></div>
     <div class="min-h-screen bg-surface font-sans text-ink">
       <!-- Breadcrumb -->
       <nav class="bg-surface border-b border-ink">
@@ -124,6 +127,18 @@ import { SeoService } from '../services/seo.service';
               </div>
             </div>
           </div>
+        </div>
+
+        <div *ngIf="!loading() && productNotFound()" class="text-center py-24 animate-fade-in-up">
+          <svg class="w-24 h-24 mx-auto text-diamond-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h2 class="text-3xl font-display font-bold text-ink mb-4">Product Not Found</h2>
+          <p class="text-lg text-ink/80 mb-8 max-w-md mx-auto">We couldn't find the product you're looking for. It may have been removed or the link is invalid.</p>
+          <a routerLink="/products" class="btn-primary inline-flex items-center gap-2">
+            <span>Explore Collections</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+          </a>
         </div>
 
         <div *ngIf="!loading() && product()" class="lg:flex lg:gap-12 relative">
@@ -225,6 +240,13 @@ import { SeoService } from '../services/seo.service';
 
                     <!-- Best Seller (Classic White Glass) -->
                     <span class="glass-tag glass-neutral"> Best Seller </span>
+                  </div>
+                  
+                  <div class="absolute bottom-4 right-4 z-10">
+                    <button (click)="tryOnOpen.set(true)" class="flex items-center gap-2 bg-surface/90 hover:bg-surface backdrop-blur-md text-ink px-4 py-2.5 rounded-full shadow-xl border border-ink/10 transition-all font-bold text-sm uppercase tracking-wide group hover:scale-105 active:scale-95">
+                      <svg class="w-5 h-5 text-gold-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                      Try It On
+                    </button>
                   </div>
 
                   <!-- Video Item -->
@@ -360,8 +382,13 @@ import { SeoService } from '../services/seo.service';
                             class="flex justify-between"
                             *ngIf="product()?.bisHallmark"
                           >
-                            <span class="text-ink">BIS Hallmark</span
-                            ><span class="font-medium text-ink">Yes</span>
+                            <span class="text-ink">BIS Hallmark</span>
+                            <span class="font-medium text-ink flex items-center gap-1">
+                              <span class="bg-gold-100 text-gold-800 text-[10px] px-1.5 py-0.5 rounded border border-gold-300 font-extrabold uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5l-4-4 1.41-1.41L11 13.67l6.59-6.59L19 8.5l-8 8z"/></svg>
+                                Certified
+                              </span>
+                            </span>
                           </div>
                         </div>
 
@@ -800,6 +827,8 @@ import { SeoService } from '../services/seo.service';
                     </div>
                   </div>
                 </div>
+                
+                <app-emi-calculator [price]="currentPriceBreakup()?.total || currentPrice()"></app-emi-calculator>
               </div>
 
               <!-- Customization Configurator -->
@@ -1177,6 +1206,14 @@ import { SeoService } from '../services/seo.service';
           </div>
         </div>
       </div>
+      <app-virtual-try-on
+        [isOpen]="tryOnOpen()"
+        [productImageUrl]="product()?.imageUrl || product()?.images?.[0]"
+        [productName]="product()?.name || ''"
+        [productCategory]="product()?.category || ''"
+        (closeEvent)="tryOnOpen.set(false)"
+      ></app-virtual-try-on>
+
     </div>
   `,
   styles: [
@@ -1256,10 +1293,12 @@ export class ProductDetailComponent
   });
 
   loading = signal(true);
+  productNotFound = signal(false);
   submittingAppointment = signal(false);
   appointmentType = signal<'TRY_AT_HOME' | 'STORE_VISIT' | 'VIDEO_CONSULT'>('TRY_AT_HOME');
+  tryOnOpen = signal(false);
   product = signal<ProductDetail | null>(null);
-  productSchema = signal<SafeHtml>('');
+  isWishlistLoading = signal(false);
 
   // Reviews & Recommendations
   private authService = inject(AuthService);
@@ -1508,17 +1547,17 @@ export class ProductDetailComponent
         const schema = {
           '@context': 'https://schema.org/',
           '@type': 'Product',
-          name: p.name,
-          image: p.images?.length ? p.images : [p.imageUrl],
-          description: p.description || p.name,
-          sku: p.sku || p.specifications?.productDetails?.sku,
+          name: data.name,
+          image: data.images?.length ? data.images : [data.imageUrl],
+          description: data.description || data.name,
+          sku: data.sku || data.specifications?.productDetails?.sku,
           offers: {
             '@type': 'Offer',
-            url: 'https://www.caratloop.com/products/' + p.id,
+            url: 'https://www.caratloop.com/products/' + data.id,
             priceCurrency: 'INR',
-            price: p.price,
+            price: data.price,
             availability:
-              p.stock > 0
+              data.stock > 0
                 ? 'https://schema.org/InStock'
                 : 'https://schema.org/OutOfStock',
             itemCondition: 'https://schema.org/NewCondition',
@@ -1535,18 +1574,15 @@ export class ProductDetailComponent
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: '4.8',
-            reviewCount: p.reviewCount || 10,
+            reviewCount: data.reviewCount || 10,
           },
         };
-        this.productSchema.set(
-          this.sanitizer.bypassSecurityTrustHtml(
-            '<script type="application/ld+json">' +
-              JSON.stringify(schema).replace(/</g, '\\u003c') +
-              '</script>',
-          ),
-        );
+        this.seoService.setJsonLd(schema);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.productNotFound.set(true);
+      },
     });
   }
 

@@ -8,7 +8,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { CartService } from '../services/cart.service';
@@ -22,10 +22,20 @@ import { Address, CartItem } from '../core/models';
 import { environment } from '../../environments/environment';
 import { COUNTRIES } from '../core/countries';
 
+export interface PendingOrderData {
+  shippingAddress: any;
+  billingAddress: any;
+  paymentMethod: string;
+  shippingMethod: string;
+  items: any[];
+  total: number;
+  paymentDetails: any;
+}
+
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CurrencyConvertPipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-surface">
@@ -193,7 +203,7 @@ import { COUNTRIES } from '../core/countries';
               <form
                 *ngIf="selectedAddressId() === 'new' || !isAuthenticated()"
                 (ngSubmit)="nextStep()"
-                #shippingForm="ngForm"
+                [formGroup]="shippingForm"
                 class="space-y-6 animate-fade-in-up"
               >
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -204,12 +214,11 @@ import { COUNTRIES } from '../core/countries';
                     >
                     <input
                       type="text"
-                      [(ngModel)]="shippingData.firstName"
-                      name="firstName"
-                      required
+                      formControlName="firstName"
                       class="input-field"
                       placeholder="John"
                     />
+                    <div *ngIf="shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched" class="text-red-500 text-xs mt-1">First name is required</div>
                   </div>
                   <div>
                     <label
@@ -218,12 +227,11 @@ import { COUNTRIES } from '../core/countries';
                     >
                     <input
                       type="text"
-                      [(ngModel)]="shippingData.lastName"
-                      name="lastName"
-                      required
+                      formControlName="lastName"
                       class="input-field"
                       placeholder="Doe"
                     />
+                    <div *ngIf="shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched" class="text-red-500 text-xs mt-1">Last name is required</div>
                   </div>
                 </div>
 
@@ -233,12 +241,11 @@ import { COUNTRIES } from '../core/countries';
                   >
                   <input
                     type="email"
-                    [(ngModel)]="shippingData.email"
-                    name="email"
-                    required
+                    formControlName="email"
                     class="input-field"
                     placeholder="john@example.com"
                   />
+                  <div *ngIf="shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched" class="text-red-500 text-xs mt-1">Valid email is required</div>
                 </div>
 
                 <div *ngIf="!isAuthenticated()">
@@ -246,7 +253,7 @@ import { COUNTRIES } from '../core/countries';
                     class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-2 space-y-2"
                   >
                     <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" [(ngModel)]="createAccountForGuest" name="createAccountForGuest" class="w-4 h-4 text-blue-600 rounded">
+                      <input type="checkbox" [ngModel]="createAccountForGuest" (ngModelChange)="createAccountForGuest = $event" [ngModelOptions]="{standalone: true}" class="w-4 h-4 text-blue-600 rounded">
                       <span class="text-sm text-blue-800 font-bold">Create an account for faster checkout next time</span>
                     </label>
                     <p class="text-xs text-blue-700 ml-7">
@@ -261,12 +268,11 @@ import { COUNTRIES } from '../core/countries';
                   >
                   <input
                     type="tel"
-                    [(ngModel)]="shippingData.phone"
-                    name="phone"
-                    required
+                    formControlName="phone"
                     class="input-field"
                     placeholder="+1 (555) 000-0000"
                   />
+                  <div *ngIf="shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched" class="text-red-500 text-xs mt-1">Valid phone number is required</div>
                 </div>
 
                 <div>
@@ -275,12 +281,11 @@ import { COUNTRIES } from '../core/countries';
                   >
                   <input
                     type="text"
-                    [(ngModel)]="shippingData.street"
-                    name="street"
-                    required
+                    formControlName="street"
                     class="input-field"
                     placeholder="123 Main Street"
                   />
+                  <div *ngIf="shippingForm.get('street')?.invalid && shippingForm.get('street')?.touched" class="text-red-500 text-xs mt-1">Street address is required</div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -291,12 +296,11 @@ import { COUNTRIES } from '../core/countries';
                     >
                     <input
                       type="text"
-                      [(ngModel)]="shippingData.city"
-                      name="city"
-                      required
+                      formControlName="city"
                       class="input-field"
                       placeholder="New York"
                     />
+                    <div *ngIf="shippingForm.get('city')?.invalid && shippingForm.get('city')?.touched" class="text-red-500 text-xs mt-1">City is required</div>
                   </div>
                   <div>
                     <label
@@ -305,12 +309,11 @@ import { COUNTRIES } from '../core/countries';
                     >
                     <input
                       type="text"
-                      [(ngModel)]="shippingData.state"
-                      name="state"
-                      required
+                      formControlName="state"
                       class="input-field"
                       placeholder="NY"
                     />
+                    <div *ngIf="shippingForm.get('state')?.invalid && shippingForm.get('state')?.touched" class="text-red-500 text-xs mt-1">State is required</div>
                   </div>
                   <div>
                     <label
@@ -319,12 +322,11 @@ import { COUNTRIES } from '../core/countries';
                     >
                     <input
                       type="text"
-                      [(ngModel)]="shippingData.zipCode"
-                      name="zipCode"
-                      required
+                      formControlName="zipCode"
                       class="input-field"
                       placeholder="10001"
                     />
+                    <div *ngIf="shippingForm.get('zipCode')?.invalid && shippingForm.get('zipCode')?.touched" class="text-red-500 text-xs mt-1">ZIP code is required</div>
                   </div>
                 </div>
 
@@ -333,9 +335,7 @@ import { COUNTRIES } from '../core/countries';
                     >Country</label
                   >
                   <select
-                    [(ngModel)]="shippingData.country"
-                    name="country"
-                    required
+                    formControlName="country"
                     class="input-field"
                   >
                     <option
@@ -350,8 +350,9 @@ import { COUNTRIES } from '../core/countries';
                 <label class="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    [(ngModel)]="billingSameAsShipping"
-                    name="billingSame"
+                    [ngModel]="billingSameAsShipping"
+                    (ngModelChange)="billingSameAsShipping = $event"
+                    [ngModelOptions]="{standalone: true}"
                     class="mt-1"
                   />
                   <span class="text-ink"
@@ -397,14 +398,14 @@ import { COUNTRIES } from '../core/countries';
                       class="bg-diamond-50 rounded-lg p-4 text-sm text-ink"
                     >
                       <p>
-                        {{ shippingData.firstName }} {{ shippingData.lastName }}
+                        {{ shippingForm.value.firstName }} {{ shippingForm.value.lastName }}
                       </p>
-                      <p>{{ shippingData.street }}</p>
+                      <p>{{ shippingForm.value.street }}</p>
                       <p>
-                        {{ shippingData.city }}, {{ shippingData.state }}
-                        {{ shippingData.zipCode }}
+                        {{ shippingForm.value.city }}, {{ shippingForm.value.state }}
+                        {{ shippingForm.value.zipCode }}
                       </p>
-                      <p>{{ shippingData.country }}</p>
+                      <p>{{ shippingForm.value.country }}</p>
                     </div>
                   </div>
 
@@ -630,17 +631,7 @@ export class CheckoutComponent implements OnInit {
 
   countriesList = COUNTRIES;
 
-  shippingData = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: 'India',
-  };
+  shippingForm: FormGroup;
 
   billingSameAsShipping = true;
   isAuthenticated = signal(false);
@@ -666,7 +657,20 @@ export class CheckoutComponent implements OnInit {
     private orderService: OrderService,
     private emailService: EmailNotificationService,
     private router: Router,
-  ) {}
+    private fb: FormBuilder,
+  ) {
+    this.shippingForm = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern(/^[+]?[\d\s-]{10,}$/)]],
+      street: ['', Validators.required],
+      city: ['', Validators.required],
+      state: ['', Validators.required],
+      zipCode: ['', [Validators.required, Validators.pattern(/^\d{5,6}$/)]],
+      country: ['India', Validators.required]
+    });
+  }
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
@@ -689,10 +693,12 @@ export class CheckoutComponent implements OnInit {
       if (user) {
         // Update basic info if new address form is active
         if (this.selectedAddressId() === 'new') {
-          this.shippingData.firstName = user.firstName || '';
-          this.shippingData.lastName = user.lastName || '';
-          this.shippingData.email = user.email || '';
-          this.shippingData.phone = user.phone || '';
+          this.shippingForm.patchValue({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email || '',
+            phone: user.phone || ''
+          });
         }
 
         // Update addresses list
@@ -740,24 +746,23 @@ export class CheckoutComponent implements OnInit {
 
   selectAddress(address: Address) {
     this.selectedAddressId.set(address.id);
-    this.shippingData = {
+    this.shippingForm.patchValue({
       firstName: address.firstName,
       lastName: address.lastName,
-      email: this.shippingData.email,
       phone: address.phone,
       street: address.street,
       city: address.city,
       state: address.state,
       zipCode: address.zipCode,
       country: address.country,
-    };
+    });
   }
 
   selectNewAddress() {
     this.selectedAddressId.set('new');
     this.authService.user().subscribe((user) => {
       if (user) {
-        this.shippingData = {
+        this.shippingForm.patchValue({
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
@@ -767,7 +772,7 @@ export class CheckoutComponent implements OnInit {
           state: '',
           zipCode: '',
           country: 'India',
-        };
+        });
       }
     });
   }
@@ -819,10 +824,10 @@ export class CheckoutComponent implements OnInit {
     const autoPassword = this.generateRandomPassword();
 
     const registerData = {
-      firstName: this.shippingData.firstName,
-      lastName: this.shippingData.lastName,
-      email: this.shippingData.email,
-      phone: this.shippingData.phone,
+      firstName: this.shippingForm.value.firstName,
+      lastName: this.shippingForm.value.lastName,
+      email: this.shippingForm.value.email,
+      phone: this.shippingForm.value.phone,
       password: autoPassword,
     };
 
@@ -840,7 +845,7 @@ export class CheckoutComponent implements OnInit {
                 .sendPromotionalEmail({
                   email: registerData.email,
                   subject: 'Welcome to Caratloop - Your Account Details',
-                  content: `Thank you for shopping with us! We have created an account for you so you can easily track your order. \n\nYour login email is: ${registerData.email}\nYour temporary password is: ${autoPassword}\n\nPlease log in and change your password as soon as possible.`,
+                  content: `Thank you for shopping with us! We have created an account for you so you can easily track your order. \n\nYour login email is: ${registerData.email}\n\nFor security reasons, we do not send passwords via email. Please use the 'Forgot Password' link on the login page to set your password.`,
                 })
                 .subscribe({
                   error: (e) =>
@@ -903,7 +908,7 @@ export class CheckoutComponent implements OnInit {
 
     // If using a new address and user is authenticated, save it to their profile
     if (this.selectedAddressId() === 'new' && this.isAuthenticated()) {
-      const { email, ...addressData } = this.shippingData;
+      const { email, ...addressData } = this.shippingForm.value;
       this.authService
         .addAddress({
           ...addressData,
@@ -935,7 +940,7 @@ export class CheckoutComponent implements OnInit {
 
   private handleCODPayment() {
     // Sanitize address data to match Backend DTO (exclude email)
-    const { email, ...shippingAddr } = this.shippingData;
+    const { email, ...shippingAddr } = this.shippingForm.value;
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
 
     // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
@@ -1016,9 +1021,9 @@ export class CheckoutComponent implements OnInit {
       description: 'Jewellery Purchase',
       order_id: orderData.id,
       prefill: {
-        name: `${this.shippingData.firstName} ${this.shippingData.lastName}`,
-        email: this.shippingData.email,
-        contact: this.shippingData.phone,
+        name: `${this.shippingForm.value.firstName} ${this.shippingForm.value.lastName}`,
+        email: this.shippingForm.value.email,
+        contact: this.shippingForm.value.phone,
       },
       theme: {
         color: '#D4AF37',
@@ -1064,7 +1069,7 @@ export class CheckoutComponent implements OnInit {
 
   handlePaymentSuccess(response: Razorpay.PaymentSuccessResponse) {
     // Sanitize address data to match Backend DTO (exclude email)
-    const { email, ...shippingAddr } = this.shippingData;
+    const { email, ...shippingAddr } = this.shippingForm.value;
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
 
     // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
@@ -1124,6 +1129,16 @@ export class CheckoutComponent implements OnInit {
 
   applyCoupon() {
     if (!this.couponCode) return;
-    this.toastService.show('Invalid or expired coupon code.', 'error');
+    this.isProcessing.set(true);
+    this.cartService.applyCoupon(this.couponCode).subscribe({
+      next: () => {
+        this.isProcessing.set(false);
+        this.toastService.show('Coupon applied successfully', 'success');
+      },
+      error: () => {
+        this.isProcessing.set(false);
+        this.toastService.show('Invalid or expired coupon code.', 'error');
+      }
+    });
   }
 }

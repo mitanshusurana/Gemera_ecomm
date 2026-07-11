@@ -14,8 +14,16 @@ if [ ! -d "$TARGET_DIR" ]; then
 fi
 
 if [ -n "$API_URL" ]; then
-    echo "Replacing PLACEHOLDER_API_URL with $API_URL in $TARGET_DIR"
-    find "$TARGET_DIR" -type f \( -name "*.js" -o -name "*.mjs" \) -exec sed -i "s|PLACEHOLDER_API_URL|$API_URL|g" {} +
+    echo "Replacing PLACEHOLDER_API_URL with $API_URL in browser files"
+    find "$TARGET_DIR/browser" -type f \( -name "*.js" -o -name "*.mjs" \) -exec sed -i "s|PLACEHOLDER_API_URL|$API_URL|g" {} +
+fi
+
+if [ -n "$SSR_API_URL" ]; then
+    echo "Replacing PLACEHOLDER_API_URL with $SSR_API_URL in server files"
+    find "$TARGET_DIR/server" -type f \( -name "*.js" -o -name "*.mjs" \) -exec sed -i "s|PLACEHOLDER_API_URL|$SSR_API_URL|g" {} +
+elif [ -n "$API_URL" ]; then
+    echo "Replacing PLACEHOLDER_API_URL with $API_URL in server files (fallback)"
+    find "$TARGET_DIR/server" -type f \( -name "*.js" -o -name "*.mjs" \) -exec sed -i "s|PLACEHOLDER_API_URL|$API_URL|g" {} +
 fi
 
 if [ -n "$RAZORPAY_KEY" ]; then

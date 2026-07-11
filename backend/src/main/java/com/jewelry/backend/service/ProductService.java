@@ -1,5 +1,7 @@
 package com.jewelry.backend.service;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.jewelry.backend.dto.CategoryResponse;
 import com.jewelry.backend.dto.DeliveryAvailability;
 import com.jewelry.backend.entity.Category;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import com.jewelry.backend.entity.UserProductView;
 import com.jewelry.backend.repository.UserProductViewRepository;
@@ -52,6 +56,7 @@ public class ProductService {
 
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
 
+    @Transactional(readOnly = true)
     public Page<Product> getAllProducts(
             String category,
             BigDecimal priceMin,
@@ -81,10 +86,14 @@ public class ProductService {
         return new DeliveryAvailability(true, "2023-12-31", "Delivery available in 3-5 days");
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "#id")
     public Product getProductById(UUID id) {
         return productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(value = "categories")
     public CategoryResponse getCategories() {
         List<Category> allCategories = categoryRepository.findAll();
         // Return only active root categories to avoid duplication (children are included in parents)
@@ -164,7 +173,8 @@ public class ProductService {
         return skuBuilder.toString();
     }
 
-        public Product updateProduct(UUID id, Product updatedProduct) {
+    @CacheEvict(value = "products", key = "#id")
+    public Product updateProduct(UUID id, Product updatedProduct) {
         return productRepository.findById(id).map(existing -> {
             String originalSku = existing.getSku();
 
@@ -209,6 +219,7 @@ public class ProductService {
         return emptyNames.toArray(result);
     }
 
+    @CacheEvict(value = "products", key = "#id")
     public void deleteProduct(UUID id) {
         productRepository.deleteById(id);
     }

@@ -12,6 +12,7 @@ This guide details the final architecture topology and the exact workflow for ru
 ### VM 2: The Core (Protected)
 - **Runs:** Spring Boot Backend & PostgreSQL Database
 - **Ports Exposed:** 80/443 (for the API). Port 5432 (DB) remains **closed** to the internet.
+- **Environment Variables Required:** You must provide `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RAZORPAY_KEY_ID`, and `RAZORPAY_KEY_SECRET` either in a `.env` file or directly to the Docker container. Hardcoded fallback values have been removed for security.
 - **Purpose:** Securely handle business logic and store data.
 
 ### Local Machine: Admin Operations

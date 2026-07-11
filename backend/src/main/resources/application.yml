@@ -1,7 +1,9 @@
 app:
+  cors:
+    allowed-origins: ${NG_ALLOWED_HOSTS:http://localhost:4200,http://localhost:4300,http://129.159.18.63,http://129.159.18.63:8080}
   admin:
-    email: ${ADMIN_EMAIL:admin@caratloop.com}
-    password: ${ADMIN_PASSWORD:admin123}
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
   cart:
     tax-rate: ${CART_TAX_RATE:0.10}
     shipping-threshold: ${CART_SHIPPING_THRESHOLD:1000}
@@ -9,27 +11,28 @@ app:
     gift-wrap-fee: ${CART_GIFT_WRAP_FEE:5}
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
+
 spring:
   application:
     name: jewelry-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/jewelry_db}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.postgresql.Driver}
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     properties:
       hibernate:
         dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:mitanshusurana@gmail.com}
-    password: ${MAIL_PASSWORD:changeme}
-    from: ${MAIL_FROM:mitanshusurana@gmail.com}
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    from: ${MAIL_FROM}
     properties:
       mail:
         smtp:
@@ -38,7 +41,7 @@ spring:
             enable: true
   security:
     jwt:
-      secret: ${JWT_SECRET:b8c3a9f2e4d7601f5c82a3b9e6d4f10c7a5b2e8d0f9c6a3b7e4d2f8c0a5b9e3d6}
+      secret: ${JWT_SECRET}
       expiration-ms: 86400000 # 24 hours
   servlet:
     multipart:
@@ -51,14 +54,23 @@ management:
       enabled: false
 
 goldapi:
-  key: ${GOLDAPI_KEY:demo}
+  key: ${GOLDAPI_KEY}
   base-url: https://www.goldapi.io/api
   cache-minutes: 15
 
 cloudflare:
   r2:
-    access-key: ${R2_ACCESS_KEY:default-key}
-    secret-key: ${R2_SECRET_KEY:default-secret}
-    endpoint: ${R2_ENDPOINT:https://default.r2.cloudflarestorage.com}
-    bucket: ${R2_BUCKET_NAME:jewelry-assets}
-    public-url: ${R2_PUBLIC_URL:https://pub-default.r2.dev}
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    endpoint: ${R2_ENDPOINT}
+    bucket: ${R2_BUCKET_NAME}
+    public-url: ${R2_PUBLIC_URL}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "prod"
+  jpa:
+    hibernate:
+      ddl-auto: validate

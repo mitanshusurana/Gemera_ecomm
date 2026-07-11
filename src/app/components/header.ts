@@ -1,7 +1,9 @@
-import { Component, OnInit, computed, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, computed, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterLink, Router, NavigationEnd, RouterLinkActive } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { CartService } from '../services/cart.service';
 import { ProductService } from '../services/product.service';
@@ -9,14 +11,16 @@ import { Product, User } from '../core/models';
 import { FormsModule } from '@angular/forms';
 import { WishlistService } from '../services/wishlist.service';
 import { CurrencyService } from '../services/currency.service';
+import { GoldRateTickerComponent } from './gold-rate-ticker';
 
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, NgOptimizedImage],
+  imports: [CommonModule, RouterLink, FormsModule, NgOptimizedImage, GoldRateTickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-gold-rate-ticker></app-gold-rate-ticker>
     <header class="bg-surface sticky top-0 z-50 shadow-sm font-sans">
       <!-- Top Bar (Purple) -->
       <div class="bg-primary text-surface py-1.5 text-xs tracking-wide">
@@ -31,6 +35,10 @@ import { CurrencyService } from '../services/currency.service';
           </div>
           <div class="flex gap-4 md:gap-6 text-surface items-center whitespace-nowrap w-full sm:w-auto justify-between sm:justify-end">
             <a routerLink="/rfq" class="hidden md:inline hover:text-surface transition-colors font-bold text-accent">Bulk Orders</a>
+            <a routerLink="/gift-card" class="hidden md:inline hover:text-surface transition-colors font-bold text-accent flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+              Gifts
+            </a>
             <a routerLink="/stores" class="hidden lg:inline hover:text-surface transition-colors">Find a Store</a>
             <a href="#" class="hover:text-surface transition-colors">Help</a>
             <a routerLink="/track-order" class="hover:text-surface transition-colors" aria-label="Track Order Header Menu">Track Order</a>
@@ -263,6 +271,7 @@ export class HeaderComponent implements OnInit {
   searchResults: Product[] = [];
   isSearchFocused = false;
   categories: any[] = [];
+  private searchSubject = new Subject<string>();
 
   private authService = inject(AuthService);
   private cartService = inject(CartService);
@@ -271,6 +280,7 @@ export class HeaderComponent implements OnInit {
   private wishlistService = inject(WishlistService);
   private currencyService = inject(CurrencyService);
   private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
 
   userSignal = signal<User | null>(null);
   user = this.userSignal;
@@ -287,6 +297,16 @@ export class HeaderComponent implements OnInit {
         this.categories = res.categories;
         this.cdr.markForCheck();
       }
+    });
+
+    this.searchSubject.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => this.productService.searchProducts(query))
+    ).subscribe(res => {
+      this.searchResults = res.results;
+      this.cdr.markForCheck();
     });
   }
 
@@ -326,10 +346,7 @@ export class HeaderComponent implements OnInit {
 
   onSearchInput() {
     if (this.searchQuery.length > 2) {
-      this.productService.searchProducts(this.searchQuery).subscribe(res => {
-        this.searchResults = res.results;
-        this.cdr.markForCheck();
-      });
+      this.searchSubject.next(this.searchQuery);
     } else {
       this.searchResults = [];
     }

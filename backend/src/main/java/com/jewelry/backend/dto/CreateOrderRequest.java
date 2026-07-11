@@ -13,6 +13,7 @@ public class CreateOrderRequest {
     private List<CartItemDTO> items;
     private BigDecimal total;
     private PaymentDetailsDTO paymentDetails;
+    private String idempotencyKey;
 
     @Data
     public static class PaymentDetailsDTO {

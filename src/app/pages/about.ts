@@ -53,14 +53,11 @@ import { SeoService } from '../services/seo.service';
         </div>
       </div>
     </div>
-    <div [innerHTML]="schemaHtml"></div>
   `,
 })
 export class AboutComponent implements OnInit {
   private seoService = inject(SeoService);
   private sanitizer = inject(DomSanitizer);
-
-  schemaHtml: SafeHtml = '';
 
   ngOnInit() {
     this.seoService.updateTags({
@@ -78,8 +75,6 @@ export class AboutComponent implements OnInit {
       "foundingDate": "1985"
     };
 
-    this.schemaHtml = this.sanitizer.bypassSecurityTrustHtml(
-      '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
-    );
+    this.seoService.setJsonLd(schema);
   }
 }

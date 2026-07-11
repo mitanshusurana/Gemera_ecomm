@@ -45,7 +45,7 @@ public class UserService {
         return Map.of("points", points, "tier", tier);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public User addAddress(String email, Address address) {
         User user = getUser(email);
         address.setUser(user);
@@ -58,7 +58,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public User updateAddress(String email, UUID addressId, Map<String, Object> updates) {
         User user = getUser(email);
         Address address = addressRepository.findById(addressId)
@@ -83,7 +83,7 @@ public class UserService {
         return userRepository.findByEmail(email).orElseThrow();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public User deleteAddress(String email, UUID addressId) {
         User user = getUser(email);
         Address address = addressRepository.findById(addressId)

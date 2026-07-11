@@ -42,6 +42,7 @@ public class AuthService {
     @org.springframework.beans.factory.annotation.Value("${frontend.url:http://localhost:4200}")
     String frontendUrl;
 
+    @org.springframework.transaction.annotation.Transactional
     public AuthResponse register(RegisterRequest registerRequest) {
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
             throw new RuntimeException("Error: Email is already in use!");
@@ -66,6 +67,7 @@ public class AuthService {
         return new AuthResponse(jwt, refreshToken.getToken(), entityMapper.toUserDTO(savedUser));
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public AuthResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
@@ -78,6 +80,7 @@ public class AuthService {
         return new AuthResponse(jwt, refreshToken.getToken(), entityMapper.toUserDTO(user));
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public AuthResponse refreshToken(String requestRefreshToken) {
         return refreshTokenService.findByToken(requestRefreshToken)
                 .map(refreshTokenService::verifyExpiration)

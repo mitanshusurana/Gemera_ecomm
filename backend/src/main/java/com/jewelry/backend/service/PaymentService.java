@@ -91,9 +91,6 @@ public class PaymentService {
             String paymentId = request.getPaymentId();
             String orderId = request.getOrderId();
 
-            // If mocking (no secret), always true
-            if ("mock_secret".equals(razorpayKeySecret)) return true;
-
             JSONObject options = new JSONObject();
             options.put("razorpay_order_id", orderId);
             options.put("razorpay_payment_id", paymentId);

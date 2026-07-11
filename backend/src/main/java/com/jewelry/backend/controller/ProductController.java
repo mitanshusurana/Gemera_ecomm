@@ -31,9 +31,10 @@ import java.util.stream.Collectors;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @RestController
 @RequestMapping("/api/v1/products")
-
 @Tag(name = "Products", description = "Product catalog APIs")
 public class ProductController {
 
@@ -50,6 +51,7 @@ public class ProductController {
     Product3DGenerationService product3DGenerationService;
 
     @GetMapping
+    @Transactional(readOnly = true)
     @Operation(summary = "Get paginated products")
     public ResponseEntity<Page<ProductDTO>> getAllProducts(
             @RequestParam(required = false) String category,
@@ -70,6 +72,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     @Operation(summary = "Get product details")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable UUID id) {
         ProductDTO productDTO = entityMapper.toProductDTO(productService.getProductById(id));
@@ -105,6 +108,7 @@ public class ProductController {
     }
 
     @GetMapping("/search")
+    @Transactional(readOnly = true)
     @Operation(summary = "Search products")
     public ResponseEntity<Map<String, List<ProductDTO>>> searchProducts(
             @RequestParam String query,

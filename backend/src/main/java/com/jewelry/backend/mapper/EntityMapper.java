@@ -251,13 +251,13 @@ public class EntityMapper {
         dto.setSupplierName(product.getSupplierName());
         dto.setReturnDueDate(product.getReturnDueDate());
         dto.setCommissionPercentage(product.getCommissionPercentage());
-        dto.setSeoQualifiers(product.getSeoQualifiers());
-        dto.setOccasionKeywords(product.getOccasionKeywords());
+        dto.setSeoQualifiers(product.getSeoQualifiers() != null ? new java.util.ArrayList<>(product.getSeoQualifiers()) : null);
+        dto.setOccasionKeywords(product.getOccasionKeywords() != null ? new java.util.ArrayList<>(product.getOccasionKeywords()) : null);
 
-        dto.setImages(product.getImages());
-        dto.setSpecifications(product.getSpecifications());
-        dto.setOccasions(product.getOccasions());
-        dto.setStyles(product.getStyles());
+        dto.setImages(product.getImages() != null ? new java.util.ArrayList<>(product.getImages()) : null);
+        dto.setSpecifications(product.getSpecifications() != null ? new java.util.HashMap<>(product.getSpecifications()) : null);
+        dto.setOccasions(product.getOccasions() != null ? new java.util.ArrayList<>(product.getOccasions()) : null);
+        dto.setStyles(product.getStyles() != null ? new java.util.ArrayList<>(product.getStyles()) : null);
 
         // 1. Finished Jewelry
         dto.setGrossWeight(product.getGrossWeight());
@@ -270,7 +270,7 @@ public class EntityMapper {
         dto.setDesignStyle(product.getDesignStyle());
         dto.setMetalColor(product.getMetalColor());
         dto.setManufacturingTerminology(product.getManufacturingTerminology());
-        dto.setStoneDetailIds(product.getStoneDetailIds());
+        dto.setStoneDetailIds(product.getStoneDetailIds() != null ? new java.util.ArrayList<>(product.getStoneDetailIds()) : null);
 
         if (product.getMetalDetails() != null) {
             MetalDetailDTO metalDetailDTO = new MetalDetailDTO();
