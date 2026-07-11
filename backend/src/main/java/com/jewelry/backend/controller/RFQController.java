@@ -44,7 +44,7 @@ public class RFQController {
     }
 
     @GetMapping("/statistics")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get RFQ statistics for admin dashboard")
     public ResponseEntity<Map<String, Object>> getStatistics() {
         long total = rfqService.getTotalCount();
@@ -103,7 +103,7 @@ public class RFQController {
     }
 
     @PutMapping("/requests/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update RFQ (Admin Only)")
     public ResponseEntity<RFQRequestDTO> updateRequest(@PathVariable UUID id, @RequestBody Map<String, Object> updates) {
         return ResponseEntity.ok(entityMapper.toRFQRequestDTO(rfqService.updateRequest(id, updates)));
@@ -131,7 +131,7 @@ public class RFQController {
     }
 
     @PostMapping("/requests/{id}/quote")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Push Formal Quote (Admin Only)")
     public ResponseEntity<RFQQuoteDTO> createQuote(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
         java.math.BigDecimal proposedPrice = new java.math.BigDecimal(body.get("proposedPrice").toString());

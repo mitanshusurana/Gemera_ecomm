@@ -120,7 +120,7 @@ public class ProductController {
 
     // Helper to seed data
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create product (Admin)")
     public ResponseEntity<ProductDTO> createProduct(@RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
@@ -129,7 +129,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update product (Admin)")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
@@ -138,7 +138,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete product (Admin)")
     public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
@@ -146,7 +146,7 @@ public class ProductController {
     }
 
     @PostMapping("/upload-image")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Upload image to Cloudflare R2")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         Path tempInputFile = null;
@@ -223,7 +223,7 @@ public class ProductController {
     }
 
     @PostMapping("/upload-video")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Upload video and strip audio asynchronously")
     public ResponseEntity<Map<String, String>> uploadVideo(@RequestParam("file") MultipartFile file) {
         Path tempInputFile = null;
@@ -295,7 +295,7 @@ public class ProductController {
     }
 
     @PostMapping("/generate-3d")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Generate 3D model locally and upload to R2")
     public ResponseEntity<Map<String, String>> generate3DModel(@RequestParam("file") MultipartFile file) {
         try {

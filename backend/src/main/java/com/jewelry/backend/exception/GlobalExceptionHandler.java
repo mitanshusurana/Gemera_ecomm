@@ -9,8 +9,18 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.net.URI;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.AccessDeniedException;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDeniedException(AccessDeniedException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access Denied");
+        problemDetail.setTitle("Access Denied");
+        problemDetail.setType(URI.create("https://gemera.com/errors/access-denied"));
+        return problemDetail;
+    }
 
     @ExceptionHandler(RuntimeException.class)
     public ProblemDetail handleRuntimeException(RuntimeException ex) {

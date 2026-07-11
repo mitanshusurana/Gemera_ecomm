@@ -23,13 +23,13 @@ public class AppointmentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Appointment>> getAllAppointments() {
         return ResponseEntity.ok(appointmentService.getAllAppointments());
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Appointment> updateStatus(@PathVariable java.util.UUID id, @RequestBody Map<String, String> payload) {
         return ResponseEntity.ok(appointmentService.updateStatus(id, payload.get("status")));
     }

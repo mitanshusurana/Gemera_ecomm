@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 @Tag(name = "Admin Categories", description = "Admin API for managing categories")
-@PreAuthorize("hasAuthority('ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminCategoryController {
 
     @Autowired

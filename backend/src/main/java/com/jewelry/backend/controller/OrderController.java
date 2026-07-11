@@ -86,7 +86,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update order status — Admin only")
     public ResponseEntity<OrderDTO> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         Order order = orderService.updateOrderStatus(id, body.get("status"));
@@ -94,7 +94,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/tracking")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update order tracking number — Admin only")
     public ResponseEntity<OrderDTO> updateTracking(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         Order order = orderService.updateOrderTracking(id, body.get("trackingNumber"));
@@ -102,7 +102,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/notes")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update internal notes — Admin only")
     public ResponseEntity<OrderDTO> updateNotes(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         Order order = orderService.updateOrderNotes(id, body.get("notes"));
