@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class DashboardController {
 
     @Autowired

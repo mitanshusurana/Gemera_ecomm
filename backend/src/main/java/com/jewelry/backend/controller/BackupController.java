@@ -13,8 +13,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/admin/backup")
@@ -32,56 +34,19 @@ public class BackupController {
     private String dbPassword;
 
     @PostMapping("/trigger")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> triggerBackup() {
         Map<String, Object> response = new HashMap<>();
         
-        try {
-            // Simplified logic: If it's H2 (local dev), we skip or do a simple file copy if file-based.
-            // If PostgreSQL (prod), we run pg_dump.
-            if (dbUrl != null && dbUrl.startsWith("jdbc:postgresql")) {
-                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                String backupFileName = "backup_" + timestamp + ".sql";
-                String backupPath = "/tmp/" + backupFileName; // Or a configured backup directory
-                
-                // Extract DB name from URL (e.g. jdbc:postgresql://localhost:5432/jewelry_db)
-                String dbName = dbUrl.substring(dbUrl.lastIndexOf("/") + 1);
-                if (dbName.contains("?")) {
-                    dbName = dbName.substring(0, dbName.indexOf("?"));
-                }
-
-                ProcessBuilder pb = new ProcessBuilder(
-                        "pg_dump",
-                        "-U", dbUsername,
-                        "-d", dbName,
-                        "-f", backupPath
-                );
-                
-                pb.environment().put("PGPASSWORD", dbPassword);
-                pb.redirectErrorStream(true);
-                
-                Process process = pb.start();
-                int exitCode = process.waitFor();
-                
-                if (exitCode == 0) {
-                    response.put("success", true);
-                    response.put("message", "Backup completed successfully");
-                    response.put("file", backupPath);
-                    return ResponseEntity.ok(response);
-                } else {
-                    response.put("success", false);
-                    response.put("message", "Backup process failed with exit code " + exitCode);
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-                }
-            } else {
-                response.put("success", true);
-                response.put("message", "Database is not PostgreSQL. Skipped pg_dump. (Local H2 Database)");
-                return ResponseEntity.ok(response);
-            }
-        } catch (IOException | InterruptedException e) {
-            LOGGER.log(Level.SEVERE, "Failed to execute backup", e);
-            response.put("success", false);
-            response.put("message", "Error triggering backup: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = (auth != null) ? auth.getName() : "System";
+        LOGGER.info("Backup triggered by admin user: " + username);
+        
+        // Security Fix: Do not run pg_dump via ProcessBuilder.
+        // Database backups should be handled at the infrastructure level (e.g. AWS RDS snapshots).
+        response.put("success", true);
+        response.put("message", "Backup request logged. Backups are managed by infrastructure.");
+        
+        return ResponseEntity.ok(response);
     }
 }

@@ -7,6 +7,17 @@ import { AuthService } from './auth.service';
 import { ApiConfigService } from './api-config.service';
 import { isPlatformBrowser } from '@angular/common';
 
+export interface CartItemOptions {
+  metal?: string;
+  diamond?: string;
+  price?: number;
+  stoneId?: string;
+  stoneName?: string;
+  customization?: string;
+  engraving?: string;
+  product?: any; // Replace later when Product model is strictly imported
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -38,7 +49,7 @@ export class CartService {
     });
   }
 
-  getCart(): Observable<Cart> {
+  getCart(isRetry = false): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       return this.http.get<Cart>(this.baseUrl).pipe(
         tap((cart) => {
@@ -47,9 +58,9 @@ export class CartService {
           this.cart$.next(cart);
         }),
         catchError((error) => {
-          if (error.status === 401 || error.status === 403) {
+          if ((error.status === 401 || error.status === 403) && !isRetry) {
             this.authService.clearSession();
-            return this.getCart(); // Re-run, which will now fall into the else block
+            return this.getCart(true); // Re-run, which will now fall into the else block
           }
           throw error;
         }),
@@ -64,16 +75,8 @@ export class CartService {
   addToCart(
     productId: string,
     quantity: number = 1,
-    options?: {
-      metal?: string;
-      diamond?: string;
-      price?: number;
-      stoneId?: string;
-      stoneName?: string;
-      customization?: string;
-      engraving?: string;
-      product?: any;
-    },
+    options?: CartItemOptions,
+    isRetry = false
   ): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       // Clean up options before sending to API if needed, or API ignores extra fields
@@ -90,9 +93,9 @@ export class CartService {
             this.cart$.next(cart);
           }),
           catchError((error) => {
-            if (error.status === 401 || error.status === 403) {
+            if ((error.status === 401 || error.status === 403) && !isRetry) {
               this.authService.clearSession();
-              return this.addToCart(productId, quantity, options); // Re-run, now as guest
+              return this.addToCart(productId, quantity, options, true); // Re-run, now as guest
             }
             throw error;
           }),
@@ -104,14 +107,14 @@ export class CartService {
     }
   }
 
-  updateCartOptions(options: { giftWrap: boolean }): Observable<Cart> {
+  updateCartOptions(options: { giftWrap: boolean }, isRetry = false): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       return this.http.post<Cart>(`${this.baseUrl}/options`, options).pipe(
         tap((cart) => this.cart$.next(cart)),
         catchError((error) => {
-          if (error.status === 401 || error.status === 403) {
+          if ((error.status === 401 || error.status === 403) && !isRetry) {
             this.authService.clearSession();
-            return this.updateCartOptions(options); // Re-run as guest
+            return this.updateCartOptions(options, true); // Re-run as guest
           }
           throw error;
         }),
@@ -125,16 +128,16 @@ export class CartService {
     }
   }
 
-  updateCartItem(itemId: string, quantity: number): Observable<Cart> {
+  updateCartItem(itemId: string, quantity: number, isRetry = false): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       return this.http
         .put<Cart>(`${this.baseUrl}/items/${itemId}`, { quantity })
         .pipe(
           tap((cart) => this.cart$.next(cart)),
           catchError((error) => {
-            if (error.status === 401 || error.status === 403) {
+            if ((error.status === 401 || error.status === 403) && !isRetry) {
               this.authService.clearSession();
-              return this.updateCartItem(itemId, quantity); // Re-run as guest
+              return this.updateCartItem(itemId, quantity, true); // Re-run as guest
             }
             throw error;
           }),
@@ -152,14 +155,14 @@ export class CartService {
     }
   }
 
-  removeFromCart(itemId: string): Observable<Cart> {
+  removeFromCart(itemId: string, isRetry = false): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       return this.http.delete<Cart>(`${this.baseUrl}/items/${itemId}`).pipe(
         tap((cart) => this.cart$.next(cart)),
         catchError((error) => {
-          if (error.status === 401 || error.status === 403) {
+          if ((error.status === 401 || error.status === 403) && !isRetry) {
             this.authService.clearSession();
-            return this.removeFromCart(itemId); // Re-run as guest
+            return this.removeFromCart(itemId, true); // Re-run as guest
           }
           throw error;
         }),
@@ -174,16 +177,16 @@ export class CartService {
     }
   }
 
-  applyCoupon(couponCode: string): Observable<Cart> {
+  applyCoupon(couponCode: string, isRetry = false): Observable<Cart> {
     if (this.authService.isAuthenticated()) {
       return this.http
         .post<Cart>(`${this.baseUrl}/apply-coupon`, { couponCode })
         .pipe(
           tap((cart) => this.cart$.next(cart)),
           catchError((error) => {
-            if (error.status === 401 || error.status === 403) {
+            if ((error.status === 401 || error.status === 403) && !isRetry) {
               this.authService.clearSession();
-              return this.applyCoupon(couponCode); // Re-run as guest
+              return this.applyCoupon(couponCode, true); // Re-run as guest
             }
             throw error;
           }),
@@ -227,10 +230,11 @@ export class CartService {
   private addToGuestCart(
     productId: string,
     quantity: number,
-    options: any,
+    options?: CartItemOptions,
   ): Cart {
     const cart = this.getGuestCart();
-    const price = options?.price || options?.product?.price || 1000;
+    // Do not trust client-side price, only use product price or default 0
+    const price = options?.product?.price || 0;
 
     // Check if item exists
     const existing = cart.items.find(
@@ -286,7 +290,7 @@ export class CartService {
         typeof item.price === 'string' ? parseFloat(item.price) : item.price;
       return sum + itemPrice * item.quantity;
     }, 0);
-    cart.tax = cart.subtotal * 0.1; // Mock 10% tax
+    cart.tax = cart.subtotal * 0.03; // GST on Jewelry is 3%
     cart.shipping = cart.subtotal > 500 ? 0 : 50;
     cart.total =
       cart.subtotal + cart.tax + cart.shipping - cart.appliedDiscount;

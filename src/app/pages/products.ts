@@ -213,8 +213,6 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               </div>
             </div>
           </div>
-    <div [innerHTML]="schemaHtml"></div>
-
           <!-- Products Grid -->
           <div class="lg:col-span-3">
             <!-- Top Bar -->
@@ -238,7 +236,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
             <!-- Loading Skeleton -->
             <div *ngIf="isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              <div *ngFor="let item of [1,2,3,4,5,6]" class="card overflow-hidden">
+              <div *ngFor="let item of [1,2,3,4,5,6]; trackBy: trackByIndex" class="card overflow-hidden">
                 <div class="skeleton h-64 w-full"></div>
                 <div class="p-6">
                   <div class="skeleton h-4 w-3/4 mb-2"></div>
@@ -251,7 +249,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
             <!-- Products Grid -->
             <div *ngIf="!isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              <a *ngFor="let product of products()" [routerLink]="['/products', product.id]" class="card card-hover group overflow-hidden block cursor-pointer w-full">
+              <a *ngFor="let product of products(); trackBy: trackByProductId" [routerLink]="['/products', product.id]" class="card card-hover group overflow-hidden block cursor-pointer w-full">
                 <!-- Image Container with Lazy Loading -->
                 <div class="relative overflow-hidden aspect-square bg-diamond-100">
                   <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" class="w-full h-full object-cover" [alt]="product.name">
@@ -448,6 +446,14 @@ export class ProductsComponent implements OnInit {
   sortBy = "newest";
   isLoading = signal(false);
 
+  trackByProductId(index: number, product: Product): any {
+    return product.id;
+  }
+  
+  trackByIndex(index: number, item: any): any {
+    return index;
+  }
+
   // Price Ranges
   priceRanges = [
     { label: 'Under $10,000', min: 0, max: 10000, id: '0-10000' },
@@ -497,9 +503,7 @@ export class ProductsComponent implements OnInit {
       "description": "Browse our complete selection of fine jewellery and gemstones"
     };
 
-    this.schemaHtml = this.sanitizer.bypassSecurityTrustHtml(
-      '<script type="application/ld+json">' + JSON.stringify(schema).replace(/</g, '\\u003c') + '</script>'
-    );
+    this.seoService.setJsonLd(schema);
 
 
     this.productService.getCategories().subscribe((res: any) => {
@@ -533,8 +537,11 @@ export class ProductsComponent implements OnInit {
     this.isLoading.set(true);
     const filters = {
         category: this.selectedCategories().length > 0 ? this.selectedCategories()[0] : undefined,
-        sortBy: this.sortBy === "newest" ? "newest" : "price",
-        order: this.sortBy === "price-high" ? "desc" : "asc",
+        sortBy: this.sortBy === "newest" ? "newest" : 
+                this.sortBy.startsWith("price") ? "price" : 
+                this.sortBy === "popular" ? "popular" :
+                this.sortBy === "rated" ? "rating" : "newest",
+        order: this.sortBy === "price-high" || this.sortBy === "popular" || this.sortBy === "rated" ? "desc" : "asc",
         // Pass custom filters to API (mock service will likely ignore but good for structure)
         occasions: this.selectedOccasions().join(','),
         styles: this.selectedStyles().join(','),

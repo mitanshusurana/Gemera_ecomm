@@ -23,7 +23,11 @@ public class SettingController {
     public ResponseEntity<Map<String, String>> getAllSettings() {
         List<Setting> settings = settingRepository.findAll();
         Map<String, String> settingsMap = settings.stream()
-            .collect(Collectors.toMap(Setting::getKeyName, Setting::getValue));
+            .filter(s -> s.getKeyName() != null)
+            .collect(Collectors.toMap(
+                Setting::getKeyName, 
+                s -> s.getValue() == null ? "" : s.getValue()
+            ));
         return ResponseEntity.ok(settingsMap);
     }
 

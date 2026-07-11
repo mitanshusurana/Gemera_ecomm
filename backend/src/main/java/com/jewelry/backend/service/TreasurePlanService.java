@@ -41,7 +41,7 @@ public class TreasurePlanService {
         return treasureChestAccountRepository.findAll();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TreasureChestAccount recordPayment(java.util.UUID id) {
         TreasureChestAccount account = treasureChestAccountRepository.findById(id).orElseThrow();
         account.setInstallmentsPaid(account.getInstallmentsPaid() + 1);
@@ -50,21 +50,21 @@ public class TreasurePlanService {
         return treasureChestAccountRepository.save(account);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TreasureChestAccount skipMonth(java.util.UUID id) {
         TreasureChestAccount account = treasureChestAccountRepository.findById(id).orElseThrow();
         account.setNextDueDate(account.getNextDueDate().plusMonths(1));
         return treasureChestAccountRepository.save(account);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TreasureChestAccount closePlan(java.util.UUID id) {
         TreasureChestAccount account = treasureChestAccountRepository.findById(id).orElseThrow();
         account.setStatus("CLOSED");
         return treasureChestAccountRepository.save(account);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TreasureChestAccount enroll(String userEmail, TreasureEnrollRequest request) {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
 

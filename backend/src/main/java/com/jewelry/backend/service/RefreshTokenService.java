@@ -47,7 +47,7 @@ public class RefreshTokenService {
         return token;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteByUserId(UUID userId) {
         return refreshTokenRepository.deleteByUser(userRepository.findById(userId).get());
     }

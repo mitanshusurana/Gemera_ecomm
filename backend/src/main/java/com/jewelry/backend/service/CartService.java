@@ -51,7 +51,7 @@ public class CartService {
     @Autowired
     CouponRepository couponRepository;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart getCart(String userEmail) {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
         Cart cart = cartRepository.findByUser(user).orElseGet(() -> {
@@ -69,7 +69,7 @@ public class CartService {
         return cart;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart addItemToCart(String userEmail, AddToCartRequest request) {
         Cart cart = getCart(userEmail);
         Product product = productRepository.findById(request.getProductId())
@@ -102,7 +102,7 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart addToWishlist(String userEmail, UUID productId) {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
         Product product = productRepository.findById(productId)
@@ -123,7 +123,7 @@ public class CartService {
         return getCart(userEmail);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart removeFromWishlist(String userEmail, UUID productId) {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
         Product product = productRepository.findById(productId)
@@ -138,7 +138,7 @@ public class CartService {
         return getCart(userEmail);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart updateItemQuantity(String userEmail, UUID itemId, int quantity) {
         Cart cart = getCart(userEmail);
         CartItem item = cartItemRepository.findById(itemId)
@@ -161,12 +161,12 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart removeItem(String userEmail, UUID itemId) {
         return updateItemQuantity(userEmail, itemId, 0);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart updateCartOptions(String userEmail, boolean giftWrap) {
         Cart cart = getCart(userEmail);
         cart.setGiftWrap(giftWrap);
@@ -175,7 +175,7 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Cart applyCoupon(String userEmail, String code) {
         Cart cart = getCart(userEmail);
         

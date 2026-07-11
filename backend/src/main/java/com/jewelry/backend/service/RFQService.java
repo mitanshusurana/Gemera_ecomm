@@ -32,7 +32,7 @@ public class RFQService {
     @Autowired
     UserRepository userRepository;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public RFQ createRequest(String userEmail, RFQ rfq) {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
         rfq.setUser(user);
@@ -67,7 +67,7 @@ public class RFQService {
         return rfqRepository.findByUser(user, pageable);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public RFQ updateRequest(UUID id, Map<String, Object> updates) {
         RFQ rfq = getRequest(id);
         if (updates.containsKey("companyName")) rfq.setCompanyName((String) updates.get("companyName"));
@@ -78,7 +78,7 @@ public class RFQService {
         return rfqRepository.save(rfq);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void cancelRequest(UUID id) {
         RFQ rfq = getRequest(id);
         rfq.setStatus("CANCELLED");
@@ -102,7 +102,7 @@ public class RFQService {
         return "Mock PDF Content".getBytes();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public RFQQuote createQuote(UUID id, java.math.BigDecimal proposedPrice, String notes) {
         if (proposedPrice == null || proposedPrice.compareTo(java.math.BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Proposed price must be greater than zero");
@@ -124,7 +124,7 @@ public class RFQService {
         return savedQuote;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void acceptQuote(UUID id) {
         RFQ rfq = getRequest(id);
         RFQQuote quote = getLatestQuote(id);
@@ -136,7 +136,7 @@ public class RFQService {
         rfqRepository.save(rfq);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void rejectQuote(UUID id, String reason) {
         RFQ rfq = getRequest(id);
         rfq.setStatus("REJECTED");
@@ -147,7 +147,7 @@ public class RFQService {
         rfqRepository.save(rfq);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void negotiate(UUID id, NegotiationRequestDTO request) {
         RFQ rfq = getRequest(id);
         rfq.setStatus("NEGOTIATING");

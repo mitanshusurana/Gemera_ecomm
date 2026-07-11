@@ -210,7 +210,7 @@ export class SizeGuideModalComponent {
   @ViewChild('modalContainer') modalContainer?: ElementRef;
 
   @HostListener('document:keydown.tab', ['$event'])
-  onTabHandler(event: KeyboardEvent) {
+  onTabHandler(event: any) {
     if (!this.isOpen || !this.modalContainer) return;
     
     const focusableElements = this.modalContainer.nativeElement.querySelectorAll(

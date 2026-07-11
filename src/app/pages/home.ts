@@ -272,8 +272,36 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     this.seoService.updateTags({
       title: 'Caratloop | Modern Fine Jewelry for the Corporate Age',
-      description: 'Discover lightweight, premium designer jewelry crafted for the modern professional. Shop office wear, daily wear, and gifts. Certified Authenticity.'
+      description: 'Discover lightweight, premium designer jewelry crafted for the modern professional. Shop office wear, daily wear, and gifts. Certified Authenticity.',
+      url: 'https://www.gemera.com'
     });
+
+    const organizationSchema = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Gemera",
+      "alternateName": "Caratloop",
+      "url": "https://www.gemera.com",
+      "logo": "https://www.gemera.com/logo-with-name.webp",
+      "sameAs": [
+        "https://www.facebook.com/gemera",
+        "https://www.instagram.com/gemera"
+      ]
+    };
+    
+    const websiteSchema = {
+      "@context": "https://schema.org/",
+      "@type": "WebSite",
+      "name": "Gemera",
+      "url": "https://www.gemera.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.gemera.com/products?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    };
+
+    this.seoService.setJsonLd([organizationSchema, websiteSchema]);
 
     this.productService.getProducts(0, 8).subscribe(res => {
         this.featuredProducts.set(res.content);

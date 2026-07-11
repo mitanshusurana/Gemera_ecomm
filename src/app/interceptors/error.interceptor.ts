@@ -26,7 +26,7 @@ export class ErrorInterceptor implements HttpInterceptor {
           return throwError(() => error);
         }
 
-        if (error instanceof HttpErrorResponse && error.error instanceof ErrorEvent) {
+        if (error instanceof HttpErrorResponse && typeof ErrorEvent !== 'undefined' && error.error instanceof ErrorEvent) {
           // Client-side error
           errorMessage = `Error: ${error.error.message}`;
         } else if (error instanceof HttpErrorResponse) {

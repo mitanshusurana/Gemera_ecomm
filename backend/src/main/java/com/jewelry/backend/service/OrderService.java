@@ -9,6 +9,7 @@ import com.jewelry.backend.repository.CartRepository;
 import com.jewelry.backend.repository.OrderItemRepository;
 import com.jewelry.backend.repository.OrderRepository;
 import com.jewelry.backend.repository.UserRepository;
+import com.jewelry.backend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,12 +44,20 @@ public class OrderService {
     @Autowired
     PaymentService paymentService;
 
-    @Transactional
+    @Autowired
+    ProductRepository productRepository;
+
+    @Transactional(rollbackFor = Exception.class)
     public Order createOrder(String userEmail, CreateOrderRequest request) {
         if (request.getPaymentDetails() != null && request.getPaymentDetails().getRazorpay_order_id() != null) {
             java.util.Optional<Order> existingOrder = orderRepository.findByRazorpayOrderId(request.getPaymentDetails().getRazorpay_order_id());
             if (existingOrder.isPresent()) {
                 return existingOrder.get(); // Idempotency check: return existing order to avoid duplicates
+            }
+        } else if (request.getIdempotencyKey() != null) {
+            java.util.Optional<Order> existingOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey());
+            if (existingOrder.isPresent()) {
+                return existingOrder.get(); // COD idempotency check
             }
         }
 
@@ -97,21 +106,38 @@ public class OrderService {
                 paymentService.verifyPayment(verifyReq);
                 order.setStatus("PAID");
             } catch (Exception e) {
-                order.setStatus("PAYMENT_FAILED");
+                // Do not create order on failed payment, throw exception to trigger rollback
+                throw new RuntimeException("Payment verification failed", e);
             }
         } else if ("COD".equalsIgnoreCase(request.getPaymentMethod()) || "CASH_ON_DELIVERY".equalsIgnoreCase(request.getPaymentMethod())) {
             // Cash on delivery is considered confirmed but not paid yet
             order.setStatus("CONFIRMED");
         }
+        
+        if (request.getIdempotencyKey() != null) {
+            order.setIdempotencyKey(request.getIdempotencyKey());
+        }
 
         Order savedOrder = orderRepository.save(order);
 
         for (CartItem cartItem : cart.getItems()) {
+            Product product = productRepository.findByIdWithPessimisticWrite(cartItem.getProduct().getId())
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            if (product.getStock() != null && product.getStock() < cartItem.getQuantity()) {
+                throw new RuntimeException("Insufficient stock for product: " + product.getName());
+            }
+
+            if (product.getStock() != null) {
+                product.setStock(product.getStock() - cartItem.getQuantity());
+                productRepository.save(product);
+            }
+
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
-            orderItem.setProduct(cartItem.getProduct());
+            orderItem.setProduct(product);
             orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPrice(cartItem.getProduct().getPrice());
+            orderItem.setPrice(product.getPrice());
             orderItem.setOptions(cartItem.getOptions());
 
             orderItemRepository.save(orderItem);

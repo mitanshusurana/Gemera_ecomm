@@ -17,7 +17,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.core.env.Environment;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
@@ -28,6 +31,9 @@ public class SecurityConfig {
 
   @Autowired
   private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+  @Autowired
+  private Environment env;
 
   @Bean
   public DaoAuthenticationProvider authenticationProvider() {
@@ -51,18 +57,17 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    // Allowed origins
-    configuration.setAllowedOrigins(Arrays.asList(
-      "http://localhost:4200",      // Angular frontend development
-      "http://localhost:3000",      // Alternative frontend
-      "http://localhost:4300",      // Angular admin panel
-      "http://129.159.18.63",       // Deployed frontend
-      "http://129.159.18.63/",      // Deployed frontend explicitly trailing slash
-      "http://129.159.18.63:4300",  // Deployed admin panel
-      "http://68.233.96.36",        // New deployed frontend
-      "http://68.233.96.36/",       // New deployed frontend explicitly trailing slash
-      "https://yourdomain.com"      // Update with your production domain
-    ));
+    // Allowed origins from environment
+    String[] allowedOrigins = env.getProperty("app.cors.allowed-origins", "http://localhost:4200").split(",");
+    
+    // In prod profile, enforce HTTPS
+    boolean isProd = Arrays.asList(env.getActiveProfiles()).contains("prod");
+    List<String> originsList = Arrays.stream(allowedOrigins)
+            .map(String::trim)
+            .filter(origin -> !isProd || origin.startsWith("https://") || origin.startsWith("http://localhost"))
+            .collect(Collectors.toList());
+
+    configuration.setAllowedOrigins(originsList);
 
     // Allowed HTTP methods
     configuration.setAllowedMethods(Arrays.asList(
@@ -117,14 +122,18 @@ public class SecurityConfig {
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/settings").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/stores/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/metal-prices").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/gift-cards/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/treasure/config").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/certificates/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/orders/track/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/email/subscribe").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/appointments").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/inquiries").permitAll()
-          .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-          .requestMatchers("/actuator/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reviews/**").permitAll()
+          .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN")
+          .requestMatchers("/actuator/**").hasRole("ADMIN")
           .anyRequest().authenticated()
       )
 

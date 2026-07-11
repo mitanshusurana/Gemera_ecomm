@@ -14,14 +14,25 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.springframework.scheduling.annotation.Scheduled;
+
 @RestController
 @RequestMapping("/api/v1/auth")
-
 @Tag(name = "Authentication", description = "Auth management APIs")
 public class AuthController {
 
     @Autowired
     AuthService authService;
+
+    private final ConcurrentHashMap<String, AtomicInteger> loginAttempts = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedRate = 60000)
+    public void resetLoginAttempts() {
+        loginAttempts.clear();
+    }
 
     @PostMapping("/register")
     @Operation(summary = "Register new user")
@@ -33,8 +44,17 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Authenticate user")
     @ApiResponse(responseCode = "200", description = "Login successful")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        AtomicInteger attempts = loginAttempts.computeIfAbsent(ip, k -> new AtomicInteger(0));
+        
+        if (attempts.incrementAndGet() > 5) {
+            return ResponseEntity.status(429).body(Map.of("message", "Too many login attempts. Please try again later."));
+        }
+        
+        AuthResponse response = authService.login(request);
+        attempts.set(0); // reset on success
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")

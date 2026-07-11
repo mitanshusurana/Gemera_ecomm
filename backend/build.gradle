@@ -43,6 +43,9 @@ dependencies {
 	// Email
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+	// Rate Limiting
+	implementation 'com.bucket4j:bucket4j-core:8.7.0'
+
 	// Payment
 	implementation 'com.razorpay:razorpay-java:1.4.3'
 

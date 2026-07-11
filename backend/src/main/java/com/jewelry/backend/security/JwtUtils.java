@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtUtils {
@@ -19,6 +22,16 @@ public class JwtUtils {
 
     @Value("${spring.security.jwt.expiration-ms}")
     private int jwtExpirationMs;
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        if (keyBytes.length < 32) {
+            logger.warn("JWT Secret is too short! It should be at least 256 bits (32 bytes) for HS256. Current length: {} bytes", keyBytes.length);
+        }
+    }
 
     public String generateJwtToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
@@ -54,13 +67,13 @@ public class JwtUtils {
             Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
             return true;
         } catch (MalformedJwtException e) {
-            // log error
+            logger.error("Invalid JWT token: {}", e.getMessage());
         } catch (ExpiredJwtException e) {
-            // log error
+            logger.error("JWT token is expired: {}", e.getMessage());
         } catch (UnsupportedJwtException e) {
-            // log error
+            logger.error("JWT token is unsupported: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
-            // log error
+            logger.error("JWT claims string is empty: {}", e.getMessage());
         }
         return false;
     }
