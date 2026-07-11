@@ -1,0 +1,41 @@
+version: '3.8'
+
+# BACKEND VM DEPLOYMENT (Backend + Admin + DB)
+# Usage: docker compose -f docker-compose.backend.yml up -d
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jewelry-postgres
+    restart: always
+    env_file:
+      - .env.backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-backend:latest}
+    container_name: jewelry-backend
+    restart: always
+    env_file:
+      - .env.backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  admin:
+    image: ${ADMIN_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-admin:latest}
+    container_name: jewelry-admin
+    restart: always
+    env_file:
+      - .env.backend
+    ports:
+      - "81:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
