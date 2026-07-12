@@ -23,7 +23,7 @@ services:
       R2_ACCESS_KEY: b6732f19ad8e84b89984e96c78d6a025
       R2_SECRET_KEY: ea7b90f35f348cb25d590bd288eb4c3099519be8daaa17f65bddd57d7f128696
       R2_ENDPOINT: https://3145274f44bbf3178e1f2469ff4fdb07.r2.cloudflarestorage.com
-      R2_BUCKET_NAME: suranagemssassets
+      R2_BUCKET_NAME: suranagemsassets
       R2_PUBLIC_URL: https://pub-edd8f524b4784df1b5961ce0d431f767.r2.dev
       MAIL_HOST: smtp.gmail.com
       MAIL_PORT: 587
@@ -67,11 +67,4 @@ services:
     depends_on:
       - backend
 
-  3d-service:
-    build:
-      context: ./3d-service
-      dockerfile: Dockerfile
-    container_name: gemera-3d-dev
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
+
