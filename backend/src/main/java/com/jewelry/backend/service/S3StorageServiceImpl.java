@@ -42,6 +42,7 @@ public class S3StorageServiceImpl implements StorageService {
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.US_EAST_1) // Region doesn't matter for R2 but SDK v2 requires it
+                .forcePathStyle(true) // Required for Cloudflare R2
                 .httpClient(software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient.create())
                 .build();
     }

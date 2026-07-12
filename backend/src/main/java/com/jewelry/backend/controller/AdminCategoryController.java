@@ -16,10 +16,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 @Tag(name = "Admin Categories", description = "Admin API for managing categories")
-@PreAuthorize("hasAuthority('ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
+@Transactional
 public class AdminCategoryController {
 
     @Autowired

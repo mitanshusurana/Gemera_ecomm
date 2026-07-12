@@ -54,14 +54,7 @@ services:
     depends_on:
       - backend
 
-  3d-service:
-    build:
-      context: ./3d-service
-      dockerfile: Dockerfile
-    container_name: jewelry-3d-service-local
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
+
 
 volumes:
   postgres_data_local:

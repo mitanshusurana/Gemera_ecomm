@@ -29,13 +29,13 @@ public class CustomInquiryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<CustomInquiry>> getAllInquiries() {
         return ResponseEntity.ok(customInquiryService.getAllInquiries());
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CustomInquiry> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         return ResponseEntity.ok(customInquiryService.updateStatus(id, payload.get("status")));
     }

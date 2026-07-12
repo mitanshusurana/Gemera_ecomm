@@ -28,7 +28,7 @@ import java.lang.management.OperatingSystemMXBean;
 
 @RestController
 @RequestMapping("/api/v1/admin")
-@PreAuthorize("hasAuthority('ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     @Autowired

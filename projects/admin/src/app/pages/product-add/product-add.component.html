@@ -111,17 +111,6 @@
           <button type="button" (click)="removeExistingVideo()" class="text-red-500 text-sm hover:underline">Remove Video</button>
         </div>
         
-        <div>
-          <label class="block text-sm font-medium text-ink">Generate 3D Model (.glb)</label>
-          <p class="text-xs text-gray-500 mb-1">Upload a video or image to generate a 3D model automatically using our local AI service.</p>
-          <input type="file" accept="video/*,image/*" (change)="on3DFileChange($event)" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-        </div>
-        <div *ngIf="existingModel3dUrl" class="mt-4">
-          <p class="text-sm text-green-600 mb-2">3D Model generated successfully.</p>
-          <p class="text-xs text-gray-500 truncate">{{ existingModel3dUrl }}</p>
-          <button type="button" (click)="removeExisting3DModel()" class="text-red-500 text-sm hover:underline">Remove 3D Model</button>
-        </div>
-
         <div *ngIf="uploadProgressMessage" class="mt-2 text-sm text-blue-600">
           {{ uploadProgressMessage }}
         </div>

@@ -32,7 +32,7 @@ public class SettingController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateSettings(@RequestBody Map<String, String> updates) {
         updates.forEach((key, value) -> {
             Setting setting = settingRepository.findByKeyName(key).orElse(new Setting());
