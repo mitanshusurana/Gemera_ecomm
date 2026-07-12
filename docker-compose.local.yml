@@ -1,19 +1,9 @@
-version: '3.8'
+
 
 # LOCAL DEV — All services running locally
 # Usage: docker compose -f docker-compose.local.yml up --build
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: jewelry-postgres-local
-    restart: unless-stopped
-    env_file:
-      - .env.local
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data_local:/var/lib/postgresql/data
 
   backend:
     build:
@@ -25,8 +15,7 @@ services:
       - .env.local
     ports:
       - "8080:8080"
-    depends_on:
-      - postgres
+
 
   frontend:
     build:
@@ -56,5 +45,3 @@ services:
 
 
 
-volumes:
-  postgres_data_local:

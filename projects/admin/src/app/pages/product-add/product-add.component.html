@@ -144,8 +144,128 @@
       </div>
     </div>
 
+    <!-- Finished Jewelry Details -->
+    <div *ngIf="showJewelryFields" class="border-b border-gray-200 pb-8 mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-4">Finished Jewelry Details</h3>
+
+      <div class="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+        <h4 class="text-md font-medium text-ink mb-3">Specifications</h4>
+        <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+          
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Gross Weight (g)</label>
+            <input type="number" formControlName="grossWeight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          </div>
+          
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Total Carat Weight</label>
+            <input type="number" formControlName="totalCaratWeight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Dimensions</label>
+            <input type="text" formControlName="dimensions" placeholder="e.g. 10x12 mm" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          </div>
+          
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Design Style</label>
+            <input type="text" formControlName="designStyle" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Metal Color</label>
+            <select formControlName="metalColor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              <option value="">Select Color</option>
+              <option *ngFor="let col of metalColors" [value]="col">{{ col }}</option>
+            </select>
+          </div>
+          
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">HUID</label>
+            <input type="text" formControlName="huid" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- Metal Details Group -->
+      <div class="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50" formGroupName="metalDetails">
+        <h4 class="text-md font-medium text-ink mb-3">Metal Details</h4>
+        <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Metal Type</label>
+            <select formControlName="metalType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              <option value="">Select Type</option>
+              <option *ngFor="let m of metalTypes" [value]="m">{{ m }}</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Metal Purity</label>
+            <select formControlName="metalPurity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              <option value="">Select Purity</option>
+              <option *ngFor="let p of metalPurities" [value]="p">{{ p }}</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-ink">Net Weight (g)</label>
+            <input type="number" formControlName="netWeight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          </div>
+        </div>
+      </div>
+
+      <!-- Stone Details Array (For Jewelry) -->
+      <div class="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="text-md font-medium text-ink">Stone Details (Mounted)</h4>
+          <button type="button" (click)="addStoneDetail()" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">+ Add Stone</button>
+        </div>
+        
+        <div formArrayName="stoneDetails">
+          <div *ngFor="let stone of stoneDetails.controls; let i=index" [formGroupName]="i" class="mb-4 p-4 border border-gray-300 rounded-md bg-white">
+            <div class="flex justify-between items-center mb-2">
+              <h5 class="text-sm font-bold text-gray-700">Stone #{{ i + 1 }}</h5>
+              <button type="button" (click)="removeStoneDetail(i)" class="text-red-500 text-sm hover:underline">Remove</button>
+            </div>
+            <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-gray-500">Stone Type (Species/Variety)</label>
+                <input type="text" formControlName="type" placeholder="e.g. Diamond, Ruby" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-gray-500">Shape</label>
+                <select formControlName="shape" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                  <option value="">Select Shape</option>
+                  <option *ngFor="let s of shapes" [value]="s">{{ s }}</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-gray-500">Carat Weight</label>
+                <input type="number" formControlName="caratWeight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-gray-500">Color</label>
+                <input type="text" formControlName="color" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-gray-500">Clarity</label>
+                <select formControlName="clarity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                  <option value="">Select Clarity</option>
+                  <option *ngFor="let c of clarities" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-gray-500">Quantity (Pcs)</label>
+                <input type="number" formControlName="quantity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              </div>
+            </div>
+          </div>
+          <p *ngIf="stoneDetails.length === 0" class="text-sm text-gray-500">No stones added yet.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Step 5: Loose Gemstone Details -->
-    <div *ngIf="selectedCategory === 'Gemstones' || selectedCategory === 'gemstones'" class="border-b border-gray-200 pb-8 mb-8">
+    <div *ngIf="showGemstoneFields" class="border-b border-gray-200 pb-8 mb-8">
       <h3 class="text-lg font-bold leading-6 text-ink mb-4">5. Loose Gemstone Details</h3>
 
       <!-- Identification -->
@@ -295,7 +415,7 @@
     </div>
 
     <!-- Final Step: Customization Options -->
-    <div *ngIf="selectedCategory !== 'Gemstones' && selectedCategory !== 'gemstones'" class="mb-8">
+    <div *ngIf="showJewelryFields" class="mb-8">
       <h3 class="text-lg font-bold leading-6 text-ink mb-4">Final Step: Customization Options</h3>
       <p class="text-sm text-gray-500 mb-4">Add custom variations like metal color, sizing, or personalization.</p>
 

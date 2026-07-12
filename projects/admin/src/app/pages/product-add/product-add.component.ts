@@ -116,6 +116,21 @@ export class ProductAddComponent implements OnInit {
     return this.productForm.get('category')?.value;
   }
 
+  get selectedCategoryObject(): any {
+    const categoryName = this.selectedCategory;
+    if (!categoryName) return null;
+    return this.categoriesList.find((c: any) => c.displayName === categoryName || c.value === categoryName);
+  }
+
+  get showJewelryFields(): boolean {
+    return this.selectedCategoryObject?.showJewelryFields ?? false;
+  }
+
+  get showGemstoneFields(): boolean {
+    return this.selectedCategoryObject?.showGemstoneFields ?? false;
+  }
+
+
   get availableSubCategories(): any[] {
     const categoryName = this.selectedCategory;
     if (!categoryName) return [];

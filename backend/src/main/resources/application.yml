@@ -1,6 +1,6 @@
 app:
   cors:
-    allowed-origins: ${NG_ALLOWED_HOSTS:http://localhost:4200,http://localhost:4300,http://129.159.18.63,http://129.159.18.63:8080}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4300,http://129.159.18.63,http://129.159.18.63:8080}
   admin:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
