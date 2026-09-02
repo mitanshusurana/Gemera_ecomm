@@ -16,6 +16,11 @@ from sqlalchemy import text
 from pydantic import BaseModel, Field, model_validator
 
 from app.core.database import get_db, set_audit_context
+from app.core.costing import (
+    cost_of_goods_sold,
+    account_id_for_code,
+    resolve_stock_account,
+)
 from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
 from app.core.stock import assert_stock_available
@@ -297,6 +302,11 @@ async def create_sales_invoice(
         )
         loc_id = loc_res.scalar()
 
+        # Cost of goods sold, accumulated per stock account so the journal can
+        # relieve each one correctly.
+        cogs_by_account: dict[str, Decimal] = {}
+        total_cogs = Decimal("0")
+
         for cl in computed_lines:
             line = cl["line"]
             mat_res = await db.execute(
@@ -313,6 +323,29 @@ async def create_sales_invoice(
                     context=f"invoice {invoice_no}",
                     material_label=str(line.material_id),
                 )
+
+                # Weighted average cost at the moment of issue.
+                line_cogs = await cost_of_goods_sold(
+                    db, company_id, mat_id, line.quantity
+                )
+                if line_cogs > 0:
+                    stock_acc = await resolve_stock_account(db, company_id, mat_id)
+                    if not stock_acc:
+                        # Skipping would debit COGS with nothing to credit, and
+                        # the balance invariant would then reject the whole
+                        # invoice with an opaque difference. Name the cause.
+                        raise HTTPException(
+                            status_code=400,
+                            detail=(
+                                f"Material {line.material_id} has no stock account and "
+                                "its category has no default. Set one before selling it. "
+                                "No data was saved."
+                            ),
+                        )
+                    total_cogs += line_cogs
+                    cogs_by_account[stock_acc] = (
+                        cogs_by_account.get(stock_acc, Decimal("0")) + line_cogs
+                    )
                 await db.execute(
                     text("""
                         INSERT INTO caratloop.stock_ledger_entries (
@@ -332,7 +365,10 @@ async def create_sales_invoice(
                         "mat_id": mat_id,
                         "entry_date": inv_date_obj,
                         "qty": line.quantity,
-                        "amt": cl["line_total"],
+                        # Cost, not the sale value. Recording line_total here
+                        # (tax inclusive) fed margin and GST back into the
+                        # weighted average this very function reads.
+                        "amt": line_cogs,
                         "gw": line.gross_weight if line.gross_weight else 0.0,
                         "nw": line.net_weight if line.net_weight else 0.0,
                         "inv_id": invoice_id,
@@ -508,6 +544,51 @@ async def create_sales_invoice(
                     ),
                 )
             seq += 1
+
+        # ─── Cost of goods sold ──────────────────────────────────────────────
+        # Dr COGS / Cr Stock, relieving each stock account by the cost of what
+        # left it. Without this the sale recognised revenue while inventory
+        # stayed on the balance sheet, so gross profit equalled revenue.
+        if total_cogs > 0:
+            cogs_acc = await account_id_for_code(db, company_id, "COGS-001")
+            if not cogs_acc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Chart of accounts is missing 'COGS-001' (Cost of Goods "
+                        "Sold). Create it before raising this invoice. "
+                        "No data was saved."
+                    ),
+                )
+
+            await db.execute(
+                text(
+                    "INSERT INTO caratloop.journal_entry_lines "
+                    "(journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration) "
+                    "VALUES (:je_id, :seq, :aid, :dr, 0, :narr)"
+                ),
+                {
+                    "je_id": je_id, "seq": seq, "aid": cogs_acc,
+                    "dr": total_cogs,
+                    "narr": f"Cost of goods sold — {invoice_no}",
+                },
+            )
+            seq += 1
+
+            for stock_acc, amount in cogs_by_account.items():
+                await db.execute(
+                    text(
+                        "INSERT INTO caratloop.journal_entry_lines "
+                        "(journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration) "
+                        "VALUES (:je_id, :seq, :aid, 0, :cr, :narr)"
+                    ),
+                    {
+                        "je_id": je_id, "seq": seq, "aid": stock_acc,
+                        "cr": amount,
+                        "narr": f"Stock relieved at cost — {invoice_no}",
+                    },
+                )
+                seq += 1
 
         # Update invoice with journal entry UUID reference
         await db.execute(

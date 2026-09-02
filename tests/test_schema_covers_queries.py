@@ -135,6 +135,7 @@ def test_journal_lines_cannot_be_double_sided():
     "CRD-001", "PUR-001", "MFG-LOSS",
     "STK-001", "STK-003", "STK-004", "STK-005",
     "STK-006", "STK-007", "STK-008", "STK-009",
+    "COGS-001",
 ])
 def test_every_hardcoded_account_code_is_seeded(code):
     """A missing code made INSERT...SELECT insert zero rows, silently."""
