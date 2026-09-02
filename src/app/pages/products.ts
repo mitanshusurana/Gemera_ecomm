@@ -22,381 +22,392 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   imports: [CommonModule, FormsModule, RouterLink, QuickViewModalComponent, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-surface">
-      <!-- Header -->
-      <div class="bg-diamond-50 border-b border-diamond-200 py-6 md:py-8">
-        <div class="container-luxury">
-          <h1 class="text-3xl md:text-4xl font-display font-bold text-diamond-900 mb-4">
-            Our Collections
+    <!-- APPLE DESIGN SYSTEM: FINE JEWELRY ARCHIVES (100% SCREEN UTILIZATION) -->
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px]">
+      
+      <!-- Top Parchment Header -->
+      <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-12 px-6 text-center">
+        <div class="max-w-[980px] mx-auto">
+          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2 block">Gemera Fine Jewelry</span>
+          <h1 class="font-display font-semibold text-3xl sm:text-4xl md:text-5xl text-[#1d1d1f] tracking-tight leading-tight mb-3">
+            Fine Jewels & Gemstones.
           </h1>
-          <p class="text-lg text-ink">
-            Browse our complete selection of fine jewellery and gemstones
+          <p class="font-sans text-base md:text-lg text-[#7a7a7a] font-normal max-w-xl mx-auto">
+            Certified ethical diamonds, 18K solid gold, and hand-selected natural gems.
           </p>
         </div>
-      </div>
+      </section>
 
-      <!-- Main Content -->
-      <div class="container-luxury py-8">
-        <!-- Mobile Filter Toggle -->
-        <div class="lg:hidden mb-6">
-          <button (click)="isFilterOpen.set(true)" class="flex items-center gap-2 btn-outline w-full justify-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-            </svg>
-            Filters & Sort
-          </button>
+      <!-- Sticky Apple Option Chip Carousel Bar (Tier 2 Sub-Nav) -->
+      <nav class="sub-nav-frosted sticky top-[96px] z-30 py-3.5 px-4 md:px-12 border-b border-[#e0e0e0]">
+        <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
+          
+          <!-- Category Option Chips (Horizontal Scrollable) -->
+          <div class="flex items-center space-x-2 overflow-x-auto hide-scrollbar py-1 text-xs">
+            <button
+              (click)="toggleCategory('all')"
+              [class.bg-white]="selectedCategories().length === 0"
+              [class.border-[#D4AF37]]="selectedCategories().length === 0"
+              [class.border-2]="selectedCategories().length === 0"
+              [class.text-[#1d1d1f]]="selectedCategories().length === 0"
+              [class.font-semibold]="selectedCategories().length === 0"
+              [class.shadow-sm]="selectedCategories().length === 0"
+              [class.text-[#7a7a7a]]="selectedCategories().length > 0"
+              class="px-4 py-2 rounded-full border border-[#e0e0e0] whitespace-nowrap active-press transition-all hover:text-[#1d1d1f]"
+            >
+              All Collections
+            </button>
+
+            <button
+              *ngFor="let cat of categories"
+              (click)="toggleCategory(cat.name)"
+              [class.bg-white]="selectedCategories().includes(cat.name)"
+              [class.border-[#D4AF37]]="selectedCategories().includes(cat.name)"
+              [class.border-2]="selectedCategories().includes(cat.name)"
+              [class.text-[#1d1d1f]]="selectedCategories().includes(cat.name)"
+              [class.font-semibold]="selectedCategories().includes(cat.name)"
+              [class.shadow-sm]="selectedCategories().includes(cat.name)"
+              [class.text-[#7a7a7a]]="!selectedCategories().includes(cat.name)"
+              class="px-4 py-2 rounded-full border border-[#e0e0e0] whitespace-nowrap active-press transition-all hover:text-[#1d1d1f]"
+            >
+              {{ cat.displayName }}
+            </button>
+          </div>
+
+          <!-- Quick Action: Ring Builder -->
+          <a routerLink="/builder" class="btn-apple-pill text-xs !py-1.5 !px-4 hidden sm:inline-flex whitespace-nowrap flex-shrink-0">
+            ✦ Custom Studio
+          </a>
+
+        </div>
+      </nav>
+
+      <!-- Utility Filter Control Bar (100% Screen Width) -->
+      <section class="bg-white border-b border-[#e0e0e0] py-4 px-4 md:px-12">
+        <div class="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
+          
+          <!-- Left Controls: Search Pill & Quick Metals -->
+          <div class="flex flex-wrap items-center gap-3">
+            
+            <!-- Pill Search Input -->
+            <div class="relative w-48 sm:w-64">
+              <input
+                type="text"
+                [(ngModel)]="searchQuery"
+                (keyup.enter)="loadProducts()"
+                placeholder="Search gems, rings..."
+                class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full pl-9 pr-4 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37] transition-colors"
+              />
+              <svg class="w-4 h-4 text-[#7a7a7a] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+
+            <!-- Metal Quick Chips -->
+            <div class="hidden lg:flex items-center space-x-2">
+              <button
+                *ngFor="let metal of metalTypes"
+                (click)="toggleFilter('metal', metal)"
+                [class.bg-[#1d1d1f]]="selectedMetals().includes(metal)"
+                [class.text-white]="selectedMetals().includes(metal)"
+                [class.border-[#1d1d1f]]="selectedMetals().includes(metal)"
+                class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-[11px] text-[#7a7a7a] hover:text-[#1d1d1f] transition-all"
+              >
+                {{ metal }}
+              </button>
+            </div>
+
+            <!-- Active Filters Badge & Clear Pill -->
+            <button
+              *ngIf="activeFilterCount() > 0"
+              (click)="clearFilters()"
+              class="px-3 py-1.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] font-medium border border-[#D4AF37]/30 hover:bg-[#D4AF37]/20 transition-all flex items-center gap-1.5"
+            >
+              <span>Reset Filters ({{ activeFilterCount() }})</span>
+              <span>✕</span>
+            </button>
+
+          </div>
+
+          <!-- Right Controls: Refine Modal Trigger & Sort -->
+          <div class="flex items-center space-x-3 ml-auto">
+            
+            <!-- Refine Drawer Toggle Pill -->
+            <button
+              (click)="isFilterOpen.set(true)"
+              class="btn-apple-dark text-xs !py-2 !px-4 flex items-center gap-2"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+              </svg>
+              <span>Filters</span>
+              <span *ngIf="activeFilterCount() > 0" class="bg-[#D4AF37] text-black text-[10px] font-bold px-1.5 rounded-full">
+                {{ activeFilterCount() }}
+              </span>
+            </button>
+
+            <!-- Sort Selector Pill -->
+            <div class="relative">
+              <select
+                [(ngModel)]="sortBy"
+                (change)="loadProducts()"
+                class="bg-white border border-[#e0e0e0] rounded-full px-4 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37] appearance-none pr-8 cursor-pointer"
+              >
+                <option value="newest">Sort: Newest</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="popular">Most Popular</option>
+                <option value="rated">Best Rated</option>
+              </select>
+              <span class="absolute right-3 top-2.5 pointer-events-none text-[#7a7a7a]">▾</span>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Main Content: Full Screen Width 4-Column Utility Grid (100% Screen Utilization) -->
+      <main class="max-w-[1440px] mx-auto px-4 md:px-12 py-8">
+        
+        <!-- Results Counter Bar -->
+        <div class="flex justify-between items-center mb-6 text-xs text-[#7a7a7a]">
+          <p>
+            Showing <span class="font-semibold text-[#1d1d1f]">{{ paginationInfo().start }}-{{ paginationInfo().end }}</span> of
+            <span class="font-semibold text-[#1d1d1f]">{{ pagination().totalItems }}</span> luxury items
+          </p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <!-- Sidebar Filters -->
-          <div [class.fixed]="true" [class.inset-0]="true" [class.z-50]="true" [class.lg:static]="true" [class.lg:z-auto]="true"
-               [class.hidden]="!isFilterOpen()" [class.lg:block]="true" class="lg:col-span-1">
+        <!-- Skeleton Loader -->
+        <div *ngIf="isLoading()" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
+          <div *ngFor="let item of [1,2,3,4,5,6,7,8]" class="store-utility-card animate-pulse">
+            <div class="w-full aspect-square bg-[#f5f5f7] rounded-[12px] mb-4"></div>
+            <div class="h-4 bg-[#f5f5f7] rounded w-3/4 mb-2"></div>
+            <div class="h-5 bg-[#f5f5f7] rounded w-1/2 mb-4"></div>
+            <div class="h-9 bg-[#f5f5f7] rounded-full w-full"></div>
+          </div>
+        </div>
 
-            <!-- Mobile Overlay -->
-            <div *ngIf="isFilterOpen()" (click)="isFilterOpen.set(false)" class="absolute inset-0 bg-black/50 lg:hidden"></div>
+        <!-- Products 4-Column Grid -->
+        <div *ngIf="!isLoading()" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
+          <article *ngFor="let product of products(); trackBy: trackByProductId" [routerLink]="['/products', product.id]" class="store-utility-card cursor-pointer group flex flex-col justify-between">
+            <div>
+              <!-- Image Viewport with Surface Product Shadow -->
+              <div class="relative overflow-hidden aspect-square bg-[#f5f5f7] rounded-[12px] mb-4">
+                <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" [alt]="product.name">
+                <div *ngIf="!product.imageUrl && !product.images?.[0]" class="w-full h-full flex items-center justify-center text-[#D4AF37] p-8">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-16 h-16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a8 8 0 100-16 8 8 0 000 16zm0-16V2m-3 2h6M9 6l3-4 3 4" /></svg>
+                </div>
 
-            <!-- Drawer Content -->
-            <div class="relative h-full w-80 bg-surface p-6 overflow-y-auto lg:h-auto lg:w-auto lg:p-0 lg:bg-transparent transition-transform duration-300"
-                 [class.translate-x-0]="isFilterOpen()"
-                 [class.-translate-x-full]="!isFilterOpen() && false"> <!-- Note: lg:block handles desktop visibility -->
-
-              <!-- Mobile Header -->
-              <div class="flex items-center justify-between mb-6 lg:hidden">
-                <h3 class="font-display font-bold text-xl">Filters</h3>
-                <button (click)="isFilterOpen.set(false)" class="p-2 hover:bg-surface rounded-full">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <!-- Circular Floating Translucent Actions -->
+                <button (click)="handleWishlist($event, product.id)" class="absolute top-3 left-3 w-8 h-8 bg-white/80 hover:bg-white text-[#1d1d1f] rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm" title="Wishlist">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                   </svg>
                 </button>
-              </div>
-
-              <div class="space-y-6">
-                <!-- Search Filter -->
-                <div class="card p-6">
-                  <h3 class="font-semibold text-ink mb-4">Search</h3>
-                  <div class="relative">
-                    <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="loadProducts()" placeholder="Search products..." class="input-field pl-10 w-full" />
-                    <span class="absolute left-3 top-3.5 text-gray-400">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Category Filter -->
-                <div class="card p-6">
-                  <h3 class="font-semibold text-ink mb-4">Categories</h3>
-                  <div class="space-y-4">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        class="w-4 h-4"
-                        [checked]="selectedCategories().length === 0"
-                        (change)="toggleCategory('all')"
-                      />
-                      <span class="text-sm font-semibold text-ink">All Collections</span>
-                    </label>
-
-                    <div *ngFor="let category of categories" class="space-y-2">
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            [checked]="selectedCategories().includes(category.name)"
-                            (change)="toggleCategory(category.name)"
-                            class="w-4 h-4 text-ink rounded border-ink focus:ring-primary cursor-pointer"
-                          >
-                          <span class="text-sm text-ink font-semibold group-hover:text-ink transition-colors">{{category.displayName}}</span>
-                        </label>
-
-                        <div *ngIf="category.subcategories?.length" class="pl-6 space-y-2 border-l border-ink ml-2">
-                          <div *ngFor="let subcat of category.subcategories">
-                             <label class="flex items-center gap-3 cursor-pointer group">
-                              <input
-                                type="checkbox"
-                                [checked]="selectedCategories().includes(subcat.name)"
-                                (change)="toggleCategory(subcat.name)"
-                                class="w-4 h-4 text-ink rounded border-ink focus:ring-primary cursor-pointer"
-                              >
-                              <span class="text-sm text-ink group-hover:text-ink transition-colors">{{subcat.displayName}}</span>
-                             </label>
-                             <div *ngIf="subcat.subcategories?.length" class="pl-6 space-y-2 mt-2">
-                                <label *ngFor="let child of subcat.subcategories" class="flex items-center gap-3 cursor-pointer group">
-                                  <input
-                                    type="checkbox"
-                                    [checked]="selectedCategories().includes(child.name)"
-                                    (change)="toggleCategory(child.name)"
-                                    class="w-4 h-4 text-ink rounded border-ink focus:ring-primary cursor-pointer"
-                                  >
-                                  <span class="text-sm text-ink group-hover:text-ink transition-colors">- {{child.displayName}}</span>
-                                </label>
-                             </div>
-                          </div>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Price Filter -->
-                <div class="card p-6">
-                  <h3 class="font-semibold text-ink mb-4">Price Range</h3>
-                  <div class="space-y-3">
-                    <label *ngFor="let range of priceRanges" class="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            class="w-4 h-4"
-                            [checked]="selectedPriceRanges().includes(range.id)"
-                            (change)="togglePriceRange(range.id)"
-                        />
-                        <span class="text-sm text-ink">{{ range.label }}</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Metal Filter -->
-                <div class="card p-6">
-                  <h3 class="font-semibold text-ink mb-4">Metal Type</h3>
-                  <div class="space-y-3">
-                    <label *ngFor="let metal of metalTypes" class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedMetals().includes(metal)" (change)="toggleFilter('metal', metal)" />
-                      <span class="text-sm text-ink">{{ metal }}</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Certification Filter -->
-                <div class="card p-6">
-                  <h3 class="font-semibold text-ink mb-4">Certification</h3>
-                  <div class="space-y-3">
-                    <label *ngFor="let cert of certificationsList" class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedCertifications().includes(cert)" (change)="toggleFilter('certification', cert)" />
-                      <span class="text-sm text-ink">{{ cert }}</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Gemstone Filter -->
-                <div class="card p-6" *ngIf="isGemstoneCategorySelected() || selectedCategories().length === 0">
-                  <h3 class="font-semibold text-ink mb-4">Gemstone Type</h3>
-                  <div class="space-y-3">
-                    <label *ngFor="let gemstone of gemstoneTypes" class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedGemstones().includes(gemstone)" (change)="toggleFilter('gemstone', gemstone)" />
-                      <span class="text-sm text-ink">{{ gemstone }}</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Occasion Filter (New) -->
-                <div class="card p-6">
-                  <h3 class="font-semibold text-ink mb-4">Occasion</h3>
-                  <div class="space-y-3">
-                    <label *ngFor="let occasion of occasionsList" class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedOccasions().includes(occasion)" (change)="toggleFilter('occasion', occasion)" />
-                      <span class="text-sm text-ink">{{ occasion }}</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Style Filter (New) -->
-                <div class="card p-6">
-                  <h3 class="font-semibold text-ink mb-4">Shop by Look</h3>
-                  <div class="space-y-3">
-                    <label *ngFor="let style of stylesList" class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" class="w-4 h-4" [checked]="selectedStyles().includes(style)" (change)="toggleFilter('style', style)" />
-                      <span class="text-sm text-ink">{{ style }}</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Clear Filters -->
-                <button (click)="clearFilters(); isFilterOpen.set(false)" class="w-full btn-ghost border border-diamond-300">
-                  Clear All Filters
+                <button (click)="handleAddToCompare($event, product)" class="absolute top-3 right-3 w-8 h-8 bg-white/80 hover:bg-white text-[#1d1d1f] rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm" title="Compare">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
                 </button>
               </div>
+
+              <!-- Meta & Name -->
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block">
+                  {{ product.category }}
+                </span>
+                <span *ngIf="product.isBestSeller || (product.reviewCount && product.reviewCount > 50)" class="bg-[#D4AF37]/15 text-[#D4AF37] text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase">Best Seller</span>
+              </div>
+
+              <h3 class="font-sans font-semibold text-base text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2 line-clamp-2">
+                {{ product.name }}
+              </h3>
+
+              <!-- Price -->
+              <div class="mb-3">
+                <span class="text-lg font-semibold text-[#1d1d1f]">
+                  {{ product.price | currencyConvert }}
+                </span>
+              </div>
+
+              <!-- Stock Alert -->
+              <div *ngIf="product.stock !== undefined && product.stock <= 5 && product.stock > 0" class="mb-2 text-xs text-amber-600 font-medium">
+                Only {{ product.stock }} left in stock
+              </div>
+              <div *ngIf="product.stock === 0" class="mb-2 text-xs text-red-600 font-medium">
+                Out of Stock
+              </div>
             </div>
+
+            <!-- Apple Pill Action Buttons -->
+            <div class="flex gap-2 pt-4 border-t border-[#f0f0f0]">
+              <button
+                (click)="handleAddToCart($event, product)"
+                [disabled]="product.stock === 0"
+                class="flex-1 btn-apple-pill text-xs !py-2 !px-3 disabled:opacity-50"
+              >
+                {{ product.stock === 0 ? 'Sold Out' : 'Add to Bag' }}
+              </button>
+              <button
+                (click)="handleBuyNow($event, product)"
+                [disabled]="product.stock === 0"
+                class="btn-apple-pill-secondary text-xs !py-2 !px-3 disabled:opacity-50"
+              >
+                Buy
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading() && products().length === 0" class="text-center py-24 bg-[#f5f5f7] rounded-[18px] border border-[#e0e0e0]">
+          <div class="text-6xl mb-4">💎</div>
+          <h3 class="text-2xl font-display font-semibold text-[#1d1d1f] mb-2">No matching artifacts found</h3>
+          <p class="text-sm text-[#7a7a7a] mb-6">Try selecting a different category or clearing active filters.</p>
+          <button (click)="clearFilters()" class="btn-apple-pill">Reset All Filters</button>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div *ngIf="!isLoading() && products().length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-[#e0e0e0] pt-6">
+          <div class="flex items-center gap-2 text-xs text-[#7a7a7a]">
+            <label>Items per page:</label>
+            <select [(ngModel)]="pagination().pageSize" (change)="onPageSizeChange()" class="bg-white border border-[#e0e0e0] rounded-full px-3 py-1 text-xs">
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+            </select>
           </div>
-          <!-- Products Grid -->
-          <div class="lg:col-span-3">
-            <!-- Top Bar -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-6 border-b border-diamond-200">
-              <div>
-                <p class="text-ink">
-                  Showing <span class="font-semibold">{{ paginationInfo().start }}-{{ paginationInfo().end }}</span> of
-                  <span class="font-semibold">{{ pagination().totalItems }}</span> products
-                </p>
-              </div>
-              <div class="flex gap-2">
-                <select [(ngModel)]="sortBy" (change)="loadProducts()" class="input-field max-w-xs">
-                  <option value="newest">Sort by: Newest</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="popular">Most Popular</option>
-                  <option value="rated">Best Rated</option>
-                </select>
-              </div>
-            </div>
 
-            <!-- Loading Skeleton -->
-            <div *ngIf="isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              <div *ngFor="let item of [1,2,3,4,5,6]; trackBy: trackByIndex" class="card overflow-hidden">
-                <div class="skeleton h-64 w-full"></div>
-                <div class="p-6">
-                  <div class="skeleton h-4 w-3/4 mb-2"></div>
-                  <div class="skeleton h-6 w-full mb-4"></div>
-                  <div class="skeleton h-4 w-1/2 mb-4"></div>
-                  <div class="skeleton h-10 w-full"></div>
+          <div class="flex items-center gap-2">
+            <button
+              (click)="previousPage()"
+              [disabled]="pagination().currentPage <= 1"
+              class="w-9 h-9 rounded-full border border-[#e0e0e0] flex items-center justify-center text-sm disabled:opacity-30 hover:bg-[#f5f5f7] transition-colors"
+            >
+              ‹
+            </button>
+            <span class="text-xs text-[#7a7a7a] px-2">Page {{ pagination().currentPage }} of {{ pagination().totalPages }}</span>
+            <button
+              (click)="nextPage()"
+              [disabled]="pagination().currentPage >= pagination().totalPages"
+              class="w-9 h-9 rounded-full border border-[#e0e0e0] flex items-center justify-center text-sm disabled:opacity-30 hover:bg-[#f5f5f7] transition-colors"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- APPLE REFINE SLIDE-OVER DRAWER (MODAL) -->
+      <div *ngIf="isFilterOpen()" class="fixed inset-0 z-50 overflow-hidden animate-fadeIn">
+        <div (click)="isFilterOpen.set(false)" class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"></div>
+
+        <div class="absolute inset-y-0 right-0 max-w-full flex pl-10">
+          <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between p-6 overflow-y-auto">
+            
+            <!-- Drawer Header -->
+            <div>
+              <div class="flex items-center justify-between border-b border-[#e0e0e0] pb-4 mb-6">
+                <div>
+                  <h3 class="font-display font-semibold text-xl text-[#1d1d1f]">Refine Jewelry</h3>
+                  <p class="text-xs text-[#7a7a7a]">Filter by price, certifications, metals, and gemstones.</p>
                 </div>
-              </div>
-            </div>
-
-            <!-- Products Grid -->
-            <div *ngIf="!isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              <a *ngFor="let product of products(); trackBy: trackByProductId" [routerLink]="['/products', product.id]" class="card card-hover group overflow-hidden block cursor-pointer w-full">
-                <!-- Image Container with Lazy Loading -->
-                <div class="relative overflow-hidden aspect-square bg-diamond-100">
-                  <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" class="w-full h-full object-cover" [alt]="product.name">
-                  <div *ngIf="!product.imageUrl && !product.images?.[0]" class="w-full h-full bg-gradient-to-br from-gold-100 to-gold-50 flex items-center justify-center" [attr.data-product-id]="product.id">
-                    <span class="text-4xl">{{ getProductEmoji(product.category) }}</span>
-                  </div>
-                  <button (click)="handleWishlist($event, product.id)" class="absolute top-4 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                  </button>
-                  <button (click)="handleAddToCompare($event, product)" class="absolute top-16 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300" title="Compare">
-                    <span class="text-lg">⚖️</span>
-                  </button>
-                  <button (click)="openQuickView($event, product.id)" class="absolute top-28 left-4 w-10 h-10 bg-surface/90 hover:bg-gold-500 hover:text-surface rounded-lg flex items-center justify-center transition-all duration-300" title="Quick View">
-                    <span class="text-lg">👁️</span>
-                  </button>
-                </div>
-
-                <!-- Product Info -->
-                <div class="p-6">
-                  <div class="flex justify-between items-start mb-1">
-                    <p class="text-xs text-gold-600 font-semibold uppercase tracking-wider">
-                      {{ product.category }}
-                    </p>
-                    <span *ngIf="product.isBestSeller || (product.reviewCount && product.reviewCount > 50)" class="bg-gold-100 text-gold-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Best Seller</span>
-                  </div>
-                  <h3 class="font-semibold text-ink mb-3 line-clamp-2">
-                    {{ product.name }}
-                  </h3>
-
-                  <!-- Rating -->
-                  <div class="flex items-center gap-2 mb-4">
-                    <div class="flex gap-1">
-                      <span *ngFor="let i of [1,2,3,4,5]" [ngClass]="{'text-gold-500': i <= (product.rating || 5), 'text-diamond-300': i > (product.rating || 5)}" class="text-xs">★</span>
-                    </div>
-                    <span class="text-xs text-ink">({{ product.reviewCount }})</span>
-                  </div>
-
-                  <!-- Price -->
-                  <div class="mb-4">
-                    <span class="text-2xl font-bold text-diamond-900">
-                      {{ product.price | currencyConvert }}
-                    </span>
-                  </div>
-
-                  <!-- Stock Status -->
-                  <div *ngIf="product.stock !== undefined && product.stock <= 5 && product.stock > 0" class="mb-3 px-2 py-1 bg-yellow-50 rounded text-xs font-semibold text-yellow-700">
-                    ⚠️ Only {{ product.stock }} left
-                  </div>
-                  <div *ngIf="product.stock === 0" class="mb-3 px-2 py-1 bg-red-50 rounded text-xs font-semibold text-red-700">
-                    Out of Stock
-                  </div>
-
-                  <!-- Actions -->
-                  <div class="flex gap-2">
-                    <button
-                      (click)="handleAddToCart($event, product)"
-                      [disabled]="product.stock === 0"
-                      class="flex-1 btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
-                    </button>
-                    <button
-                      (click)="handleBuyNow($event, product)"
-                      [disabled]="product.stock === 0"
-                      class="flex-1 btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Buy Now
-                    </button>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            <!-- Empty State -->
-            <div *ngIf="!isLoading() && products().length === 0" class="text-center py-16">
-              <svg class="w-16 h-16 mx-auto text-ink mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-              </svg>
-              <h3 class="text-2xl font-semibold text-ink mb-2">No products found</h3>
-              <p class="text-ink mb-6">Try adjusting your filters or search terms</p>
-              <button (click)="clearFilters()" class="btn-primary">Clear Filters</button>
-            </div>
-
-            <!-- Pagination Controls -->
-            <div *ngIf="!isLoading() && products().length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <!-- Page Size Selector -->
-              <div class="flex items-center gap-2">
-                <label class="text-sm text-ink">Items per page:</label>
-                <select [(ngModel)]="pagination().pageSize" (change)="onPageSizeChange()" class="input-field max-w-xs">
-                  <option value="12">12</option>
-                  <option value="24">24</option>
-                  <option value="48">48</option>
-                </select>
-              </div>
-
-              <!-- Pagination Buttons -->
-              <div class="flex items-center justify-center gap-2 flex-wrap">
-                <!-- Previous Button -->
-                <button
-                  (click)="previousPage()"
-                  [disabled]="pagination().currentPage === 1"
-                  [class.opacity-50]="pagination().currentPage === 1"
-                  [class.cursor-not-allowed]="pagination().currentPage === 1"
-                  class="w-10 h-10 border border-diamond-300 rounded-lg hover:bg-gold-50 transition-colors duration-300 disabled:hover:bg-surface"
-                >
-                  ‹
+                <button (click)="isFilterOpen.set(false)" class="w-8 h-8 rounded-full bg-[#f5f5f7] flex items-center justify-center text-xs text-[#1d1d1f] hover:bg-[#e0e0e0]">
+                  ✕
                 </button>
+              </div>
 
-                <!-- Page Numbers -->
-                <div class="flex gap-1">
-                  <!-- First Pages -->
+              <!-- Price Ranges -->
+              <div class="mb-6">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Price Tier</h4>
+                <div class="space-y-2">
+                  <label *ngFor="let range of priceRanges" class="flex items-center gap-3 cursor-pointer text-xs text-[#333333] hover:text-[#1d1d1f]">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedPriceRanges().includes(range.id)"
+                      (change)="togglePriceRange(range.id)"
+                      class="rounded border-[#e0e0e0] text-[#D4AF37] focus:ring-[#D4AF37]"
+                    />
+                    <span>{{ range.label }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Metal Types -->
+              <div class="mb-6">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Metal Type</h4>
+                <div class="flex flex-wrap gap-2">
                   <button
-                    *ngFor="let page of visiblePages()"
-                    (click)="goToPage(page)"
-                    [class.bg-gold-500]="pagination().currentPage === page"
-                    [class.text-surface]="pagination().currentPage === page"
-                    [class.border-diamond-300]="pagination().currentPage !== page"
-                    [class.text-ink]="pagination().currentPage !== page"
-                    class="w-10 h-10 border rounded-lg transition-colors duration-300 font-semibold"
-                    [class.hover:bg-gold-50]="pagination().currentPage !== page"
+                    *ngFor="let metal of metalTypes"
+                    (click)="toggleFilter('metal', metal)"
+                    [class.bg-[#D4AF37]]="selectedMetals().includes(metal)"
+                    [class.text-black]="selectedMetals().includes(metal)"
+                    [class.font-semibold]="selectedMetals().includes(metal)"
+                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
                   >
-                    {{ page }}
+                    {{ metal }}
                   </button>
-
-                  <!-- Ellipsis -->
-                  <span *ngIf="shouldShowEllipsis()" class="px-2 text-ink">...</span>
                 </div>
-
-                <!-- Next Button -->
-                <button
-                  (click)="nextPage()"
-                  [disabled]="pagination().currentPage >= pagination().totalPages"
-                  [class.opacity-50]="pagination().currentPage >= pagination().totalPages"
-                  [class.cursor-not-allowed]="pagination().currentPage >= pagination().totalPages"
-                  class="w-10 h-10 border border-diamond-300 rounded-lg hover:bg-gold-50 transition-colors duration-300 disabled:hover:bg-surface"
-                >
-                  ›
-                </button>
               </div>
 
-              <!-- Page Info -->
-              <div class="text-sm text-ink">
-                Page {{ pagination().currentPage }} of {{ pagination().totalPages }}
+              <!-- Certifications -->
+              <div class="mb-6">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Gem Certificate</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let cert of certificationsList"
+                    (click)="toggleFilter('certification', cert)"
+                    [class.bg-[#1d1d1f]]="selectedCertifications().includes(cert)"
+                    [class.text-white]="selectedCertifications().includes(cert)"
+                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
+                  >
+                    {{ cert }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Gemstone Types -->
+              <div class="mb-6" *ngIf="gemstoneTypes.length > 0">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Gemstone Spec</h4>
+                <div class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar">
+                  <label *ngFor="let gemstone of gemstoneTypes" class="flex items-center gap-3 cursor-pointer text-xs text-[#333333]">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedGemstones().includes(gemstone)"
+                      (change)="toggleFilter('gemstone', gemstone)"
+                      class="rounded border-[#e0e0e0] text-[#D4AF37] focus:ring-[#D4AF37]"
+                    />
+                    <span>{{ gemstone }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Occasion -->
+              <div class="mb-6">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Occasion</h4>
+                <div class="space-y-2">
+                  <label *ngFor="let occasion of occasionsList" class="flex items-center gap-3 cursor-pointer text-xs text-[#333333]">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedOccasions().includes(occasion)"
+                      (change)="toggleFilter('occasion', occasion)"
+                      class="rounded border-[#e0e0e0] text-[#D4AF37] focus:ring-[#D4AF37]"
+                    />
+                    <span>{{ occasion }}</span>
+                  </label>
+                </div>
               </div>
             </div>
+
+            <!-- Drawer Bottom Actions -->
+            <div class="border-t border-[#e0e0e0] pt-4 flex gap-3">
+              <button (click)="clearFilters()" class="btn-apple-pill-secondary flex-1 text-xs">
+                Reset All
+              </button>
+              <button (click)="isFilterOpen.set(false)" class="btn-apple-pill flex-1 text-xs">
+                Done
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
@@ -637,12 +648,26 @@ export class ProductsComponent implements OnInit {
       this.loadProducts();
   }
 
+  activeFilterCount = computed(() => {
+    return this.selectedCategories().length +
+      this.selectedOccasions().length +
+      this.selectedStyles().length +
+      this.selectedGemstones().length +
+      this.selectedPriceRanges().length +
+      this.selectedMetals().length +
+      this.selectedCertifications().length +
+      (this.searchQuery() ? 1 : 0);
+  });
+
   clearFilters(): void {
     this.selectedCategories.set([]);
     this.selectedOccasions.set([]);
     this.selectedStyles.set([]);
     this.selectedGemstones.set([]);
     this.selectedPriceRanges.set([]);
+    this.selectedMetals.set([]);
+    this.selectedCertifications.set([]);
+    this.searchQuery.set('');
     this.sortBy = "newest";
     this.pagination.update(p => ({ ...p, currentPage: 1 }));
     this.loadProducts();

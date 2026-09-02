@@ -15,117 +15,105 @@ import { environment } from "../../environments/environment";
   imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <footer *ngIf="settings" class="bg-primary text-surface w-full overflow-hidden border-t-4 border-secondary-500">
-      <!-- Newsletter Section -->
-      <div class="bg-primary border-b border-primary">
-          <div class="container-luxury py-8 md:py-12 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div class="text-center md:text-left">
-                <h3 class="font-display font-bold text-2xl mb-1">Join the Caratloop Family</h3>
-                <p class="!text-[#FAFAFA] text-sm">Be the first to know about new collections & exclusive offers.</p>
-             </div>
-             <div class="flex flex-col w-full md:w-auto max-w-md">
-                <div class="flex w-full gap-0">
-                   <input
-                     type="email"
-                     [formControl]="emailControl"
-                     (keyup.enter)="subscribe()"
-                     placeholder="Enter your email"
-                     class="w-full px-4 py-3 bg-surface text-ink rounded-l-lg focus:outline-none focus:ring-2 focus:ring-secondary-500"
-                   >
-                   <button
-                     (click)="subscribe()"
-                     [disabled]="isSubscribing"
-                     class="bg-accent hover:bg-accent text-primary font-bold px-6 py-3 rounded-r-lg transition-colors whitespace-nowrap disabled:opacity-50"
-                   >
-                      {{ isSubscribing ? 'Signing Up...' : 'Sign Up' }}
-                   </button>
-                </div>
-                <div *ngIf="emailControl.invalid && (emailControl.dirty || emailControl.touched)" class="text-red-400 text-xs mt-1">
-                   <span *ngIf="emailControl.errors?.['email']">Please enter a valid email address.</span>
-                </div>
-             </div>
+    <!-- APPLE DESIGN SYSTEM: PARCHMENT FOOTER (DESIGN.md) -->
+    <footer *ngIf="settings" class="bg-[#f5f5f7] text-[#333333] w-full border-t border-[#e0e0e0] font-sans">
+      
+      <!-- Newsletter Strip -->
+      <div class="bg-[#fafafc] border-b border-[#e0e0e0] py-10 px-6 md:px-12">
+        <div class="max-w-[1440px] mx-auto flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div>
+            <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight">Join the Gemera Club</h3>
+            <p class="text-sm text-[#7a7a7a] mt-1">Be first to receive new collection debuts and private gemstone allocations.</p>
           </div>
+          <div class="flex flex-col sm:flex-row w-full lg:w-auto gap-3 max-w-md">
+            <input
+              type="email"
+              [formControl]="emailControl"
+              (keyup.enter)="subscribe()"
+              placeholder="Enter your email address"
+              class="w-full bg-white border border-[#e0e0e0] rounded-full px-5 py-2.5 text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37] transition-all"
+            >
+            <button
+              (click)="subscribe()"
+              [disabled]="isSubscribing"
+              class="btn-apple-pill !py-2.5 !px-6 text-sm whitespace-nowrap"
+            >
+              {{ isSubscribing ? 'Subscribing...' : 'Subscribe' }}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Main Footer -->
-      <div class="container-luxury section-padding pt-16 pb-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-12">
-          <!-- Brand -->
-          <div class="col-span-1">
-            <div class="flex items-center gap-2 mb-6">
-              <img ngSrc="/logo-with-name-light.webp" alt="Caratloop Fine Jewelry Logo" class="h-16 w-auto object-contain rounded-md" width="140" height="80" />
-            </div>
-            <p class="text-sm mb-6 leading-relaxed" style="color: var(--color-text-muted-light, #d1fae5);">
-              Elegance for the everyday. We craft lightweight, premium designer jewelry for the modern corporate lifestyle.
+      <!-- Multi-Column Links Section (Apple 2.41 line-height link stacks) -->
+      <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-16">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 text-[14px]">
+          
+          <!-- Column 1: Brand -->
+          <div class="col-span-2 md:col-span-4 lg:col-span-1">
+            <img ngSrc="/logo-with-name.png" alt="Gemera Fine Jewelry" class="h-8 w-auto object-contain mb-4" width="130" height="32" />
+            <p class="text-xs text-[#7a7a7a] leading-relaxed max-w-xs">
+              Reverent craftsmanship meets modern luxury. Certified ethical diamonds and 18K solid gold.
             </p>
-            <div class="flex gap-4">
-              <a [href]="settings.facebookUrl" target="_blank" rel="noopener noreferrer" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-accent transition-colors">
-                <span class="sr-only">Facebook</span>
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              </a>
-              <a [href]="settings.instagramUrl" target="_blank" rel="noopener noreferrer" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-accent transition-colors">
-                <span class="sr-only">Instagram</span>
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.057-1.645.069-4.849.069-3.205 0-3.584-.012-4.849-.069-3.259-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-              </a>
+          </div>
+
+          <!-- Column 2: Collections -->
+          <div>
+            <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">Collections</h4>
+            <ul class="space-y-1 text-sm text-[#333333] leading-[2.2]">
+              <li><a routerLink="/products" [queryParams]="{category: 'rings'}" class="hover:text-[#D4AF37] transition-colors">Fine Rings</a></li>
+              <li><a routerLink="/products" [queryParams]="{category: 'necklaces'}" class="hover:text-[#D4AF37] transition-colors">Necklaces</a></li>
+              <li><a routerLink="/products" [queryParams]="{category: 'earrings'}" class="hover:text-[#D4AF37] transition-colors">Earrings</a></li>
+              <li><a routerLink="/products" [queryParams]="{category: 'bracelets'}" class="hover:text-[#D4AF37] transition-colors">Bracelets</a></li>
+              <li><a routerLink="/products" [queryParams]="{category: 'diamonds'}" class="hover:text-[#D4AF37] transition-colors">Certified Diamonds</a></li>
+            </ul>
+          </div>
+
+          <!-- Column 3: Custom Services -->
+          <div>
+            <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">Custom Services</h4>
+            <ul class="space-y-1 text-sm text-[#333333] leading-[2.2]">
+              <li><a routerLink="/builder" class="text-[#D4AF37] font-medium hover:underline">Custom Ring Studio</a></li>
+              <li><a routerLink="/rfq" class="hover:text-[#D4AF37] transition-colors">Request Quote</a></li>
+              <li><a routerLink="/treasure" class="hover:text-[#D4AF37] transition-colors">Treasure Investment Plan</a></li>
+              <li><a routerLink="/custom-design" class="hover:text-[#D4AF37] transition-colors">Bespoke Design Service</a></li>
+            </ul>
+          </div>
+
+          <!-- Column 4: Customer Care -->
+          <div>
+            <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">Customer Care</h4>
+            <ul class="space-y-1 text-sm text-[#333333] leading-[2.2]">
+              <li><a routerLink="/contact" class="hover:text-[#D4AF37] transition-colors">Contact Concierge</a></li>
+              <li><a routerLink="/returns" class="hover:text-[#D4AF37] transition-colors">Shipping &amp; Returns</a></li>
+              <li><a routerLink="/track-order" class="hover:text-[#D4AF37] transition-colors">Track Your Order</a></li>
+              <li><a routerLink="/verify-certificate" class="hover:text-[#D4AF37] transition-colors">Verify Gem Certificate</a></li>
+            </ul>
+          </div>
+
+          <!-- Column 5: Contact & Location -->
+          <div>
+            <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">Gemera House</h4>
+            <div class="text-xs text-[#7a7a7a] space-y-3">
+              <p [innerHTML]="settings.address"></p>
+              <p><a [href]="'tel:' + settings.phone" class="hover:text-[#1d1d1f]">{{ settings.phone }}</a></p>
+              <p><a [href]="'mailto:' + settings.email" class="hover:text-[#1d1d1f]">{{ settings.email }}</a></p>
             </div>
           </div>
 
-          <!-- Quick Links -->
-          <div>
-            <h3 class="font-bold mb-6 font-display text-lg text-surface">Collections</h3>
-            <ul class="space-y-3">
-              <li><a routerLink="/rfq" class="text-sm font-extrabold text-accent hover:text-surface transition-colors flex items-center gap-1">📋 Request for Quote</a></li>
-              <li><a routerLink="/treasure" class="text-sm font-extrabold text-accent hover:text-surface transition-colors flex items-center gap-1">✨ Treasure Plan</a></li>
-              <li *ngFor="let cat of categories.slice(0, 5)">
-                <a [routerLink]="['/products']" [queryParams]="{category: cat.name}" class="text-sm font-bold text-surface hover:text-accent transition-colors">{{ cat.displayName }}</a>
-              </li>
-            </ul>
-          </div>
+        </div>
 
-          <!-- Customer Service -->
-          <div>
-            <h3 class="font-bold mb-6 font-display text-lg text-surface">Customer Care</h3>
-            <ul class="space-y-3">
-              <li><a routerLink="/contact" class="text-sm font-bold text-surface hover:text-accent transition-colors">Contact Us</a></li>
-              <li><a routerLink="/about" class="text-sm font-bold text-surface hover:text-accent transition-colors">Shipping & Returns</a></li>
-              <li><a routerLink="/account" class="text-sm font-bold text-surface hover:text-accent transition-colors" aria-label="Track Order Footer Menu">Track Order</a></li>
-              <li><a routerLink="/verify-certificate" class="text-sm font-bold text-surface hover:text-accent transition-colors">Certifications</a></li>
-            </ul>
-          </div>
-
-          <!-- Contact Info -->
-          <div>
-            <h3 class="font-bold mb-6 font-display text-lg text-surface">Contact Us</h3>
-             <ul class="space-y-4">
-               <li class="flex items-start gap-3 text-sm text-surface">
-                 <span class="text-accent mt-1">📍</span>
-                 <span [innerHTML]="settings.address | uppercase"></span>
-               </li>
-               <li class="flex items-center gap-3 text-sm text-surface">
-                 <span class="text-accent">📞</span>
-                 <a [href]="'tel:' + settings.phone" class="hover:text-surface">{{ settings.phone }}</a>
-               </li>
-               <li class="flex items-center gap-3 text-sm text-surface">
-                 <span class="text-accent">✉️</span>
-                 <a [href]="'mailto:' + settings.email" class="hover:text-surface">{{ settings.email }}</a>
-               </li>
-             </ul>
+        <!-- Apple Micro Fine Print & Copyright Row -->
+        <div class="border-t border-[#e0e0e0] mt-12 pt-6 flex flex-col md:flex-row items-center justify-between text-xs text-[#7a7a7a] gap-4">
+          <div>Copyright &copy; 2026 Gemera Fine Jewels. All rights reserved.</div>
+          <div class="flex space-x-6">
+            <a routerLink="/privacy" class="hover:text-[#1d1d1f] transition-colors">Privacy Policy</a>
+            <a routerLink="/terms" class="hover:text-[#1d1d1f] transition-colors">Terms of Use</a>
+            <a routerLink="/contact" class="hover:text-[#1d1d1f] transition-colors">Legal</a>
           </div>
         </div>
 
-        <!-- Bottom Footer -->
-        <div
-          class="border-t border-primary pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-surface"
-        >
-          <div class="text-center md:text-left">&copy; 2026 Caratloop Fine Jewels. All rights reserved.</div>
-          <div class="flex flex-wrap justify-center gap-6">
-            <a routerLink="/privacy" class="hover:text-surface transition-colors">Privacy Policy</a>
-            <a routerLink="/terms" class="hover:text-surface transition-colors">Terms of Service</a>
-          </div>
-        </div>
       </div>
     </footer>
-
   `,
 })
 export class FooterComponent implements OnInit {

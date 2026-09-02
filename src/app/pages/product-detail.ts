@@ -31,6 +31,7 @@ import { ToastService } from '../services/toast.service';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { HistoryService } from '../services/history.service';
+import { SettingService } from '../services/setting.service';
 import { CurrencyService } from '../services/currency.service';
 import { RING_CATEGORIES } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
@@ -53,124 +54,89 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
     ReactiveFormsModule,
     SizeGuideModalComponent,
     CurrencyConvertPipe,
-    EmiCalculatorComponent,
     VirtualTryOnComponent
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
-    <div class="min-h-screen bg-surface font-sans text-ink">
-      <!-- Breadcrumb -->
-      <nav class="bg-surface border-b border-ink">
-        <div class="container mx-auto px-4 lg:px-12 py-3">
-          <div class="flex items-center gap-2 text-xs text-ink">
-            <a routerLink="/" class="hover:text-accent transition-colors"
-              >Home</a
-            >
+    <!-- APPLE DESIGN SYSTEM: PRODUCT DETAIL & CONFIGURATOR (DESIGN.md) -->
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+      
+      <!-- Sub-Nav Breadcrumb -->
+      <nav class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-3 px-6 md:px-12">
+        <div class="max-w-[1440px] mx-auto flex items-center justify-between text-xs text-[#7a7a7a]">
+          <div class="flex items-center gap-2">
+            <a routerLink="/" class="hover:text-[#1d1d1f] transition-colors">Home</a>
             <span>/</span>
-            <a
-              routerLink="/products"
-              class="hover:text-accent transition-colors"
-              >Products</a
-            >
+            <a routerLink="/products" class="hover:text-[#1d1d1f] transition-colors">Collections</a>
             <span>/</span>
-            <span class="text-ink font-medium truncate max-w-[200px]">{{
-              product()?.name
-            }}</span>
+            <span class="text-[#1d1d1f] font-medium truncate max-w-[240px]">{{ product()?.name }}</span>
           </div>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#7a7a7a]">
+            SKU: {{ product()?.specifications?.productDetails?.sku || product()?.sku || 'GEM-SOL-01' }}
+          </span>
         </div>
       </nav>
 
-      <div class="container mx-auto px-4 lg:px-12 py-8">
+      <div class="max-w-[1440px] mx-auto px-4 md:px-12 py-10">
+        
+        <!-- Loading Skeleton -->
         <div *ngIf="loading()" class="animate-pulse lg:flex lg:gap-12 relative">
-          <!-- Left Column Skeleton -->
-          <div class="lg:w-[58%] flex flex-col gap-12">
-            <div class="flex flex-col gap-4">
-              <!-- Main Image -->
-              <div class="w-full h-[500px] bg-surface rounded-lg"></div>
-              <!-- Thumbnails -->
-              <div class="grid grid-cols-2 gap-4">
-                <div class="h-[300px] bg-surface rounded-lg"></div>
-                <div class="h-[300px] bg-surface rounded-lg"></div>
-              </div>
-            </div>
-            <!-- Details -->
-            <div class="border-t border-ink pt-8 space-y-4">
-              <div class="h-8 w-1/3 bg-surface rounded"></div>
-              <div class="h-4 w-full bg-surface rounded"></div>
-              <div class="h-4 w-full bg-surface rounded"></div>
-              <div class="h-4 w-2/3 bg-surface rounded"></div>
+          <div class="lg:w-[58%] space-y-6">
+            <div class="w-full aspect-square bg-[#f5f5f7] rounded-[24px]"></div>
+            <div class="grid grid-cols-4 gap-4">
+              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
+              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
+              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
+              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
             </div>
           </div>
-
-          <!-- Right Column Skeleton -->
-          <div class="lg:w-[42%] relative">
-            <div class="sticky top-24 p-6 rounded-2xl border border-ink">
-              <div class="h-4 w-1/4 bg-surface rounded mb-4"></div>
-              <!-- SKU -->
-              <div class="h-10 w-3/4 bg-surface rounded mb-6"></div>
-              <!-- Title -->
-              <div class="h-8 w-1/2 bg-surface rounded mb-6"></div>
-              <!-- Price -->
-
-              <!-- Configurator Skeleton -->
-              <div class="space-y-4 mb-8">
-                <div class="h-10 w-full bg-surface rounded"></div>
-                <div class="h-10 w-full bg-surface rounded"></div>
-              </div>
-
-              <!-- Buttons -->
-              <div class="flex gap-3 h-14">
-                <div class="flex-1 bg-surface rounded-lg"></div>
-                <div class="flex-1 bg-surface rounded-lg"></div>
-              </div>
-            </div>
+          <div class="lg:w-[42%] space-y-6">
+            <div class="h-8 bg-[#f5f5f7] rounded-full w-3/4"></div>
+            <div class="h-12 bg-[#f5f5f7] rounded-full w-1/2"></div>
+            <div class="h-40 bg-[#f5f5f7] rounded-[24px]"></div>
           </div>
         </div>
 
-        <div *ngIf="!loading() && productNotFound()" class="text-center py-24 animate-fade-in-up">
-          <svg class="w-24 h-24 mx-auto text-diamond-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <h2 class="text-3xl font-display font-bold text-ink mb-4">Product Not Found</h2>
-          <p class="text-lg text-ink/80 mb-8 max-w-md mx-auto">We couldn't find the product you're looking for. It may have been removed or the link is invalid.</p>
-          <a routerLink="/products" class="btn-primary inline-flex items-center gap-2">
-            <span>Explore Collections</span>
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-          </a>
+        <!-- Product Not Found -->
+        <div *ngIf="!loading() && productNotFound()" class="text-center py-24">
+          <div class="w-16 h-16 mx-auto text-[#D4AF37] mb-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a8 8 0 100-16 8 8 0 000 16zm0-16V2m-3 2h6M9 6l3-4 3 4" /></svg>
+          </div>
+          <h2 class="font-display font-semibold text-3xl text-[#1d1d1f] mb-3">Creation Not Found</h2>
+          <p class="text-sm text-[#7a7a7a] mb-8 max-w-md mx-auto">The requested fine jewelry creation is no longer available or the link is invalid.</p>
+          <a routerLink="/products" class="btn-apple-pill">Explore Collections</a>
         </div>
 
-        <div *ngIf="!loading() && product()" class="lg:flex lg:gap-12 relative">
-          <!-- LEFT COLUMN: Scrollable Content (Images + Details) -->
-          <div class="lg:w-[58%] flex flex-col gap-12">
-            <!-- Image Gallery -->
+        <!-- Main Product Content -->
+        <div *ngIf="!loading() && product()" class="lg:flex lg:gap-12 relative items-start">
+          
+          <!-- LEFT COLUMN: Scrollable Media Gallery + Specifications -->
+          <div class="lg:w-[58%] flex flex-col gap-10">
+            
+            <!-- Gallery Container -->
             <div class="flex flex-col gap-4">
               <div class="flex flex-col md:flex-row gap-4">
-                <!-- Thumbnails -->
+                
+                <!-- Thumbnails Strip -->
                 <div
-                  class="order-2 md:order-1 flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 md:pr-2 hide-scrollbar snap-x snap-mandatory shrink-0"
-                  role="tablist" aria-label="Product Media Thumbnails"
+                  class="order-2 md:order-1 flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto w-full md:w-24 pb-2 md:pb-0 hide-scrollbar snap-x snap-mandatory shrink-0"
+                  role="tablist" aria-label="Media Thumbnails"
                 >
-                  <!-- Video Thumbnail -->
+                  <!-- Video Thumbnail (if available) -->
                   <div
                     *ngIf="product()?.videoUrl"
                     (click)="scrollToMedia(0)"
-                    role="tab" [attr.aria-selected]="selectedMediaIndex() === 0" aria-label="View Video"
-                    class="snap-start relative w-20 h-20 md:w-full md:h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all shrink-0 bg-surface flex items-center justify-center"
-                    [class.border-primary]="selectedMediaIndex() === 0"
-                    [class.border-transparent]="selectedMediaIndex() !== 0"
+                    role="tab"
+                    [attr.aria-selected]="selectedMediaIndex() === 0"
+                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-black rounded-[14px] overflow-hidden border border-[#e0e0e0] cursor-pointer hover:opacity-90 transition-all shrink-0 flex items-center justify-center"
+                    [class.!border-2]="selectedMediaIndex() === 0"
+                    [class.!border-[#D4AF37]]="selectedMediaIndex() === 0"
+                    [class.shadow-sm]="selectedMediaIndex() === 0"
                   >
-                    <div
-                      class="absolute inset-0 bg-black/20 flex items-center justify-center z-10"
-                    >
-                      <svg
-                        class="w-8 h-8 text-surface drop-shadow-md"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
+                      <svg class="w-6 h-6 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                     </div>
                     <video
                       [src]="product()?.videoUrl"
@@ -178,7 +144,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                       loop
                       muted
                       playsinline
-                      class="w-full h-full object-cover opacity-50"
+                      class="w-full h-full object-cover opacity-60"
                     ></video>
                   </div>
 
@@ -191,84 +157,128 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                       let i = index
                     "
                     (click)="scrollToMedia(product()?.videoUrl ? i + 1 : i)"
-                    role="tab" [attr.aria-selected]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)" [attr.aria-label]="'View Image ' + (i + 1)"
-                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-surface rounded-lg overflow-hidden border-2 cursor-pointer hover:opacity-90 transition-all shrink-0"
-                    [class.border-primary]="
-                      selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)
-                    "
-                    [class.border-transparent]="
-                      selectedMediaIndex() !== (product()?.videoUrl ? i + 1 : i)
-                    "
+                    role="tab"
+                    [attr.aria-selected]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
+                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-[#f5f5f7] rounded-[14px] overflow-hidden border border-[#e0e0e0] cursor-pointer hover:opacity-90 transition-all shrink-0 flex items-center justify-center p-1.5"
+                    [class.!border-2]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
+                    [class.!border-[#D4AF37]]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
+                    [class.shadow-sm]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
                   >
                     <img
                       *ngIf="img"
                       [ngSrc]="img"
                       fill
                       sizes="100px"
-                      class="object-cover"
+                      class="object-contain p-1"
+                      [alt]="product()?.name"
                     />
                   </div>
                 </div>
 
-                <!-- Main Display Area -->
+                <!-- Main Display Viewport -->
                 <div
                   #scrollContainer
                   (scroll)="onGalleryScroll($event)"
                   id="main-media-scroll"
-                  role="region" aria-label="Main Product Media"
-                  class="scroll-smooth order-1 md:order-2 flex-1 relative bg-surface rounded-lg overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-ink aspect-square md:aspect-auto"
+                  class="scroll-smooth order-1 md:order-2 flex-1 relative bg-[#f5f5f7] rounded-[24px] overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-[#e0e0e0] aspect-square product-surface-shadow"
                 >
-                  <div class="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                    <!-- Stock Warning (Warm/Amber Glass) -->
-                    <span
-                      *ngIf="
-                        (product()?.stock ?? 0) < 5 &&
-                        (product()?.stock ?? 0) > 0
-                      "
-                      class="glass-tag glass-warning"
-                    >
-                      Only {{ product()?.stock }} left
+                  <!-- Stock & Badge Pill -->
+                  <div class="absolute top-5 left-5 z-10 flex flex-col gap-2">
+                    <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="bg-amber-100 text-amber-800 text-[11px] font-semibold px-3 py-1 rounded-full border border-amber-300">
+                      Limited Edition ({{ product()?.stock }} left)
                     </span>
-
-                    <!-- Out of Stock (Red Glass) -->
-                    <span
-                      *ngIf="product()?.stock === 0"
-                      class="glass-tag glass-error"
-                    >
-                      Out of Stock
+                    <span *ngIf="product()?.stock === 0" class="bg-red-100 text-red-800 text-[11px] font-semibold px-3 py-1 rounded-full border border-red-300">
+                      Vault Reserved
                     </span>
-
-                    <!-- Best Seller (Classic White Glass) -->
-                    <span class="glass-tag glass-neutral"> Best Seller </span>
+                    <span *ngIf="hasCertification('GIA')" class="bg-white/90 backdrop-blur-md text-[#1d1d1f] text-[11px] font-semibold px-3 py-1 rounded-full border border-[#e0e0e0] shadow-sm">
+                      GIA Certified
+                    </span>
                   </div>
-                  
-                  <div class="absolute bottom-4 right-4 z-10">
-                    <button (click)="tryOnOpen.set(true)" class="flex items-center gap-2 bg-surface/90 hover:bg-surface backdrop-blur-md text-ink px-4 py-2.5 rounded-full shadow-xl border border-ink/10 transition-all font-bold text-sm uppercase tracking-wide group hover:scale-105 active:scale-95">
-                      <svg class="w-5 h-5 text-gold-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                      Try It On
+
+                  <!-- Try It On Button -->
+                  <div class="absolute bottom-5 right-5 z-10">
+                    <button (click)="tryOnOpen.set(true)" class="btn-apple-pill text-xs !py-2 !px-4 !bg-white/90 !text-[#1d1d1f] hover:!bg-white border border-[#e0e0e0] shadow-lg backdrop-blur-md flex items-center gap-2">
+                      <span>✨</span> Virtual Try-On
                     </button>
                   </div>
 
-                  <!-- Video Item -->
-                  <div
-                    *ngIf="product()?.videoUrl"
-                    class="w-full h-full shrink-0 snap-center flex items-center justify-center bg-black"
-                  >
+                  <!-- Premium Luxury Video Player -->
+                  <div *ngIf="product()?.videoUrl" class="w-full h-full shrink-0 snap-center flex items-center justify-center bg-[#09090b] relative group overflow-hidden">
                     <video
+                      #luxuryVideo
                       [src]="product()?.videoUrl"
                       autoplay
                       loop
-                      muted
+                      [muted]="isVideoMuted()"
                       playsinline
-                      class="w-full h-full object-contain"
+                      (timeupdate)="onVideoTimeUpdate(luxuryVideo)"
+                      (click)="toggleVideoPlay(luxuryVideo)"
+                      class="w-full h-full object-contain cursor-pointer"
                     ></video>
+
+                    <!-- Top Floating Badge -->
+                    <div class="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-none">
+                      <span class="bg-black/70 backdrop-blur-md text-[#D4AF37] text-[10px] uppercase tracking-[0.2em] font-semibold px-3 py-1 rounded-full border border-[#D4AF37]/30 shadow-lg flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-ping"></span>
+                        4K Atelier Film
+                      </span>
+                    </div>
+
+                    <!-- Center Big Play Indicator when paused -->
+                    <div
+                      *ngIf="!isVideoPlaying()"
+                      (click)="toggleVideoPlay(luxuryVideo)"
+                      class="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-20 cursor-pointer animate-fadeIn"
+                    >
+                      <div class="w-16 h-16 rounded-full bg-white/90 hover:bg-white text-[#1d1d1f] flex items-center justify-center shadow-2xl transition-transform hover:scale-110">
+                        <svg class="w-7 h-7 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      </div>
+                    </div>
+
+                    <!-- Luxury Frosted Control Pill Bar -->
+                    <div class="absolute bottom-4 inset-x-4 md:inset-x-8 z-20 bg-black/70 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl flex items-center gap-3 transition-opacity duration-300 opacity-90 hover:opacity-100 shadow-2xl">
+                      
+                      <!-- Play/Pause Toggle -->
+                      <button
+                        (click)="toggleVideoPlay(luxuryVideo)"
+                        class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                        [title]="isVideoPlaying() ? 'Pause' : 'Play'"
+                      >
+                        <svg *ngIf="isVideoPlaying()" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                        <svg *ngIf="!isVideoPlaying()" class="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      </button>
+
+                      <!-- Progress Bar -->
+                      <div class="flex-1 flex items-center gap-2">
+                        <div class="relative w-full h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer" (click)="seekVideo($event, luxuryVideo)">
+                          <div class="h-full bg-gradient-to-r from-[#D4AF37] to-[#f3e5ab] rounded-full transition-all duration-100" [style.width.%]="videoProgress()"></div>
+                        </div>
+                      </div>
+
+                      <!-- Mute / Unmute Toggle -->
+                      <button
+                        (click)="toggleVideoMute(luxuryVideo)"
+                        class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                        [title]="isVideoMuted() ? 'Unmute' : 'Mute'"
+                      >
+                        <svg *ngIf="isVideoMuted()" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                        <svg *ngIf="!isVideoMuted()" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                      </button>
+
+                      <!-- Fullscreen Toggle -->
+                      <button
+                        (click)="toggleVideoFullscreen(luxuryVideo)"
+                        class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+                        title="Expand Fullscreen"
+                      >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                      </button>
+
+                    </div>
                   </div>
 
                   <!-- 3D Model Item -->
-                  <div
-                    *ngIf="product()?.model3dUrl"
-                    class="w-full h-full shrink-0 snap-center relative bg-surface flex items-center justify-center"
-                  >
+                  <div *ngIf="product()?.model3dUrl" class="w-full h-full shrink-0 snap-center relative flex items-center justify-center">
                     <model-viewer
                       [src]="product()?.model3dUrl"
                       auto-rotate
@@ -282,8 +292,8 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
 
                   <!-- Image Items -->
                   <div
-                    *ngFor="let img of product()?.images || []; let i = index"
-                    class="w-full h-full shrink-0 snap-center relative"
+                    *ngFor="let img of product()?.images || (product()?.imageUrl ? [product()!.imageUrl] : []); let i = index"
+                    class="w-full h-full shrink-0 snap-center relative flex items-center justify-center p-8"
                   >
                     <img
                       *ngIf="img"
@@ -296,840 +306,483 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     />
                   </div>
                 </div>
+
               </div>
             </div>
 
-            <ng-template #productDetailsTpl>
-              <!-- PRODUCT DETAILS (Moved Below Images) -->
-              <div class="border-t border-ink pt-8 mt-8 lg:mt-0">
-                <h3 class="text-xl font-bold text-ink mb-6 font-serif">
-                  Product Details
-                </h3>
+            <!-- COMPREHENSIVE PRODUCT SPECIFICATIONS -->
+            <div class="store-utility-card p-8 rounded-[24px] space-y-8">
+              
+              <!-- Description -->
+              <div *ngIf="product()?.description">
+                <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block mb-1">Creation Narrative</span>
+                <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-3">About {{ product()?.name }}</h3>
+                <p class="text-sm text-[#7a7a7a] leading-relaxed font-sans font-light">
+                  {{ product()?.description }}
+                </p>
+              </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                  <!-- Dynamic Category Rendering -->
-                  <ng-container [ngSwitch]="product()?.category">
-                    <!-- Finished Jewelry -->
-                    <ng-container *ngSwitchCase="'Jewelry'">
-                      <div
-                        *ngIf="
-                          product()?.metalDetails ||
-                          product()?.grossWeight ||
-                          product()?.stoneDetails
-                        "
-                      >
-                        <h4
-                          class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3"
-                        >
-                          Product Specifications
-                        </h4>
-                        <div class="space-y-2 text-sm">
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.grossWeight"
-                          >
-                            <span class="text-ink">Gross Weight</span
-                            ><span class="font-medium text-ink"
-                              >{{ product()?.grossWeight }} g</span
-                            >
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.metalDetails?.metalType"
-                          >
-                            <span class="text-ink">Metal Type</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.metalDetails?.metalType
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.metalDetails?.metalPurity"
-                          >
-                            <span class="text-ink">Purity</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.metalDetails?.metalPurity
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.metalColor"
-                          >
-                            <span class="text-ink">Metal Color</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.metalColor
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.metalDetails?.netWeight"
-                          >
-                            <span class="text-ink">Net Weight</span
-                            ><span class="font-medium text-ink"
-                              >{{ product()?.metalDetails?.netWeight }} g</span
-                            >
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.dimensions"
-                          >
-                            <span class="text-ink">Dimensions</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.dimensions
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.bisHallmark"
-                          >
-                            <span class="text-ink">BIS Hallmark</span>
-                            <span class="font-medium text-ink flex items-center gap-1">
-                              <span class="bg-gold-100 text-gold-800 text-[10px] px-1.5 py-0.5 rounded border border-gold-300 font-extrabold uppercase tracking-widest flex items-center gap-1 shadow-sm">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5l-4-4 1.41-1.41L11 13.67l6.59-6.59L19 8.5l-8 8z"/></svg>
-                                Certified
-                              </span>
-                            </span>
-                          </div>
-                        </div>
+              <!-- Master Specifications Header -->
+              <div>
+                <div class="flex items-center justify-between border-b border-[#e0e0e0] pb-4 mb-6">
+                  <div>
+                    <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block mb-1">Authenticity & Hallmark</span>
+                    <h3 class="font-display font-semibold text-2xl text-[#1d1d1f]">Master Specifications</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span
+                      *ngIf="certificationLabel()"
+                      class="bg-[#f5f5f7] border border-[#e0e0e0] text-[#1d1d1f] text-xs font-semibold px-3 py-1 rounded-full"
+                      >{{ certificationLabel() }}</span
+                    >
+                  </div>
+                </div>
 
-                        <ng-container *ngIf="product()?.stoneDetails?.length">
-                          <h5
-                            class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3 mt-4"
-                          >
-                            Stone Details
-                          </h5>
-                          <div class="space-y-3">
-                            <div
-                              *ngFor="let stone of product()?.stoneDetails"
-                              class="bg-surface p-3 rounded-md text-sm border border-ink"
-                            >
-                              <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                  <span class="text-ink block text-xs"
-                                    >Type</span
-                                  ><span class="font-medium text-ink">{{
-                                    stone.stoneType || 'N/A'
-                                  }}</span>
-                                </div>
-                                <div>
-                                  <span class="text-ink block text-xs"
-                                    >Shape</span
-                                  ><span class="font-medium text-ink">{{
-                                    stone.shape || 'N/A'
-                                  }}</span>
-                                </div>
-                                <div>
-                                  <span class="text-ink block text-xs"
-                                    >Pieces</span
-                                  ><span class="font-medium text-ink">{{
-                                    stone.pieceCount || '0'
-                                  }}</span>
-                                </div>
-                                <div>
-                                  <span class="text-ink block text-xs"
-                                    >Carat Weight</span
-                                  ><span class="font-medium text-ink"
-                                    >{{
-                                      stone.totalCaratWeight || '0'
-                                    }}
-                                    ct</span
-                                  >
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </ng-container>
+                <!-- Precious Metal & Physical Specs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.grossWeight">
+                    <span class="text-[#7a7a7a]">Gross Weight</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ product()?.grossWeight }} g</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.metalDetails?.metalType || selectedMetal()">
+                    <span class="text-[#7a7a7a]">Metal Alloy</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ selectedMetal()?.name || product()?.metalDetails?.metalType || '18K Solid Gold' }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.metalDetails?.metalPurity">
+                    <span class="text-[#7a7a7a]">Purity Hallmark</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ product()?.metalDetails?.metalPurity || '750 (18 Karat)' }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.metalColor">
+                    <span class="text-[#7a7a7a]">Metal Tone</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ product()?.metalColor }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.metalDetails?.netWeight">
+                    <span class="text-[#7a7a7a]">Net Precious Metal</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ product()?.metalDetails?.netWeight }} g</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.dimensions">
+                    <span class="text-[#7a7a7a]">Dimensions</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ product()?.dimensions }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.bisHallmark">
+                    <span class="text-[#7a7a7a]">Government Hallmark</span>
+                    <span class="font-semibold text-emerald-700">✓ BIS Hallmarked (Guaranteed Purity)</span>
+                  </div>
+                </div>
+
+                <!-- Gemstone & Diamond 4Cs Specs -->
+                <div *ngIf="product()?.caratWeight || product()?.clarity || product()?.cut || product()?.species || product()?.originProvenance">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Gemological Grading (4Cs & Provenance)
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.species">
+                      <span class="text-[#7a7a7a]">Species</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.species }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.variety">
+                      <span class="text-[#7a7a7a]">Variety</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.variety }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.shape">
+                      <span class="text-[#7a7a7a]">Shape / Cut Style</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.shape }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.caratWeight">
+                      <span class="text-[#7a7a7a]">Carat Weight</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.caratWeight }} ct</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.clarity">
+                      <span class="text-[#7a7a7a]">Clarity Grade</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.clarity }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.cut">
+                      <span class="text-[#7a7a7a]">Cut & Symmetry</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.cut }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.colorHue">
+                      <span class="text-[#7a7a7a]">Color Hue</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.colorHue }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.colorTradeTerm">
+                      <span class="text-[#7a7a7a]">Trade Color</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.colorTradeTerm }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.measurements">
+                      <span class="text-[#7a7a7a]">Measurements</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.measurements }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.treatmentStatus">
+                      <span class="text-[#7a7a7a]">Enhancement / Treatment</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.treatmentStatus }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.originProvenance">
+                      <span class="text-[#7a7a7a]">Geographic Origin</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.originProvenance }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.labReportNumber">
+                      <span class="text-[#7a7a7a]">Lab Report Number</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.labReportNumber }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Stone Details Breakdown (if multi-stone) -->
+                <div *ngIf="product()?.stoneDetails?.length" class="mb-8">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Setting Stone Inventory
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div *ngFor="let s of product()?.stoneDetails" class="bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-xl text-xs space-y-1">
+                      <div class="flex justify-between">
+                        <span class="text-[#7a7a7a]">Stone Type</span>
+                        <span class="font-semibold text-[#1d1d1f]">{{ s.stoneType || 'Diamond' }}</span>
                       </div>
-                    </ng-container>
-
-                    <!-- Loose Gemstones -->
-                    <ng-container *ngSwitchCase="'Gemstones'">
-                      <div *ngIf="product()?.shape || product()?.caratWeight">
-                        <h4
-                          class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3"
-                        >
-                          Gemstone Details
-                        </h4>
-                        <div class="space-y-2 text-sm">
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.species"
-                          >
-                            <span class="text-ink">Species</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.species
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.variety"
-                          >
-                            <span class="text-ink">Variety</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.variety
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.shape"
-                          >
-                            <span class="text-ink">Shape</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.shape
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.cut"
-                          >
-                            <span class="text-ink flex items-center gap-1 group relative cursor-help">
-                              Cut
-                              <svg class="w-3 h-3 text-ink/70" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
-                              <div class="hidden group-hover:block absolute bottom-full left-0 w-48 bg-ink text-surface text-xs p-2 rounded shadow-lg z-10 mb-1">
-                                Indicates the quality of the gemstone's proportions and finish.
-                              </div>
-                            </span><span class="font-medium text-ink">{{
-                              product()?.cut
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.caratWeight"
-                          >
-                            <span class="text-ink">Carat Weight</span
-                            ><span class="font-medium text-ink"
-                              >{{ product()?.caratWeight }} ct</span
-                            >
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.colorHue"
-                          >
-                            <span class="text-ink">Color Hue</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.colorHue
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.colorTradeTerm"
-                          >
-                            <span class="text-ink">Trade Color</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.colorTradeTerm
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.clarity"
-                          >
-                            <span class="text-ink flex items-center gap-1 group relative cursor-help">
-                              Clarity
-                              <svg class="w-3 h-3 text-ink/70" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
-                              <div class="hidden group-hover:block absolute bottom-full left-0 w-48 bg-ink text-surface text-xs p-2 rounded shadow-lg z-10 mb-1">
-                                Assesses the presence of internal inclusions and external blemishes.
-                              </div>
-                            </span><span class="font-medium text-ink">{{
-                              product()?.clarity
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.measurements"
-                          >
-                            <span class="text-ink">Measurements</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.measurements
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.treatmentStatus"
-                          >
-                            <span class="text-ink">Treatment</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.treatmentStatus
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.originProvenance"
-                          >
-                            <span class="text-ink">Origin</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.originProvenance
-                            }}</span>
-                          </div>
-                          <div
-                            class="flex justify-between"
-                            *ngIf="product()?.labReportNumber"
-                          >
-                            <span class="text-ink">Lab Report</span
-                            ><span class="font-medium text-ink">{{
-                              product()?.labReportNumber
-                            }}</span>
-                          </div>
-                        </div>
+                      <div class="flex justify-between">
+                        <span class="text-[#7a7a7a]">Shape</span>
+                        <span class="font-semibold text-[#1d1d1f]">{{ s.shape || 'Round Brilliant' }}</span>
                       </div>
-                    </ng-container>
-
-                    <!-- Dynamic Catch-all Specs -->
-                    <ng-container *ngSwitchDefault>
-                      <div *ngIf="productSpecs().length > 0">
-                        <h4
-                          class="text-sm font-bold text-ink border-b border-ink pb-2 mb-3"
-                        >
-                          Product Specifications
-                        </h4>
-                        <div class="space-y-2 text-sm">
-                          <div
-                            class="flex justify-between"
-                            *ngFor="let spec of productSpecs()"
-                          >
-                            <span class="text-ink capitalize">{{
-                              spec.key
-                            }}</span>
-                            <span
-                              class="font-medium text-ink text-right w-1/2"
-                              >{{ spec.value }}</span
-                            >
-                          </div>
-                        </div>
+                      <div class="flex justify-between">
+                        <span class="text-[#7a7a7a]">Piece Count</span>
+                        <span class="font-semibold text-[#1d1d1f]">{{ s.pieceCount || 1 }}</span>
                       </div>
-                    </ng-container>
-                  </ng-container>
+                      <div class="flex justify-between">
+                        <span class="text-[#7a7a7a]">Total Weight</span>
+                        <span class="font-semibold text-[#1d1d1f]">{{ s.totalCaratWeight || '0' }} ct</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Diamond Details Table -->
-                <div
-                  *ngIf="product()?.specifications?.diamondDetails as dd"
-                  class="mt-8"
-                >
-                  <h4
-                    class="text-sm font-bold text-ink border-b border-ink pb-2 mb-4"
-                  >
-                    Diamond Specifications
+                <div *ngIf="product()?.specifications?.diamondDetails as dd" class="mb-8">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Diamond Setting Details
                   </h4>
-                  <div
-                    class="overflow-hidden border border-ink rounded-lg"
-                  >
-                    <table class="w-full text-sm text-left">
-                      <thead class="bg-surface text-ink font-medium">
+                  <div class="overflow-x-auto border border-[#e0e0e0] rounded-xl">
+                    <table class="w-full text-xs text-left">
+                      <thead class="bg-[#f5f5f7] text-[#1d1d1f] font-semibold border-b border-[#e0e0e0]">
                         <tr>
                           <th class="px-4 py-3">Type</th>
                           <th class="px-4 py-3">Shape</th>
                           <th class="px-4 py-3">Weight</th>
-                          <th class="px-4 py-3">Color/Clarity</th>
+                          <th class="px-4 py-3">Color / Clarity</th>
                           <th class="px-4 py-3">Setting</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-gray-100">
+                      <tbody class="divide-y divide-[#f0f0f0]">
                         <tr *ngFor="let d of dd">
-                          <td class="px-4 py-3 font-medium text-ink">
-                            {{ d.type }}
-                          </td>
-                          <td class="px-4 py-3 text-ink">{{ d.shape }}</td>
-                          <td class="px-4 py-3 text-ink">
-                            {{ d.carat }} ct
-                          </td>
-                          <td class="px-4 py-3 text-ink">
-                            {{ d.color }} / {{ d.clarity }}
-                          </td>
-                          <td class="px-4 py-3 text-ink">
-                            {{ d.settingType }}
-                          </td>
+                          <td class="px-4 py-3 font-semibold text-[#1d1d1f]">{{ d.type }}</td>
+                          <td class="px-4 py-3 text-[#7a7a7a]">{{ d.shape }}</td>
+                          <td class="px-4 py-3 text-[#1d1d1f] font-medium">{{ d.carat }} ct</td>
+                          <td class="px-4 py-3 text-[#7a7a7a]">{{ d.color }} / {{ d.clarity }}</td>
+                          <td class="px-4 py-3 text-[#7a7a7a]">{{ d.settingType }}</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
-              </div>
-            </ng-template>
 
-            <!-- Render details here only on large screens -->
-            <div class="hidden lg:block">
-              <ng-container
-                *ngTemplateOutlet="productDetailsTpl"
-              ></ng-container>
+                <!-- Dynamic Additional Specs Catch-all -->
+                <div *ngIf="productSpecs().length > 0">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Additional Specifications
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-xs">
+                    <div *ngFor="let spec of productSpecs()" class="flex justify-between py-2 border-b border-[#f0f0f0]">
+                      <span class="text-[#7a7a7a] capitalize">{{ spec.key }}</span>
+                      <span class="font-semibold text-[#1d1d1f] text-right">{{ spec.value }}</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
+
           </div>
 
-          <!-- RIGHT COLUMN: Sticky Buy Box -->
-          <div class="lg:w-[42%] relative">
-            <div
-              class="sticky top-24 bg-surface p-6 rounded-2xl border border-ink shadow-[0_8px_30px_rgb(0,0,0,0.04)] max-h-[calc(100vh-8rem)] overflow-y-auto hide-scrollbar"
-            >
-              <!-- Product Header -->
-              <div class="mb-4">
-                <div class="flex items-center justify-between mb-1">
-                  <div class="flex items-center gap-1">
-                    <span class="text-orange-400">★★★★☆</span>
-                    <span class="text-xs text-ink"
-                      >({{ product()?.reviewCount }} Reviews)</span
-                    >
-                  </div>
-                  <span class="text-xs text-ink"
-                    >SKU:
-                    {{
-                      product()?.specifications?.productDetails?.sku ||
-                        product()?.sku
-                    }}</span
+          <!-- RIGHT COLUMN: Sticky Buy & Configurator Box -->
+          <div class="lg:w-[42%] relative mt-8 lg:mt-0">
+            <div class="sticky top-[110px] bg-white p-8 rounded-[24px] border border-[#e0e0e0] shadow-sm space-y-6">
+              
+              <!-- Title & Reviews -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-semibold uppercase tracking-[0.2em] text-[#D4AF37]">Haute Joaillerie</span>
+                  <div
+                    *ngIf="product()?.rating && (product()?.reviewCount ?? 0) > 0"
+                    class="flex items-center gap-1 text-xs text-[#7a7a7a]"
                   >
+                    <span class="text-amber-500">{{ starsFor(product()?.rating) }}</span>
+                    <span>({{ product()?.reviewCount }} reviews)</span>
+                  </div>
                 </div>
-                <h1
-                  class="text-2xl font-serif font-bold text-ink leading-snug"
-                >
+                <h1 class="font-display font-semibold text-3xl text-[#1d1d1f] leading-tight">
                   {{ product()?.name }}
                 </h1>
               </div>
 
               <!-- Price Section -->
-              <div class="mb-6 pb-6 border-b border-ink">
-                <div class="flex items-baseline gap-3 mb-1">
-                  <span class="text-3xl font-bold text-ink">{{
-                    currentPriceBreakup()?.total || currentPrice()
-                      | currencyConvert
-                  }}</span>
-                  <span
-                    *ngIf="product()?.originalPrice"
-                    class="text-lg text-ink line-through"
-                    >{{ product()?.originalPrice || 0 | currencyConvert }}</span
-                  >
+              <div class="pb-6 border-b border-[#e0e0e0]">
+                <div class="flex items-baseline gap-3">
+                  <span class="font-sans font-semibold text-3xl text-[#1d1d1f]">
+                    {{ currentPriceBreakup()?.total || currentPrice() | currencyConvert }}
+                  </span>
+                  <span *ngIf="product()?.originalPrice" class="text-base text-[#7a7a7a] line-through">
+                    {{ product()?.originalPrice || 0 | currencyConvert }}
+                  </span>
                 </div>
-                <p class="text-xs text-green-700 font-medium mb-3">
-                  Inclusive of all taxes
-                </p>
+                <p class="text-xs text-[#7a7a7a] mt-1">Includes all applicable luxury duties, insured delivery & GIA report.</p>
 
-                <!-- Price Breakup Toggle -->
+                <!-- Transparent Price Breakup Accordion -->
                 <button
                   *ngIf="hasPriceBreakup()"
                   (click)="togglePriceBreakup()"
-                  class="text-xs font-extrabold text-accent hover:text-accent flex items-center gap-1 uppercase tracking-wide mt-2"
+                  class="text-xs font-semibold text-[#D4AF37] hover:underline flex items-center gap-1 uppercase tracking-wider mt-3"
                 >
-                  View Price Breakup
-                  <span
-                    class="transition-transform"
-                    [class.rotate-180]="showPriceBreakup()"
-                    >▼</span
-                  >
+                  <span>Detailed Valuation Breakdown</span>
+                  <span>{{ showPriceBreakup() ? '▲' : '▼' }}</span>
                 </button>
 
-                <!-- Transparent Price Breakdown Accordion -->
-                <div
-                  *ngIf="showPriceBreakup() && hasPriceBreakup()"
-                  class="mt-4 bg-surface border border-ink shadow-sm p-4 rounded-lg text-sm text-ink animate-fade-in transition-all duration-300"
-                >
-                  <h4
-                    class="font-semibold text-ink mb-3 border-b border-ink pb-2"
-                  >
-                    Price Breakdown
-                  </h4>
-                  <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                      <span class="flex items-center gap-2"
-                        ><svg
-                          class="w-4 h-4 text-ink"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          ></path>
-                        </svg>
-                        Metal</span
-                      >
-                      <span class="font-medium">{{
-                        currentPriceBreakup()!.metal | currencyConvert
-                      }}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                      <span class="flex items-center gap-2"
-                        ><svg
-                          class="w-4 h-4 text-ink"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-                          ></path>
-                        </svg>
-                        Stones</span
-                      >
-                      <span class="font-medium">{{
-                        currentPriceBreakup()!.gemstone | currencyConvert
-                      }}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                      <span class="flex items-center gap-2"
-                        ><svg
-                          class="w-4 h-4 text-ink"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                          ></path>
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          ></path>
-                        </svg>
-                        Making Charges</span
-                      >
-                      <span class="font-medium">{{
-                        currentPriceBreakup()!.makingCharges | currencyConvert
-                      }}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                      <span class="flex items-center gap-2"
-                        ><svg
-                          class="w-4 h-4 text-ink"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"
-                          ></path>
-                        </svg>
-                        Tax (3%)</span
-                      >
-                      <span class="font-medium">{{
-                        currentPriceBreakup()!.tax | currencyConvert
-                      }}</span>
-                    </div>
-                    <div
-                      class="flex justify-between items-center pt-3 border-t border-ink mt-2"
-                    >
-                      <span class="font-bold text-ink text-base"
-                        >Grand Total</span
-                      >
-                      <span class="font-bold text-accent text-lg">{{
-                        currentPriceBreakup()!.total | currencyConvert
-                      }}</span>
-                    </div>
+                <div *ngIf="showPriceBreakup() && hasPriceBreakup()" class="mt-4 bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-xl text-xs space-y-2 animate-fadeIn">
+                  <div class="flex justify-between text-[#7a7a7a]">
+                    <span>Precious Metal (18K)</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ currentPriceBreakup()!.metal | currencyConvert }}</span>
+                  </div>
+                  <div class="flex justify-between text-[#7a7a7a]">
+                    <span>Certified Gemstones</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ currentPriceBreakup()!.gemstone | currencyConvert }}</span>
+                  </div>
+                  <div class="flex justify-between text-[#7a7a7a]">
+                    <span>Artisanal Making & Setting</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ currentPriceBreakup()!.makingCharges | currencyConvert }}</span>
+                  </div>
+                  <div class="flex justify-between text-[#7a7a7a]">
+                    <span>Tax & Insurance</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ currentPriceBreakup()!.tax | currencyConvert }}</span>
+                  </div>
+                  <div class="flex justify-between pt-2 border-t border-[#e0e0e0] font-semibold text-sm text-[#1d1d1f]">
+                    <span>Total Valuation</span>
+                    <span class="text-[#D4AF37]">{{ currentPriceBreakup()!.total | currencyConvert }}</span>
                   </div>
                 </div>
-                
-                <app-emi-calculator [price]="currentPriceBreakup()?.total || currentPrice()"></app-emi-calculator>
               </div>
 
-              <!-- Customization Configurator -->
-              <div class="space-y-5 mb-8">
-                <!-- Metal -->
+              <!-- Configurator Options -->
+              <div class="space-y-5">
+                
+                <!-- Metal Option Chips -->
                 <div *ngIf="hasOption('metal')">
-                  <span
-                    class="text-xs font-bold text-ink uppercase tracking-wider block mb-2"
-                    >Metal Color & Purity</span
-                  >
+                  <span class="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider block mb-2">Select Metal Alloy</span>
                   <div class="flex flex-wrap gap-2">
                     <button
                       *ngFor="let opt of getOptions('metal')"
                       (click)="selectedMetal.set(opt)"
-                      class="px-4 py-2 rounded-full border text-sm font-medium transition-all"
-                      [class.bg-primary]="selectedMetal()?.id === opt.id"
-                      [class.text-surface]="selectedMetal()?.id === opt.id"
-                      [class.border-primary]="
-                        selectedMetal()?.id === opt.id
-                      "
-                      [class.bg-surface]="selectedMetal()?.id !== opt.id"
-                      [class.text-ink]="selectedMetal()?.id !== opt.id"
-                      [class.border-ink]="selectedMetal()?.id !== opt.id"
+                      class="px-4 py-2 rounded-full border text-xs font-medium transition-all active-press"
+                      [class.bg-[#1d1d1f]]="selectedMetal()?.id === opt.id"
+                      [class.text-white]="selectedMetal()?.id === opt.id"
+                      [class.border-[#1d1d1f]]="selectedMetal()?.id === opt.id"
+                      [class.bg-[#f5f5f7]]="selectedMetal()?.id !== opt.id"
+                      [class.text-[#1d1d1f]]="selectedMetal()?.id !== opt.id"
+                      [class.border-[#e0e0e0]]="selectedMetal()?.id !== opt.id"
                     >
                       {{ opt.name }}
                     </button>
                   </div>
                 </div>
 
-                <!-- Diamond -->
+                <!-- Diamond Quality Option Chips -->
                 <div *ngIf="hasOption('diamond')">
-                  <div class="flex justify-between mb-2">
-                    <span
-                      class="text-xs font-bold text-ink uppercase tracking-wider"
-                      >Diamond Quality</span
-                    >
-                    <button class="text-xs font-extrabold text-accent underline">
-                      Guide
-                    </button>
-                  </div>
+                  <span class="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider block mb-2">Diamond Grading</span>
                   <div class="flex flex-wrap gap-2">
                     <button
                       *ngFor="let opt of getOptions('diamond')"
                       (click)="selectedDiamondQuality.set(opt)"
-                      class="flex-1 px-3 py-2 rounded border text-center text-xs font-medium transition-all"
-                      [class.border-primary]="
-                        selectedDiamondQuality()?.id === opt.id
-                      "
-                      [class.text-ink]="
-                        selectedDiamondQuality()?.id === opt.id
-                      "
-                      [class.bg-primary]="
-                        selectedDiamondQuality()?.id === opt.id
-                      "
-                      [class.border-ink]="
-                        selectedDiamondQuality()?.id !== opt.id
-                      "
-                      [class.text-ink]="
-                        selectedDiamondQuality()?.id !== opt.id
-                      "
+                      class="px-4 py-2 rounded-full border text-xs font-medium transition-all active-press"
+                      [class.bg-[#1d1d1f]]="selectedDiamondQuality()?.id === opt.id"
+                      [class.text-white]="selectedDiamondQuality()?.id === opt.id"
+                      [class.border-[#1d1d1f]]="selectedDiamondQuality()?.id === opt.id"
+                      [class.bg-[#f5f5f7]]="selectedDiamondQuality()?.id !== opt.id"
+                      [class.text-[#1d1d1f]]="selectedDiamondQuality()?.id !== opt.id"
+                      [class.border-[#e0e0e0]]="selectedDiamondQuality()?.id !== opt.id"
                     >
                       {{ opt.name }}
                     </button>
                   </div>
                 </div>
 
-                <!-- Size -->
+                <!-- Ring Size Selector -->
                 <div *ngIf="isRingCategory()">
-                  <div class="flex justify-between mb-2">
-                    <span
-                      class="text-xs font-bold text-ink uppercase tracking-wider"
-                      >Ring Size</span
-                    >
-                    <button
-                      (click)="sizeGuideOpen.set(true)"
-                      class="text-xs font-extrabold text-accent underline"
-                    >
-                      Size Guide
-                    </button>
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider">Ring Size</span>
+                    <button (click)="sizeGuideOpen.set(true)" class="text-xs text-[#D4AF37] hover:underline font-semibold">Size Chart</button>
                   </div>
                   <select
                     [ngModel]="selectedSize()"
                     (ngModelChange)="selectedSize.set($event)"
-                    class="w-full p-3 border border-ink rounded-lg bg-surface text-sm focus:border-primary outline-none"
+                    class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-5 py-2.5 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]"
                   >
-                    <option [ngValue]="null">Select Size</option>
-                    <option
-                      *ngFor="
-                        let i of [
-                          6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-                          20,
-                        ]
-                      "
-                      [ngValue]="i"
-                    >
-                      Size {{ i }}
+                    <option [ngValue]="null">Select Ring Size (US)</option>
+                    <option *ngFor="let i of [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]" [ngValue]="i">
+                      Size {{ i }} (US)
                     </option>
                   </select>
                 </div>
+
+                <!-- Pincode Delivery -->
+                <div>
+                  <span class="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider block mb-2">Insured Delivery Verification</span>
+                  <div class="flex gap-2">
+                    <input
+                      type="text"
+                      [ngModel]="pincode()"
+                      (ngModelChange)="pincode.set($event)"
+                      placeholder="Enter postal code"
+                      class="flex-1 bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-5 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]"
+                    />
+                    <button (click)="checkDelivery()" class="btn-apple-pill-secondary text-xs !py-2 !px-4">Check</button>
+                  </div>
+                  <p *ngIf="deliveryDate()" class="text-xs text-emerald-700 font-semibold mt-2 pl-2">
+                    ✓ Estimated delivery by {{ deliveryDate() }}
+                  </p>
+                </div>
+
               </div>
 
-              <!-- Delivery -->
-              <div class="mb-6">
-                <div class="relative">
-                  <input
-                    type="text"
-                    [ngModel]="pincode()"
-                    (ngModelChange)="pincode.set($event)"
-                    placeholder="Enter Pincode for Delivery"
-                    class="w-full pl-4 pr-20 py-3 border border-ink rounded-lg text-sm focus:border-primary outline-none"
-                  />
-                  <button
-                    (click)="checkDelivery()"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-ink px-3 py-1.5 hover:bg-surface rounded"
-                  >
-                    CHECK
-                  </button>
-                </div>
-                <p
-                  *ngIf="deliveryDate()"
-                  class="text-xs text-green-700 font-medium mt-2 pl-1"
+              <!-- Action CTAs -->
+              <div class="space-y-3 pt-4 border-t border-[#e0e0e0]">
+                <button
+                  *ngIf="product()?.stock !== 0"
+                  (click)="handleAddToCart()"
+                  class="btn-apple-pill w-full !py-3.5 text-sm"
                 >
-                  Expected delivery by {{ deliveryDate() }}
-                </p>
-              </div>
-
-              <!-- Actions -->
-              <div class="flex flex-col gap-3">
-                <div class="flex gap-3" *ngIf="product()?.stock !== 0">
-                  <button
-                    (click)="handleAddToCart()"
-                    class="flex-1 bg-gradient-to-r from-primary to-primary text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm"
-                  >
-                    Add to Cart
-                  </button>
-                  <button
-                    (click)="handleBuyNow()"
-                    class="flex-1 bg-surface border-2 border-primary text-ink font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm"
-                  >
-                    Buy Now
-                  </button>
-                </div>
+                  Add to Bag
+                </button>
+                <button
+                  *ngIf="product()?.stock !== 0"
+                  (click)="handleBuyNow()"
+                  class="btn-apple-pill-secondary w-full !py-3 text-sm"
+                >
+                  Instant 1-Click Checkout
+                </button>
                 <button
                   *ngIf="product()?.stock === 0"
                   (click)="notifyMe()"
-                  class="w-full bg-gradient-to-r from-gold-500 to-gold-600 text-surface font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.99] uppercase tracking-wider text-sm flex items-center justify-center gap-2"
+                  class="btn-apple-pill w-full !py-3 text-xs !bg-[#1c1c1e] !text-white"
                 >
-                  <span>🔔</span> Notify Me When Available
+                  Notify Me When Restocked
                 </button>
-                <div class="grid grid-cols-2 gap-2 w-full mb-2">
-                  <button
-                    (click)="openTryAtHome()"
-                    class="w-full border border-secondary-600 text-ink font-bold py-3 rounded-lg hover:bg-secondary-50 transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
-                  >
-                    <span>🏠</span> Try at Home
-                  </button>
-                  <button
-                    (click)="openStoreVisit()"
-                    class="w-full border border-primary text-ink font-bold py-3 rounded-lg hover:bg-primary transition-colors uppercase tracking-wider text-[10px] flex items-center justify-center gap-1"
-                  >
-                    <span>🏢</span> Store Visit
-                  </button>
-                </div>
-                <button
-                  (click)="openVideoConsult()"
-                  class="w-full bg-[#25D366] text-surface font-bold py-3 rounded-lg hover:bg-[#128C7E] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
-                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
-                  </svg>
-                  Video Consult
-                </button>
-              </div>
 
-              <!-- Trust Badges (Moved to Buy Box) -->
-              <div class="flex flex-wrap gap-2 mt-6">
-                <div
-                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto border border-ink shadow-sm font-bold uppercase tracking-wide"
-                >
-                  <span class="text-lg">💎</span> GIA Certified
-                </div>
-                <div
-                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto border border-ink shadow-sm font-bold uppercase tracking-wide"
-                >
-                  <span class="text-lg">📜</span> IGI Certified
-                </div>
-                <div
-                  class="flex items-center gap-2 text-xs text-ink bg-surface px-3 py-2 rounded-lg w-full sm:w-auto border border-ink shadow-sm font-bold uppercase tracking-wide"
-                >
-                  <span class="text-lg">🛡️</span> BIS Hallmarked
+                <!-- Concierge Appointment Strip -->
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                  <button (click)="openTryAtHome()" class="btn-apple-pill-secondary text-xs !py-2 !px-3">
+                    🏡 Try at Home
+                  </button>
+                  <button (click)="openVideoConsult()" class="btn-apple-pill-secondary text-xs !py-2 !px-3">
+                    📹 Video Consult
+                  </button>
                 </div>
               </div>
 
-              <div
-                class="mt-6 pt-4 border-t border-ink flex flex-col justify-center gap-4 text-xs font-medium text-ink text-center"
-              >
-                <div class="flex justify-center gap-6">
-                  <a
-                    routerLink="/contact"
-                    class="hover:text-ink transition-colors"
-                    >Contact Us</a
-                  >
-                  <span>|</span>
-                  <button
-                    (click)="openWhatsApp()"
-                    class="hover:text-ink transition-colors"
-                  >
-                    Chat on WhatsApp
-                  </button>
+              <!-- Trust Guarantee Strip -->
+              <div class="grid grid-cols-2 gap-2 text-[11px] text-[#7a7a7a] pt-4 border-t border-[#f0f0f0]">
+                <div class="flex items-center gap-1.5">
+                  <span>🔒</span>
+                  <span>Insured Express Shipping</span>
                 </div>
-                <a
-                  routerLink="/rfq"
-                  [queryParams]="{ product: product()?.id }"
-                  class="text-gold-600 hover:text-gold-700 font-semibold transition-colors text-sm"
-                >
-                  Need bulk quantities? Request a Quote &rarr;
-                </a>
+                <div *ngIf="hasCertification('GIA')" class="flex items-center gap-1.5">
+                  <span>💎</span>
+                  <span>GIA Lab Certificate</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span>🛡️</span>
+                  <span>Lifetime Authenticity</span>
+                </div>
+                <div *ngIf="returnPolicyDays() as days" class="flex items-center gap-1.5">
+                  <span>🔄</span>
+                  <a routerLink="/returns" class="underline">{{ days }}-Day Returns</a>
+                </div>
               </div>
+
             </div>
           </div>
 
-          <!-- Render details here only on small screens -->
-          <div class="block lg:hidden mt-8 w-full">
-            <ng-container *ngTemplateOutlet="productDetailsTpl"></ng-container>
-          </div>
-
-          <!-- Sticky Mobile Add to Cart Bar -->
-          <div
-            class="lg:hidden fixed bottom-0 left-0 w-full bg-surface border-t border-ink p-4 shadow-[0_-4px_10px_rgb(0,0,0,0.05)] z-40 flex items-center justify-between gap-4 animate-fade-in-up"
-          >
-            <div>
-              <p class="text-xs text-ink mb-0.5 truncate max-w-[150px]">
-                {{ product()?.name }}
-              </p>
-              <p class="font-bold text-ink text-lg leading-none">
-                {{
-                  currentPriceBreakup()?.total || currentPrice()
-                    | currencyConvert
-                }}
-              </p>
-            </div>
-            <button
-              *ngIf="product()?.stock !== 0"
-              (click)="handleAddToCart()"
-              class="bg-gradient-to-r from-primary to-primary text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0"
-            >
-              Add to Cart
-            </button>
-            <button
-              *ngIf="product()?.stock === 0"
-              (click)="notifyMe()"
-              class="bg-gradient-to-r from-gold-500 to-gold-600 text-surface font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider flex-shrink-0 flex items-center gap-2"
-            >
-              <span>🔔</span> Notify Me
-            </button>
-          </div>
         </div>
+
+        <!-- REVIEWS SECTION -->
+        <section *ngIf="!loading() && product()" class="mt-20 border-t border-[#e0e0e0] pt-16">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block mb-1">Client Testimonials</span>
+              <h2 class="font-display font-semibold text-3xl text-[#1d1d1f]">Patron Reviews & Ratings.</h2>
+            </div>
+            <button *ngIf="isAuthenticated()" (click)="showReviewModal.set(true)" class="btn-apple-pill text-xs !py-2.5 !px-5 self-start sm:self-auto">
+              Write a Review
+            </button>
+          </div>
+
+          <div *ngIf="reviews().length === 0" class="store-utility-card p-12 text-center">
+            <span class="text-3xl mb-2 block">✦</span>
+            <h3 class="font-display font-semibold text-lg text-[#1d1d1f] mb-1">Be the First to Review</h3>
+            <p class="text-xs text-[#7a7a7a]">Share your experience with this bespoke creation.</p>
+          </div>
+
+          <div *ngIf="reviews().length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <article *ngFor="let review of reviews()" class="store-utility-card p-6">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-semibold text-sm text-[#1d1d1f]">{{ review.userName || 'Verified Patron' }}</span>
+                <div class="text-amber-500 text-xs">
+                  {{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}
+                </div>
+              </div>
+              <p class="text-xs text-[#7a7a7a] leading-relaxed font-light">{{ review.comment }}</p>
+              <span class="text-[10px] text-[#a1a1a6] mt-4 block">{{ review.createdAt | date:'mediumDate' }}</span>
+            </article>
+          </div>
+        </section>
+
+        <!-- CURATED RECOMMENDATIONS ("YOU MAY ALSO ADORE") -->
+        <section *ngIf="!loading() && similarProducts().length > 0" class="mt-20 border-t border-[#e0e0e0] pt-16">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block mb-1">Curated Pairings</span>
+              <h2 class="font-display font-semibold text-3xl text-[#1d1d1f]">You May Also Adore.</h2>
+            </div>
+            <a routerLink="/products" class="text-xs font-semibold text-[#D4AF37] hover:underline uppercase tracking-wider">
+              View All Collections &rarr;
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <article *ngFor="let prod of similarProducts() | slice:0:4" [routerLink]="['/products', prod.id]" class="store-utility-card cursor-pointer group flex flex-col justify-between">
+              <div>
+                <div class="relative overflow-hidden aspect-square bg-[#f5f5f7] rounded-[12px] mb-4">
+                  <img [ngSrc]="prod.images?.[0] || prod.imageUrl || ''" fill sizes="280px" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" [alt]="prod.name">
+                </div>
+                <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block mb-1">{{ prod.category }}</span>
+                <h3 class="font-sans font-semibold text-base text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2 line-clamp-1">{{ prod.name }}</h3>
+                <span class="text-sm font-semibold text-[#1d1d1f]">{{ prod.price | currencyConvert }}</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
       </div>
 
-      <!-- Reviews Section -->
-      <div *ngIf="!loading() && product()" class="mt-16 border-t border-ink pt-12">
-        <div class="flex items-center justify-between mb-8">
-          <h3 class="text-2xl font-serif font-bold text-ink">Customer Reviews</h3>
-          <button *ngIf="isAuthenticated()" (click)="showReviewModal.set(true)" class="bg-primary text-surface px-6 py-2 rounded-lg font-bold hover:bg-opacity-90 transition-all">
-            Write a Review
+      <!-- Floating Sticky Bar (Mobile / Scroll) -->
+      <div *ngIf="product()" class="fixed bottom-0 left-0 w-full bg-[#f5f5f7]/90 backdrop-blur-xl border-t border-[#e0e0e0] py-3.5 px-6 md:px-12 z-40 shadow-2xl flex items-center justify-between">
+        <div class="truncate max-w-[200px] sm:max-w-md">
+          <span class="font-sans font-semibold text-sm text-[#1d1d1f] truncate block">{{ product()?.name }}</span>
+          <span class="text-xs font-semibold text-[#D4AF37]">{{ currentPriceBreakup()?.total || currentPrice() | currencyConvert }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button (click)="handleAddToCart()" class="btn-apple-pill text-xs !py-2 !px-5">
+            Add to Bag
           </button>
         </div>
-        
-        <div *ngIf="reviews().length === 0" class="text-center py-8 text-ink bg-surface rounded-xl border border-ink">
-          <p>No reviews yet. Be the first to review this product!</p>
-        </div>
-        
-        <div *ngIf="reviews().length > 0" class="space-y-6">
-          <div *ngFor="let review of reviews()" class="bg-surface p-6 rounded-xl border border-ink">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-ink">{{ review.userName || 'Customer' }}</span>
-                <span class="text-xs text-ink/70">{{ review.createdAt | date }}</span>
-              </div>
-              <div class="text-orange-400 font-bold">
-                 {{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}
-              </div>
-            </div>
-            <p class="text-ink leading-relaxed">{{ review.comment }}</p>
-          </div>
-        </div>
       </div>
 
-      <!-- Similar Products Carousel -->
-      <div *ngIf="!loading() && similarProducts().length > 0" class="mt-16 border-t border-ink pt-12">
-        <h3 class="text-2xl font-serif font-bold text-ink mb-8">You May Also Like</h3>
-        <div class="flex overflow-x-auto gap-6 pb-6 snap-x hide-scrollbar">
-          <a *ngFor="let prod of similarProducts()" [routerLink]="['/products', prod.id]" class="snap-start shrink-0 w-64 group">
-            <div class="bg-surface rounded-xl border border-ink overflow-hidden aspect-square relative mb-3">
-              <img [ngSrc]="prod.images?.[0] || prod.imageUrl || ''" fill class="object-cover group-hover:scale-105 transition-transform duration-500" />
-            </div>
-            <h4 class="font-bold text-ink truncate">{{ prod.name }}</h4>
-            <p class="text-ink font-medium">{{ prod.price | currencyConvert }}</p>
-          </a>
-        </div>
-      </div>
 
       <!-- Modals -->
       <app-size-guide-modal
@@ -1280,6 +933,10 @@ export class ProductDetailComponent
   private historyService = inject(HistoryService);
   private currencyService = inject(CurrencyService);
   private sanitizer = inject(DomSanitizer);
+  private settingService = inject(SettingService);
+
+  /** Store settings, used to decide which promises may be made. */
+  storeSettings: Record<string, string> = {};
   private seoService = inject(SeoService);
 
   private appointmentService = inject(AppointmentService);
@@ -1320,6 +977,11 @@ export class ProductDetailComponent
   sizeGuideOpen = signal(false);
   showPriceBreakup = signal(true);
   tryAtHomeOpen = signal(false);
+
+  // Luxury Video Player State
+  isVideoPlaying = signal(true);
+  isVideoMuted = signal(true);
+  videoProgress = signal(0);
 
   // Customization
   selectedMetal = signal<CustomizationOption | null>(null);
@@ -1453,6 +1115,10 @@ export class ProductDetailComponent
   });
 
   ngOnInit(): void {
+    this.settingService
+      .getSettings()
+      .subscribe((s) => (this.storeSettings = s || {}));
+
     this.route.params.subscribe((p) => {
       if (p['id']) {
         this.loadProduct(p['id']);
@@ -1526,10 +1192,10 @@ export class ProductDetailComponent
 
         // Update SEO Tags
         this.seoService.updateTags({
-          title: `${data.name} | Gemera`,
+          title: `${data.name} | Caratloop`,
           description: data.description || `Buy ${data.name} online at Gemera.`,
           image: data.imageUrl || (data.images && data.images.length > 0 ? data.images[0] : ''),
-          url: `https://www.gemera.com/products/${data.id}`
+          url: `https://www.caratloop.com/products/${data.id}`
         });
 
         if (data.customizationOptions) {
@@ -1561,22 +1227,34 @@ export class ProductDetailComponent
                 ? 'https://schema.org/InStock'
                 : 'https://schema.org/OutOfStock',
             itemCondition: 'https://schema.org/NewCondition',
-            hasMerchantReturnPolicy: {
-              '@type': 'MerchantReturnPolicy',
-              applicableCountry: 'IN',
-              returnPolicyCategory:
-                'https://schema.org/MerchantReturnFiniteReturnWindow',
-              merchantReturnDays: 30,
-              returnMethod: 'https://schema.org/ReturnByMail',
-              returnFees: 'https://schema.org/FreeReturn',
-            },
-          },
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.8',
-            reviewCount: data.reviewCount || 10,
           },
         };
+
+        // A MerchantReturnPolicy declaring a free 30-day window was emitted for
+        // every product while no returns policy existed anywhere on the site.
+        // Only declare it once the business has actually published one.
+        const returnDays = this.returnPolicyDays();
+        if (returnDays) {
+          (schema.offers as any).hasMerchantReturnPolicy = {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'IN',
+            returnPolicyCategory:
+              'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: returnDays,
+            returnMethod: 'https://schema.org/ReturnByMail',
+          };
+        }
+
+        // Emit aggregateRating only when the product genuinely has one.
+        // A hardcoded 4.8 with an invented count is a fake review signal to
+        // Google and a misrepresentation to shoppers.
+        if (data.rating && data.reviewCount && data.reviewCount > 0) {
+          (schema as any).aggregateRating = {
+            '@type': 'AggregateRating',
+            ratingValue: String(data.rating),
+            reviewCount: data.reviewCount,
+          };
+        }
         this.seoService.setJsonLd(schema);
       },
       error: () => {
@@ -1584,6 +1262,40 @@ export class ProductDetailComponent
         this.productNotFound.set(true);
       },
     });
+  }
+
+  /**
+   * True only when the product actually records this lab's certificate.
+   * The badges used to render unconditionally, so uncertified stock carried a
+   * "GIA Certified" mark -- misrepresentation, and for BIS an offence under
+   * the BIS Act once hallmarking became mandatory.
+   */
+  /** Published return window, in days. Null until the business sets one. */
+  returnPolicyDays(): number | null {
+    const raw = this.storeSettings?.['returnPolicyDays'];
+    const n = raw ? parseInt(String(raw), 10) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  hasCertification(lab: string): boolean {
+    const certs = this.product()?.certifications;
+    if (!certs || !certs.length) return false;
+    return certs.some((c) => (c || '').toUpperCase().includes(lab.toUpperCase()));
+  }
+
+  /** Label naming only the accreditations this piece genuinely holds. */
+  certificationLabel(): string {
+    const held: string[] = [];
+    if (this.hasCertification('GIA')) held.push('GIA');
+    if (this.hasCertification('IGI')) held.push('IGI');
+    if (this.product()?.bisHallmark) held.push('BIS Hallmarked');
+    return held.join(' · ');
+  }
+
+  /** Star glyphs for a real rating; never a fixed five. */
+  starsFor(rating?: number | null): string {
+    const r = Math.max(0, Math.min(5, Math.round(rating ?? 0)));
+    return '★'.repeat(r) + '☆'.repeat(5 - r);
   }
 
   handleAddToCart(): void {
@@ -1784,6 +1496,46 @@ export class ProductDetailComponent
 
     if (this.selectedMediaIndex() !== index) {
       this.selectedMediaIndex.set(index);
+    }
+  }
+
+  // Luxury Video Player Methods
+  toggleVideoPlay(video: HTMLVideoElement) {
+    if (!video) return;
+    if (video.paused) {
+      video.play().then(() => this.isVideoPlaying.set(true)).catch(() => {});
+    } else {
+      video.pause();
+      this.isVideoPlaying.set(false);
+    }
+  }
+
+  toggleVideoMute(video: HTMLVideoElement) {
+    if (!video) return;
+    video.muted = !video.muted;
+    this.isVideoMuted.set(video.muted);
+  }
+
+  onVideoTimeUpdate(video: HTMLVideoElement) {
+    if (!video || !video.duration) return;
+    this.videoProgress.set((video.currentTime / video.duration) * 100);
+  }
+
+  seekVideo(event: MouseEvent, video: HTMLVideoElement) {
+    if (!video || !video.duration) return;
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const pos = (event.clientX - rect.left) / rect.width;
+    video.currentTime = pos * video.duration;
+    this.videoProgress.set(pos * 100);
+  }
+
+  toggleVideoFullscreen(video: HTMLVideoElement) {
+    if (!video) return;
+    if (!document.fullscreenElement) {
+      video.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
     }
   }
 }

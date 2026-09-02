@@ -92,6 +92,22 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/privacy").then(m => m.PrivacyPolicyComponent)
   },
   {
+    // Returns, shipping and cancellation. The storefront promised 30-day
+    // returns in six places with no policy page behind any of them.
+    path: "returns",
+    loadComponent: () => import("./pages/policies").then(m => m.PoliciesComponent)
+  },
+  {
+    path: "shipping",
+    redirectTo: "returns",
+    pathMatch: "full"
+  },
+  {
+    path: "cancellation",
+    redirectTo: "returns",
+    pathMatch: "full"
+  },
+  {
     path: "terms",
     loadComponent: () => import("./pages/terms").then(m => m.TermsComponent)
   },

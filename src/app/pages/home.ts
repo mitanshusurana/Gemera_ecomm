@@ -1,21 +1,14 @@
 import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { RouterLink, Router } from "@angular/router";
-import { QuickViewModalComponent } from "../components/quick-view-modal";
+import { FormsModule } from "@angular/forms";
 import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
-import { Product, ProductDetail, Category } from "../core/models";
-import { CurrencyService } from "../services/currency.service";
+import { Product } from "../core/models";
 import { SeoService } from "../services/seo.service";
 import { ToastService } from "../services/toast.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
-
-interface CollectionUI {
-  id: string;
-  name: string;
-  title: string;
-  icon: string;
-}
+import { VirtualTryOnComponent } from "../components/virtual-try-on";
 
 @Component({
   selector: "app-home",
@@ -24,316 +17,406 @@ interface CollectionUI {
     CommonModule,
     NgOptimizedImage,
     RouterLink,
-    CurrencyConvertPipe
+    FormsModule,
+    CurrencyConvertPipe,
+    VirtualTryOnComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Hero Slider (Modern Corporate) -->
-    <section class="relative w-full h-[550px] md:h-[650px] bg-gradient-to-br from-primary to-primary overflow-hidden flex items-center text-white">
-       <!-- Abstract Background Shapes -->
-       <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-surface/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-       <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"></div>
-
-       <div class="container-luxury grid grid-cols-1 md:grid-cols-2 gap-12 items-center h-full px-6 md:px-12 relative z-10">
-          <div class="animate-fade-in-up text-center md:text-left">
-            <span class="inline-block py-1 px-3 border border-secondary-400 text-accent text-xs font-extrabold tracking-[0.2em] uppercase mb-6 rounded-full">New Season Collection</span>
-            <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
-              Elevate Your <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-secondary-200 to-secondary-500">Everyday</span>
-            </h1>
-            <p class="text-white text-lg mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed font-light" style="color: var(--color-text-muted-light, #d1fae5);">
-               Lightweight, premium designer jewelry crafted for the modern professional. Seamlessly transition from the boardroom to the ballroom.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-               <a routerLink="/products" class="btn-primary bg-accent hover:bg-accent border-none text-white px-8 py-4 text-lg">
-                 Shop Collection
-               </a>
-               <a routerLink="/treasure" class="px-8 py-4 rounded-lg border border-white/30 hover:bg-surface/10 transition-colors font-semibold text-white text-lg">
-                 Start Treasure Plan
-               </a>
-            </div>
-          </div>
-          <div class="relative h-full w-full flex items-center justify-center hidden md:flex">
-             <!-- Hero Image Placeholder -->
-             <div class="w-[450px] h-[550px] bg-surface rounded-t-[10rem] rounded-b-3xl relative overflow-hidden shadow-2xl border-4 border-white/10">
-                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.webp" fill priority sizes="450px" class="object-cover" alt="Modern Corporate Jewelry" ngSrcset="400w, 800w, 1200w">
-                <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
-                <div class="absolute bottom-8 left-8 text-white">
-                   <p class="text-sm uppercase tracking-widest mb-1 text-accent font-extrabold">Featured</p>
-                   <p class="font-display text-2xl">The Executive Edit</p>
-                </div>
-             </div>
-          </div>
-       </div>
-    </section>
-
-    <!-- Shop By Occasion (New Section) -->
-    <section class="py-20 bg-surface">
-       <div class="container-luxury px-6">
-          <div class="text-center mb-16">
-             <h2 class="text-3xl md:text-4xl font-display font-bold text-ink mb-4">Shop By Occasion</h2>
-             <p class="text-ink">Curated edits for every moment of your life</p>
+    <!-- APPLE DESIGN SYSTEM: FLAGSHIP HAUTE JOAILLERIE HOMEPAGE -->
+    <main class="w-full overflow-hidden font-sans pt-[96px] bg-white text-[#1d1d1f]">
+      
+      <!-- HERO TILE: PURE LIGHT LUXURY SHOWCASE -->
+      <section class="relative min-h-[90vh] flex flex-col justify-between py-16 md:py-24 border-b border-[#e0e0e0] bg-gradient-to-b from-[#fafafc] to-white">
+        <div class="max-w-[1080px] mx-auto text-center px-4 z-10">
+          
+          <!-- Floating Gold Hallmark Pill -->
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[#e0e0e0] shadow-sm mb-6 animate-fadeIn">
+            <span class="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse"></span>
+            <span class="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4AF37]">Haute Joaillerie & Solitaire Atelier</span>
           </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-             <!-- Card 1 -->
-             <a routerLink="/products" [queryParams]="{category: 'Office Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="Hero%20%26%20Office%20Wear%20Sophisticated%20Professional.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Office Wear">
-                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-white">
-                   <h3 class="text-xl font-bold font-display mb-1">Office Wear</h3>
-                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
-                </div>
-             </a>
-             <!-- Card 2 -->
-             <a routerLink="/products" [queryParams]="{category: 'Daily Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="Daily%20Wear%20Elevated%20Essentials.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Daily Wear">
-                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-white">
-                   <h3 class="text-xl font-bold font-display mb-1">Daily Wear</h3>
-                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
-                </div>
-             </a>
-             <!-- Card 3 -->
-             <a routerLink="/products" [queryParams]="{category: 'Party Wear'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="https://images.pexels.com/photos/177332/pexels-photo-177332.jpeg?auto=compress&cs=tinysrgb&w=600" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Party Wear">
-                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-white">
-                   <h3 class="text-xl font-bold font-display mb-1">Party Wear</h3>
-                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
-                </div>
-             </a>
-             <!-- Card 4 -->
-             <a routerLink="/products" [queryParams]="{category: 'Gifting'}" class="group relative aspect-[3/4] overflow-hidden rounded-xl cursor-pointer bg-diamond-100">
-                <img ngSrc="Gifting%20The%20Unboxing%20Experience.webp" fill class="object-cover transition-transform duration-700 group-hover:scale-110" alt="Gifting">
-                <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                <div class="absolute bottom-6 left-6 text-white">
-                   <h3 class="text-xl font-bold font-display mb-1">Gifting</h3>
-                   <span class="text-xs uppercase tracking-widest text-accent font-extrabold opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 block duration-300">Shop Now</span>
-                </div>
-             </a>
-          </div>
-       </div>
-    </section>
-
-    <!-- Featured Collections -->
-    <section class="py-20 bg-surface">
-      <div class="container-luxury">
-        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4 px-6">
-            <div>
-                <h2 class="text-3xl md:text-4xl font-display font-bold text-ink mb-2">
-                  Best Sellers
-                </h2>
-                <p class="text-ink">
-                  Pieces loved by our community
-                </p>
-            </div>
-            <a routerLink="/products" class="text-ink font-bold hover:text-ink flex items-center gap-2 group text-sm uppercase tracking-wider">
-                View All Products
-                <span class="group-hover:translate-x-1 transition-transform">→</span>
+          <h1 class="font-display font-semibold text-4xl sm:text-6xl md:text-7xl text-[#1d1d1f] tracking-tight leading-[1.05] mb-5">
+            Jewels Forged for Eternity.
+          </h1>
+          <p class="font-sans text-lg sm:text-xl md:text-2xl text-[#6e6e73] font-normal tracking-tight mb-8 max-w-2xl mx-auto leading-relaxed">
+            Ethical natural diamonds, 18K solid gold, and handcrafted solitaires by master goldsmiths.
+          </p>
+          
+          <!-- CTA Action Buttons -->
+          <div class="flex flex-wrap items-center justify-center gap-4 mb-10">
+            <a routerLink="/products" class="btn-apple-pill !py-3.5 !px-8 text-sm">
+              Explore Collections
             </a>
+            <a routerLink="/builder" class="btn-apple-pill-secondary !py-3.5 !px-8 text-sm flex items-center gap-2">
+              <span>✦</span> Custom Ring Studio
+            </a>
+          </div>
+
+          <!-- Trust Badges Strip -->
+          <div class="flex flex-wrap justify-center items-center gap-6 sm:gap-10 text-[11px] font-medium text-[#7a7a7a] uppercase tracking-wider">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-[#D4AF37]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 4.2l7.5 12.8H4.5L12 6.2z"/></svg>
+              100% BIS Hallmarked
+            </span>
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-[#D4AF37]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+              GIA Certified Solitaires
+            </span>
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-[#D4AF37]" fill="currentColor" viewBox="0 0 24 24"><path d="M20 8h-3V4H7v4H4c-1.1 0-2 .9-2 2v10h20V10c0-1.1-.9-2-2-2zM9 6h6v2H9V6z"/></svg>
+              Insured White-Glove Delivery
+            </span>
+          </div>
+
         </div>
 
-        <!-- Featured Items Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-6">
-          <a
-            *ngFor="let product of featuredProducts()"
-            [routerLink]="['/products', product.id]"
-            class="group bg-surface rounded-none overflow-hidden hover:shadow-luxury transition-all duration-300 block cursor-pointer"
-          >
-            <!-- Image Container -->
-            <div
-              class="relative overflow-hidden aspect-[4/5] bg-surface"
-            >
-              <img *ngIf="product.imageUrl || product.images?.[0]" [ngSrc]="product.imageUrl || product.images?.[0] || ''" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" [alt]="product.name">
-              <div
-                *ngIf="!product.imageUrl && !product.images?.[0]"
-                class="w-full h-full flex items-center justify-center text-5xl bg-surface"
-              >
-                {{ getProductEmoji(product.category) }}
+        <!-- Hero Masterpiece Display -->
+        <div class="max-w-[1200px] w-full mx-auto px-4 mt-12 relative flex justify-center">
+          <div class="w-full max-w-[960px] aspect-[16/9] relative rounded-[28px] overflow-hidden product-surface-shadow border border-[#e0e0e0]">
+            <img ngSrc="https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=1600"
+                 fill
+                 priority
+                 sizes="(max-width: 1200px) 100vw, 960px"
+                 class="object-cover hover:scale-105 transition-transform duration-1000"
+                 alt="Gemera Fine Solitaire Diamond Ring">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-8">
+              <div class="text-white">
+                <span class="text-xs font-mono uppercase tracking-[0.2em] text-[#D4AF37] block mb-1">Featured Masterwork</span>
+                <h3 class="font-display font-semibold text-2xl sm:text-3xl text-white">The Royal Solitaire Pavé in 18K Yellow Gold</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INTERACTIVE ATELIER SPOTLIGHT: 4CS SOLITAIRE SIMULATOR -->
+      <section class="py-24 bg-[#f5f5f7] border-b border-[#e0e0e0]">
+        <div class="max-w-[1280px] mx-auto px-6 md:px-12">
+          
+          <div class="text-center max-w-2xl mx-auto mb-16">
+            <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block mb-2">Interactive Atelier</span>
+            <h2 class="font-display font-semibold text-3xl sm:text-4xl text-[#1d1d1f] tracking-tight mb-4">
+              Configure Your Solitaire.
+            </h2>
+            <p class="text-sm text-[#7a7a7a]">
+              Experience real-time proportions. Select precious gold alloy and diamond cut shapes to preview your bespoke creation.
+            </p>
+          </div>
+
+          <!-- Interactive Atelier Stage Card -->
+          <div class="bg-white rounded-[24px] border border-[#e0e0e0] p-8 md:p-12 shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            <!-- Left: Interactive Visual Stage -->
+            <div class="relative bg-[#f5f5f7] rounded-[20px] aspect-square flex flex-col items-center justify-center p-8 border border-[#e0e0e0] overflow-hidden group">
+              <img [src]="spotlightImage()"
+                   class="w-72 h-72 object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl"
+                   [alt]="selectedMetalName() + ' ' + selectedDiamondShape()">
+
+              <!-- Dynamic Specs Badge -->
+              <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#e0e0e0] text-[11px] font-semibold text-[#1d1d1f] shadow-sm">
+                {{ selectedMetalName() }} • {{ selectedDiamondShape() }}
               </div>
 
-              <!-- Quick Add Overlay -->
-              <button
-                (click)="handleAddToCart($event, product)"
-                class="absolute bottom-0 left-0 w-full bg-primary text-white font-bold py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-sm uppercase tracking-widest"
-              >
-                Add to Cart
+              <!-- Quick Try On CTA -->
+              <button (click)="openSpotlightTryOn()"
+                      class="absolute bottom-4 right-4 btn-apple-pill text-xs !py-2 !px-4 !bg-white/95 !text-[#1d1d1f] hover:!bg-white border border-[#e0e0e0] shadow-md flex items-center gap-1.5">
+                <span>✨</span> AR Try-On
               </button>
             </div>
 
-            <!-- Product Info -->
-            <div class="pt-4 pb-2">
-              <h3 class="font-medium text-ink text-sm mb-1 line-clamp-1 group-hover:text-ink transition-colors">
-                {{ product.name }}
-              </h3>
-
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-ink">{{ product.price | currencyConvert }}</span>
-                <span *ngIf="product.originalPrice" class="text-xs text-ink line-through">{{ product.originalPrice | currencyConvert }}</span>
+            <!-- Right: Configurator Selector Controls -->
+            <div class="space-y-8">
+              
+              <!-- 1. Metal Alloy Selector -->
+              <div>
+                <span class="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider block mb-3">1. Select Precious Metal</span>
+                <div class="grid grid-cols-3 gap-3">
+                  <button *ngFor="let m of metals"
+                          (click)="selectMetal(m)"
+                          [class.bg-[#1d1d1f]]="selectedMetalId() === m.id"
+                          [class.text-white]="selectedMetalId() === m.id"
+                          [class.border-[#1d1d1f]]="selectedMetalId() === m.id"
+                          [class.bg-[#f5f5f7]]="selectedMetalId() !== m.id"
+                          [class.text-[#1d1d1f]]="selectedMetalId() !== m.id"
+                          class="py-3 px-2 rounded-xl border border-[#e0e0e0] text-center text-xs font-medium transition-all active-press flex flex-col items-center gap-1">
+                    <span class="w-4 h-4 rounded-full" [style.background-color]="m.colorCode"></span>
+                    <span>{{ m.name }}</span>
+                  </button>
+                </div>
               </div>
+
+              <!-- 2. Diamond Cut Shape Selector -->
+              <div>
+                <span class="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider block mb-3">2. Diamond Cut & Shape</span>
+                <div class="grid grid-cols-4 gap-2 text-xs">
+                  <button *ngFor="let shape of diamondShapes"
+                          (click)="selectShape(shape)"
+                          [class.bg-[#1d1d1f]]="selectedDiamondShape() === shape.name"
+                          [class.text-white]="selectedDiamondShape() === shape.name"
+                          [class.border-[#1d1d1f]]="selectedDiamondShape() === shape.name"
+                          [class.bg-[#f5f5f7]]="selectedDiamondShape() !== shape.name"
+                          [class.text-[#1d1d1f]]="selectedDiamondShape() !== shape.name"
+                          class="py-2.5 px-2 rounded-xl border border-[#e0e0e0] font-medium text-center transition-all active-press">
+                    {{ shape.name }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Valuation & Atelier CTAs -->
+              <div class="pt-6 border-t border-[#e0e0e0] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span class="text-[11px] uppercase tracking-wider text-[#7a7a7a] block">Estimated Valuation</span>
+                  <span class="font-sans font-semibold text-2xl text-[#1d1d1f]">{{ estimatedPrice() | currencyConvert }}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <a routerLink="/builder" class="btn-apple-pill text-xs !py-3 !px-6">
+                    Launch 3D Ring Studio &rarr;
+                  </a>
+                </div>
+              </div>
+
             </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- FEATURED HIGH JEWELRY CREATIONS -->
+      <section class="py-24 max-w-[1440px] mx-auto px-6 md:px-12">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+          <div>
+            <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2 block">Haute Joaillerie</span>
+            <h2 class="font-display font-semibold text-3xl md:text-4xl text-[#1d1d1f] tracking-tight">Curated Masterworks.</h2>
+          </div>
+          <a routerLink="/products" class="text-xs font-semibold text-[#D4AF37] hover:underline uppercase tracking-wider mt-4 md:mt-0">
+            View All Collections &rarr;
           </a>
         </div>
-      </div>
-    </section>
 
-    <!-- Client Diaries (Testimonials) -->
-    <section class="py-24 bg-primary text-white overflow-hidden relative">
-      <!-- Decor -->
-      <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-         <div class="absolute top-10 left-10 text-9xl">❝</div>
-         <div class="absolute bottom-10 right-10 text-9xl rotate-180">❝</div>
-      </div>
+        <!-- Products Grid (Cards with Add to Bag + Quick AR Try On) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          <article *ngFor="let item of featuredProducts()" class="store-utility-card cursor-pointer group flex flex-col justify-between">
+            <div [routerLink]="['/products', item.id]">
+              <div class="w-full aspect-square bg-[#f5f5f7] rounded-[16px] overflow-hidden relative mb-6">
+                <img *ngIf="item.imageUrl || item.images?.[0]"
+                     [ngSrc]="item.imageUrl || item.images?.[0] || ''"
+                     fill
+                     sizes="(max-width: 768px) 100vw, 33vw"
+                     class="object-cover group-hover:scale-105 transition-transform duration-700"
+                     [alt]="item.name">
+                
+                <div *ngIf="!item.imageUrl && !item.images?.[0]" class="w-full h-full flex items-center justify-center text-[#D4AF37] p-8">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-16 h-16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a8 8 0 100-16 8 8 0 000 16zm0-16V2m-3 2h6M9 6l3-4 3 4" /></svg>
+                </div>
 
-      <div class="container-luxury px-6 relative z-10">
-         <div class="text-center mb-16">
-            <h2 class="text-3xl md:text-5xl font-display font-bold mb-4">Client Diaries</h2>
-            <p class="text-white opacity-90"><span class="text-[#FAFAFA]">Stories of sparkle from our cherished customers</span></p>
-         </div>
+                <!-- Instant Try On Button on Card -->
+                <button (click)="openQuickTryOn($event, item)"
+                        class="absolute bottom-3 right-3 btn-apple-pill text-[11px] !py-1.5 !px-3 !bg-white/90 !text-[#1d1d1f] hover:!bg-white border border-[#e0e0e0] shadow-sm backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
+                  ✨ Try On
+                </button>
+              </div>
 
-         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Testimonial 1 -->
-            <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
-               <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light !text-white opacity-90">"I was looking for something elegant for my daily office wear, and Caratloop's collection is just perfect. Lightweight yet so premium!"</p>
-               <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-white">S</div>
-                  <div>
-                     <h3 class="font-bold text-white text-lg">Sneha Kapoor</h3>
-                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold !text-[#FDE68A]">Marketing Head</p>
-                  </div>
-               </div>
+              <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block mb-1">{{ item.category }}</span>
+              <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2 line-clamp-1">{{ item.name }}</h3>
             </div>
 
-            <!-- Testimonial 2 -->
-            <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
-               <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light !text-white opacity-90">"The Treasure Plan helped me save up for my anniversary gift without any stress. The 100% off on the last installment is a game changer."</p>
-               <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-white">A</div>
-                  <div>
-                     <h3 class="font-bold text-white text-lg">Ankit Sharma</h3>
-                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold !text-[#FDE68A]">Entrepreneur</p>
-                  </div>
-               </div>
+            <div class="flex justify-between items-center pt-4 border-t border-[#f0f0f0]">
+              <span class="font-sans font-semibold text-base text-[#1d1d1f]">{{ item.price | currencyConvert }}</span>
+              <button (click)="handleAddToCart($event, item)" class="btn-apple-pill text-xs !py-1.5 !px-4">
+                Add to Bag
+              </button>
             </div>
+          </article>
 
-            <!-- Testimonial 3 -->
-            <div class="bg-primary p-8 rounded-2xl border border-primary shadow-xl relative hover:-translate-y-2 transition-transform duration-300">
-               <div class="flex gap-1 text-accent mb-4 text-sm font-extrabold">★★★★★</div>
-               <p class="text-lg leading-relaxed mb-6 font-light !text-white opacity-90">"Absolutely in love with the customization options. I got my ring engraved and resizing was hassle-free. Highly recommended!"</p>
-               <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-xl text-white">P</div>
-                  <div>
-                     <h3 class="font-bold text-white text-lg">Priya Menon</h3>
-                     <p class="text-xs uppercase tracking-wider text-[#FDE68A] font-extrabold !text-[#FDE68A]">Doctor</p>
-                  </div>
-               </div>
+          <!-- Fallback Cards if API has few products -->
+          <article *ngIf="featuredProducts().length < 3" routerLink="/builder" class="store-utility-card cursor-pointer group flex flex-col justify-between">
+            <div>
+              <div class="w-full aspect-square bg-[#f5f5f7] rounded-[16px] flex items-center justify-center text-[#D4AF37] p-8 mb-6 group-hover:scale-105 transition-transform duration-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-20 h-20"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a8 8 0 100-16 8 8 0 000 16zm0-16V2m-3 2h6M9 6l3-4 3 4" /></svg>
+              </div>
+              <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block mb-1">Bespoke Studio</span>
+              <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2">Build Your Dream Solitaire</h3>
+              <p class="text-xs text-[#7a7a7a]">Handpick natural diamonds and 18K solid gold settings.</p>
             </div>
-         </div>
-      </div>
-    </section>
+            <div class="flex justify-between items-center pt-4 border-t border-[#f0f0f0]">
+              <span class="text-xs font-semibold text-[#D4AF37]">Custom Atelier</span>
+              <span class="btn-apple-pill text-xs !py-1.5 !px-4">Start Studio</span>
+            </div>
+          </article>
 
-    <!-- Treasure Plan Banner (Compact) -->
-    <section class="py-20 bg-secondary-50">
-       <div class="container-luxury flex flex-col md:flex-row items-center justify-between gap-12 px-6">
-          <div class="flex-1">
-             <span class="text-[#B45309] font-extrabold uppercase tracking-widest text-xs mb-2 block">Smart Investment</span>
-             <h2 class="text-3xl md:text-5xl font-display font-bold text-ink mb-6">Caratloop <span class="text-[#B45309]">Treasure Plan</span></h2>
-             <p class="text-ink text-lg mb-8 max-w-xl">
-               The smartest way to buy jewellery. Pay for 10 months, and we pay the 11th installment for you.
-             </p>
-             <div class="flex gap-4">
-                <a routerLink="/treasure" class="btn-primary">Learn more about the Caratloop Treasure Plan</a>
-             </div>
+        </div>
+      </section>
+
+      <!-- THE BESPOKE 3-STEP JOURNEY -->
+      <section class="py-24 bg-[#1c1c1e] text-white">
+        <div class="max-w-[1280px] mx-auto px-6 md:px-12">
+          
+          <div class="text-center max-w-2xl mx-auto mb-16">
+            <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block mb-2">The Atelier Method</span>
+            <h2 class="font-display font-semibold text-3xl sm:text-4xl text-white tracking-tight mb-4">
+              How Your Jewelry Is Born.
+            </h2>
+            <p class="text-sm text-[#a1a1a6]">
+              From conflict-free mine to master goldsmith bench — crafted without unnecessary retail markups.
+            </p>
           </div>
-          <div class="flex-1 flex justify-center">
-             <div class="relative w-64 h-64 md:w-80 md:h-80 bg-surface rounded-full flex items-center justify-center shadow-2xl border-8 border-white">
-                <span class="text-8xl">💎</span>
-                <div class="absolute bottom-4 bg-primary text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg">10 + 1 Plan</div>
-             </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <!-- Step 1 -->
+            <div class="bg-[#2c2c2e] p-8 rounded-[20px] border border-white/10 relative">
+              <span class="font-mono text-3xl text-[#D4AF37] font-semibold block mb-4">01</span>
+              <h3 class="font-display font-semibold text-xl text-white mb-2">18K Precious Setting</h3>
+              <p class="text-xs text-[#a1a1a6] leading-relaxed">
+                Choose from solid 18K Yellow Gold, Rose Gold, or Platinum 950 alloys with BIS government hallmarking.
+              </p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-[#2c2c2e] p-8 rounded-[20px] border border-white/10 relative">
+              <span class="font-mono text-3xl text-[#D4AF37] font-semibold block mb-4">02</span>
+              <h3 class="font-display font-semibold text-xl text-white mb-2">Certified Gemstone</h3>
+              <p class="text-xs text-[#a1a1a6] leading-relaxed">
+                Hand-select ethical diamonds and natural gemstones graded by GIA, IGI, and GRS gemological laboratories.
+              </p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-[#2c2c2e] p-8 rounded-[20px] border border-white/10 relative">
+              <span class="font-mono text-3xl text-[#D4AF37] font-semibold block mb-4">03</span>
+              <h3 class="font-display font-semibold text-xl text-white mb-2">Handset & Polished</h3>
+              <p class="text-xs text-[#a1a1a6] leading-relaxed">
+                Master goldsmiths hand-set every stone with microscope precision and deliver in insured luxury packaging.
+              </p>
+            </div>
+
           </div>
-       </div>
-    </section>
 
+          <div class="mt-12 text-center">
+            <a routerLink="/builder" class="btn-apple-pill text-xs !py-3 !px-8">
+              Design Your Creation &rarr;
+            </a>
+          </div>
 
+        </div>
+      </section>
+
+      <!-- VIP CONCIERGE & INVITATION -->
+      <section class="py-24 bg-[#fafafc] border-t border-[#e0e0e0]">
+        <div class="max-w-[700px] mx-auto text-center px-6">
+          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block mb-2">Private Access</span>
+          <h2 class="font-display font-semibold text-3xl text-[#1d1d1f] mb-4">Join The Gemera Atelier Circle.</h2>
+          <p class="text-xs text-[#7a7a7a] mb-8 leading-relaxed">
+            Receive private invitations to limited collection drops, bespoke gemstone releases, and VIP concierge fittings.
+          </p>
+
+          <form (submit)="handleSubscribe($event)" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input type="email"
+                   [(ngModel)]="emailInput"
+                   name="email"
+                   placeholder="Enter your email address"
+                   required
+                   class="flex-1 bg-white border border-[#e0e0e0] rounded-full px-5 py-3 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37] shadow-sm">
+            <button type="submit" class="btn-apple-pill text-xs !py-3 !px-6 whitespace-nowrap">
+              Request Invitation
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Quick Virtual Try-On Modal Triggered from Homepage -->
+      <app-virtual-try-on
+        [isOpen]="tryOnOpen()"
+        [productImageUrl]="tryOnProduct()?.imageUrl || tryOnProduct()?.images?.[0] || spotlightImage()"
+        [productName]="tryOnProduct()?.name || 'Solitaire Masterpiece'"
+        [productCategory]="tryOnProduct()?.category || 'Fine Jewelry'"
+        (closeEvent)="tryOnOpen.set(false)">
+      </app-virtual-try-on>
+
+    </main>
   `,
 })
 export class HomeComponent implements OnInit {
   private productService = inject(ProductService);
   private cartService = inject(CartService);
-  private currencyService = inject(CurrencyService);
   private seoService = inject(SeoService);
   private toastService = inject(ToastService);
-  private router = inject(Router);
 
   featuredProducts = signal<Product[]>([]);
+  tryOnOpen = signal(false);
+  tryOnProduct = signal<Product | null>(null);
+
+  emailInput = '';
+
+  // Solitaire Simulator State
+  selectedMetalId = signal('yellow');
+  selectedMetalName = signal('18K Yellow Gold');
+  selectedDiamondShape = signal('Round Brilliant');
+  estimatedPrice = signal(145000);
+  spotlightImage = signal('https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=800');
+
+  metals = [
+    { id: 'yellow', name: '18K Yellow Gold', colorCode: '#D4AF37', baseModifier: 0, image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=800' },
+    { id: 'rose', name: '18K Rose Gold', colorCode: '#B76E79', baseModifier: 5000, image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&q=80&w=800' },
+    { id: 'platinum', name: 'Platinum 950', colorCode: '#E5E4E2', baseModifier: 15000, image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800' },
+  ];
+
+  diamondShapes = [
+    { name: 'Round Brilliant', multiplier: 1.0 },
+    { name: 'Emerald Cut', multiplier: 1.15 },
+    { name: 'Oval Cut', multiplier: 1.08 },
+    { name: 'Princess Cut', multiplier: 1.05 },
+  ];
 
   ngOnInit() {
     this.seoService.updateTags({
-      title: 'Caratloop | Modern Fine Jewelry for the Corporate Age',
-      description: 'Discover lightweight, premium designer jewelry crafted for the modern professional. Shop office wear, daily wear, and gifts. Certified Authenticity.',
-      url: 'https://www.gemera.com'
+      title: 'Gemera | Haute Joaillerie & Solitaire Atelier',
+      description: 'Handcrafted fine jewelry, certified conflict-free solitaires, and 18K solid gold creations. Explore curated collections.',
+      url: 'https://www.caratloop.com'
     });
 
-    const organizationSchema = {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Gemera",
-      "alternateName": "Caratloop",
-      "url": "https://www.gemera.com",
-      "logo": "https://www.gemera.com/logo-with-name.webp",
-      "sameAs": [
-        "https://www.facebook.com/gemera",
-        "https://www.instagram.com/gemera"
-      ]
-    };
-    
-    const websiteSchema = {
-      "@context": "https://schema.org/",
-      "@type": "WebSite",
-      "name": "Gemera",
-      "url": "https://www.gemera.com/",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://www.gemera.com/products?search={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    };
-
-    this.seoService.setJsonLd([organizationSchema, websiteSchema]);
-
-    this.productService.getProducts(0, 8).subscribe(res => {
+    this.productService.getProducts(0, 6).subscribe({
+      next: (res) => {
         this.featuredProducts.set(res.content);
+      },
+      error: (err) => console.error('Error fetching home products', err)
     });
-
   }
 
-  getProductEmoji(category: string): string {
-    const emojiMap: { [key: string]: string } = {
-      "Engagement Ring": "💍",
-      "Loose Gemstone": "💎",
-      "Spiritual Idol": "🕉️",
-      "Gemstone Ring": "👑",
-      "Precious Metal": "🏆",
-      "DIAMOND": "💎",
-      "GEMSTONE": "🔮",
-      "PRECIOUS_METAL": "🥇",
-    };
-    // Normalize key
-    const normalized = category.replace('_', ' ').toLowerCase();
+  selectMetal(metal: any) {
+    this.selectedMetalId.set(metal.id);
+    this.selectedMetalName.set(metal.name);
+    this.spotlightImage.set(metal.image);
+    this.calculateEstimatedPrice();
+  }
 
-    // Simple fallback logic
-    if (normalized.includes('ring')) return "💍";
-    if (normalized.includes('diamond')) return "💎";
-    if (normalized.includes('gemstone')) return "🔮";
-    if (normalized.includes('idol')) return "🕉️";
-    if (normalized.includes('metal') || normalized.includes('gold')) return "🏆";
-    if (normalized.includes('earring')) return "👂";
-    if (normalized.includes('pendant')) return "📿";
-    if (normalized.includes('bracelet')) return "💫";
+  selectShape(shape: any) {
+    this.selectedDiamondShape.set(shape.name);
+    this.calculateEstimatedPrice();
+  }
 
-    return emojiMap[category] || "✦";
+  calculateEstimatedPrice() {
+    const metal = this.metals.find(m => m.id === this.selectedMetalId());
+    const shape = this.diamondShapes.find(s => s.name === this.selectedDiamondShape());
+    const base = 145000;
+    const metalMod = metal ? metal.baseModifier : 0;
+    const shapeMult = shape ? shape.multiplier : 1.0;
+    this.estimatedPrice.set(Math.round((base + metalMod) * shapeMult));
+  }
+
+  openSpotlightTryOn() {
+    this.tryOnProduct.set(null);
+    this.tryOnOpen.set(true);
+  }
+
+  openQuickTryOn(event: Event, product: Product) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.tryOnProduct.set(product);
+    this.tryOnOpen.set(true);
   }
 
   handleAddToCart(event: Event, product: any): void {
@@ -341,7 +424,15 @@ export class HomeComponent implements OnInit {
     event.stopPropagation();
     const options = { product, price: product.price };
     this.cartService.addToCart(product.id, 1, options).subscribe(() => {
-        this.toastService.show('Added to cart!', 'success');
+      this.toastService.show(`Added ${product.name} to your bag`, 'success');
     });
+  }
+
+  handleSubscribe(event: Event) {
+    event.preventDefault();
+    if (this.emailInput) {
+      this.toastService.show('Thank you! You have been added to the Gemera Atelier Circle.', 'success');
+      this.emailInput = '';
+    }
   }
 }

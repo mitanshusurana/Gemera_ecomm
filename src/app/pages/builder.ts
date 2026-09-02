@@ -366,7 +366,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                 Add Bespoke Creation to Bag
               </button>
               <p class="text-[11px] text-[#7a7a7a] text-center">
-                Includes complimentary insured delivery, lifetime warranty & GIA gem report.
+                Includes fully insured delivery. Certification and warranty as stated on the product.
               </p>
             </div>
 

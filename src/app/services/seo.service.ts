@@ -49,10 +49,17 @@ export class SeoService {
 
   setJsonLd(schema: any) {
     const head = this.document.getElementsByTagName('head')[0];
-    let element: HTMLScriptElement | null = this.document.querySelector(`script[type='application/ld+json']`);
+    // Scope to <head> and to our own tag. The unscoped selector matched the
+    // Organization schema that app.ts injects into the body, so product
+    // schema overwrote it -- and then persisted onto every page visited
+    // afterwards, since nothing removed it.
+    let element: HTMLScriptElement | null = head.querySelector(
+      `script[type='application/ld+json'][data-seo='page']`,
+    );
     if (!element) {
       element = this.renderer.createElement('script');
       this.renderer.setAttribute(element, 'type', 'application/ld+json');
+      this.renderer.setAttribute(element, 'data-seo', 'page');
       this.renderer.appendChild(head, element);
     }
     this.renderer.setProperty(element, 'text', JSON.stringify(schema));

@@ -12,6 +12,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { CartService, CART_PRICING } from '../services/cart.service';
+import { SettingService } from '../services/setting.service';
 import { OrderService } from '../services/order.service';
 import { PaymentService } from '../services/payment.service';
 import { CurrencyService } from '../services/currency.service';
@@ -252,13 +253,18 @@ export interface PendingOrderData {
                   <div
                     class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-2 space-y-2"
                   >
-                    <label class="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" [ngModel]="createAccountForGuest" (ngModelChange)="createAccountForGuest = $event" [ngModelOptions]="{standalone: true}" class="w-4 h-4 text-blue-600 rounded">
-                      <span class="text-sm text-blue-800 font-bold">Create an account for faster checkout next time</span>
-                    </label>
-                    <p class="text-xs text-blue-700 ml-7">
-                      Your login details will be emailed to you!
+                    <p class="text-sm text-blue-800 font-semibold">
+                      An account will be created so you can track this order
                     </p>
+                    <p class="text-xs text-blue-700">
+                      We need it to process and track your order. We will email
+                      you the sign-in address &mdash; never a password. You can
+                      set one later from &lsquo;Forgot password&rsquo;.
+                    </p>
+                    <label class="flex items-center gap-3 cursor-pointer pt-1">
+                      <input type="checkbox" [ngModel]="marketingOptIn" (ngModelChange)="marketingOptIn = $event" [ngModelOptions]="{standalone: true}" class="w-4 h-4 text-blue-600 rounded">
+                      <span class="text-sm text-blue-800">Also email me new arrivals and offers</span>
+                    </label>
                   </div>
                 </div>
 
@@ -607,18 +613,22 @@ export interface PendingOrderData {
                     <p class="text-xs text-ink mt-0.5">Your package is fully insured until delivery</p>
                   </div>
                 </div>
-                <div class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                <div *ngIf="returnPolicyDays() as days" class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
                   <span class="text-lg">🔄</span>
                   <div>
-                    <p class="text-sm font-bold text-diamond-900">30-Day Returns</p>
-                    <p class="text-xs text-ink mt-0.5">No questions asked return policy</p>
+                    <p class="text-sm font-bold text-diamond-900">{{ days }}-Day Returns</p>
+                    <p class="text-xs text-ink mt-0.5">
+                      <a routerLink="/returns" class="underline">See our returns policy</a>
+                    </p>
                   </div>
                 </div>
-                <div class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                <div *ngIf="warrantyLabel()" class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
                   <span class="text-lg">💎</span>
                   <div>
-                    <p class="text-sm font-bold text-diamond-900">Lifetime Warranty</p>
-                    <p class="text-xs text-ink mt-0.5">Guaranteed quality and craftsmanship</p>
+                    <p class="text-sm font-bold text-diamond-900">{{ warrantyLabel() }}</p>
+                    <p class="text-xs text-ink mt-0.5">
+                      <a routerLink="/returns" class="underline">See warranty terms</a>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -643,7 +653,29 @@ export class CheckoutComponent implements OnInit {
   isRecovering = signal(false);
   pendingOrderData: any = null;
   private recoveryTimeout: ReturnType<typeof setTimeout> | undefined;
-  createAccountForGuest = true;
+  // Marketing consent. The previous flag (createAccountForGuest) was bound
+  // to a checkbox and read nowhere, and it implied the account was optional
+  // when the order cannot be placed without one. This governs the only part
+  // that is genuinely a choice.
+  marketingOptIn = false;
+
+  /** Store settings; decides which promises the checkout may display. */
+  storeSettings: Record<string, string> = {};
+
+  /**
+   * Published return window. These badges previously asserted "30-Day Returns"
+   * and a "Lifetime Warranty" unconditionally, with no policy page anywhere on
+   * the site to back either.
+   */
+  returnPolicyDays(): number | null {
+    const raw = this.storeSettings['returnPolicyDays'];
+    const n = raw ? parseInt(String(raw), 10) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  warrantyLabel(): string {
+    return this.storeSettings['warrantyLabel'] || '';
+  }
   couponCode = '';
 
   countriesList = COUNTRIES;
@@ -666,6 +698,7 @@ export class CheckoutComponent implements OnInit {
   private paymentService = inject(PaymentService);
   private currencyService = inject(CurrencyService);
   private toastService = inject(ToastService);
+  private settingService = inject(SettingService);
   private platformId = inject(PLATFORM_ID);
 
   constructor(
@@ -690,6 +723,10 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.settingService
+      .getSettings()
+      .subscribe((s) => (this.storeSettings = s || {}));
+
     if (isPlatformBrowser(this.platformId)) {
       const pending = sessionStorage.getItem('pendingOrderData');
       if (pending) {
@@ -872,6 +909,15 @@ export class CheckoutComponent implements OnInit {
                   error: (e) =>
                     console.error('Failed to send welcome email', e),
                 });
+
+              // Marketing list only on an explicit opt-in. Previously nothing
+              // read the checkbox at all.
+              if (this.marketingOptIn) {
+                this.emailService.subscribeToNotifications(registerData.email).subscribe({
+                  error: (e) =>
+                    console.error('Failed to record marketing opt-in', e),
+                });
+              }
 
               // CartService's user subscription will handle guest cart sync automatically on login
               // Just wait a little bit or proceed immediately

@@ -10,46 +10,46 @@ import { CertificateDetail } from '../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-surface">
-      <!-- Header -->
-      <div class="bg-diamond-50 border-b border-diamond-200">
-        <div class="container-luxury py-12 text-center">
-          <h1 class="text-4xl md:text-5xl font-display font-bold text-diamond-900 mb-4">
-            Verify Your Report
+    <!-- APPLE DESIGN SYSTEM: CERTIFICATE VERIFIER (DESIGN.md) -->
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+      
+      <!-- Top Parchment Header -->
+      <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-16 px-6 text-center">
+        <div class="max-w-[800px] mx-auto">
+          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-3 block">Certificate Lookup</span>
+          <h1 class="font-display font-semibold text-4xl md:text-5xl text-[#1d1d1f] tracking-tight">
+            Verify GIA / IGI Certificate.
           </h1>
-          <p class="text-ink max-w-2xl mx-auto">
-            Enter your report number to verify the authenticity of your gemstone or jewellery.
-            We verify reports from GIA, IGI, and our internal Caratloop Authenticity Certificates.
+          <p class="text-base text-[#7a7a7a] mt-4 max-w-xl mx-auto">
+            Look up the grading report we hold for your piece. This is our own record; it is not a query against the laboratory&rsquo;s registry.
           </p>
         </div>
-      </div>
+      </section>
 
-      <!-- Search Section -->
-      <div class="container-luxury section-padding">
-        <div class="max-w-xl mx-auto">
-          <div class="card p-8 shadow-lg">
-            <label class="block text-sm font-bold text-ink mb-2">Report / Certificate Number</label>
-            <div class="flex gap-2 mb-4">
-              <input
-                type="text"
-                [(ngModel)]="reportNumber"
-                (keyup.enter)="verify()"
-                placeholder="e.g. GIA-1234-5678"
-                class="input-field flex-1 uppercase"
-              >
-              <button (click)="verify()" [disabled]="loading()" class="btn-primary px-6">
-                {{ loading() ? 'Checking...' : 'Verify' }}
-              </button>
-            </div>
+      <!-- Main Search Section -->
+      <main class="max-w-[800px] mx-auto px-6 py-12">
+        <div class="store-utility-card p-8 md:p-12 shadow-sm">
+          <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-3">Report / Certificate Identifier</label>
+          <div class="flex gap-3">
+            <input
+              type="text"
+              [(ngModel)]="reportNumber"
+              (keyup.enter)="verify()"
+              placeholder="e.g. GIA-1234-5678"
+              class="flex-1 bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-6 py-3 text-sm text-[#1d1d1f] uppercase focus:outline-none focus:border-[#D4AF37]"
+            >
+            <button (click)="verify()" [disabled]="loading()" class="btn-apple-pill text-xs !py-3 !px-6 disabled:opacity-50">
+              {{ loading() ? 'Verifying...' : 'Verify Certificate' }}
+            </button>
+          </div>
 
-            <!-- Error Message -->
-            <div *ngIf="error()" class="mt-4 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 animate-fade-in-up">
-              <p class="font-bold">❌ Report Not Found</p>
-              <p class="text-sm">We couldn't find a report with that number. Please check and try again or contact customer care.</p>
-            </div>
+          <!-- Error Alert -->
+          <div *ngIf="error()" class="mt-6 p-4 bg-red-50 text-red-700 rounded-xl border border-red-200 text-xs">
+            <p class="font-semibold mb-1">❌ Report Identifier Not Found</p>
+            <p>We could not locate a matching laboratory record for that report number. Please verify the digits or contact our concierge.</p>
           </div>
         </div>
-      </div>
+      </main>
 
       <!-- Result Modal -->
       <div *ngIf="result()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -107,7 +107,7 @@ import { CertificateDetail } from '../core/models';
                   <span *ngIf="!result()?.imageUrl" class="text-4xl">💎</span>
                 </div>
                 <p class="font-bold text-ink mb-1">Digital Asset</p>
-                <p class="text-xs text-ink mb-4">Secured on Blockchain</p>
+                <p class="text-xs text-ink mb-4">Stored in our certificate archive</p>
                 <button (click)="downloadPdf()" [disabled]="downloading()" class="text-gold-600 underline text-sm hover:text-gold-700 flex items-center justify-center gap-1">
                    <span *ngIf="downloading()" class="animate-spin h-3 w-3 border-2 border-gold-600 border-t-transparent rounded-full"></span>
                    {{ downloading() ? 'Downloading...' : 'Download Original PDF' }}
@@ -117,7 +117,9 @@ import { CertificateDetail } from '../core/models';
 
             <div class="mt-8 pt-6 border-t border-ink text-center">
               <p class="text-sm text-ink">
-                This verification is provided by Caratloop Fine Jewels in partnership with {{ result()?.lab }}.
+                Checked against Caratloop&rsquo;s own record of the certificate
+                issued by {{ result()?.lab }}. To confirm the grading itself,
+                verify the report number directly with {{ result()?.lab }}.
               </p>
             </div>
           </div>

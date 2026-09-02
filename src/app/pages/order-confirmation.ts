@@ -269,13 +269,7 @@ import { environment } from "../../environments/environment";
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
                   <p class="text-sm text-ink">
-                    30-day money-back guarantee
-                  </p>
-                </div>
-                <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">
-                    Lifetime warranty included
+                    <a routerLink="/returns" class="underline">Returns and warranty terms</a>
                   </p>
                 </div>
               </div>

@@ -24,7 +24,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
           <h1 class="font-display font-semibold text-3xl sm:text-4xl text-[#1d1d1f] tracking-tight">
             Review Your Shopping Bag.
           </h1>
-          <p class="text-xs text-[#7a7a7a] mt-2">Free insured delivery and complimentary 30-day returns on all items.</p>
+          <p class="text-xs text-[#7a7a7a] mt-2">Fully insured delivery on all items. <a routerLink="/returns" class="underline">Returns policy</a>.</p>
         </div>
       </section>
 
@@ -167,7 +167,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               </a>
 
               <p class="text-[11px] text-[#7a7a7a] text-center mt-4">
-                🔒 Encrypted SSL Checkout & 30-Day Money-Back Guarantee
+                🔒 Encrypted SSL Checkout
               </p>
             </div>
           </div>
