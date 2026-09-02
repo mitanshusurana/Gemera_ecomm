@@ -519,7 +519,7 @@ async def complete_production_order(
                     po.order_no, 'ProductionOrder', po.id,
                     :total_amount, :total_amount,
                     CAST(:created_by AS UUID), CAST(:ip AS INET), :session_id,
-                    nextval('caratloop.journal_entries_id_seq')
+                    nextval('caratloop.journal_entry_seq')
                 FROM caratloop.production_orders po
                 WHERE po.id = :order_id
                 RETURNING id
