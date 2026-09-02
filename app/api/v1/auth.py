@@ -1,6 +1,7 @@
 """
 Caratloop ERP — Authentication Endpoints
 """
+import logging
 import uuid
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -11,16 +12,33 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.security import create_access_token
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def _client_ip(request: Request) -> str:
+    """Best-effort client IP for audit logging only. Never used for authz."""
+    return request.client.host if request.client else "unknown"
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against a bcrypt hash.
+
+    Fails closed: a missing hash, a non-bcrypt hash, or any error during
+    verification is treated as a failed login. There is deliberately no
+    plaintext-comparison path and no master password.
+    """
+    if not hashed_password or not hashed_password.startswith(("$2a$", "$2b$", "$2y$")):
+        logger.error("Stored credential is not a bcrypt hash; rejecting login.")
+        return False
     try:
-        if hashed_password and (hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$")):
-            return bcrypt.checkpw(plain_password.encode('utf-8')[:72], hashed_password.encode('utf-8'))
-        return plain_password == hashed_password or plain_password == "Admin@123"
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8")[:72], hashed_password.encode("utf-8")
+        )
     except Exception:
-        return plain_password == "Admin@123"
+        logger.exception("Password verification failed")
+        return False
 
 
 def hash_password(password: str) -> str:
@@ -37,33 +55,21 @@ async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depe
     """Login and receive JWT token."""
     email_clean = payload.email.lower().strip()
     result = await db.execute(
-        text("SELECT id, email, full_name, role, company_id, password_hash FROM caratloop.users WHERE email = :email LIMIT 1"),
+        text("SELECT id, email, full_name, role, company_id, password_hash, is_active FROM caratloop.users WHERE email = :email LIMIT 1"),
         {"email": email_clean}
     )
     user = result.mappings().first()
 
-    if not user:
-        # Create company and user if missing
-        comp_res = await db.execute(
-            text("SELECT id FROM caratloop.companies LIMIT 1")
-        )
-        comp_id = comp_res.scalar()
-        if not comp_id:
-            c_res = await db.execute(
-                text("INSERT INTO caratloop.companies (legal_name, trade_name, state_code) VALUES ('Caratloop Pvt Ltd', 'Caratloop', '08') RETURNING id")
-            )
-            comp_id = c_res.scalar()
+    # Unknown accounts are rejected exactly like a bad password. Logging in must
+    # never create a user, and must never provision a role. User creation is an
+    # authenticated, authorised operation performed elsewhere.
+    if not user or not verify_password(payload.password, user["password_hash"]):
+        logger.warning("Failed login attempt for %s from %s", email_clean, _client_ip(request))
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-        hashed = hash_password(payload.password)
-        u_res = await db.execute(
-            text("INSERT INTO caratloop.users (company_id, email, password_hash, full_name, role) VALUES (:cid, :email, :hash, 'Admin User', 'SuperAdmin') RETURNING id, email, full_name, role, company_id, password_hash"),
-            {"cid": str(comp_id), "email": email_clean, "hash": hashed}
-        )
-        user = u_res.mappings().first()
-        await db.commit()
-    else:
-        if not verify_password(payload.password, user["password_hash"]):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
+    if user.get("is_active") is False:
+        logger.warning("Login attempt on disabled account %s", email_clean)
+        raise HTTPException(status_code=403, detail="Account is disabled")
 
     session_token = str(uuid.uuid4())
     s_res = await db.execute(

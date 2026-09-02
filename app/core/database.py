@@ -59,7 +59,20 @@ async def set_audit_context(
     [MCA-11g] Every financial transaction must capture user, session, IP, reason.
     These vars are read by fn_audit_trigger() in the database.
     """
-    await session.execute(text(f"SET LOCAL app.user_id = '{user_id or ''}'"))
-    await session.execute(text(f"SET LOCAL app.session_id = '{session_id or 0}'"))
-    await session.execute(text(f"SET LOCAL app.ip_address = '{ip_address or '0.0.0.0'}'"))
-    await session.execute(text(f"SET LOCAL app.reason = '{reason}'"))
+    # set_config(name, value, is_local=true) is the parameterised equivalent of
+    # SET LOCAL. The values below are caller-supplied (``reason`` is a plain
+    # request-body field), so they MUST be bound parameters, never interpolated.
+    await session.execute(
+        text(
+            "SELECT set_config('app.user_id',    :user_id,    true), "
+            "       set_config('app.session_id', :session_id, true), "
+            "       set_config('app.ip_address', :ip_address, true), "
+            "       set_config('app.reason',     :reason,     true)"
+        ),
+        {
+            "user_id": str(user_id or ""),
+            "session_id": str(session_id if session_id is not None else 0),
+            "ip_address": str(ip_address or "0.0.0.0"),
+            "reason": str(reason or "System")[:500],
+        },
+    )

@@ -73,7 +73,8 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
     state_name = STATE_NAMES.get(state_code, "Rajasthan")
 
     # 1. Primary Official GSTIN API (www.gstinapi.in)
-    api_key = os.environ.get('GSTIN_API_KEY', 'gak_3b71b903830a4230b0cfe5cf17340f35')
+    # No default: a hardcoded key here was billable, shared and public.
+    api_key = os.environ.get('GSTIN_API_KEY', '')
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
@@ -165,7 +166,15 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
     }
 
 @router.get("/gstin/{gstin}")
-async def fetch_gstin_details(gstin: str):
+async def fetch_gstin_details(
+    gstin: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Proxy a GSTIN lookup to the upstream provider.
+
+    Authenticated: this spends a paid third-party quota and, left open, allowed
+    anonymous GSTIN enumeration through our credentials.
+    """
     token = os.environ.get("SUREPASS_TOKEN", "")
     return await fetch_gstin_from_surepass(gstin, token)
 

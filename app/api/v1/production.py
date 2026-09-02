@@ -574,7 +574,9 @@ async def complete_production_order(
 
         # 3. Wastage leg
         mfg_loss_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'MFG-LOSS' AND company_id = :cid LIMIT 1"), {"cid": current_user["company_id"]})
-        mfg_loss_id = str(mfg_loss_res.scalar()) if mfg_loss_res.scalar() else wip_account_id
+        # .scalar() consumes the cursor; calling it twice raises ResourceClosedError.
+        _mfg_loss_row = mfg_loss_res.scalar()
+        mfg_loss_id = str(_mfg_loss_row) if _mfg_loss_row else wip_account_id
         for w_line in (payload.wastage_lines or []):
             w_val = w_line.qty_lost * (w_line.rate or 0)
             await db.execute(text("INSERT INTO caratloop.journal_entry_lines (journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration) VALUES (:jid, :seq, :aid, :amount, 0, 'Manufacturing Loss — ' || :order_no)"), {"jid": je_id, "seq": seq, "aid": mfg_loss_id, "amount": w_val, "order_no": order["order_no"]})

@@ -764,9 +764,9 @@ async def get_stock_register(
             COALESCE(m.hsn_code, '71131910') AS hsn_code,
             COALESCE(u.code, 'gm') AS uom,
             COALESCE(m.gst_tax_rate, 3.0) AS gst_rate,
-            COALESCE(SUM(CASE WHEN sle.direction = 'IN' THEN sle.quantity ELSE 0 END), 0) AS total_inward_qty,
-            COALESCE(SUM(CASE WHEN sle.direction = 'OUT' THEN sle.quantity ELSE 0 END), 0) AS total_outward_qty,
-            COALESCE(SUM(CASE WHEN sle.direction = 'IN' THEN sle.quantity ELSE -sle.quantity END), 0) AS closing_stock_qty
+            COALESCE(SUM(CASE WHEN sle.direction = 'I' THEN sle.quantity ELSE 0 END), 0) AS total_inward_qty,
+            COALESCE(SUM(CASE WHEN sle.direction = 'O' THEN sle.quantity ELSE 0 END), 0) AS total_outward_qty,
+            COALESCE(SUM(CASE WHEN sle.direction = 'I' THEN sle.quantity ELSE -sle.quantity END), 0) AS closing_stock_qty
         FROM caratloop.materials m
         LEFT JOIN caratloop.units_of_measure u ON u.id = m.uom_id
         LEFT JOIN caratloop.stock_ledger_entries sle ON sle.material_id = m.id AND sle.entry_date <= CAST(:as_of_date AS DATE)

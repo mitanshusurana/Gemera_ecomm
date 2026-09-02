@@ -59,6 +59,17 @@ async def create_purchase_invoice(
 
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
+    # Ownership guard. Every mutation below (one UPDATE and five DELETEs across
+    # the ledger, stock and ITC tables) is addressed by invoice id alone, so the
+    # caller's right to touch this invoice must be established up front.
+    owner_res = await db.execute(
+        text("SELECT company_id FROM caratloop.purchase_invoices WHERE id = :id LIMIT 1"),
+        {"id": str(id)}
+    )
+    owner_company = owner_res.scalar()
+    if owner_company is None or str(owner_company) != str(company_id):
+        raise HTTPException(status_code=404, detail="Purchase invoice not found")
+
     try:
         fy_res = await db.execute(
             text("SELECT id, year_label FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
@@ -70,8 +81,8 @@ async def create_purchase_invoice(
             fy = fy_res.mappings().first()
 
         supp_res = await db.execute(
-            text("SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties WHERE id = :id LIMIT 1"),
-            {"id": str(payload.supplier_id)}
+            text("SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties WHERE id = :id AND company_id = :cid LIMIT 1"),
+            {"id": str(payload.supplier_id), "cid": company_id}
         )
         supplier = supp_res.mappings().first()
         if not supplier:
@@ -467,8 +478,8 @@ async def update_purchase_invoice(
         is_unregistered = not supp_gstin or supp_gstin in ["UNREGISTERED", "N/A", "NONE", ""]
 
         bill_res = await db.execute(
-            text("SELECT bill_no FROM caratloop.purchase_invoices WHERE id = :id LIMIT 1"),
-            {"id": str(id)}
+            text("SELECT bill_no FROM caratloop.purchase_invoices WHERE id = :id AND company_id = :cid LIMIT 1"),
+            {"id": str(id), "cid": company_id}
         )
         bill_no = bill_res.scalar() or "PI-UPDATED"
 
@@ -482,11 +493,15 @@ async def update_purchase_invoice(
         is_inter_state = pos != "08"
 
         total_cgst, total_sgst, total_igst = 0.0, 0.0, 0.0
+        # Mirrors create_purchase_invoice: RCM totals must exist on this path too,
+        # otherwise the RCM journal legs below raise NameError on every edit.
+        rcm_cgst, rcm_sgst = 0.0, 0.0
+
         if not is_unregistered:
             for item in payload.items:
                 line_mat_val = (item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate)
                 line_mak_val = item.making_charges or 0.0
-                
+
                 # Dynamic rate lookup from Item Master if rate is 0 or None
                 gst_rate = float(item.gst_rate) if (item.gst_rate is not None and float(item.gst_rate) > 0) else None
                 if gst_rate is None and item.material_id:
@@ -504,9 +519,22 @@ async def update_purchase_invoice(
                 else:
                     total_cgst += line_tax / 2.0
                     total_sgst += line_tax / 2.0
+        else:
+            # Unregistered supplier: no forward-charge GST [CGST Sec 9(4)]
+            if payload.is_rcm:
+                for item in payload.items:
+                    line_mat_val = (item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate)
+                    line_mak_val = item.making_charges or 0.0
+                    gst_rate = item.gst_rate if item.gst_rate is not None else 3.0
+                    line_tax = (line_mat_val * (gst_rate / 100.0)) + (line_mak_val * 0.05)
+
+                    rcm_cgst += line_tax / 2.0
+                    rcm_sgst += line_tax / 2.0
 
         total_gst = total_cgst + total_sgst + total_igst
-        grand_total = material_subtotal + making_subtotal + total_gst
+        # Match create_purchase_invoice: under RCM the tax is not payable to the
+        # supplier, so it is excluded from the bill value.
+        grand_total = material_subtotal + making_subtotal + (total_gst if not payload.is_rcm else 0.0)
 
         await db.execute(
             text("""
@@ -523,10 +551,11 @@ async def update_purchase_invoice(
                     igst_amount = :igst,
                     total_gst = :tot_gst,
                     grand_total = :grand
-                WHERE id = :id
+                WHERE id = :id AND company_id = :cid
             """),
             {
                 "id": str(id),
+                "cid": company_id,
                 "vid": str(payload.supplier_id),
                 "vinv": payload.supplier_invoice_no,
                 "vdate": payload.vendor_invoice_date or payload.invoice_date,
@@ -823,9 +852,9 @@ async def list_purchases(
             p.name AS vendor_name, p.trade_name AS vendor_trade_name, p.gstin AS vendor_gstin, p.address_line1, p.city
         FROM caratloop.purchase_invoices pi
         LEFT JOIN caratloop.parties p ON p.id = pi.vendor_id
-        WHERE 1=1
+        WHERE pi.company_id = :cid
     """
-    params = {}
+    params = {"cid": str(current_user["company_id"])}
     if from_date:
         query += " AND pi.bill_date >= :from_date"
         params["from_date"] = from_date
@@ -873,9 +902,9 @@ async def get_purchase(
                 p.name AS vendor_name, p.gstin AS vendor_gstin, p.address_line1, p.city
             FROM caratloop.purchase_invoices pi
             LEFT JOIN caratloop.parties p ON p.id = pi.vendor_id
-            WHERE pi.id = :id
+            WHERE pi.id = :id AND pi.company_id = :cid
         """),
-        {"id": str(id)}
+        {"id": str(id), "cid": str(current_user["company_id"])}
     )
     inv = res.mappings().first()
     if not inv:

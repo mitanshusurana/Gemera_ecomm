@@ -18,6 +18,9 @@ logger = logging.getLogger("caratloop")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
+    # Refuse to serve on unsafe configuration (weak/absent JWT secret, CORS
+    # wildcard, missing DATABASE_URL) rather than booting with defaults.
+    settings.validate_runtime()
     logger.info(f"🪙 Caratloop ERP starting — State: {settings.COMPANY_STATE_NAME}")
     logger.info(f"📊 Database: {settings.DATABASE_URL.split('@')[-1]}")
     yield
@@ -38,17 +41,22 @@ app = FastAPI(
     """,
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    # Interactive API docs expose every endpoint, schema and parameter of the
+    # GST/ledger surface. Disabled outside development.
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
 )
 
-# CORS — restrict in production to your frontend domain
+# CORS. allow_credentials=True means a wildcard origin would cause the browser
+# to reflect any caller's Origin back, so the list is validated at startup to
+# ensure it never contains "*".
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=[o for o in settings.CORS_ORIGINS if o != "*"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
 # Global exception handler
