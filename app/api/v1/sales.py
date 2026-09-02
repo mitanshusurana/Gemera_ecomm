@@ -16,6 +16,8 @@ from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
+from app.core.stock import assert_stock_available
+from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.core.config import settings
@@ -53,7 +55,7 @@ class CreateSalesInvoiceRequest(BaseModel):
     reason: str = "Sales invoice creation"
 
 
-@router.post("/invoices")
+@router.post("/invoices", dependencies=[Depends(require(*CAN_POST))])
 async def create_sales_invoice(
     payload: CreateSalesInvoiceRequest,
     request: Request,
@@ -193,14 +195,13 @@ async def create_sales_invoice(
         if not fy:
             raise HTTPException(status_code=400, detail="No active fiscal year found")
 
+        # Atomic allocation. COUNT(*)+1 raced across workers and minted
+        # duplicate invoice numbers.
         inv_count_result = await db.execute(
-            text("""
-                SELECT COUNT(*) FROM caratloop.sales_invoices
-                WHERE company_id = :cid AND fiscal_year_id = :fyid
-            """),
+            text("SELECT caratloop.next_document_number(:cid, :fyid, 'SalesInvoice')"),
             {"cid": company_id, "fyid": str(fy["id"])},
         )
-        inv_count = inv_count_result.scalar() + 1
+        inv_count = inv_count_result.scalar()
         invoice_no = f"CL/{fy['year_label']}/{inv_count:05d}"
 
         inv_date_obj = date.fromisoformat(str(payload.invoice_date)) if isinstance(payload.invoice_date, str) else payload.invoice_date
@@ -275,6 +276,14 @@ async def create_sales_invoice(
             )
             mat_id = mat_res.scalar()
             if mat_id and loc_id:
+                # Refuse to ship stock that is not there. Nothing checked this,
+                # so the ledger could go negative on a sale.
+                await assert_stock_available(
+                    db, company_id, mat_id, line.quantity,
+                    location_id=loc_id,
+                    context=f"invoice {invoice_no}",
+                    material_label=str(line.material_id),
+                )
                 await db.execute(
                     text("""
                         INSERT INTO caratloop.stock_ledger_entries (
@@ -551,7 +560,7 @@ async def list_sales_invoices(
     return {"invoices": [dict(r) for r in result.mappings().all()]}
 
 
-@router.delete("/invoices/by-no/{invoice_no}")
+@router.delete("/invoices/by-no/{invoice_no}", dependencies=[Depends(require(*CAN_AMEND))])
 async def delete_sales_invoice(
     invoice_no: str,
     request: Request,
@@ -578,6 +587,14 @@ async def delete_sales_invoice(
         inv = inv_res.mappings().first()
         if not inv:
             raise HTTPException(status_code=404, detail="Invoice not found")
+
+        # Reversal vouchers are numbered in the invoice's own financial year.
+        # The label was previously hardcoded to 2026-27.
+        fy_res = await db.execute(
+            text("SELECT year_label FROM caratloop.fiscal_years WHERE id = :fyid"),
+            {"fyid": str(inv["fiscal_year_id"])},
+        )
+        fy_label = fy_res.scalar() or "UNKNOWN"
         if inv["status"] == "Cancelled":
             return {"status": "already_cancelled"}
 
@@ -611,11 +628,12 @@ async def delete_sales_invoice(
             
             # Create new reversing entry
             rev_no_res = await db.execute(
-                text("SELECT COUNT(*) FROM caratloop.journal_entries WHERE company_id = :cid"),
+                text("SELECT caratloop.next_document_number(:cid, NULL, 'JournalVoucher')"),
                 {"cid": company_id}
             )
-            cnt = (rev_no_res.scalar() or 0) + 1
-            rev_vno = f"JV/2026-27/{cnt:05d}"
+            cnt = rev_no_res.scalar()
+            # The financial year was hardcoded to 2026-27 here.
+            rev_vno = f"JV/{fy_label}/{cnt:05d}"
             
             je_res = await db.execute(
                 text("""

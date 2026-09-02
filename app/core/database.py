@@ -12,21 +12,52 @@ from app.core.config import settings
 
 
 # ─── Engine ──────────────────────────────────────────────────────────────────
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.ENVIRONMENT == "development",
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-)
+# Built lazily. Constructing it at import time made the whole application
+# un-importable without a database URL -- including for tests that touch no
+# database at all -- and meant a misconfigured URL failed at import rather than
+# at the startup check that reports it properly.
 
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-    autocommit=False,
-)
+_engine = None
+_sessionmaker = None
+
+
+def get_engine():
+    """Create the async engine on first use."""
+    global _engine
+    if _engine is None:
+        _engine = create_async_engine(
+            settings.DATABASE_URL,
+            # SQL echo logs every statement and parameter, including
+            # credentials and PII; development only.
+            echo=settings.ENVIRONMENT == "development",
+            pool_size=10,
+            max_overflow=20,
+            pool_pre_ping=True,
+        )
+    return _engine
+
+
+def get_sessionmaker():
+    global _sessionmaker
+    if _sessionmaker is None:
+        _sessionmaker = async_sessionmaker(
+            bind=get_engine(),
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+            autocommit=False,
+        )
+    return _sessionmaker
+
+
+class _LazySessionFactory:
+    """Preserves the ``AsyncSessionLocal()`` call sites."""
+
+    def __call__(self, *args, **kwargs):
+        return get_sessionmaker()(*args, **kwargs)
+
+
+AsyncSessionLocal = _LazySessionFactory()
 
 
 class Base(DeclarativeBase):

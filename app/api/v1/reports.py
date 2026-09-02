@@ -9,6 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from app.core.database import get_db
+from decimal import Decimal
+
+from app.core.money import round_money, to_decimal
+from app.core.roles import CAN_READ_FULL_AUDIT, has_role
 from app.core.security import get_current_user
 
 router = APIRouter()
@@ -26,7 +30,10 @@ async def get_audit_trail(
     """
     [MCA Rule 11(g)] Immutable Audit Trail Report.
     """
-    if current_user["role"] not in ("admin", "owner", "auditor"):
+    # Was compared against lowercase literals while the only role the system
+    # issued was 'SuperAdmin', so the sole administrator was denied the full
+    # trail. has_role() normalises case.
+    if not has_role(current_user, CAN_READ_FULL_AUDIT):
         user_id = str(current_user["id"])
 
     query = """
@@ -766,7 +773,16 @@ async def get_stock_register(
             COALESCE(m.gst_tax_rate, 3.0) AS gst_rate,
             COALESCE(SUM(CASE WHEN sle.direction = 'I' THEN sle.quantity ELSE 0 END), 0) AS total_inward_qty,
             COALESCE(SUM(CASE WHEN sle.direction = 'O' THEN sle.quantity ELSE 0 END), 0) AS total_outward_qty,
-            COALESCE(SUM(CASE WHEN sle.direction = 'I' THEN sle.quantity ELSE -sle.quantity END), 0) AS closing_stock_qty
+            COALESCE(SUM(CASE WHEN sle.direction = 'I' THEN sle.quantity ELSE -sle.quantity END), 0) AS closing_stock_qty,
+            -- Weighted average cost of goods actually received. The rate was
+            -- previously invented by substring-matching the material name
+            -- (gold -> 7200, silver -> 85, anything else -> 5000) and fed
+            -- straight into a statutory stock register.
+            COALESCE(
+                SUM(CASE WHEN sle.direction = 'I' THEN sle.amount ELSE 0 END)
+                / NULLIF(SUM(CASE WHEN sle.direction = 'I' THEN sle.quantity ELSE 0 END), 0),
+                0
+            ) AS weighted_avg_rate
         FROM caratloop.materials m
         LEFT JOIN caratloop.units_of_measure u ON u.id = m.uom_id
         LEFT JOIN caratloop.stock_ledger_entries sle ON sle.material_id = m.id AND sle.entry_date <= CAST(:as_of_date AS DATE)
@@ -783,22 +799,31 @@ async def get_stock_register(
     rows = result.mappings().all()
 
     stock_items = []
-    total_val = 0.0
+    total_val = Decimal("0")
+    unvalued = []
     for r in rows:
         item_dict = dict(r)
-        qty = float(item_dict["closing_stock_qty"] or 0)
-        mat_name = item_dict["material_name"].lower()
-        rate = 7200.0 if 'gold' in mat_name else (85.0 if 'silver' in mat_name else (25000.0 if 'diamond' in mat_name else 5000.0))
-        item_val = qty * rate
+        qty = to_decimal(item_dict["closing_stock_qty"])
+        rate = to_decimal(item_dict.get("weighted_avg_rate"))
+
+        # No inward movement means no cost basis. Report it as unvalued rather
+        # than substituting a number nobody can trace to a document.
+        if rate <= 0 and qty != 0:
+            unvalued.append(item_dict["material_name"])
+
+        item_val = round_money(qty * rate)
         item_dict["closing_stock"] = qty
-        item_dict["valuation_rate"] = rate
+        item_dict["valuation_rate"] = round_money(rate)
         item_dict["valuation_amount"] = item_val
+        item_dict["valuation_basis"] = "weighted_average_cost" if rate > 0 else "unvalued"
         total_val += item_val
         stock_items.append(item_dict)
 
     return {
         "as_of_date": str(as_of_date),
         "rule": "CGST Rule 56(2) Quantitative Stock Register",
+        "valuation_basis": "weighted average cost of inward movements",
+        "unvalued_materials": unvalued,
         "items": stock_items,
         "total_valuation": total_val,
         "total_items": len(stock_items)

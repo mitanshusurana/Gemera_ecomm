@@ -16,6 +16,9 @@ from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
+from app.core.money import to_decimal
+from app.core.stock import assert_stock_available
+from app.core.roles import CAN_MOVE_STOCK, require
 from app.core.security import get_current_user
 
 router = APIRouter(prefix="/production", tags=["Manufacturing"])
@@ -105,7 +108,7 @@ async def list_production_orders(
     return {"orders": [dict(o) for o in orders]}
 
 
-@router.post("/orders")
+@router.post("/orders", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
 async def create_production_order(
     payload: CreateProductionOrderRequest,
     request: Request,
@@ -170,10 +173,10 @@ async def create_production_order(
 
         # 4. Generate Order No
         cnt_res = await db.execute(
-            text("SELECT COUNT(*) FROM caratloop.production_orders WHERE company_id = :cid"),
-            {"cid": company_id}
+            text("SELECT caratloop.next_document_number(:cid, :fyid, 'ProductionOrder')"),
+            {"cid": company_id, "fyid": str(fy["id"])}
         )
-        cnt = cnt_res.scalar() + 1
+        cnt = cnt_res.scalar()
         order_no = f"PO-{fy['year_label']}-{cnt:04d}"
         month_year = payload.order_date.strftime("%Y-%m")
 
@@ -181,16 +184,19 @@ async def create_production_order(
             text("""
                 INSERT INTO caratloop.production_orders (
                     company_id, fiscal_year_id, order_no, order_date, product_id, bom_id,
-                    planned_qty, status, month_year, remarks, created_by
+                    planned_qty, allowed_wastage_pct, status, month_year, remarks, created_by
                 ) VALUES (
                     :cid, :fyid, :ono, :odate, :pid, :bomid,
-                    :pqty, 'In_Progress', :my, :rem, CAST(:cb AS UUID)
+                    :pqty, :wpct, 'In_Progress', :my, :rem, CAST(:cb AS UUID)
                 ) RETURNING id
             """),
             {
                 "cid": company_id,
                 "fyid": fy["id"],
                 "ono": order_no,
+                # Was accepted in the request and then dropped, so the ceiling
+                # enforced at completion had nothing to enforce against.
+                "wpct": to_decimal(payload.allowed_wastage_pct),
                 "odate": payload.order_date,
                 "pid": prod_id,
                 "bomid": bom_id,
@@ -208,7 +214,7 @@ async def create_production_order(
         raise HTTPException(status_code=500, detail=f"Failed to create production order: {str(e)}")
 
 
-@router.post("/orders/{order_id}/complete")
+@router.post("/orders/{order_id}/complete", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
 async def complete_production_order(
     order_id: UUID,
     payload: CompleteProductionOrderRequest,
@@ -283,8 +289,19 @@ async def complete_production_order(
         # ─── STEP 2: Post Consumption Entries [CGST-R56-12] ──────────────────
         # Record each raw material consumed in production
         for line in payload.consumption_lines:
-            fine_wt = (float(line.net_weight) * float(line.purity)) if (line.purity and line.net_weight) else None
-            mat_amount = float(line.qty_issued) * float(line.rate or 0)
+            # The docstring claimed "Verify raw material stock" but nothing did.
+            await assert_stock_available(
+                db, company_id, line.material_id, line.qty_issued,
+                context=f"production order {order['order_no']}",
+                material_label=str(line.material_id),
+            )
+
+            # Purity is a fraction (0.916), not millesimal (916); fine weight is
+            # net weight times purity. The DB CHECK enforces the convention.
+            purity = to_decimal(line.purity)
+            net_wt = to_decimal(line.net_weight)
+            fine_wt = (net_wt * purity) if (line.purity and line.net_weight) else None
+            mat_amount = to_decimal(line.qty_issued) * to_decimal(line.rate or 0)
 
             # [CGST-R56-2] Stock outward entry — raw material to production
             sle_result = await db.execute(
@@ -375,8 +392,38 @@ async def complete_production_order(
 
         # ─── STEP 3: Post Wastage Entries [CGST-R56-12] ──────────────────────
         # CGST Rule 56(12): Must record waste/by-products with quantitative details
+        #
+        # Enforce the order's own wastage ceiling. allowed_wastage_pct was
+        # captured when the order was raised and then never checked, so any
+        # quantity of gold could be written off to MFG-LOSS with no limit and
+        # no approval step.
+        total_consumed = sum(to_decimal(c.qty_issued) for c in payload.consumption_lines)
+        total_lost = sum(to_decimal(w.qty_lost) for w in (payload.wastage_lines or []))
+        allowed_pct = to_decimal(order["allowed_wastage_pct"] if order["allowed_wastage_pct"] is not None else 0)
+
+        if total_lost > 0 and total_consumed > 0:
+            actual_pct = (total_lost / total_consumed) * 100
+            if actual_pct > allowed_pct:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        f"Wastage of {actual_pct.quantize(Decimal('0.01'))}% exceeds the "
+                        f"{allowed_pct}% allowed on order {order['order_no']}. "
+                        "Raise the allowance on the order if this loss is genuine. "
+                        "No data was saved."
+                    ),
+                )
+        elif total_lost > 0 and total_consumed == 0:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Wastage cannot be recorded against an order with no material "
+                    "consumption. No data was saved."
+                ),
+            )
+
         for w_line in (payload.wastage_lines or []):
-            w_amount = float(w_line.qty_lost) * float(w_line.rate or 0)
+            w_amount = to_decimal(w_line.qty_lost) * to_decimal(w_line.rate or 0)
             await db.execute(
                 text("""
                     INSERT INTO caratloop.production_wastage_entries (

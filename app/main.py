@@ -8,7 +8,6 @@ from fastapi.responses import JSONResponse
 import logging
 
 from app.core.config import settings
-from app.core.database import engine
 from app.api.v1.router import api_router
 
 logging.basicConfig(level=logging.INFO)

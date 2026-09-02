@@ -48,28 +48,11 @@ async def import_statement(
     wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
     sheet = wb.active
 
-    # Ensure table exists
-    await db.execute(text("""
-        CREATE TABLE IF NOT EXISTS caratloop.bank_statement_lines (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            company_id UUID NOT NULL,
-            bank_account_id UUID NOT NULL,
-            import_batch_id UUID NOT NULL,
-            txn_date DATE NOT NULL,
-            value_date DATE,
-            description TEXT,
-            ref_no VARCHAR(100),
-            debit NUMERIC(15,2) DEFAULT 0,
-            credit NUMERIC(15,2) DEFAULT 0,
-            balance NUMERIC(15,2) DEFAULT 0,
-            is_reconciled BOOLEAN DEFAULT FALSE,
-            reconciled_entry_id UUID,
-            reconciled_at TIMESTAMPTZ,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-    """))
+    # The table is created by migration 0001. Creating it here raced on
+    # concurrent imports, was invisible to migration tooling, and declared a
+    # different column shape than the migration does.
 
-    batch_id_res = await db.execute(text("SELECT uuid_generate_v4()"))
+    batch_id_res = await db.execute(text("SELECT gen_random_uuid()"))
     batch_id = batch_id_res.scalar()
 
     count = 0

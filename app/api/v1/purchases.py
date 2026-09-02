@@ -10,8 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from pydantic import BaseModel
 
+from app.core.config import settings
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
+from app.core.money import to_decimal
+from app.tax.purchase_tax import PurchaseLineInput, compute_purchase_totals
+from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.security import get_current_user
 
 router = APIRouter(tags=["Purchases"])
@@ -42,7 +46,37 @@ class CreatePurchaseInvoiceRequest(BaseModel):
     reason: str = "Purchase invoice creation"
 
 
-@router.post("/invoices")
+async def _resolve_line_rates(db, company_id, items):
+    """Resolve each line's GST rate from the item master.
+
+    The rate lookup is the only part of purchase tax that needs the database;
+    everything after it is pure arithmetic in app.tax.purchase_tax.
+    """
+    resolved = []
+    for item in items:
+        rate = to_decimal(item.gst_rate) if item.gst_rate is not None else None
+        if (rate is None or rate <= 0) and item.material_id:
+            m_res = await db.execute(
+                text(
+                    "SELECT gst_tax_rate FROM caratloop.materials "
+                    "WHERE company_id = :cid AND (id = :mid OR code = :mcode) LIMIT 1"
+                ),
+                {"cid": company_id, "mid": str(item.material_id), "mcode": str(item.material_id)},
+            )
+            found = m_res.scalar()
+            rate = to_decimal(found) if found is not None else None
+        resolved.append(
+            PurchaseLineInput(
+                quantity=to_decimal(item.quantity),
+                net_weight=to_decimal(item.net_weight),
+                rate=to_decimal(item.rate),
+                making_charges=to_decimal(item.making_charges),
+                gst_rate=rate if (rate is not None and rate > 0) else to_decimal(0),
+            )
+        )
+    return resolved
+
+@router.post("/invoices", dependencies=[Depends(require(*CAN_POST))])
 async def create_purchase_invoice(
     payload: CreatePurchaseInvoiceRequest,
     request: Request,
@@ -92,62 +126,24 @@ async def create_purchase_invoice(
         supp_gstin = (supplier.get("gstin") or "").strip().upper()
         is_unregistered = not supp_gstin or supp_gstin in ["UNREGISTERED", "N/A", "NONE", ""]
 
-        material_subtotal = sum(
-            ((item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate))
-            for item in payload.items
-        )
-        making_subtotal = sum((item.making_charges or 0.0) for item in payload.items)
-
         pos = payload.place_of_supply or supplier.get("state_code") or "08"
-        is_inter_state = pos != "08"
+        is_inter_state = pos.strip().zfill(2) != settings.COMPANY_STATE_CODE.strip().zfill(2)
 
-        total_cgst, total_sgst, total_igst = 0.0, 0.0, 0.0
-        rcm_cgst, rcm_sgst = 0.0, 0.0
-
-        if not is_unregistered:
-            # Registered Supplier: Forward Charge GST Calculation
-            for item in payload.items:
-                line_mat_val = (item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate)
-                line_mak_val = item.making_charges or 0.0
-                
-                # Dynamic rate lookup from Item Master if rate is 0 or None
-                gst_rate = float(item.gst_rate) if (item.gst_rate is not None and float(item.gst_rate) > 0) else None
-                if gst_rate is None and item.material_id:
-                    m_res = await db.execute(
-                        text("SELECT gst_tax_rate FROM caratloop.materials WHERE id = :mid OR code = :mcode LIMIT 1"),
-                        {"mid": str(item.material_id), "mcode": str(item.material_id)}
-                    )
-                    gst_rate = m_res.scalar()
-                gst_rate = float(gst_rate) if (gst_rate is not None and float(gst_rate) > 0) else 0.0
-
-                mat_gst = line_mat_val * (gst_rate / 100.0)
-                mak_gst = line_mak_val * 0.05
-                line_tax = mat_gst + mak_gst
-
-                if is_inter_state:
-                    total_igst += line_tax
-                else:
-                    total_cgst += line_tax / 2.0
-                    total_sgst += line_tax / 2.0
-        else:
-            # Unregistered Supplier: No GST charged on forward bill [CGST Sec 9(4)]
-            if payload.is_rcm:
-                for item in payload.items:
-                    line_mat_val = (item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate)
-                    line_mak_val = item.making_charges or 0.0
-                    gst_rate = item.gst_rate if item.gst_rate is not None else 3.0
-                    line_tax = (line_mat_val * (gst_rate / 100.0)) + (line_mak_val * 0.05)
-
-                    rcm_cgst += line_tax / 2.0
-                    rcm_sgst += line_tax / 2.0
-
-        total_gst = total_cgst + total_sgst + total_igst
-        # Reverse charge under CGST s.9(4) applies to unregistered suppliers.
-        # Honouring is_rcm for a REGISTERED supplier dropped the GST from the
-        # payable while the forward-charge ITC debits were still posted, so the
-        # entry was out of balance by exactly the tax.
-        rcm_applicable = is_unregistered and bool(payload.is_rcm)
-        grand_total = material_subtotal + making_subtotal + (0.0 if rcm_applicable else total_gst)
+        # One tested Decimal implementation, shared with the update path.
+        priced = await _resolve_line_rates(db, company_id, payload.items)
+        totals = compute_purchase_totals(
+            priced,
+            is_unregistered=is_unregistered,
+            is_rcm=payload.is_rcm,
+            is_inter_state=is_inter_state,
+        )
+        material_subtotal = totals.material_subtotal
+        making_subtotal = totals.making_subtotal
+        total_cgst, total_sgst, total_igst = totals.total_cgst, totals.total_sgst, totals.total_igst
+        rcm_cgst, rcm_sgst = totals.rcm_cgst, totals.rcm_sgst
+        total_gst = totals.total_gst
+        rcm_applicable = totals.rcm_applicable
+        grand_total = totals.grand_total
 
         bill_no_res = await db.execute(
             text("SELECT 'PI/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
@@ -449,7 +445,7 @@ async def create_purchase_invoice(
         raise HTTPException(status_code=500, detail=f"Failed to record purchase invoice: {str(e)}")
 
 
-@router.put("/invoices/{id}")
+@router.put("/invoices/{id}", dependencies=[Depends(require(*CAN_AMEND))])
 async def update_purchase_invoice(
     id: UUID,
     payload: CreatePurchaseInvoiceRequest,
@@ -493,58 +489,23 @@ async def update_purchase_invoice(
         )
         bill_no = bill_res.scalar() or "PI-UPDATED"
 
-        material_subtotal = sum(
-            ((item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate))
-            for item in payload.items
+        pos = payload.place_of_supply or (supplier.get("state_code") if supplier else None) or "08"
+        is_inter_state = pos.strip().zfill(2) != settings.COMPANY_STATE_CODE.strip().zfill(2)
+
+        priced = await _resolve_line_rates(db, company_id, payload.items)
+        totals = compute_purchase_totals(
+            priced,
+            is_unregistered=is_unregistered,
+            is_rcm=payload.is_rcm,
+            is_inter_state=is_inter_state,
         )
-        making_subtotal = sum((item.making_charges or 0.0) for item in payload.items)
-
-        pos = payload.place_of_supply or (supplier.get("state_code") if supplier else "08") or "08"
-        is_inter_state = pos != "08"
-
-        total_cgst, total_sgst, total_igst = 0.0, 0.0, 0.0
-        # Mirrors create_purchase_invoice: RCM totals must exist on this path too,
-        # otherwise the RCM journal legs below raise NameError on every edit.
-        rcm_cgst, rcm_sgst = 0.0, 0.0
-
-        if not is_unregistered:
-            for item in payload.items:
-                line_mat_val = (item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate)
-                line_mak_val = item.making_charges or 0.0
-
-                # Dynamic rate lookup from Item Master if rate is 0 or None
-                gst_rate = float(item.gst_rate) if (item.gst_rate is not None and float(item.gst_rate) > 0) else None
-                if gst_rate is None and item.material_id:
-                    m_res = await db.execute(
-                        text("SELECT gst_tax_rate FROM caratloop.materials WHERE id = :mid OR code = :mcode LIMIT 1"),
-                        {"mid": str(item.material_id), "mcode": str(item.material_id)}
-                    )
-                    gst_rate = m_res.scalar()
-                gst_rate = float(gst_rate) if (gst_rate is not None and float(gst_rate) > 0) else 0.0
-
-                line_tax = (line_mat_val * (gst_rate / 100.0)) + (line_mak_val * 0.05)
-
-                if is_inter_state:
-                    total_igst += line_tax
-                else:
-                    total_cgst += line_tax / 2.0
-                    total_sgst += line_tax / 2.0
-        else:
-            # Unregistered supplier: no forward-charge GST [CGST Sec 9(4)]
-            if payload.is_rcm:
-                for item in payload.items:
-                    line_mat_val = (item.net_weight * item.rate) if (item.net_weight and item.net_weight > 0) else (item.quantity * item.rate)
-                    line_mak_val = item.making_charges or 0.0
-                    gst_rate = item.gst_rate if item.gst_rate is not None else 3.0
-                    line_tax = (line_mat_val * (gst_rate / 100.0)) + (line_mak_val * 0.05)
-
-                    rcm_cgst += line_tax / 2.0
-                    rcm_sgst += line_tax / 2.0
-
-        total_gst = total_cgst + total_sgst + total_igst
-        # Match create_purchase_invoice exactly, including the s.9(4) condition.
-        rcm_applicable = is_unregistered and bool(payload.is_rcm)
-        grand_total = material_subtotal + making_subtotal + (0.0 if rcm_applicable else total_gst)
+        material_subtotal = totals.material_subtotal
+        making_subtotal = totals.making_subtotal
+        total_cgst, total_sgst, total_igst = totals.total_cgst, totals.total_sgst, totals.total_igst
+        rcm_cgst, rcm_sgst = totals.rcm_cgst, totals.rcm_sgst
+        total_gst = totals.total_gst
+        rcm_applicable = totals.rcm_applicable
+        grand_total = totals.grand_total
 
         await db.execute(
             text("""

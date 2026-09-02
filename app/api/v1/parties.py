@@ -223,10 +223,10 @@ async def create_party(
         if not payload.party_code:
             prefix = "CUST" if payload.party_type == "Customer" else "SUPP"
             count_res = await db.execute(
-                text("SELECT COUNT(*) FROM caratloop.parties WHERE company_id = :cid"),
-                {"cid": company_id}
+                text("SELECT caratloop.next_document_number(:cid, NULL, :dtype)"),
+                {"cid": company_id, "dtype": f"Party:{prefix}"}
             )
-            cnt = (count_res.scalar() or 0) + 1
+            cnt = count_res.scalar()
             party_code = f"{prefix}-{cnt:04d}"
         else:
             party_code = payload.party_code

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from uuid import UUID
 
 from app.core.database import get_db, set_audit_context
+from app.core.roles import CAN_AMEND, require
 from app.core.security import get_current_user
 
 router = APIRouter()
@@ -233,7 +234,7 @@ async def list_accounts(
     return {"accounts": [dict(r) for r in result.mappings().all()]}
 
 
-@router.post("/accounts")
+@router.post("/accounts", dependencies=[Depends(require(*CAN_AMEND))])
 async def create_account(
     payload: CreateAccountRequest,
     request: Request,
@@ -297,7 +298,7 @@ async def create_account(
         raise HTTPException(status_code=500, detail=f"Failed to create account: {str(e)}")
 
 
-@router.patch("/accounts/{account_id}/opening-balance")
+@router.patch("/accounts/{account_id}/opening-balance", dependencies=[Depends(require(*CAN_AMEND))])
 async def update_account_opening_balance(
     account_id: UUID,
     payload: UpdateOpeningBalanceRequest,
@@ -331,7 +332,7 @@ async def update_account_opening_balance(
         raise HTTPException(status_code=500, detail=f"Failed to update opening balance: {str(e)}")
 
 
-@router.post("/opening-balances")
+@router.post("/opening-balances", dependencies=[Depends(require(*CAN_AMEND))])
 async def batch_update_opening_balances(
     payload: BatchOpeningBalancesRequest,
     request: Request,

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
+from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.security import get_current_user
 
 router = APIRouter(tags=["Vouchers"])
@@ -115,7 +116,7 @@ async def post_journal(db, cid, fy_id, je_no, entry_date, entry_type, narration,
     return je_id
 
 
-@router.post("/receipt")
+@router.post("/receipt", dependencies=[Depends(require(*CAN_POST))])
 async def create_receipt(payload: ReceiptPaymentPayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id, company_id = str(current_user["id"]), current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"
@@ -154,7 +155,7 @@ async def create_receipt(payload: ReceiptPaymentPayload, request: Request, db: A
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/payment")
+@router.post("/payment", dependencies=[Depends(require(*CAN_POST))])
 async def create_payment(payload: ReceiptPaymentPayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id, company_id = str(current_user["id"]), current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"
@@ -229,7 +230,7 @@ async def get_open_invoices(
     }
 
 
-@router.post("/contra")
+@router.post("/contra", dependencies=[Depends(require(*CAN_POST))])
 async def create_contra(payload: ContraPayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id, company_id = str(current_user["id"]), current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"
@@ -252,7 +253,7 @@ async def create_contra(payload: ContraPayload, request: Request, db: AsyncSessi
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/journal")
+@router.post("/journal", dependencies=[Depends(require(*CAN_POST))])
 async def create_journal(payload: JournalPayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id, company_id = str(current_user["id"]), current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"
@@ -277,7 +278,7 @@ async def create_journal(payload: JournalPayload, request: Request, db: AsyncSes
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/credit-note")
+@router.post("/credit-note", dependencies=[Depends(require(*CAN_AMEND))])
 async def create_credit_note(payload: CreditNotePayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id, company_id = str(current_user["id"]), current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"
@@ -307,7 +308,7 @@ async def create_credit_note(payload: CreditNotePayload, request: Request, db: A
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/debit-note")
+@router.post("/debit-note", dependencies=[Depends(require(*CAN_AMEND))])
 async def create_debit_note(payload: DebitNotePayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id, company_id = str(current_user["id"]), current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"

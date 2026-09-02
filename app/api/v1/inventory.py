@@ -11,6 +11,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
+from app.core.roles import CAN_AMEND, CAN_MOVE_STOCK, require
 from app.core.security import get_current_user
 
 router = APIRouter()
@@ -169,7 +170,7 @@ async def search_items(q: str = "", limit: int = 20, db: AsyncSession = Depends(
     return [dict(r) for r in res.mappings().all()]
 
 
-@router.post("/items")
+@router.post("/items", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
 async def create_item(
     payload: CreateItemRequest,
     request: Request,
@@ -280,7 +281,7 @@ async def create_item(
         raise HTTPException(status_code=500, detail=f"Failed to create stock item: {str(e)}")
 
 
-@router.patch("/items/{id}")
+@router.patch("/items/{id}", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
 async def update_item(
     id: UUID,
     payload: UpdateItemRequest,
@@ -397,7 +398,7 @@ class BatchOpeningStockRequest(BaseModel):
     reason: str = "Opening stock initialization"
 
 
-@router.post("/opening-stock")
+@router.post("/opening-stock", dependencies=[Depends(require(*CAN_AMEND))])
 async def record_opening_stock(
     payload: BatchOpeningStockRequest,
     request: Request,
