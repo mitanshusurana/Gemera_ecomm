@@ -64,9 +64,14 @@
         <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
           <dt class="text-sm font-medium text-ink">Status</dt>
           <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
-             <select [value]="order.status" (change)="onStatusChange($event)" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
-                <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+             <select [value]="order.status" (change)="onStatusChange($event)" [disabled]="isTerminal()" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm disabled:opacity-60">
+                <!-- Current status, plus only the transitions permitted from it. -->
+                <option [value]="order.status">{{ order.status }}</option>
+                <option *ngFor="let s of allowedNextStatuses()" [value]="s">{{ s }}</option>
              </select>
+             <p *ngIf="isTerminal()" class="mt-1 text-xs text-ink/70">
+               {{ order.status }} is a final state; it cannot be changed here.
+             </p>
           </dd>
         </div>
         <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">

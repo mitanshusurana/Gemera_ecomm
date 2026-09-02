@@ -82,7 +82,19 @@
                          (change)="togglePrintSelection(product, $event)"
                          class="h-4 w-4 rounded border-ink text-emerald-600 focus:ring-emerald-500">
                 </td>
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-ink sm:pl-6">{{ product.name }}</td>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-ink sm:pl-6">
+                  <div class="flex items-center gap-2">
+                    <img *ngIf="product.images?.[0] || product.imageUrl" [src]="product.images?.[0] || product.imageUrl" class="w-9 h-9 object-cover rounded-lg border border-gray-200">
+                    <div>
+                      <span class="block font-semibold text-gray-900">{{ product.name }}</span>
+                      <div class="flex items-center gap-1 mt-0.5">
+                        <span *ngIf="product.videoUrl" class="px-1.5 py-0.5 rounded text-[9px] bg-purple-100 text-purple-800 font-semibold">🎬 Video</span>
+                        <span *ngIf="product.model3dUrl" class="px-1.5 py-0.5 rounded text-[9px] bg-blue-100 text-blue-800 font-semibold">✨ 3D</span>
+                        <span *ngIf="product.bisHallmark" class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-100 text-emerald-800 font-semibold">BIS</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">
                   <div class="flex items-center space-x-2 relative group">
                     <span class="font-mono">{{ product.sku || 'N/A' }}</span>
@@ -100,12 +112,17 @@
                   </div>
                 </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ product.category }}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ product.price | currency }}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ product.stock }}</td>
-                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex justify-end space-x-4">
-                  <a [routerLink]="['/products/edit', product.id]" class="text-indigo-600 hover:text-indigo-900" title="Edit">Edit<span class="sr-only">, {{ product.name }}</span></a>
-                  <a [routerLink]="['/products/new']" [queryParams]="{duplicateId: product.id}" class="text-emerald-600 hover:text-emerald-900" title="Duplicate">Duplicate<span class="sr-only">, {{ product.name }}</span></a>
-                  <button (click)="deleteProduct(product.id)" class="text-red-600 hover:text-red-900" title="Delete">Delete<span class="sr-only">, {{ product.name }}</span></button>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink font-medium">{{ product.price | currency:'INR':'symbol' }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">
+                  <span [class.text-red-600]="product.stock === 0" [class.text-amber-600]="product.stock > 0 && product.stock < 5" [class.text-emerald-600]="product.stock >= 5" class="font-semibold">
+                    {{ product.stock }} in stock
+                  </span>
+                </td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex justify-end space-x-3 items-center">
+                  <a [href]="storefrontUrl + '/products/' + product.id" target="_blank" class="text-amber-600 hover:text-amber-800 text-xs font-semibold px-2 py-1 bg-amber-50 rounded border border-amber-200" title="Preview on consumer storefront">View Live ↗</a>
+                  <a [routerLink]="['/products/edit', product.id]" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium" title="Edit">Edit</a>
+                  <a [routerLink]="['/products/new']" [queryParams]="{duplicateId: product.id}" class="text-emerald-600 hover:text-emerald-900 text-xs font-medium" title="Duplicate">Duplicate</a>
+                  <button (click)="deleteProduct(product.id)" class="text-red-600 hover:text-red-900 text-xs font-medium" title="Delete">Delete</button>
                 </td>
               </tr>
               <tr *ngIf="products.length === 0 && !loading">

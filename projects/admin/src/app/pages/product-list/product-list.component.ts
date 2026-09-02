@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -16,6 +17,10 @@ import { QRCodeComponent } from 'angularx-qrcode';
   styleUrl: './product-list.component.css'
 })
 export class ProductListComponent implements OnInit, AfterViewInit {
+  /** Storefront origin for the 'View Live' preview; was hardcoded to
+   *  http://localhost:4200, which is broken for every deployed user. */
+  readonly storefrontUrl = environment.storefrontUrl;
+
   private productService = inject(ProductService);
 
   @ViewChild('searchInput') searchInput!: ElementRef;

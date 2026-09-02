@@ -99,6 +99,9 @@ export class ProductAddComponent implements OnInit {
   // Auto-generation flags
   isNameManuallyEdited = false;
   isDescriptionManuallyEdited = false;
+  // True while an existing product is being loaded into the form, so that
+  // valueChanges handlers do not treat the load as a user edit.
+  isPatchingForm = false;
 
   get occasions() {
     return this.productForm.get('occasions') as FormArray;
@@ -163,11 +166,14 @@ export class ProductAddComponent implements OnInit {
       name: ['', Validators.required],
       description: ['', Validators.required],
       price: [null, [Validators.required, Validators.min(0)]],
+      originalPrice: [null],
       stockQuantity: [1, [Validators.required, Validators.min(0)]],
       category: ['', Validators.required],
       subCategory: [''],
       sku: [''], // Auto-generated if empty
       isVerified: [false], // Admin verification step
+      videoUrl: [''],
+      model3dUrl: [''],
 
       // Global e-commerce / inventory ownership
       inventoryOwnership: ['Owned Stock'],
@@ -295,16 +301,32 @@ export class ProductAddComponent implements OnInit {
       this.generateNameAndDescription();
     });
 
-    // Auto-calculate Price Breakup Total
+    // Auto-calculate Price Breakup Total.
+    //
+    // This must never silently rewrite the product's selling price. Two guards:
+    //   1. isPatchingForm - suppressed while an existing product is loaded into
+    //      the form, otherwise patching a stored partial breakup recomputed a
+    //      total of 0 and overwrote a real price with zero.
+    //   2. hasAnyComponent - a breakup with no components entered carries no
+    //      information, so it must not drive the price down to zero.
     this.productForm.get('priceBreakup')?.valueChanges.subscribe((breakup) => {
+      if (this.isPatchingForm) { return; }
+
       const metal = parseFloat(breakup.metal) || 0;
       const gemstone = parseFloat(breakup.gemstone) || 0;
       const makingCharges = parseFloat(breakup.makingCharges) || 0;
       const tax = parseFloat(breakup.tax) || 0;
       const total = metal + gemstone + makingCharges + tax;
 
-      if (breakup.total !== total) {
+      const hasAnyComponent =
+        [breakup.metal, breakup.gemstone, breakup.makingCharges, breakup.tax]
+          .some(v => v !== null && v !== undefined && v !== '' && !isNaN(parseFloat(v)));
+
+      if (parseFloat(breakup.total) !== total) {
         this.productForm.get('priceBreakup.total')?.setValue(total, { emitEvent: false });
+      }
+
+      if (hasAnyComponent && total > 0) {
         this.productForm.get('price')?.setValue(total, { emitEvent: false });
       }
     });
@@ -353,6 +375,15 @@ export class ProductAddComponent implements OnInit {
   }
 
   patchProductForm(product: any) {
+    this.isPatchingForm = true;
+    try {
+      this.patchProductFormInner(product);
+    } finally {
+      this.isPatchingForm = false;
+    }
+  }
+
+  private patchProductFormInner(product: any) {
     // Media
     this.existingImages = product.images || [];
     this.existingVideoUrl = product.videoUrl || null;
@@ -362,11 +393,14 @@ export class ProductAddComponent implements OnInit {
       name: product.name || '',
       description: product.description || '',
       price: product.price ?? null,
-      stock: product.stock ?? null,
+      originalPrice: product.originalPrice ?? null,
+      stockQuantity: product.stockQuantity ?? product.stock ?? 1,
       category: product.category || '',
       subCategory: product.subCategory || '',
       sku: product.sku || '',
       isVerified: product.isVerified || false,
+      videoUrl: product.videoUrl || '',
+      model3dUrl: product.model3dUrl || '',
       inventoryOwnership: product.inventoryOwnership || 'Owned Stock',
       seoQualifiersStr: product.seoQualifiers ? product.seoQualifiers.join(', ') : '',
       occasionKeywordsStr: product.occasionKeywords ? product.occasionKeywords.join(', ') : '',
@@ -504,12 +538,31 @@ export class ProductAddComponent implements OnInit {
     }
   }
 
-  addCustomizationOption() {
+  addCustomizationOption(opt?: any) {
     this.customizationOptions.push(this.fb.group({
-      type: ['', Validators.required],
-      name: ['', Validators.required],
-      priceModifier: [null, Validators.required]
+      type: [opt?.type || '', Validators.required],
+      name: [opt?.name || '', Validators.required],
+      priceModifier: [opt?.priceModifier ?? 0, Validators.required]
     }));
+  }
+
+  addStandardMetals() {
+    const standard = [
+      { type: 'metal', name: '18K Yellow Gold', priceModifier: 0 },
+      { type: 'metal', name: '18K Rose Gold', priceModifier: 3500 },
+      { type: 'metal', name: '18K White Gold', priceModifier: 0 },
+      { type: 'metal', name: 'Platinum 950', priceModifier: 12000 }
+    ];
+    standard.forEach(opt => this.addCustomizationOption(opt));
+  }
+
+  addStandardDiamondQualities() {
+    const standard = [
+      { type: 'diamond', name: 'IJ / SI Grade', priceModifier: 0 },
+      { type: 'diamond', name: 'GH / VS Grade (High Luster)', priceModifier: 15000 },
+      { type: 'diamond', name: 'EF / VVS Grade (Museum Solitaire)', priceModifier: 28000 }
+    ];
+    standard.forEach(opt => this.addCustomizationOption(opt));
   }
 
   removeCustomizationOption(index: number) {
@@ -686,6 +739,11 @@ export class ProductAddComponent implements OnInit {
 
       const total = metal + gemstone + making + tax;
       breakup.get('total')?.setValue(total, { emitEvent: false });
+
+      // Keep price in step only when the breakup actually carries a value.
+      if (total > 0) {
+        this.productForm.get('price')?.setValue(total, { emitEvent: false });
+      }
     }
   }
 
@@ -708,11 +766,13 @@ export class ProductAddComponent implements OnInit {
 
     const productData = {
       ...formValue,
+      stock: formValue.stockQuantity,
       seoQualifiers,
       occasionKeywords,
       stoneDetailIds,
       images: this.existingImages,
-      videoUrl: this.existingVideoUrl,
+      videoUrl: formValue.videoUrl || this.existingVideoUrl,
+      model3dUrl: formValue.model3dUrl,
       specifications: null
     };
 

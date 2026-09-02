@@ -43,8 +43,70 @@ export class AuthService {
     return null;
   }
 
+  /**
+   * True only for a token that is present, well-formed and unexpired.
+   *
+   * This used to return `!!getToken()` -- the presence of any string in
+   * localStorage. An expired or garbage value rendered the entire admin shell,
+   * and every route was guarded by nothing more than that.
+   *
+   * This is a usability and exposure control, not authorisation: the token is
+   * unverified here, and the backend remains the only authority. Every admin
+   * endpoint must enforce hasRole('ADMIN') independently.
+   */
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    if (!token) return false;
+
+    const claims = this.decodeToken(token);
+    if (!claims) {
+      // Not a readable JWT. Treat as invalid and clear it, rather than
+      // rendering the admin UI around a value the API will reject.
+      this.clearSession();
+      return false;
+    }
+
+    if (typeof claims['exp'] === 'number' && Date.now() >= claims['exp'] * 1000) {
+      this.clearSession();
+      return false;
+    }
+
+    return true;
+  }
+
+  /** Current role from the token, not from the separately-stored user blob. */
+  currentRole(): string | null {
+    const token = this.getToken();
+    const claims = token ? this.decodeToken(token) : null;
+    const role = claims?.['role'] ?? claims?.['roles'] ?? null;
+    return typeof role === 'string' ? role : null;
+  }
+
+  isAdmin(): boolean {
+    return (this.currentRole() || '').toUpperCase().includes('ADMIN');
+  }
+
+  clearSession(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+    }
+  }
+
+  /** Read JWT claims without verifying. Never used to grant access. */
+  private decodeToken(token: string): Record<string, any> | null {
+    try {
+      const part = token.split('.')[1];
+      if (!part) return null;
+      const base64 = part.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(
+        base64.length + ((4 - (base64.length % 4)) % 4),
+        '=',
+      );
+      return JSON.parse(atob(padded));
+    } catch {
+      return null;
+    }
   }
 
   private getUserFromStorage() {

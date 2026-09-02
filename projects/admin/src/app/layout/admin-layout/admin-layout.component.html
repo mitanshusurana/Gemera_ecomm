@@ -71,27 +71,14 @@
     </div>
   </aside>
 
-  <!-- Live Metal Prices Ticker (Mock) -->
-  <div class="bg-surface dark:bg-surface border-b border-ink dark:border-ink overflow-hidden hidden sm:block">
-    <div class="flex gap-3 p-3 overflow-x-auto no-scrollbar justify-center">
-      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-3">
-        <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
-        <p class="text-emerald-700 dark:text-emerald-400 text-xs font-semibold whitespace-nowrap">Gold: $2,045.20 (+0.5%)</p>
-      </div>
-      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 px-3">
-        <span class="material-symbols-outlined text-rose-600 text-sm">trending_down</span>
-        <p class="text-rose-700 dark:text-rose-400 text-xs font-semibold whitespace-nowrap">Silver: $23.15 (-0.2%)</p>
-      </div>
-      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-3">
-        <span class="material-symbols-outlined text-emerald-600 text-sm">trending_up</span>
-        <p class="text-emerald-700 dark:text-emerald-400 text-xs font-semibold whitespace-nowrap">Platinum: $910.40 (+0.1%)</p>
-      </div>
-      <div class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-surface dark:bg-surface border border-ink dark:border-ink px-3">
-        <span class="material-symbols-outlined text-ink text-sm">schedule</span>
-        <p class="text-ink dark:text-ink text-xs font-semibold whitespace-nowrap">Updated: 2m ago</p>
-      </div>
-    </div>
-  </div>
+  <!--
+    A hardcoded metal-price ticker used to sit here: fixed USD spot prices with
+    a fabricated "Updated: 2m ago" freshness claim, on the screen where staff
+    price gold. Invented rates in front of the people setting prices is worse
+    than no ticker, so it is removed until it can be fed from the real
+    /metal-prices endpoint (which the storefront already uses).
+  -->
+
 
   <!-- Dashboard Content -->
   <main class="flex-1 w-full max-w-7xl mx-auto">

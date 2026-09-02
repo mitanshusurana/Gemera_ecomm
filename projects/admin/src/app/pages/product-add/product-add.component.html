@@ -21,14 +21,19 @@
           </select>
         </div>
 
-        <div class="sm:col-span-3">
+        <div class="sm:col-span-2">
           <label class="block text-sm font-medium text-ink">Name *</label>
           <input type="text" formControlName="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
         </div>
 
-        <div class="sm:col-span-3">
-          <label class="block text-sm font-medium text-ink">Price *</label>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-ink">Selling Price (₹) *</label>
           <input type="number" formControlName="price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-ink">Compare-at Price (₹) <span class="text-xs text-gray-500">(MSRP / Original)</span></label>
+          <input type="number" formControlName="originalPrice" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
         </div>
 
         <div class="sm:col-span-6">
@@ -102,13 +107,28 @@
           </div>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-ink">Upload Video (Optional)</label>
-          <input type="file" accept="video/*" (change)="onVideoFileChange($event)" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+        <!-- Video Direct URL or Upload -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-ink">Upload Video File (MP4/WebM)</label>
+            <input type="file" accept="video/*" (change)="onVideoFileChange($event)" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-ink">Or Direct Video URL (CDN / Cloudinary / MP4)</label>
+            <input type="text" formControlName="videoUrl" placeholder="https://cdn.example.com/jewelry-video.mp4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          </div>
         </div>
-        <div *ngIf="existingVideoUrl" class="mt-4">
-          <p class="text-sm text-green-600 mb-2">Video uploaded successfully.</p>
-          <button type="button" (click)="removeExistingVideo()" class="text-red-500 text-sm hover:underline">Remove Video</button>
+
+        <div *ngIf="existingVideoUrl || productForm.get('videoUrl')?.value" class="mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-md flex items-center justify-between">
+          <p class="text-xs text-emerald-800 font-medium">✓ Video configured: {{ existingVideoUrl || productForm.get('videoUrl')?.value }}</p>
+          <button *ngIf="existingVideoUrl" type="button" (click)="removeExistingVideo()" class="text-red-500 text-xs font-semibold hover:underline">Remove Uploaded Video</button>
+        </div>
+
+        <!-- 3D Interactive Model URL -->
+        <div>
+          <label class="block text-sm font-medium text-ink">3D Interactive Model URL (.glb / .gltf / .usdz)</label>
+          <input type="text" formControlName="model3dUrl" placeholder="https://cdn.example.com/solitaire-ring.glb" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+          <p class="text-xs text-gray-500 mt-1">Used for the 360° interactive 3D model viewer and AR Try-On on the storefront.</p>
         </div>
         
         <div *ngIf="uploadProgressMessage" class="mt-2 text-sm text-blue-600">
@@ -415,13 +435,21 @@
     </div>
 
     <!-- Final Step: Customization Options -->
-    <div *ngIf="showJewelryFields" class="mb-8">
-      <h3 class="text-lg font-bold leading-6 text-ink mb-4">Final Step: Customization Options</h3>
-      <p class="text-sm text-gray-500 mb-4">Add custom variations like metal color, sizing, or personalization.</p>
+    <div class="mb-8">
+      <h3 class="text-lg font-bold leading-6 text-ink mb-2">Customization & Configurator Options</h3>
+      <p class="text-sm text-gray-500 mb-4">Add variations that clients can configure on the storefront (e.g. 18K metals, diamond qualities, ring sizes).</p>
 
-      <button type="button" (click)="addCustomizationOption()" class="mb-4 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-ink bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-        + Add Customization Option
-      </button>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button type="button" (click)="addCustomizationOption()" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-ink bg-white hover:bg-gray-50">
+          + Custom Option
+        </button>
+        <button type="button" (click)="addStandardMetals()" class="inline-flex items-center px-3 py-2 border border-[#D4AF37] shadow-sm text-xs font-semibold rounded-md text-amber-900 bg-amber-50 hover:bg-amber-100">
+          + Add 18K / Platinum Metals Preset
+        </button>
+        <button type="button" (click)="addStandardDiamondQualities()" class="inline-flex items-center px-3 py-2 border border-blue-300 shadow-sm text-xs font-semibold rounded-md text-blue-900 bg-blue-50 hover:bg-blue-100">
+          + Add Diamond 4Cs Quality Tiers Preset
+        </button>
+      </div>
 
       <div formArrayName="customizationOptions">
         <div *ngFor="let opt of customizationOptions.controls; let i=index" [formGroupName]="i" class="mb-4 p-4 border border-gray-200 rounded-md bg-gray-50 flex items-end space-x-4">
