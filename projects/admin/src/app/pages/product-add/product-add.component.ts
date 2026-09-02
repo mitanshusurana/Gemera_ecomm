@@ -189,6 +189,9 @@ export class ProductAddComponent implements OnInit {
       totalCaratWeight: [null],
       dimensions: [''],
       currentLocation: [''],
+      // HSN per line item is required on an Indian tax invoice (CGST Rule 46).
+      // 7113 jewellery, 7103 gemstones, 7102 rough diamonds.
+      hsnCode: ['', [Validators.pattern(/^[0-9]{4}([0-9]{2}([0-9]{2})?)?$/)]],
       huid: [''],
       bisHallmark: [false],
       hallmarkingDate: [''],
@@ -410,6 +413,7 @@ export class ProductAddComponent implements OnInit {
       totalCaratWeight: product.totalCaratWeight ?? null,
       dimensions: product.dimensions || '',
       currentLocation: product.currentLocation || '',
+      hsnCode: product.hsnCode || '',
       huid: product.huid || '',
       bisHallmark: product.bisHallmark || false,
       hallmarkingDate: product.hallmarkingDate || '',

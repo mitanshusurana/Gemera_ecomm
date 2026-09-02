@@ -1,12 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SettingService } from '../services/setting.service';
+import { InquiryService } from '../services/inquiry.service';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
   template: `
     <!-- APPLE DESIGN SYSTEM: CONTACT CONCIERGE (DESIGN.md) -->
     <div *ngIf="settings" class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
@@ -30,24 +32,36 @@ import { environment } from '../../environments/environment';
           <!-- Contact Form Card -->
           <div class="lg:col-span-7 store-utility-card p-8 md:p-12 shadow-sm">
             <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">Send an Inquiry</h2>
-            <form class="space-y-5">
+            <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
               <div>
-                <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Full Name</label>
-                <input type="text" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="Enter your name">
+                <label for="contact-name" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Full Name</label>
+                <input id="contact-name" formControlName="name" type="text" autocomplete="name" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="Enter your name">
+                <p *ngIf="invalid('name')" class="text-xs text-red-600 mt-1">Please tell us your name.</p>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Email Address</label>
-                <input type="email" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="your@email.com">
+                <label for="contact-email" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Email Address</label>
+                <input id="contact-email" formControlName="email" type="email" autocomplete="email" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="your@email.com">
+                <p *ngIf="invalid('email')" class="text-xs text-red-600 mt-1">Please enter an email address we can reply to.</p>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Subject</label>
-                <input type="text" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="e.g. Solitaire Appointment or Custom Design">
+                <label for="contact-subject" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Subject</label>
+                <input id="contact-subject" formControlName="subject" type="text" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="e.g. Solitaire Appointment or Custom Design">
               </div>
               <div>
-                <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Message</label>
-                <textarea rows="4" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="How may we assist you?"></textarea>
+                <label for="contact-message" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Message</label>
+                <textarea id="contact-message" formControlName="message" rows="4" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="How may we assist you?"></textarea>
+                <p *ngIf="invalid('message')" class="text-xs text-red-600 mt-1">Please tell us how we can help.</p>
               </div>
-              <button type="button" class="btn-apple-pill w-full !py-3.5 text-sm">Send Message to Concierge</button>
+              <button type="submit" [disabled]="sending()" class="btn-apple-pill w-full !py-3.5 text-sm disabled:opacity-60">
+                {{ sending() ? 'Sending…' : 'Send Message to Concierge' }}
+              </button>
+              <p *ngIf="sent()" class="text-sm text-emerald-700">
+                Thank you — your enquiry has reached us and we will reply by email.
+              </p>
+              <p *ngIf="failed()" class="text-sm text-red-600">
+                We could not send that. Please try again, or email us directly at
+                {{ settings?.email }}.
+              </p>
             </form>
           </div>
 
@@ -73,7 +87,7 @@ import { environment } from '../../environments/environment';
                 <div>
                   <h3 class="font-semibold text-sm text-[#1d1d1f] mb-1">Telephone Concierge</h3>
                   <p class="font-semibold text-[#1d1d1f]">{{ settings.phone }}</p>
-                  <p class="mt-0.5">Mon–Fri, 9:00am – 7:00pm EST</p>
+                  <p class="mt-0.5">Mon–Sat, 10:00am – 7:00pm IST</p>
                 </div>
               </div>
 
@@ -89,7 +103,7 @@ import { environment } from '../../environments/environment';
             </div>
 
             <div class="pt-6 border-t border-[#e0e0e0]">
-              <a href="https://wa.me/1234567890" target="_blank" class="btn-apple-pill-secondary w-full text-center !py-3 text-xs flex items-center justify-center gap-2">
+              <a *ngIf="whatsappLink()" [href]="whatsappLink()" target="_blank" rel="noopener noreferrer" class="btn-apple-pill-secondary w-full text-center !py-3 text-xs flex items-center justify-center gap-2">
                 <span>💬</span> Instant WhatsApp Concierge
               </a>
             </div>
@@ -105,6 +119,70 @@ export class ContactComponent implements OnInit {
   env = environment;
   settings: any = null;
 
+  private fb = inject(FormBuilder);
+  private inquiryService = inject(InquiryService);
+
+  sending = signal(false);
+  sent = signal(false);
+  failed = signal(false);
+
+  /**
+   * The form previously had no bindings at all and a type="button" submit with
+   * no handler, so every enquiry a customer typed was silently discarded.
+   */
+  form = this.fb.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+    email: ['', [Validators.required, Validators.email]],
+    subject: ['', [Validators.maxLength(200)]],
+    message: ['', [Validators.required, Validators.maxLength(4000)]],
+  });
+
+  /**
+   * WhatsApp link from configuration. It was hardcoded to the placeholder
+   * 1234567890, so the concierge button went to a stranger.
+   */
+  whatsappLink(): string | null {
+    const raw = this.settings?.whatsapp || this.env.whatsappNumber || '';
+    const digits = String(raw).replace(/[^0-9]/g, '');
+    return digits ? `https://wa.me/${digits}` : null;
+  }
+
+  invalid(control: string): boolean {
+    const c = this.form.get(control);
+    return !!c && c.invalid && (c.dirty || c.touched);
+  }
+
+  submit(): void {
+    this.sent.set(false);
+    this.failed.set(false);
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const v = this.form.getRawValue();
+    // The inquiries endpoint is multipart (it also accepts attachments).
+    const payload = new FormData();
+    payload.append('name', v.name ?? '');
+    payload.append('email', v.email ?? '');
+    payload.append('subject', v.subject || 'Website enquiry');
+    payload.append('message', v.message ?? '');
+
+    this.sending.set(true);
+    this.inquiryService.createInquiry(payload).subscribe({
+      next: () => {
+        this.sending.set(false);
+        this.sent.set(true);
+        this.form.reset();
+      },
+      error: () => {
+        this.sending.set(false);
+        this.failed.set(true);
+      },
+    });
+  }
+
   constructor(private settingService: SettingService) {}
 
   ngOnInit() {
@@ -113,7 +191,8 @@ export class ContactComponent implements OnInit {
         this.settings = {
           email: data?.companyEmail || this.env.companyEmail,
           phone: data?.companyPhone || this.env.companyPhone,
-          address: data?.companyAddress || this.env.companyAddress
+          address: data?.companyAddress || this.env.companyAddress,
+          whatsapp: data?.whatsappNumber || this.env.whatsappNumber
         };
       },
       error: () => {

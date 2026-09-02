@@ -47,6 +47,9 @@ public class OrderService {
     @Autowired
     ProductRepository productRepository;
 
+    @Autowired
+    com.jewelry.backend.repository.CouponRepository couponRepository;
+
     @Transactional(rollbackFor = Exception.class)
     public Order createOrder(String userEmail, CreateOrderRequest request) {
         if (request.getPaymentDetails() != null && request.getPaymentDetails().getRazorpay_order_id() != null) {
@@ -143,6 +146,20 @@ public class OrderService {
             orderItemRepository.save(orderItem);
         }
 
+        // Redeem the coupon before the cart is cleared.
+        //
+        // Coupon.timesUsed was read to enforce usageLimit but incremented
+        // nowhere in the codebase, so the limit could never be reached: a
+        // single-use launch code was redeemable without end, by everyone.
+        String redeemed = cart.getAppliedCoupon();
+        if (redeemed != null && !redeemed.isBlank()) {
+            couponRepository.findByCodeIgnoreCase(redeemed).ifPresent(coupon -> {
+                Integer used = coupon.getTimesUsed();
+                coupon.setTimesUsed((used == null ? 0 : used) + 1);
+                couponRepository.save(coupon);
+            });
+        }
+
         // Clear cart
         cart.getItems().clear();
         cart.setSubtotal(java.math.BigDecimal.ZERO);
@@ -198,9 +215,60 @@ public class OrderService {
         return tracking;
     }
 
+    /**
+     * Permitted order status transitions.
+     *
+     * There was no state machine: any string was accepted, so DELIVERED could
+     * move back to PENDING_PAYMENT, CANCELLED to PAID, or a typo like
+     * "delivered" could be stored -- after which the code that string-matches
+     * "DELIVERED" and "COMPLETED" elsewhere behaves inconsistently.
+     *
+     * The admin UI now offers only valid transitions, but the API is the
+     * authority and must enforce this independently of any client.
+     */
+    private static final java.util.Map<String, java.util.Set<String>> ALLOWED_TRANSITIONS =
+            java.util.Map.of(
+                    "PENDING_PAYMENT", java.util.Set.of("PAID", "CANCELLED"),
+                    "PAID", java.util.Set.of("PROCESSING", "CANCELLED", "REFUNDED"),
+                    "PROCESSING", java.util.Set.of("SHIPPED", "CANCELLED"),
+                    "SHIPPED", java.util.Set.of("DELIVERED"),
+                    "DELIVERED", java.util.Set.of("RETURNED", "COMPLETED"),
+                    "RETURNED", java.util.Set.of("REFUNDED"),
+                    "COMPLETED", java.util.Set.of("RETURNED"),
+                    "CANCELLED", java.util.Set.of(),
+                    "REFUNDED", java.util.Set.of()
+            );
+
+    @org.springframework.transaction.annotation.Transactional
     public Order updateOrderStatus(UUID orderId, String status) {
         Order order = getOrder(orderId);
-        order.setStatus(status);
+
+        if (status == null || status.isBlank()) {
+            throw new IllegalArgumentException("A status is required.");
+        }
+
+        String next = status.trim().toUpperCase();
+        String current = order.getStatus() == null
+                ? "PENDING_PAYMENT"
+                : order.getStatus().trim().toUpperCase();
+
+        if (next.equals(current)) {
+            return order;
+        }
+
+        java.util.Set<String> allowed =
+                ALLOWED_TRANSITIONS.getOrDefault(current, java.util.Set.of());
+
+        if (!ALLOWED_TRANSITIONS.containsKey(next)) {
+            throw new IllegalArgumentException("Unknown order status: " + next);
+        }
+
+        if (!allowed.contains(next)) {
+            throw new IllegalArgumentException(
+                    "An order cannot move from " + current + " to " + next + ".");
+        }
+
+        order.setStatus(next);
         return orderRepository.save(order);
     }
 

@@ -37,25 +37,32 @@ public class Product extends BaseEntity {
     private String returnDueDate; // Consignment Return Date
     private BigDecimal commissionPercentage; // Consignment Commission
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<String> seoQualifiers; // e.g., "Ethically Sourced", "Handmade"
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<String> occasionKeywords;
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<String> images;
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private Map<String, String> specifications;
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<CustomizationOption> customizationOptions;
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<String> occasions;
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<String> styles;
 
     // ----- SPECIFIC FIELDS FOR CATEGORIES -----
@@ -65,6 +72,11 @@ public class Product extends BaseEntity {
     private BigDecimal totalCaratWeight;
     private String dimensions;
     private String currentLocation;
+    // HSN code for GST invoicing: 7113 jewellery, 7103 gemstones, 7102 rough
+    // diamonds. Required per line item under CGST Rule 46; the catalogue had
+    // nowhere to record it.
+    private String hsnCode;
+
     private String huid; // HUID (India)
     private Boolean bisHallmark;
     private String hallmarkingDate;
@@ -76,11 +88,13 @@ public class Product extends BaseEntity {
     @jakarta.persistence.JoinColumn(name = "metal_detail_id")
     private MetalDetail metalDetails;
 
-    @jakarta.persistence.OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @jakarta.persistence.OneToMany(fetch = jakarta.persistence.FetchType.EAGER, cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     @jakarta.persistence.JoinColumn(name = "product_id")
     private List<StoneDetail> stoneDetails;
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @org.hibernate.annotations.Fetch(org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<String> stoneDetailIds; // BOM linking to specific loose stones (legacy)
 
     // 2. Loose Gemstones

@@ -84,15 +84,27 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div class="space-y-2">
                     <label class="text-sm font-medium text-ink dark:text-ink">Jewelry Tax</label>
-                    <input formControlName="taxRateJewelry" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <input formControlName="taxRateJewelry" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="number" step="0.0001" min="0" max="1" />
+                    <p class="text-xs mt-1" [class.text-red-600]="rateInvalid('taxRateJewelry')">
+                      <span *ngIf="!rateInvalid('taxRateJewelry')">= {{ ratePercent('taxRateJewelry') }}</span>
+                      <span *ngIf="rateInvalid('taxRateJewelry')">Enter a fraction between 0 and 1 (0.03 = 3%).</span>
+                    </p>
                   </div>
                   <div class="space-y-2">
                     <label class="text-sm font-medium text-ink dark:text-ink">Gemstones Tax</label>
-                    <input formControlName="taxRateGemstones" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <input formControlName="taxRateGemstones" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="number" step="0.0001" min="0" max="1" />
+                    <p class="text-xs mt-1" [class.text-red-600]="rateInvalid('taxRateGemstones')">
+                      <span *ngIf="!rateInvalid('taxRateGemstones')">= {{ ratePercent('taxRateGemstones') }}</span>
+                      <span *ngIf="rateInvalid('taxRateGemstones')">Enter a fraction between 0 and 1 (0.03 = 3%).</span>
+                    </p>
                   </div>
                   <div class="space-y-2">
                     <label class="text-sm font-medium text-ink dark:text-ink">Other Categories Tax</label>
-                    <input formControlName="taxRateDefault" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <input formControlName="taxRateDefault" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="number" step="0.0001" min="0" max="1" />
+                    <p class="text-xs mt-1" [class.text-red-600]="rateInvalid('taxRateDefault')">
+                      <span *ngIf="!rateInvalid('taxRateDefault')">= {{ ratePercent('taxRateDefault') }}</span>
+                      <span *ngIf="rateInvalid('taxRateDefault')">Enter a fraction between 0 and 1 (0.03 = 3%).</span>
+                    </p>
                   </div>
                 </div>
               </div>

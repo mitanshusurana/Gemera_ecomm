@@ -117,6 +117,7 @@ public class ProductController {
 
     // Helper to seed data
     @PostMapping
+    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create product (Admin)")
     public ResponseEntity<ProductDTO> createProduct(@RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
@@ -126,6 +127,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update product (Admin)")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
@@ -135,6 +137,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete product (Admin)")
     public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {

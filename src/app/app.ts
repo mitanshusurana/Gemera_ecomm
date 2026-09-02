@@ -7,11 +7,12 @@ import { ChatWidgetComponent } from './components/chat-widget';
 import { WhatsappButtonComponent } from './components/whatsapp-button';
 import { routeAnimations } from './app.animations';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { CookieConsentComponent } from './components/cookie-consent';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, FooterComponent, ToastContainerComponent, ChatWidgetComponent, WhatsappButtonComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, ToastContainerComponent, ChatWidgetComponent, WhatsappButtonComponent, CookieConsentComponent],
   animations: [routeAnimations],
   template: `
     <div [innerHTML]="organizationSchema"></div>
@@ -28,6 +29,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
     <app-toast-container></app-toast-container>
     <app-chat-widget></app-chat-widget>
     <app-whatsapp-button></app-whatsapp-button>
+    <app-cookie-consent></app-cookie-consent>
   `,
 })
 export class App {

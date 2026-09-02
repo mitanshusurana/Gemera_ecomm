@@ -1,5 +1,5 @@
-import { Component, OnInit, signal, ChangeDetectionStrategy } from "@angular/core";
-import { CommonModule, NgOptimizedImage } from "@angular/common";
+import { Component, OnInit, signal, ChangeDetectionStrategy, PLATFORM_ID, inject } from "@angular/core";
+import { CommonModule, NgOptimizedImage, isPlatformBrowser } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
@@ -323,6 +323,7 @@ import { environment } from "../../environments/environment";
   ],
 })
 export class OrderConfirmationComponent implements OnInit {
+  private platformId = inject(PLATFORM_ID);
   whatsappUrl = `https://wa.me/${environment.whatsappNumber}`;
   orderNumber = signal("");
   estimatedDelivery = signal("");
@@ -351,10 +352,27 @@ export class OrderConfirmationComponent implements OnInit {
       }
     });
 
-    const sessionOrderId = sessionStorage.getItem("lastOrderId");
-    if (sessionOrderId) {
-      this.loadOrder(sessionOrderId);
-      sessionStorage.removeItem("lastOrderId");
+    // Every route is server-rendered (RenderMode.Server on '**'), where
+    // sessionStorage does not exist. Reading it unguarded threw a
+    // ReferenceError during SSR, so this page failed to render at all on the
+    // server -- on the screen a customer lands on immediately after paying.
+    if (isPlatformBrowser(this.platformId)) {
+      let sessionOrderId: string | null = null;
+      try {
+        sessionOrderId = sessionStorage.getItem("lastOrderId");
+      } catch {
+        // Storage can be unavailable (private mode, blocked site data).
+        sessionOrderId = null;
+      }
+
+      if (sessionOrderId) {
+        this.loadOrder(sessionOrderId);
+        try {
+          sessionStorage.removeItem("lastOrderId");
+        } catch {
+          /* nothing to clean up */
+        }
+      }
     }
   }
 

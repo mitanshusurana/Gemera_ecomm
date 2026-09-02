@@ -624,10 +624,13 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-5 py-2.5 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]"
                   >
                     <option [ngValue]="null">Select Ring Size (US)</option>
-                    <option *ngFor="let i of [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]" [ngValue]="i">
+                    <option *ngFor="let i of ringSizes" [ngValue]="i">
                       Size {{ i }} (US)
                     </option>
                   </select>
+                  <p *ngIf="sizeError()" class="text-xs text-red-600 mt-1.5">
+                    Please choose a ring size before adding to your bag.
+                  </p>
                 </div>
 
                 <!-- Pincode Delivery -->
@@ -987,6 +990,35 @@ export class ProductDetailComponent
   selectedMetal = signal<CustomizationOption | null>(null);
   selectedDiamondQuality = signal<CustomizationOption | null>(null);
   selectedSize = signal<number | null>(null);
+  sizeError = signal(false);
+
+  /**
+   * US ring sizes actually manufactured. The selector offered 6-20; US sizing
+   * stops around 13, and this app's own size guide lists 5-13. Sizes 14-20
+   * were unorderable as labelled.
+   */
+  readonly ringSizes = [5, 6, 7, 8, 9, 10, 11, 12, 13];
+
+  /** Size as it should appear on the order line, or undefined if N/A. */
+  selectedSizeLabel(): string | undefined {
+    if (!this.isRingCategory()) return undefined;
+    const size = this.selectedSize();
+    return size == null ? undefined : `US ${size}`;
+  }
+
+  /**
+   * A ring cannot be made without a size. This was not checked, so an order
+   * could be placed with none and only surface when it reached the workshop.
+   */
+  private ensureSizeChosen(): boolean {
+    if (!this.isRingCategory() || this.selectedSize() != null) {
+      this.sizeError.set(false);
+      return true;
+    }
+    this.sizeError.set(true);
+    this.toastService.show('Please choose a ring size first.', 'error');
+    return false;
+  }
 
   // Delivery
   pincode = signal('');
@@ -1023,9 +1055,22 @@ export class ProductDetailComponent
     // If the calculated subtotal is wildly incorrect (e.g., missing components),
     // or if it's completely 0 but the product has a price,
     // we should override the breakup logic to match the trusted base product price.
-    if (calculatedSubtotal === 0 || (baseProductPrice > 0 && Math.abs(calculatedSubtotal - baseProductPrice) > (baseProductPrice * 0.1))) {
-        // Assume the entire price is just "gemstone/product cost" if breakup is missing/wrong
-        gemstonePrice = baseProductPrice;
+    // When the stored breakup is missing or does not reconcile with the price,
+    // the components are not known. This used to invent one -- assigning the
+    // whole price to "gemstone" and showing making charges as zero -- under a
+    // heading reading "Detailed Valuation Breakdown". For jewellery, making
+    // charges are the single most scrutinised component, and a manufactured
+    // zero is a price-transparency failure rather than a display nicety.
+    //
+    // Mark it unavailable instead, so the template can omit the breakdown and
+    // show only the price, which is the part we actually know.
+    const breakupIsUsable =
+      calculatedSubtotal > 0 &&
+      (baseProductPrice === 0 ||
+        Math.abs(calculatedSubtotal - baseProductPrice) <= baseProductPrice * 0.1);
+
+    if (!breakupIsUsable) {
+        gemstonePrice = 0;
         metalPrice = 0;
         makingCharges = 0;
         calculatedSubtotal = baseProductPrice;
@@ -1039,6 +1084,8 @@ export class ProductDetailComponent
     const total = calculatedSubtotal + tax;
 
     return {
+      // False when the components could not be reconciled with the price.
+      available: breakupIsUsable,
       metal: metalPrice,
       gemstone: gemstonePrice,
       makingCharges: makingCharges,
@@ -1300,9 +1347,14 @@ export class ProductDetailComponent
 
   handleAddToCart(): void {
     if (this.product()) {
+      if (!this.ensureSizeChosen()) return;
+
       const options = {
         metal: this.selectedMetal()?.name,
         diamond: this.selectedDiamondQuality()?.name,
+        // Collected by the selector above and carried by CartItemOptions, but
+        // never sent -- so every ring was ordered without a size.
+        size: this.selectedSizeLabel(),
         price: this.currentPrice(),
         product: this.product(),
       };
@@ -1316,9 +1368,12 @@ export class ProductDetailComponent
 
   handleBuyNow(): void {
     if (this.product()) {
+      if (!this.ensureSizeChosen()) return;
+
       const options = {
         metal: this.selectedMetal()?.name,
         diamond: this.selectedDiamondQuality()?.name,
+        size: this.selectedSizeLabel(),
         price: this.currentPrice(),
         product: this.product(),
       };
@@ -1449,10 +1504,16 @@ export class ProductDetailComponent
   hasPriceBreakup(): boolean {
     const pb = this.product()?.priceBreakup;
     if (!pb) return false;
-    // Check if there is valid numerical data beyond just 0
-    return (
-      pb.metal > 0 || pb.gemstone > 0 || pb.makingCharges > 0 || pb.total > 0
-    );
+
+    // Some component data must exist...
+    const hasData =
+      pb.metal > 0 || pb.gemstone > 0 || pb.makingCharges > 0 || pb.total > 0;
+    if (!hasData) return false;
+
+    // ...and it must reconcile with the price. currentPriceBreakup() reports
+    // `available: false` when it does not, and the breakdown is then hidden
+    // rather than shown with invented components.
+    return this.currentPriceBreakup()?.available === true;
   }
 
   hasOption(t: string) {

@@ -25,10 +25,28 @@ export class SettingsComponent implements OnInit {
     usdRate: ['0.012', Validators.required],
     eurRate: ['0.011', Validators.required],
     gbpRate: ['0.009', Validators.required],
-    taxRateJewelry: ['0.03', Validators.required],
-    taxRateGemstones: ['0.0025', Validators.required],
-    taxRateDefault: ['0.03', Validators.required]
+    // Rates are stored as decimal fractions (0.03 = 3%). The only rule was
+    // `required` on a type="text" input, so an operator reading the label as a
+    // percentage and typing 3 set a 300% tax rate across the whole catalogue,
+    // with no confirmation and no audit entry. Bounded to 0..1 -- a rate above
+    // 100% is never valid.
+    taxRateJewelry: ['0.03', [Validators.required, Validators.min(0), Validators.max(1)]],
+    taxRateGemstones: ['0.0025', [Validators.required, Validators.min(0), Validators.max(1)]],
+    taxRateDefault: ['0.03', [Validators.required, Validators.min(0), Validators.max(1)]]
   });
+
+  /** A rate as a readable percentage, so the operator can sanity-check it. */
+  ratePercent(control: string): string {
+    const raw = this.settingsForm.get(control)?.value;
+    const n = parseFloat(raw);
+    if (!Number.isFinite(n)) return '';
+    return `${(n * 100).toFixed(2)}%`;
+  }
+
+  rateInvalid(control: string): boolean {
+    const c = this.settingsForm.get(control);
+    return !!c && c.invalid && (c.dirty || c.touched);
+  }
 
   saving = false;
   successMessage = '';

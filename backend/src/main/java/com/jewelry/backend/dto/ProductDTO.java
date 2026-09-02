@@ -53,6 +53,7 @@ public class ProductDTO {
     private BigDecimal totalCaratWeight;
     private String dimensions;
     private String currentLocation;
+    private String hsnCode;
     private String huid;
     private Boolean bisHallmark;
     private String hallmarkingDate;

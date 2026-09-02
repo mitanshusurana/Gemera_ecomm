@@ -1,6 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SettingService } from './setting.service';
+import { hasConsent } from '../components/cookie-consent';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR';
 
@@ -42,7 +43,15 @@ export class CurrencyService {
       error: (err) => console.error('Failed to load currency rates from settings', err)
     });
 
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && !localStorage.getItem('currency')) {
+    // Geo detection sends the visitor's IP to a third party. Under the DPDP
+    // Act that needs consent first, and the absence of a choice is not
+    // consent -- so this stays off until the visitor opts in.
+    if (
+      typeof window !== 'undefined' &&
+      typeof localStorage !== 'undefined' &&
+      !localStorage.getItem('currency') &&
+      hasConsent()
+    ) {
       this.http.get('https://ipapi.co/currency/', { responseType: 'text' }).subscribe({
         next: (currency) => {
           if (this.availableCurrencies.includes(currency.trim() as CurrencyCode)) {

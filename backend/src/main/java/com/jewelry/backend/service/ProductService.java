@@ -115,6 +115,7 @@ public class ProductService {
     }
 
     // Admin only - strictly for seeding/testing
+    @Transactional(rollbackFor = Exception.class)
     public Product createProduct(Product product) {
         if (product.getSku() == null || product.getSku().trim().isEmpty()) {
             product.setSku(generateSku(product));
@@ -173,6 +174,7 @@ public class ProductService {
         return skuBuilder.toString();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = "products", key = "#id")
     public Product updateProduct(UUID id, Product updatedProduct) {
         return productRepository.findById(id).map(existing -> {
@@ -219,6 +221,7 @@ public class ProductService {
         return emptyNames.toArray(result);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = "products", key = "#id")
     public void deleteProduct(UUID id) {
         productRepository.deleteById(id);

@@ -201,8 +201,19 @@
           </div>
           
           <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-ink">HUID</label>
-            <input type="text" formControlName="huid" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+            <label for="hsnCode" class="block text-sm font-medium text-ink">HSN Code</label>
+            <input id="hsnCode" type="text" inputmode="numeric" formControlName="hsnCode" placeholder="7113" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+            <p class="mt-1 text-xs text-gray-500">
+              Required on a GST invoice. 7113 jewellery &middot; 7103 gemstones &middot; 7102 rough diamonds.
+            </p>
+            <p *ngIf="productForm.get('hsnCode')?.invalid && productForm.get('hsnCode')?.touched" class="mt-1 text-xs text-red-600">
+              Enter 4, 6 or 8 digits.
+            </p>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label for="huid" class="block text-sm font-medium text-ink">HUID</label>
+            <input id="huid" type="text" formControlName="huid" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
           </div>
           
         </div>
@@ -247,9 +258,23 @@
               <button type="button" (click)="removeStoneDetail(i)" class="text-red-500 text-sm hover:underline">Remove</button>
             </div>
             <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
+              <!--
+                Control names must match the FormGroup in addStoneDetail(),
+                which in turn matches the StoneDetail entity the backend
+                persists. They did not: the template bound type / caratWeight /
+                color / clarity / quantity while the group declared stoneType /
+                totalCaratWeight / pieceCount / settingType. Angular threw
+                NG01203 as soon as a stone row rendered, so mounted-stone data
+                -- the basis of valuation on every finished piece -- could not
+                be entered or edited at all.
+
+                Colour and clarity are not fields on StoneDetail. They are left
+                out rather than bound to controls that would be silently
+                dropped on save; adding them needs the entity extended first.
+              -->
               <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-gray-500">Stone Type (Species/Variety)</label>
-                <input type="text" formControlName="type" placeholder="e.g. Diamond, Ruby" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                <input type="text" formControlName="stoneType" placeholder="e.g. Diamond, Ruby" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
               </div>
               <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-gray-500">Shape</label>
@@ -259,23 +284,16 @@
                 </select>
               </div>
               <div class="sm:col-span-2">
-                <label class="block text-xs font-medium text-gray-500">Carat Weight</label>
-                <input type="number" formControlName="caratWeight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                <label class="block text-xs font-medium text-gray-500">Total Carat Weight</label>
+                <input type="number" step="0.001" min="0" formControlName="totalCaratWeight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
               </div>
               <div class="sm:col-span-2">
-                <label class="block text-xs font-medium text-gray-500">Color</label>
-                <input type="text" formControlName="color" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                <label class="block text-xs font-medium text-gray-500">Piece Count</label>
+                <input type="number" min="0" step="1" formControlName="pieceCount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
               </div>
               <div class="sm:col-span-2">
-                <label class="block text-xs font-medium text-gray-500">Clarity</label>
-                <select formControlName="clarity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
-                  <option value="">Select Clarity</option>
-                  <option *ngFor="let c of clarities" [value]="c">{{ c }}</option>
-                </select>
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block text-xs font-medium text-gray-500">Quantity (Pcs)</label>
-                <input type="number" formControlName="quantity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                <label class="block text-xs font-medium text-gray-500">Setting Type</label>
+                <input type="text" formControlName="settingType" placeholder="e.g. Prong, Bezel, Pave" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
               </div>
             </div>
           </div>
