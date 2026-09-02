@@ -28,7 +28,8 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         localStorage.removeItem('caratloop_token');
         localStorage.removeItem('caratloop_user');
-        window.location.href = '/login';
+        // Login lives at the app root; '/login' does not exist and 404s.
+        window.location.href = '/';
       }
     }
     console.error('API Error:', error.response?.data?.message || error.message);

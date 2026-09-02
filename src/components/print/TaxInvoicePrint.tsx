@@ -11,10 +11,27 @@ interface TaxInvoicePrintProps {
 export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintProps) {
   if (!invoice) return null;
 
+  // Seller identity is company master data. It was previously hardcoded --
+  // including a placeholder GSTIN (08AAACC1234F1Z9, dummy PAN AAACC1234F) --
+  // so every printed invoice carried a false GSTIN under a Rule 46 heading.
+  const company = invoice.company || {};
+  const seller = {
+    legal_name: company.legal_name || company.trade_name || 'COMPANY NOT CONFIGURED',
+    address_line1: company.address_line1 || '',
+    address_line2: [company.city, company.state_name, company.pincode]
+      .filter(Boolean)
+      .join(', '),
+    gstin: company.gstin || '',
+    state_label: company.state_code
+      ? `${company.state_code}${company.state_name ? ' - ' + company.state_name : ''}`
+      : 'Not configured',
+  };
+  const sellerConfigured = Boolean(company.gstin && (company.legal_name || company.trade_name));
+
   const lines = invoice.lines || [
     {
       description: invoice.description || '22K Gold Jewelry / Material',
-      hsn_sac_code: invoice.hsn_code || '71131910',
+      hsn_sac_code: invoice.hsn_code || '',
       quantity: 1,
       material_value: invoice.subtotal_material_value || invoice.material_value || 0,
       making_charges: invoice.subtotal_making_charges || invoice.making_charges || 0,
@@ -72,14 +89,31 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
             <p className="text-xs font-semibold text-gray-600">(Issued under Rule 46 of CGST Rules, 2017)</p>
           </div>
 
+          {!sellerConfigured && (
+            <div className="border-2 border-red-600 bg-red-50 p-3 text-center print:border-red-600">
+              <p className="text-xs font-bold uppercase text-red-700">
+                Not a valid tax invoice
+              </p>
+              <p className="text-xs text-red-700">
+                Company GSTIN and legal name are not configured. Set them in company
+                master data before issuing this document to a customer.
+              </p>
+            </div>
+          )}
+
           {/* Seller & Invoice Details */}
           <div className="grid grid-cols-2 gap-4 border border-black p-4 rounded-sm">
             <div>
-              <h2 className="font-bold text-base text-amber-900 uppercase">Caratloop Manufacturing ERP</h2>
-              <p className="text-xs">Export Zone, Sitapura Industrial Area, Phase II</p>
-              <p className="text-xs">Jaipur, Rajasthan — 302022</p>
-              <p className="text-xs font-mono mt-1"><strong>GSTIN:</strong> 08AAACC1234F1Z9</p>
-              <p className="text-xs"><strong>State:</strong> 08 - Rajasthan</p>
+              <h2 className="font-bold text-base text-amber-900 uppercase">{seller.legal_name}</h2>
+              {seller.address_line1 && <p className="text-xs">{seller.address_line1}</p>}
+              {seller.address_line2 && <p className="text-xs">{seller.address_line2}</p>}
+              <p className="text-xs font-mono mt-1">
+                <strong>GSTIN:</strong>{' '}
+                {seller.gstin
+                  ? seller.gstin
+                  : <span className="text-red-600 font-bold">NOT CONFIGURED</span>}
+              </p>
+              <p className="text-xs"><strong>State:</strong> {seller.state_label}</p>
             </div>
             <div className="text-right space-y-1">
               <p className="text-sm font-bold font-mono">Invoice No: {invoice.invoice_no}</p>
@@ -132,7 +166,7 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
                   <tr key={idx} className="border-b border-gray-300 text-gray-800">
                     <td className="border border-gray-300 p-2 text-center">{idx + 1}</td>
                     <td className="border border-gray-300 p-2 font-medium">{line.description || 'Gold Jewelry Article'}</td>
-                    <td className="border border-gray-300 p-2 text-center font-mono">{line.hsn_sac_code || '71131910'}</td>
+                    <td className="border border-gray-300 p-2 text-center font-mono">{line.hsn_sac_code || <span className="text-red-600">—</span>}</td>
                     <td className="border border-gray-300 p-2 text-right">{formatCurrency(matVal)}</td>
                     <td className="border border-gray-300 p-2 text-right">{formatCurrency(makVal)}</td>
                     <td className="border border-gray-300 p-2 text-right font-semibold">{formatCurrency(lineTaxable)}</td>

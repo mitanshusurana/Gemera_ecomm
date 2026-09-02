@@ -1,5 +1,6 @@
 import Sidebar from '@/components/ui/Sidebar';
 import Header from '@/components/ui/Header';
+import RequireAuth from '@/components/auth/RequireAuth';
 
 export default function DashboardLayout({
   children,
@@ -7,6 +8,7 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
+    <RequireAuth>
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
@@ -20,5 +22,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+    </RequireAuth>
   );
 }

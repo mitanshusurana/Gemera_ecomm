@@ -8,10 +8,12 @@ interface StatsCardProps {
   icon: ReactNode;
   trend?: number; // percentage
   trendLabel?: string;
+  /** Secondary line under the value, e.g. a year-to-date comparison. */
+  subtitle?: string;
   className?: string;
 }
 
-export default function StatsCard({ title, value, icon, trend, trendLabel, className }: StatsCardProps) {
+export default function StatsCard({ title, value, icon, trend, trendLabel, subtitle, className }: StatsCardProps) {
   const isPositive = trend && trend > 0;
   
   return (
@@ -23,6 +25,10 @@ export default function StatsCard({ title, value, icon, trend, trendLabel, class
         <div className="space-y-4">
           <p className="text-sm font-medium text-textSecondary uppercase tracking-wider">{title}</p>
           <h4 className="text-3xl font-playfair font-semibold text-white">{value}</h4>
+
+          {subtitle && (
+            <p className="text-xs text-textSecondary">{subtitle}</p>
+          )}
           
           {trend !== undefined && (
             <div className="flex items-center gap-2 mt-2">

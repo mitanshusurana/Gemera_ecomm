@@ -472,7 +472,7 @@ export default function PurchasesPage() {
           <PartySelect
             partyType="Supplier"
             value={selectedSupplierId}
-            onSelect={(p) => setSelectedSupplierId(p ? p.id : '')}
+            onChange={(partyId) => setSelectedSupplierId(partyId)}
             placeholder="Filter Supplier"
           />
         </div>

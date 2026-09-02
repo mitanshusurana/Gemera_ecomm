@@ -182,9 +182,9 @@ export default function InventoryPage() {
                     <td className="py-3 font-mono text-primary font-medium">{item.code}</td>
                     <td className="py-3 text-white font-medium">{item.name}</td>
                     <td className="py-3">
-                      <Badge variant="secondary">{item.category || 'General'}</Badge>
+                      <Badge variant="default">{item.category || 'General'}</Badge>
                     </td>
-                    <td className="py-3 font-mono text-textSecondary">{item.hsn_code || '71131910'}</td>
+                    <td className="py-3 font-mono text-textSecondary">{item.hsn_code || '—'}</td>
                     <td className="py-3 text-right font-mono text-white">
                       {Number(item.gst_tax_rate ?? item.material_gst_rate ?? 3.0)}%
                     </td>

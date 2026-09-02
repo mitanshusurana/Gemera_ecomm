@@ -111,7 +111,7 @@ export default function OutstandingPage() {
                       <th className="pb-3 font-medium text-right">0-30 days</th>
                       <th className="pb-3 font-medium text-right">31-60 days</th>
                       <th className="pb-3 font-medium text-right">61-90 days</th>
-                      <th className="pb-3 font-medium text-right text-danger">>90 days</th>
+                      <th className="pb-3 font-medium text-right text-danger">&gt;90 days</th>
                     </>
                   ) : (
                     <>

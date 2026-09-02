@@ -56,7 +56,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
     const existing = options.find((i) => i.id === value);
     if (existing) {
       setSelectedItem(existing);
-      onSelect(existing);
+      onChange(existing.id, existing);
       return;
     }
 
@@ -77,7 +77,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
           current_stock: i.current_stock ?? 0
         };
         setSelectedItem(formatted);
-        onSelect(formatted);
+        onChange(formatted.id, formatted);
       })
       .catch(() => {
         // Fallback: search by query/value if getItem fails
@@ -98,7 +98,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
               current_stock: match.current_stock ?? 0
             };
             setSelectedItem(formatted);
-            onSelect(formatted);
+            onChange(formatted.id, formatted);
           }
         });
       });

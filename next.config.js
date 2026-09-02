@@ -2,8 +2,11 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
+  // Both suppressions removed: the project now typechecks clean. On a UI that
+  // renders GST figures, a hidden type error is a route to a wrong number on
+  // an invoice.
+  eslint: { ignoreDuringBuilds: false },
+  typescript: { ignoreBuildErrors: false },
   async rewrites() {
     return [
       {

@@ -31,7 +31,12 @@ const INDIAN_STATES = [
   { code: '23', name: '23 - Madhya Pradesh (Inter-State)' },
 ];
 
-export default function SalesInvoiceForm() {
+interface SalesInvoiceFormProps {
+  /** Called after a successful create so the caller can close and refresh. */
+  onSuccess?: () => void;
+}
+
+export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
   const [customerId, setCustomerId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [placeOfSupply, setPlaceOfSupply] = useState('08');
@@ -73,8 +78,11 @@ export default function SalesInvoiceForm() {
         })),
         reason: 'Sales invoice creation'
       });
-      alert('Sales invoice created successfully!');
-      window.location.reload();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        window.location.reload();
+      }
     } catch (err: any) {
       console.error('Invoice create error:', err);
       alert(err.response?.data?.detail || 'Failed to create sales invoice');
