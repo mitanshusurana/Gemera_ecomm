@@ -2,6 +2,7 @@
 Caratloop ERP — Purchase Invoices API
 Gemstone, Bullion, & Jewelry Purchase Invoices with Multi-Rate GST, ITC Register, Stock Ledger, & Double-Entry Accounting [CGST-R56-4] [S44AA]
 """
+import logging
 from uuid import UUID
 from datetime import date
 from typing import Optional, List
@@ -17,6 +18,8 @@ from app.core.money import to_decimal
 from app.tax.purchase_tax import PurchaseLineInput, compute_purchase_totals
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Purchases"])
 
@@ -440,9 +443,19 @@ async def create_purchase_invoice(
         await db.commit()
         return {"status": "success", "bill_no": bill_no, "id": str(invoice_id)}
 
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to record purchase invoice: {str(e)}")
+        logger.exception("Failed to record purchase invoice")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to record purchase invoice. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.put("/invoices/{id}", dependencies=[Depends(require(*CAN_AMEND))])
@@ -801,9 +814,19 @@ async def update_purchase_invoice(
         await db.commit()
         return {"status": "success", "message": "Purchase invoice updated successfully"}
 
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update purchase invoice: {str(e)}")
+        logger.exception("Failed to update purchase invoice")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update purchase invoice. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.get("/invoices")

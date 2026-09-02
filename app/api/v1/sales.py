@@ -5,6 +5,7 @@ Caratloop ERP — Sales Invoice API
 [S44AA] Double-entry: Dr Customer / Cr Sales + GST Output
 [MCA-11g] Append-only, immutable audit trail
 """
+import logging
 from uuid import UUID
 from datetime import date, datetime
 from decimal import Decimal
@@ -21,6 +22,8 @@ from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Sales"])
 
@@ -514,11 +517,18 @@ async def create_sales_invoice(
         }
 
     except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
         await db.rollback()
         raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Invoice creation failed: {str(e)}")
+        logger.exception("Invoice creation failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Invoice creation failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.get("/invoices")
@@ -714,7 +724,17 @@ async def delete_sales_invoice(
 
         await db.commit()
         return {"status": "success", "invoice_no": invoice_no, "message": f"Invoice {invoice_no} cancelled successfully"}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to delete invoice: {str(e)}")
+        logger.exception("Failed to delete invoice")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete invoice. The operation was rolled back and nothing was saved.",
+        ) from e
 

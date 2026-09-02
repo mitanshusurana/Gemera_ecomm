@@ -2,6 +2,7 @@
 Caratloop ERP — Accounting API
 [S44AA] Double-entry mercantile system: Trial Balance, General Ledger, Journal Entries
 """
+import logging
 from typing import Optional, List
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -13,6 +14,8 @@ from uuid import UUID
 from app.core.database import get_db, set_audit_context
 from app.core.roles import CAN_AMEND, require
 from app.core.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -293,9 +296,19 @@ async def create_account(
         acc_id = acc_res.scalar()
         await db.commit()
         return {"status": "success", "id": str(acc_id), "code": payload.code}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create account: {str(e)}")
+        logger.exception("Failed to create account")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create account. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.patch("/accounts/{account_id}/opening-balance", dependencies=[Depends(require(*CAN_AMEND))])
@@ -327,9 +340,19 @@ async def update_account_opening_balance(
             raise HTTPException(status_code=404, detail="Account not found")
         await db.commit()
         return {"status": "success", "account_id": str(account_id), "opening_balance": payload.opening_balance}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update opening balance: {str(e)}")
+        logger.exception("Failed to update opening balance")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update opening balance. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.post("/opening-balances", dependencies=[Depends(require(*CAN_AMEND))])
@@ -361,6 +384,16 @@ async def batch_update_opening_balances(
 
         await db.commit()
         return {"status": "success", "updated_accounts_count": updated_count}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to batch update opening balances: {str(e)}")
+        logger.exception("Failed to batch update opening balances")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to batch update opening balances. The operation was rolled back and nothing was saved.",
+        ) from e

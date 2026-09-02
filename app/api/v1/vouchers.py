@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 from datetime import date
 from typing import Optional, List
@@ -10,6 +11,8 @@ from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Vouchers"])
 
@@ -151,9 +154,18 @@ async def create_receipt(payload: ReceiptPaymentPayload, request: Request, db: A
 
         await db.commit()
         return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+    except HTTPException:
+        # Authorisation, unbalanced-entry and missing-account errors are
+        # deliberate 4xx responses and must not become 500s.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Voucher posting failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Voucher posting failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 @router.post("/payment", dependencies=[Depends(require(*CAN_POST))])
 async def create_payment(payload: ReceiptPaymentPayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -190,9 +202,18 @@ async def create_payment(payload: ReceiptPaymentPayload, request: Request, db: A
 
         await db.commit()
         return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+    except HTTPException:
+        # Authorisation, unbalanced-entry and missing-account errors are
+        # deliberate 4xx responses and must not become 500s.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Voucher posting failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Voucher posting failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.get("/open-invoices")
@@ -249,9 +270,18 @@ async def create_contra(payload: ContraPayload, request: Request, db: AsyncSessi
         je_id = await post_journal(db, company_id, str(fy['id']), vno, payload.date, 'Contra', payload.narration, None, payload.amount, user_id, ip_address, session_id, lines)
         await db.commit()
         return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+    except HTTPException:
+        # Authorisation, unbalanced-entry and missing-account errors are
+        # deliberate 4xx responses and must not become 500s.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Voucher posting failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Voucher posting failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 @router.post("/journal", dependencies=[Depends(require(*CAN_POST))])
 async def create_journal(payload: JournalPayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -274,9 +304,18 @@ async def create_journal(payload: JournalPayload, request: Request, db: AsyncSes
         je_id = await post_journal(db, company_id, str(fy['id']), vno, payload.date, 'Journal', payload.narration, None, dr_sum, user_id, ip_address, session_id, lines)
         await db.commit()
         return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+    except HTTPException:
+        # Authorisation, unbalanced-entry and missing-account errors are
+        # deliberate 4xx responses and must not become 500s.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Voucher posting failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Voucher posting failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 @router.post("/credit-note", dependencies=[Depends(require(*CAN_AMEND))])
 async def create_credit_note(payload: CreditNotePayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -304,9 +343,18 @@ async def create_credit_note(payload: CreditNotePayload, request: Request, db: A
         je_id = await post_journal(db, company_id, str(fy['id']), vno, payload.date, 'Credit Note', payload.reason, str(payload.original_invoice_id), tot_val, user_id, ip_address, session_id, lines)
         await db.commit()
         return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+    except HTTPException:
+        # Authorisation, unbalanced-entry and missing-account errors are
+        # deliberate 4xx responses and must not become 500s.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Voucher posting failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Voucher posting failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 @router.post("/debit-note", dependencies=[Depends(require(*CAN_AMEND))])
 async def create_debit_note(payload: DebitNotePayload, request: Request, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -332,9 +380,18 @@ async def create_debit_note(payload: DebitNotePayload, request: Request, db: Asy
         je_id = await post_journal(db, company_id, str(fy['id']), vno, payload.date, 'Debit Note', payload.reason, str(payload.original_purchase_id), payload.amount, user_id, ip_address, session_id, lines)
         await db.commit()
         return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+    except HTTPException:
+        # Authorisation, unbalanced-entry and missing-account errors are
+        # deliberate 4xx responses and must not become 500s.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Voucher posting failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Voucher posting failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 @router.get("")
 async def list_vouchers(type: Optional[str] = None, from_date: Optional[date] = None, to_date: Optional[date] = None, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):

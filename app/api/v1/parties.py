@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -9,6 +10,8 @@ import os
 
 from app.core.database import get_db, set_audit_context
 from app.core.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Party Master"])
 
@@ -107,7 +110,7 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
                         'einvoice_eligible': True
                     }
     except Exception as err:
-        print("GSTINAPI fetch error:", err)
+        logger.warning("GSTIN API lookup failed: %s", err)
 
     # 2. Try Surepass token if configured
     if token:
@@ -143,7 +146,7 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
                             'einvoice_eligible': data.get('einvoice_status', 'No') == 'Yes'
                         }
         except Exception as err:
-            print("Surepass fetch error:", err)
+            logger.warning("Surepass lookup failed: %s", err)
 
     # Clean structure strictly based on GSTIN format (no dummy hardcoded text)
     return {
@@ -314,10 +317,16 @@ async def create_party(
         party_id = party_result.scalar()
         await db.commit()
         return {"status": "success", "id": str(party_id), "party_code": party_code}
+    except HTTPException:
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        print("Create Party Error:", e)
-        raise HTTPException(status_code=500, detail=f"Failed to create party: {str(e)}")
+        logger.exception("Failed to create party")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create party. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.get("")
@@ -427,6 +436,16 @@ async def update_party(
             await db.commit()
 
         return {"status": "success"}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update party: {str(e)}")
+        logger.exception("Failed to update party")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update party. The operation was rolled back and nothing was saved.",
+        ) from e

@@ -2,6 +2,7 @@
 Caratloop ERP — Inventory API
 [CGST Rule 56(2)] Stock Register for Manufacturers
 """
+import logging
 from typing import Optional, List
 from datetime import date
 from uuid import UUID
@@ -13,6 +14,8 @@ from pydantic import BaseModel
 from app.core.database import get_db, set_audit_context
 from app.core.roles import CAN_AMEND, CAN_MOVE_STOCK, require
 from app.core.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -99,8 +102,18 @@ async def get_stock_register(
     try:
         result = await db.execute(text(query), params)
         rows = [dict(r) for r in result.mappings().all()]
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Stock register query error: {str(e)}")
+        logger.exception("Stock register query error")
+        raise HTTPException(
+            status_code=500,
+            detail="Stock register query error. The operation was rolled back and nothing was saved.",
+        ) from e
 
     total_stock_value = sum(float(r.get("stock_value") or 0) for r in rows)
     total_gold_weight = sum(float(r.get("closing_weight_gm") or 0) for r in rows if r.get("category") == "Gold")
@@ -276,9 +289,19 @@ async def create_item(
 
         await db.commit()
         return {"status": "success", "id": str(item_id), "code": payload.code}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create stock item: {str(e)}")
+        logger.exception("Failed to create stock item")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create stock item. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.patch("/items/{id}", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
@@ -312,9 +335,19 @@ async def update_item(
             await db.commit()
 
         return {"status": "success"}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update stock item: {str(e)}")
+        logger.exception("Failed to update stock item")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update stock item. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.get("/items/{id}/ledger")
@@ -471,6 +504,16 @@ async def record_opening_stock(
 
         await db.commit()
         return {"status": "success", "inserted_count": inserted_count}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to record opening stock: {str(e)}")
+        logger.exception("Failed to record opening stock")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to record opening stock. The operation was rolled back and nothing was saved.",
+        ) from e

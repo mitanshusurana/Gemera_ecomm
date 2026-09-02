@@ -5,6 +5,7 @@ Caratloop ERP — Production Order API
 [S44AA]            Double-entry journal entry for manufacturing
 [MCA-11g]          All entries are append-only with full audit trail
 """
+import logging
 from uuid import UUID
 from datetime import date, datetime
 from decimal import Decimal
@@ -20,6 +21,8 @@ from app.core.money import to_decimal
 from app.core.stock import assert_stock_available
 from app.core.roles import CAN_MOVE_STOCK, require
 from app.core.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/production", tags=["Manufacturing"])
 
@@ -209,9 +212,19 @@ async def create_production_order(
         po_id = po_res.scalar()
         await db.commit()
         return {"status": "success", "id": str(po_id), "order_no": order_no}
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create production order: {str(e)}")
+        logger.exception("Failed to create production order")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create production order. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.post("/orders/{order_id}/complete", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
@@ -674,9 +687,19 @@ async def complete_production_order(
             },
         }
 
+    except HTTPException:
+        # Deliberate 4xx responses (validation, authorisation,
+        # insufficient stock, unbalanced entry) must not be
+        # rewritten as a 500.
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Production completion failed: {str(e)}")
+        logger.exception("Production completion failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Production completion failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.get("/monthly-account")
