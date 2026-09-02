@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+.env
+.env.*
+!.env.*.example
+*.log
+.git/
+.gitignore
+refactor.py
+refactor_fix.py
