@@ -133,6 +133,9 @@ public class SecurityConfig {
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/inquiries").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reviews/**").permitAll()
           .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN")
+          // Liveness probe only. Must precede the /actuator/** rule (first match
+          // wins) so container healthchecks work; everything else stays admin-only.
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/actuator/health").permitAll()
           .requestMatchers("/actuator/**").hasRole("ADMIN")
           .anyRequest().authenticated()
       )

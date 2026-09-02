@@ -1,0 +1,18 @@
+# Secrets must never enter the build context (they land in builder layers and
+# in any exported build cache).
+.env
+.env.*
+!.env.*.example
+payload.json
+test_bcrypt.js
+test_login.js
+
+# Build artefacts / VCS
+node_modules
+dist
+.angular
+.git
+.github
+*.log
+backend/build
+backend/.gradle

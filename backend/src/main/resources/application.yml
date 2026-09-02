@@ -52,6 +52,16 @@ management:
   health:
     mail:
       enabled: false
+  endpoint:
+    health:
+      # /actuator/health is reachable unauthenticated for container probes, so
+      # it must never disclose component detail.
+      show-details: never
+      show-components: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 goldapi:
   key: ${GOLDAPI_KEY}
