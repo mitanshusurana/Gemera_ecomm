@@ -7,6 +7,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
+from app.core.ledger import assert_journal_balanced
 from app.core.security import get_current_user
 
 router = APIRouter(tags=["Vouchers"])
@@ -85,6 +86,18 @@ async def post_journal(db, cid, fy_id, je_no, entry_date, entry_type, narration,
 
     # Insert Lines
     for seq, ln in enumerate(lines, 1):
+        # A missing account resolves to None upstream (e.g. a party with no
+        # linked ledger account). Posting it produced a line with a NULL
+        # account_id -- an orphaned amount in the ledger. Refuse instead.
+        if not ln.get('acc'):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Cannot post {entry_type}: line {seq} has no ledger account. "
+                    "The party or bank account involved is not linked to an "
+                    "account in the chart of accounts. No data was saved."
+                ),
+            )
         await db.execute(
             text("""
                 INSERT INTO caratloop.journal_entry_lines (
@@ -95,6 +108,10 @@ async def post_journal(db, cid, fy_id, je_no, entry_date, entry_type, narration,
             """),
             {"je_id": je_id, "seq": seq, "acc": str(ln['acc']), "dr": ln['dr'], "cr": ln['cr'], "narr": ln.get('narr', '')}
         )
+
+    # Every voucher type routes through here, so one check covers receipt,
+    # payment, contra, journal, credit note and debit note.
+    await assert_journal_balanced(db, je_id, context=f"{entry_type.lower()} voucher")
     return je_id
 
 

@@ -17,8 +17,31 @@ RCM on Old Gold:
     Buyer (Caratloop) pays tax directly to government.
 """
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional
+from typing import Optional, Union
 from dataclasses import dataclass
+
+
+Money = Union[Decimal, int, str, float]
+
+
+def _money(val: Money) -> Decimal:
+    """Coerce a monetary input to Decimal without losing precision.
+
+    Decimal, int and str convert exactly. A float is routed through str() so a
+    caller passing 66666.66666666667 gets that value rather than its binary
+    expansion -- but callers should pass Decimal and avoid the question.
+    """
+    if isinstance(val, Decimal):
+        return val
+    if val is None:
+        return Decimal("0")
+    return Decimal(str(val))
+
+
+def _normalise_state(code: Optional[str]) -> str:
+    """Zero-pad a GST state code to two digits, so '8' == '08'."""
+    cleaned = (code or "").strip()
+    return cleaned.zfill(2) if cleaned.isdigit() else cleaned.upper()
 
 
 def _round(val: Decimal) -> Decimal:
@@ -66,12 +89,12 @@ class RCMResult:
 
 
 def calculate_jewelry_gst(
-    material_value: float,
-    making_charges: float,
+    material_value: Money,
+    making_charges: Money,
     seller_state_code: str = "08",          # Caratloop = Rajasthan (08)
     buyer_state_code: str = "08",
-    material_gst_rate: float = 3.00,         # [CGST-R56-4] 3% on HSN 7113
-    making_gst_rate: float = 5.00,           # [CGST-R56-4] 5% on SAC 9988
+    material_gst_rate: Money = Decimal("3.00"),   # [CGST-R56-4] 3% on HSN 7113
+    making_gst_rate: Money = Decimal("5.00"),     # [CGST-R56-4] 5% on SAC 9988
 ) -> JewelryGSTResult:
     """
     Calculate GST for a jewelry sale transaction using dual-rate methodology.
@@ -90,12 +113,15 @@ def calculate_jewelry_gst(
     Returns:
         JewelryGSTResult with all CGST/SGST/IGST amounts computed.
     """
-    mat_val = Decimal(str(material_value))
-    mak_val = Decimal(str(making_charges))
-    mat_rate = Decimal(str(material_gst_rate)) / 100
-    mak_rate = Decimal(str(making_gst_rate)) / 100
+    mat_val = _money(material_value)
+    mak_val = _money(making_charges)
+    mat_rate = _money(material_gst_rate) / 100
+    mak_rate = _money(making_gst_rate) / 100
 
-    is_inter_state = seller_state_code.strip() != buyer_state_code.strip()
+    # Normalise state codes before comparing: '8' and '08' are the same state,
+    # but a raw string compare treated them as an inter-state supply and
+    # charged IGST instead of CGST+SGST.
+    is_inter_state = _normalise_state(seller_state_code) != _normalise_state(buyer_state_code)
 
     # Total tax on material and making
     mat_total_tax = _round(mat_val * mat_rate)

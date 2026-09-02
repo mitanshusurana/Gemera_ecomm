@@ -11,6 +11,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
+from app.core.ledger import assert_journal_balanced
 from app.core.security import get_current_user
 
 router = APIRouter(tags=["Purchases"])
@@ -141,7 +142,12 @@ async def create_purchase_invoice(
                     rcm_sgst += line_tax / 2.0
 
         total_gst = total_cgst + total_sgst + total_igst
-        grand_total = material_subtotal + making_subtotal + (total_gst if not payload.is_rcm else 0.0)
+        # Reverse charge under CGST s.9(4) applies to unregistered suppliers.
+        # Honouring is_rcm for a REGISTERED supplier dropped the GST from the
+        # payable while the forward-charge ITC debits were still posted, so the
+        # entry was out of balance by exactly the tax.
+        rcm_applicable = is_unregistered and bool(payload.is_rcm)
+        grand_total = material_subtotal + making_subtotal + (0.0 if rcm_applicable else total_gst)
 
         bill_no_res = await db.execute(
             text("SELECT 'PI/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
@@ -377,7 +383,7 @@ async def create_purchase_invoice(
         )
         seq += 1
 
-        if is_unregistered and payload.is_rcm and (rcm_cgst + rcm_sgst) > 0:
+        if rcm_applicable and (rcm_cgst + rcm_sgst) > 0:
             rcm_itc_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'ITC-004' AND company_id = :cid LIMIT 1"), {"cid": company_id})
             rcm_itc_id = str(rcm_itc_res.scalar())
             rcm_cgst_acc_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'RCM-001' AND company_id = :cid LIMIT 1"), {"cid": company_id})
@@ -430,6 +436,10 @@ async def create_purchase_invoice(
                     "cb": user_id
                 }
             )
+
+        # Catches the RCM case where ITC debit legs were posted while the
+        # supplier credit excluded the tax.
+        await assert_journal_balanced(db, je_id, context="purchase invoice journal entry")
 
         await db.commit()
         return {"status": "success", "bill_no": bill_no, "id": str(invoice_id)}
@@ -532,9 +542,9 @@ async def update_purchase_invoice(
                     rcm_sgst += line_tax / 2.0
 
         total_gst = total_cgst + total_sgst + total_igst
-        # Match create_purchase_invoice: under RCM the tax is not payable to the
-        # supplier, so it is excluded from the bill value.
-        grand_total = material_subtotal + making_subtotal + (total_gst if not payload.is_rcm else 0.0)
+        # Match create_purchase_invoice exactly, including the s.9(4) condition.
+        rcm_applicable = is_unregistered and bool(payload.is_rcm)
+        grand_total = material_subtotal + making_subtotal + (0.0 if rcm_applicable else total_gst)
 
         await db.execute(
             text("""
@@ -771,7 +781,7 @@ async def update_purchase_invoice(
         )
         seq += 1
 
-        if is_unregistered and payload.is_rcm and (rcm_cgst + rcm_sgst) > 0:
+        if rcm_applicable and (rcm_cgst + rcm_sgst) > 0:
             rcm_itc_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'ITC-004' AND company_id = :cid LIMIT 1"), {"cid": company_id})
             rcm_itc_id = str(rcm_itc_res.scalar())
             rcm_cgst_acc_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'RCM-001' AND company_id = :cid LIMIT 1"), {"cid": company_id})
@@ -824,6 +834,8 @@ async def update_purchase_invoice(
                     "cb": user_id
                 }
             )
+
+        await assert_journal_balanced(db, je_id, context="revised purchase invoice journal entry")
 
         await db.commit()
         return {"status": "success", "message": "Purchase invoice updated successfully"}

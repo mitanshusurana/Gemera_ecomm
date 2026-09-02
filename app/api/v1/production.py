@@ -15,6 +15,7 @@ from sqlalchemy import text, select
 from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
+from app.core.ledger import assert_journal_balanced
 from app.core.security import get_current_user
 
 router = APIRouter(prefix="/production", tags=["Manufacturing"])
@@ -599,6 +600,12 @@ async def complete_production_order(
                 "order_id": str(order_id),
             },
         )
+
+        # The header previously recorded only total_material_cost while the
+        # lines also carried the finished-goods and wastage legs, so header and
+        # lines permanently disagreed. assert_journal_balanced re-derives the
+        # header from its own lines.
+        await assert_journal_balanced(db, je_id, context="production completion journal entry")
 
         await db.commit()
 

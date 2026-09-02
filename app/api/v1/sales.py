@@ -15,6 +15,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
+from app.core.ledger import assert_journal_balanced
 from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.core.config import settings
@@ -42,7 +43,10 @@ class InvoiceLineRequest(BaseModel):
 class CreateSalesInvoiceRequest(BaseModel):
     customer_id: UUID
     invoice_date: date
-    place_of_supply: Optional[str] = "08"     # Buyer's state code (default 08 - Rajasthan)
+    # No default. Defaulting to the seller's own state charged CGST+SGST on
+    # genuinely inter-state supplies whenever the client omitted the field.
+    # When absent, the customer's registered state is used instead.
+    place_of_supply: Optional[str] = None
     lines: List[InvoiceLineRequest]
     payment_terms: Optional[str] = "Immediate"
     narration: Optional[str] = None
@@ -91,9 +95,21 @@ async def create_sales_invoice(
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    # Determine inter-state vs intra-state
-    buyer_state = payload.place_of_supply.strip()
-    seller_state = settings.COMPANY_STATE_CODE  # "08" = Rajasthan
+    # Determine inter-state vs intra-state.
+    # Precedence: an explicit place of supply, else the customer's registered
+    # state. Falling back to the seller's state would silently mis-classify the
+    # supply and send the wrong tax to the wrong government.
+    buyer_state = (payload.place_of_supply or customer.get("state_code") or "").strip()
+    if not buyer_state:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Place of supply could not be determined: the customer has no "
+                "registered state and none was supplied. Set the customer's state "
+                "or pass place_of_supply explicitly."
+            ),
+        )
+    seller_state = settings.COMPANY_STATE_CODE
 
     # [MCA-11g] Set audit context
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
@@ -111,7 +127,7 @@ async def create_sales_invoice(
 
     computed_lines = []
     for line in payload.lines:
-        mat_gst_rate = 3.0
+        mat_gst_rate = Decimal("3.0")
         mat_hsn = line.hsn_sac_code or "71131910"
         if line.material_id:
             m_res = await db.execute(
@@ -120,15 +136,22 @@ async def create_sales_invoice(
             )
             m_row = m_res.mappings().first()
             if m_row:
-                mat_gst_rate = float(m_row["gst_tax_rate"] if m_row["gst_tax_rate"] is not None else 3.0)
+                # Keep as Decimal: the engine accepts it natively now.
+                mat_gst_rate = (
+                    m_row["gst_tax_rate"] if m_row["gst_tax_rate"] is not None
+                    else Decimal("3.0")
+                )
                 mat_hsn = m_row["hsn_code"] or mat_hsn
 
         taxable_mat = Decimal(str(line.material_value)) * (1 - Decimal(str(line.discount_pct)) / 100)
         taxable_mak = Decimal(str(line.making_charges)) * (1 - Decimal(str(line.discount_pct)) / 100)
 
+        # Pass Decimal straight through. Casting to float here meant a
+        # discounted value such as 66666.66666666667 was taxed as its binary
+        # expansion rather than the exact decimal.
         gst = calculate_jewelry_gst(
-            material_value=float(taxable_mat),
-            making_charges=float(taxable_mak),
+            material_value=taxable_mat,
+            making_charges=taxable_mak,
             seller_state_code=seller_state,
             buyer_state_code=buyer_state,
             material_gst_rate=mat_gst_rate,
@@ -319,7 +342,7 @@ async def create_sales_invoice(
                 "supply_type": supply_type,
                 "mat_hsn": computed_lines[0]["mat_hsn"] if computed_lines else '71131910',
                 "mat_val": float(total_material),
-                "mat_gst_rate": float(computed_lines[0]["mat_gst_rate"]) if computed_lines else 3.0,
+                "mat_gst_rate": computed_lines[0]["mat_gst_rate"] if computed_lines else Decimal("3.0"),
                 "mak_val": float(total_making),
                 "igst": float(total_igst_mat + total_igst_mak),
                 "cgst": float(total_cgst_mat + total_cgst_mak),
@@ -397,9 +420,15 @@ async def create_sales_invoice(
         )
 
         # 2. Cr. Sales & GST Output Accounts
+        #
+        # other_charges is included in grand_total and therefore in the customer
+        # debit above, so it must be credited to an income account. It was
+        # omitted entirely, leaving every invoice carrying other charges out of
+        # balance by exactly that amount.
         credit_lines = [
             ("SAL-001", float(total_material), "Gold/Gem material sales"),
             ("SAL-003", float(total_making), "Making charges income"),
+            ("SAL-004", float(total_other), "Other charges"),
         ]
         if is_inter_state:
             credit_lines.extend([
@@ -418,7 +447,7 @@ async def create_sales_invoice(
         for acc_code, cr_val, narr in credit_lines:
             if cr_val <= 0:
                 continue
-            await db.execute(
+            result = await db.execute(
                 text("""
                     INSERT INTO caratloop.journal_entry_lines
                         (journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration)
@@ -428,6 +457,17 @@ async def create_sales_invoice(
                 """),
                 {"je_id": je_id, "seq": seq, "cr": cr_val, "narr": narr, "code": acc_code, "cid": company_id},
             )
+            # INSERT...SELECT inserts zero rows and raises nothing when the
+            # account code is absent. Say which code is missing rather than
+            # letting the balance check report an opaque difference later.
+            if result.rowcount == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Chart of accounts is missing '{acc_code}' ({narr}). "
+                        "Create it before raising this invoice. No data was saved."
+                    ),
+                )
             seq += 1
 
         # Update invoice with journal entry UUID reference
@@ -435,6 +475,10 @@ async def create_sales_invoice(
             text("UPDATE caratloop.sales_invoices SET journal_entry_id = :je_uuid WHERE id = :inv_id"),
             {"je_uuid": str(je_uuid), "inv_id": invoice_id},
         )
+
+        # Double-entry invariant. Catches, among others, the case where
+        # other_charges is debited to the customer but credited to no account.
+        await assert_journal_balanced(db, je_uuid, context="sales invoice journal entry")
 
         await db.commit()
 
@@ -548,12 +592,20 @@ async def delete_sales_invoice(
         )
 
         # 3. Create reversal Journal Entry
+        # Scoped by company: invoice numbers are per-company (CL/FY/00001) and
+        # will collide across tenants, which would reverse another company's
+        # journal entry.
         je_original_res = await db.execute(
-            text("SELECT id, entry_no FROM caratloop.journal_entries WHERE reference_no = :inv_no AND reference_type = 'SalesInvoice'"),
-            {"inv_no": invoice_no}
+            text(
+                "SELECT id, entry_no FROM caratloop.journal_entries "
+                "WHERE reference_no = :inv_no AND reference_type = 'SalesInvoice' "
+                "AND company_id = :cid"
+            ),
+            {"inv_no": invoice_no, "cid": company_id}
         )
         orig_je = je_original_res.mappings().first()
 
+        rev_je_id = None
         if orig_je:
             orig_je_id = orig_je["id"]
             
@@ -616,11 +668,31 @@ async def delete_sales_invoice(
             {"inv_no": invoice_no, "created_by": user_id}
         )
 
-        # 5. Reverse GST output tax
+        # 5. Reverse GST output tax.
+        #
+        # Previously this DELETEd the register row. If the period was already
+        # filed, that silently desynchronised the books from the submitted
+        # GSTR-1 and destroyed the evidence trail. Mark it as a credit note
+        # instead: the is_credit_note column already exists and every GSTR
+        # query filters on NOT is_credit_note, so reported figures are
+        # unchanged while the record survives for audit.
+        #
+        # Note: a full CDNR (credit note) table entry for GSTR-1 is still not
+        # generated -- that remains outstanding.
         await db.execute(
-            text("DELETE FROM caratloop.gst_output_tax_register WHERE invoice_no = :inv_no"),
-            {"inv_no": invoice_no}
+            text(
+                "UPDATE caratloop.gst_output_tax_register "
+                "SET is_credit_note = TRUE "
+                "WHERE invoice_no = :inv_no AND company_id = :cid"
+            ),
+            {"inv_no": invoice_no, "cid": company_id}
         )
+
+        # The reversal must itself balance.
+        if rev_je_id:
+            await assert_journal_balanced(
+                db, rev_je_id, context="sales cancellation reversal entry"
+            )
 
         await db.commit()
         return {"status": "success", "invoice_no": invoice_no, "message": f"Invoice {invoice_no} cancelled successfully"}
