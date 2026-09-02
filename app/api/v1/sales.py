@@ -20,6 +20,7 @@ from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
 from app.core.stock import assert_stock_available
 from app.core.roles import CAN_AMEND, CAN_POST, require
+from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.core.config import settings
@@ -562,6 +563,7 @@ async def list_sales_invoices(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
     customer_id: Optional[UUID] = None,
+    page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -591,6 +593,11 @@ async def list_sales_invoices(
         query += " AND si.customer_id = :cust_id"
         params["cust_id"] = str(customer_id)
     query += " ORDER BY si.invoice_date DESC"
+
+    # Bound the result set. These endpoints previously returned the whole
+    # table; the sales register returned every invoice ever raised.
+    query = page.apply(query)
+    params.update(page.params)
 
     result = await db.execute(text(query), params)
     return {"invoices": [dict(r) for r in result.mappings().all()]}

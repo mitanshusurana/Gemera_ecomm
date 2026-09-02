@@ -7,7 +7,7 @@ Caratloop ERP — Production Order API
 """
 import logging
 from uuid import UUID
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -20,6 +20,7 @@ from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
 from app.core.stock import assert_stock_available
 from app.core.roles import CAN_MOVE_STOCK, require
+from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,7 @@ class CompleteProductionOrderRequest(BaseModel):
 async def list_production_orders(
     status: Optional[str] = None,
     month_year: Optional[str] = None,
+    page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -107,6 +109,11 @@ async def list_production_orders(
         query += " AND po.month_year = :month_year"
         params["month_year"] = month_year
     query += " ORDER BY po.order_date DESC"
+
+    # Bound the result set. These endpoints previously returned the whole
+    # table; the sales register returned every invoice ever raised.
+    query = page.apply(query)
+    params.update(page.params)
 
     result = await db.execute(text(query), params)
     orders = result.mappings().all()
@@ -658,7 +665,7 @@ async def complete_production_order(
             """),
             {
                 "actual_qty": total_fg_qty,
-                "completed_at": datetime.utcnow(),
+                "completed_at": datetime.now(timezone.utc),
                 "order_id": str(order_id),
             },
         )

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.roles import CAN_AMEND, CAN_POST, require
+from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -394,7 +395,8 @@ async def create_debit_note(payload: DebitNotePayload, request: Request, db: Asy
         ) from e
 
 @router.get("")
-async def list_vouchers(type: Optional[str] = None, from_date: Optional[date] = None, to_date: Optional[date] = None, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+async def list_vouchers(type: Optional[str] = None, from_date: Optional[date] = None, to_date: Optional[date] = None, page: Page = Depends(paginate),
+    db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     company_id = current_user["company_id"]
     query = "SELECT id, entry_no, entry_date, entry_type, narration, total_debit, status FROM caratloop.journal_entries WHERE company_id = :cid"
     params = {"cid": company_id}
@@ -408,6 +410,11 @@ async def list_vouchers(type: Optional[str] = None, from_date: Optional[date] = 
         query += " AND entry_date <= :t"
         params["t"] = str(to_date)
     
+    # Bound the result set. These endpoints previously returned the whole
+    # table; the sales register returned every invoice ever raised.
+    query = page.apply(query)
+    params.update(page.params)
+
     result = await db.execute(text(query), params)
     return [dict(r) for r in result.mappings().all()]
 

@@ -17,6 +17,7 @@ from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
 from app.tax.purchase_tax import PurchaseLineInput, compute_purchase_totals
 from app.core.roles import CAN_AMEND, CAN_POST, require
+from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -834,6 +835,7 @@ async def list_purchases(
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
     supplier_id: Optional[UUID] = None,
+    page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -862,6 +864,11 @@ async def list_purchases(
         params["sid"] = str(supplier_id)
 
     query += " ORDER BY pi.bill_date DESC, pi.created_at DESC"
+
+    # Bound the result set. These endpoints previously returned the whole
+    # table; the sales register returned every invoice ever raised.
+    query = page.apply(query)
+    params.update(page.params)
 
     res = await db.execute(text(query), params)
     invoices = [dict(r) for r in res.mappings().all()]

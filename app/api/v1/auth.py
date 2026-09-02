@@ -10,7 +10,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.core.security import create_access_token
+from app.core.security import create_access_token, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -98,3 +98,28 @@ async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depe
             "role": user["role"],
         },
     }
+
+@router.post("/logout")
+async def logout(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """End the current session.
+
+    There was no logout endpoint at all, and no way to invalidate a token: a
+    stolen one stayed valid for its full 8-hour life. Closing the session row
+    makes get_current_user reject the token immediately.
+    """
+    session_id = current_user.get("session_id")
+    if session_id and str(session_id).isdigit():
+        await db.execute(
+            text(
+                "UPDATE caratloop.session_logs SET logout_at = NOW() "
+                "WHERE id = :sid AND user_id = :uid AND logout_at IS NULL"
+            ),
+            {"sid": int(session_id), "uid": str(current_user["id"])},
+        )
+        await db.commit()
+
+    logger.info("User %s logged out (session %s)", current_user["email"], session_id)
+    return {"status": "success", "message": "Signed out"}

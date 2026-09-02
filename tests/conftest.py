@@ -12,6 +12,7 @@ tests against a real Postgres.
 
 from __future__ import annotations
 
+import os
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -20,6 +21,16 @@ import pytest
 
 # Make the application package importable without installing it.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+# Settings are a module-level singleton built on first import of
+# app.core.config, and validate_runtime() rejects an empty JWT secret. pytest
+# imports conftest before any test module, so this is the only place the
+# environment can be set early enough -- doing it inside a test module meant
+# whichever module imported app.core.config first won, and the secret was "".
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5432/testdb")
+os.environ.setdefault("SYNC_DATABASE_URL", "postgresql://u:p@localhost:5432/testdb")
+os.environ.setdefault("JWT_SECRET", "t" * 48)
+os.environ.setdefault("ENVIRONMENT", "test")
 
 
 class StubResult:

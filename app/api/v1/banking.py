@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import openpyxl
 
 from app.core.database import get_db, set_audit_context
+from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 
 router = APIRouter(tags=["Banking & BRS"])
@@ -21,7 +22,8 @@ class UnmatchPayload(BaseModel):
     match_id: UUID
 
 @router.get("/accounts")
-async def list_bank_accounts(db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+async def list_bank_accounts(page: Page = Depends(paginate),
+    db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     company_id = current_user["company_id"]
     query = """
         SELECT a.id, a.code, a.name, a.account_type, a.currency
@@ -29,7 +31,9 @@ async def list_bank_accounts(db: AsyncSession = Depends(get_db), current_user: d
         JOIN caratloop.account_groups g ON a.group_id = g.id
         WHERE a.company_id = CAST(:cid AS UUID) AND (g.name ILIKE '%Bank Accounts%' OR a.account_type = 'Bank' OR a.name ILIKE '%Bank%')
     """
-    res = await db.execute(text(query), {"cid": str(company_id)})
+    # Bounded like the other list endpoints.
+    res = await db.execute(text(page.apply(query)),
+                           {"cid": str(company_id), **page.params})
     return [dict(r) for r in res.mappings().all()]
 
 @router.post("/statement/import")

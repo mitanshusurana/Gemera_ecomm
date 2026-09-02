@@ -17,6 +17,7 @@ from decimal import Decimal
 from app.core.ledger import TOLERANCE
 from app.core.money import to_decimal
 from app.core.roles import CAN_AMEND, require
+from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -207,6 +208,7 @@ async def get_journal_entries(
 async def list_accounts(
     nature: Optional[str] = None,
     group_id: Optional[UUID] = None,
+    page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -239,6 +241,11 @@ async def list_accounts(
         query += " AND ag.id = :group_id"
         params["group_id"] = str(group_id)
     query += " GROUP BY a.id, a.code, a.name, a.account_type, a.normal_balance, a.currency, a.opening_balance, a.opening_balance_type, a.is_system, a.is_active, a.description, ag.id, ag.code, ag.name, ag.nature ORDER BY ag.nature, ag.name, a.code"
+
+    # Bound the result set. These endpoints previously returned the whole
+    # table; the sales register returned every invoice ever raised.
+    query = page.apply(query)
+    params.update(page.params)
 
     result = await db.execute(text(query), params)
     return {"accounts": [dict(r) for r in result.mappings().all()]}

@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from app.core.database import get_db, set_audit_context
 from app.core.money import to_decimal
 from app.core.roles import CAN_AMEND, CAN_MOVE_STOCK, require
+from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -134,6 +135,7 @@ async def get_stock_register(
 @router.get("/materials")
 async def list_materials(
     category: Optional[str] = None,
+    page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -155,6 +157,11 @@ async def list_materials(
         query += " AND m.category = :cat"
         params["cat"] = category
     query += " ORDER BY m.category, m.name"
+
+    # Bound the result set. These endpoints previously returned the whole
+    # table; the sales register returned every invoice ever raised.
+    query = page.apply(query)
+    params.update(page.params)
 
     result = await db.execute(text(query), params)
     return {"materials": [dict(r) for r in result.mappings().all()]}
