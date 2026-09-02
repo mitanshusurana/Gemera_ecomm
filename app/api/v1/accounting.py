@@ -12,6 +12,10 @@ from pydantic import BaseModel
 from uuid import UUID
 
 from app.core.database import get_db, set_audit_context
+from decimal import Decimal
+
+from app.core.ledger import TOLERANCE
+from app.core.money import to_decimal
 from app.core.roles import CAN_AMEND, require
 from app.core.security import get_current_user
 
@@ -92,18 +96,21 @@ async def get_trial_balance(
     formatted_rows = []
     for r in result.mappings().all():
         row_dict = dict(r)
-        dr_val = float(r["period_debit"] or 0)
-        cr_val = float(r["period_credit"] or 0)
+        dr_val = to_decimal(r["period_debit"])
+        cr_val = to_decimal(r["period_credit"])
         row_dict["total_debit"] = dr_val
         row_dict["total_credit"] = cr_val
         row_dict["debit"] = dr_val
         row_dict["credit"] = cr_val
-        row_dict["net_balance"] = float(r["closing_balance"] or 0)
+        row_dict["net_balance"] = to_decimal(r["closing_balance"])
         formatted_rows.append(row_dict)
 
-    total_dr = sum(r["total_debit"] for r in formatted_rows)
-    total_cr = sum(r["total_credit"] for r in formatted_rows)
-    balanced = abs(total_dr - total_cr) < 0.01
+    # Start at Decimal("0") so an empty trial balance does not fall back to
+    # int, and compare against the same tolerance the ledger guard uses so the
+    # report and the posting check can never disagree.
+    total_dr = sum((r["total_debit"] for r in formatted_rows), Decimal("0"))
+    total_cr = sum((r["total_credit"] for r in formatted_rows), Decimal("0"))
+    balanced = abs(total_dr - total_cr) <= TOLERANCE
 
     return {
         "as_of_date": str(as_of_date),

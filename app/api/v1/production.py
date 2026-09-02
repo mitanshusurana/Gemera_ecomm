@@ -13,7 +13,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
@@ -32,39 +32,41 @@ router = APIRouter(prefix="/production", tags=["Manufacturing"])
 class MaterialConsumptionLine(BaseModel):
     material_id: UUID
     batch_no: Optional[str] = None
-    qty_issued: float
-    gross_weight: Optional[float] = None
-    net_weight: Optional[float] = None
-    purity: Optional[float] = None
-    rate: Optional[float] = None
+    qty_issued: Decimal = Field(ge=0)
+    gross_weight: Optional[Decimal] = Field(default=None, ge=0)
+    net_weight: Optional[Decimal] = Field(default=None, ge=0)
+    # Fraction (0.916), not millesimal (916): fine weight is net * purity, so
+    # 916 would inflate the weight a thousandfold. The DB CHECK agrees.
+    purity: Optional[Decimal] = Field(default=None, gt=0, le=1)
+    rate: Optional[Decimal] = Field(default=None, ge=0)
     remarks: Optional[str] = None
 
 
 class OutputLine(BaseModel):
     material_id: UUID         # Finished good material ID
-    qty_produced: float
-    gross_weight: Optional[float] = None
-    net_weight: Optional[float] = None
+    qty_produced: Decimal = Field(ge=0)
+    gross_weight: Optional[Decimal] = Field(default=None, ge=0)
+    net_weight: Optional[Decimal] = Field(default=None, ge=0)
     hallmark_no: Optional[str] = None
     quality_grade: Optional[str] = None
-    valuation_rate: Optional[float] = None
+    valuation_rate: Optional[Decimal] = Field(default=None, ge=0)
 
 
 class WastageLine(BaseModel):
     material_id: UUID
     wastage_type: str         # Melting_Loss, Polishing_Loss, etc.
-    qty_lost: float
-    loss_pct: Optional[float] = None
-    recoverable_qty: Optional[float] = None
-    rate: Optional[float] = None
+    qty_lost: Decimal = Field(ge=0)
+    loss_pct: Optional[Decimal] = Field(default=None, ge=0, le=100)
+    recoverable_qty: Optional[Decimal] = Field(default=None, ge=0)
+    rate: Optional[Decimal] = Field(default=None, ge=0)
     remarks: Optional[str] = None
 
 
 class CreateProductionOrderRequest(BaseModel):
     product_name: str = "Gold Jewelry Item"
     order_date: date = date.today()
-    planned_qty: float = 1.0
-    allowed_wastage_pct: float = 2.5
+    planned_qty: Decimal = Field(default=Decimal("1"), gt=0)
+    allowed_wastage_pct: Decimal = Field(default=Decimal("2.5"), ge=0, le=100)
     remarks: Optional[str] = None
     reason: str = "Production order creation"
 
@@ -344,12 +346,12 @@ async def complete_production_order(
                     "entry_date": payload.completion_date,
                     "material_id": str(line.material_id),
                     "batch_no": line.batch_no,
-                    "qty": float(line.qty_issued),
-                    "rate": float(line.rate or 0),
+                    "qty": line.qty_issued,
+                    "rate": line.rate or 0,
                     "amount": mat_amount,
-                    "gross_wt": float(line.gross_weight) if line.gross_weight is not None else None,
-                    "net_wt": float(line.net_weight) if line.net_weight is not None else None,
-                    "purity": float(line.purity) if line.purity is not None else None,
+                    "gross_wt": line.gross_weight if line.gross_weight is not None else None,
+                    "net_wt": line.net_weight if line.net_weight is not None else None,
+                    "purity": line.purity if line.purity is not None else None,
                     "fine_wt": fine_wt,
                     "remarks": line.remarks,
                     "created_by": user_id,
@@ -386,12 +388,12 @@ async def complete_production_order(
                     "entry_date": payload.completion_date,
                     "material_id": str(line.material_id),
                     "batch_no": line.batch_no,
-                    "qty_issued": float(line.qty_issued),
-                    "gross_wt": float(line.gross_weight) if line.gross_weight is not None else None,
-                    "net_wt": float(line.net_weight) if line.net_weight is not None else None,
-                    "purity": float(line.purity) if line.purity is not None else None,
+                    "qty_issued": line.qty_issued,
+                    "gross_wt": line.gross_weight if line.gross_weight is not None else None,
+                    "net_wt": line.net_weight if line.net_weight is not None else None,
+                    "purity": line.purity if line.purity is not None else None,
                     "fine_wt": fine_wt,
-                    "rate": float(line.rate or 0),
+                    "rate": line.rate or 0,
                     "amount": mat_amount,
                     "remarks": line.remarks,
                     "created_by": user_id,
@@ -459,10 +461,10 @@ async def complete_production_order(
                     "entry_date": payload.completion_date,
                     "wastage_type": w_line.wastage_type,
                     "material_id": str(w_line.material_id),
-                    "qty_lost": float(w_line.qty_lost),
-                    "loss_pct": float(w_line.loss_pct) if w_line.loss_pct is not None else None,
-                    "recoverable_qty": float(w_line.recoverable_qty or 0),
-                    "rate": float(w_line.rate or 0),
+                    "qty_lost": w_line.qty_lost,
+                    "loss_pct": w_line.loss_pct if w_line.loss_pct is not None else None,
+                    "recoverable_qty": w_line.recoverable_qty or 0,
+                    "rate": w_line.rate or 0,
                     "amount": w_amount,
                     "remarks": w_line.remarks,
                     "created_by": user_id,
@@ -474,7 +476,7 @@ async def complete_production_order(
         # Record finished goods produced
         total_fg_qty = Decimal("0")
         for out_line in payload.output_lines:
-            out_amount = float(out_line.qty_produced) * float(out_line.valuation_rate or 0)
+            out_amount = out_line.qty_produced * (out_line.valuation_rate or 0)
             # [CGST-R56-2] Stock inward entry — finished goods received
             sle_out_result = await db.execute(
                 text("""
@@ -502,11 +504,11 @@ async def complete_production_order(
                 {
                     "entry_date": payload.completion_date,
                     "material_id": str(out_line.material_id),
-                    "qty": float(out_line.qty_produced),
-                    "rate": float(out_line.valuation_rate or 0),
+                    "qty": out_line.qty_produced,
+                    "rate": out_line.valuation_rate or 0,
                     "amount": out_amount,
-                    "gross_wt": float(out_line.gross_weight) if out_line.gross_weight is not None else None,
-                    "net_wt": float(out_line.net_weight) if out_line.net_weight is not None else None,
+                    "gross_wt": out_line.gross_weight if out_line.gross_weight is not None else None,
+                    "net_wt": out_line.net_weight if out_line.net_weight is not None else None,
                     "created_by": user_id,
                     "ip": ip_address,
                     "order_id": str(order_id),
@@ -588,7 +590,7 @@ async def complete_production_order(
                 "je_no": je_no,
                 "entry_date": payload.completion_date,
                 "product_name": order["product_name"],
-                "total_amount": float(total_material_cost),
+                "total_amount": total_material_cost,
                 "created_by": user_id,
                 "ip": ip_address,
                 "session_id": int(session_id) if (session_id and str(session_id).isdigit() and int(session_id) > 0) else None,
@@ -655,7 +657,7 @@ async def complete_production_order(
                 WHERE id = :order_id
             """),
             {
-                "actual_qty": float(total_fg_qty),
+                "actual_qty": total_fg_qty,
                 "completed_at": datetime.utcnow(),
                 "order_id": str(order_id),
             },

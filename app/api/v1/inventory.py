@@ -12,6 +12,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from app.core.database import get_db, set_audit_context
+from app.core.money import to_decimal
 from app.core.roles import CAN_AMEND, CAN_MOVE_STOCK, require
 from app.core.security import get_current_user
 
@@ -392,7 +393,7 @@ async def get_item_ledger(
     # Compute running balance line-by-line
     running_balance = 0.0
     for e in entries:
-        qty = float(e["quantity"] or 0)
+        qty = to_decimal(e["quantity"])
         if e["direction"] == 'I':
             running_balance += qty
         else:
@@ -473,7 +474,7 @@ async def record_opening_stock(
                 continue
             entry_date = item.entry_date or date.today()
             target_loc = str(item.location_id) if item.location_id else str(loc_id)
-            total_amt = float(item.quantity) * float(item.rate or 0.0)
+            total_amt = to_decimal(item.quantity) * to_decimal(item.rate or 0)
 
             await db.execute(
                 text("""
@@ -493,10 +494,10 @@ async def record_opening_stock(
                     "loc_id": target_loc,
                     "mat_id": str(item.material_id),
                     "edate": entry_date,
-                    "qty": float(item.quantity),
+                    "qty": to_decimal(item.quantity),
                     "amt": total_amt,
-                    "gw": float(item.gross_weight or 0.0),
-                    "nw": float(item.net_weight or 0.0),
+                    "gw": to_decimal(item.gross_weight or 0),
+                    "nw": to_decimal(item.net_weight or 0),
                     "created_by": user_id
                 }
             )

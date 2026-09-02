@@ -13,10 +13,11 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
+from app.core.money import to_decimal
 from app.core.stock import assert_stock_available
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.security import get_current_user
@@ -29,20 +30,41 @@ router = APIRouter(tags=["Sales"])
 
 
 class InvoiceLineRequest(BaseModel):
+    """Money and quantities are Decimal end to end.
+
+    Every corresponding column is NUMERIC in Postgres. Accepting float here
+    meant a value arrived as its binary expansion before any arithmetic ran.
+    Pydantic coerces an incoming JSON number to Decimal via its string form,
+    so the exact decimal the client sent is preserved.
+    """
+
     product_id: Optional[UUID] = None
     material_id: Optional[UUID] = None
-    hsn_sac_code: str = "71131910"           # Default HSN for gold jewelry
+    hsn_sac_code: Optional[str] = None       # Falls back to the item master
     description: Optional[str] = None
-    quantity: float = 1.0
-    gross_weight: Optional[float] = None
-    net_weight: Optional[float] = None
-    stone_weight: Optional[float] = None
-    gold_weight: Optional[float] = None
-    purity: Optional[float] = None
-    material_value: float = 0.0              # Gold + gem component
-    making_charges: float = 0.0             # Labor/artisan component
-    other_charges: float = 0.0
-    discount_pct: float = 0.0
+    quantity: Decimal = Field(default=Decimal("1"), ge=0)
+    gross_weight: Optional[Decimal] = Field(default=None, ge=0)
+    net_weight: Optional[Decimal] = Field(default=None, ge=0)
+    stone_weight: Optional[Decimal] = Field(default=None, ge=0)
+    gold_weight: Optional[Decimal] = Field(default=None, ge=0)
+    # Purity is a fraction (0.916), not millesimal (916): fine weight is
+    # net weight times purity. The DB CHECK enforces the same bound.
+    purity: Optional[Decimal] = Field(default=None, gt=0, le=1)
+    material_value: Decimal = Field(default=Decimal("0"), ge=0)
+    making_charges: Decimal = Field(default=Decimal("0"), ge=0)
+    other_charges: Decimal = Field(default=Decimal("0"), ge=0)
+    # Above 100 produced a negative taxable value and negative tax.
+    discount_pct: Decimal = Field(default=Decimal("0"), ge=0, le=100)
+
+    @model_validator(mode="after")
+    def _net_not_more_than_gross(self):
+        if (
+            self.gross_weight is not None
+            and self.net_weight is not None
+            and self.net_weight > self.gross_weight
+        ):
+            raise ValueError("net_weight cannot exceed gross_weight")
+        return self
 
 
 class CreateSalesInvoiceRequest(BaseModel):
@@ -133,11 +155,14 @@ async def create_sales_invoice(
     computed_lines = []
     for line in payload.lines:
         mat_gst_rate = Decimal("3.0")
-        mat_hsn = line.hsn_sac_code or "71131910"
+        mat_hsn = line.hsn_sac_code or ""
         if line.material_id:
             m_res = await db.execute(
-                text("SELECT gst_tax_rate, hsn_code FROM caratloop.materials WHERE id = :mid OR code = :mcode LIMIT 1"),
-                {"mid": str(line.material_id), "mcode": str(line.material_id)}
+                text(
+                    "SELECT gst_tax_rate, hsn_code FROM caratloop.materials "
+                    "WHERE company_id = :cid AND (id = :mid OR code = :mcode) LIMIT 1"
+                ),
+                {"cid": company_id, "mid": str(line.material_id), "mcode": str(line.material_id)}
             )
             m_row = m_res.mappings().first()
             if m_row:
@@ -148,8 +173,8 @@ async def create_sales_invoice(
                 )
                 mat_hsn = m_row["hsn_code"] or mat_hsn
 
-        taxable_mat = Decimal(str(line.material_value)) * (1 - Decimal(str(line.discount_pct)) / 100)
-        taxable_mak = Decimal(str(line.making_charges)) * (1 - Decimal(str(line.discount_pct)) / 100)
+        taxable_mat = line.material_value * (1 - line.discount_pct / 100)
+        taxable_mak = line.making_charges * (1 - line.discount_pct / 100)
 
         # Pass Decimal straight through. Casting to float here meant a
         # discounted value such as 66666.66666666667 was taxed as its binary
@@ -162,12 +187,12 @@ async def create_sales_invoice(
             material_gst_rate=mat_gst_rate,
         )
 
-        line_total = (taxable_mat + taxable_mak + Decimal(str(line.other_charges))
+        line_total = (taxable_mat + taxable_mak + line.other_charges
                       + gst.total_gst)
 
         total_material += taxable_mat
         total_making += taxable_mak
-        total_other += Decimal(str(line.other_charges))
+        total_other += line.other_charges
         total_igst_mat += gst.igst_material
         total_igst_mak += gst.igst_making
         total_cgst_mat += gst.cgst_material
@@ -246,17 +271,17 @@ async def create_sales_invoice(
                 "cust_state": buyer_state,
                 "pos": buyer_state,
                 "is_inter": is_inter_state,
-                "mat_val": float(total_material),
-                "mak_val": float(total_making),
-                "other_val": float(total_other),
-                "igst_mat": float(total_igst_mat),
-                "igst_mak": float(total_igst_mak),
-                "cgst_mat": float(total_cgst_mat),
-                "sgst_mat": float(total_sgst_mat),
-                "cgst_mak": float(total_cgst_mak),
-                "sgst_mak": float(total_sgst_mak),
-                "total_gst": float(total_gst),
-                "grand_total": float(grand_total),
+                "mat_val": total_material,
+                "mak_val": total_making,
+                "other_val": total_other,
+                "igst_mat": total_igst_mat,
+                "igst_mak": total_igst_mak,
+                "cgst_mat": total_cgst_mat,
+                "sgst_mat": total_sgst_mat,
+                "cgst_mak": total_cgst_mak,
+                "sgst_mak": total_sgst_mak,
+                "total_gst": total_gst,
+                "grand_total": grand_total,
                 "payment_terms": payload.payment_terms,
                 "narration": payload.narration,
                 "created_by": user_id,
@@ -305,10 +330,10 @@ async def create_sales_invoice(
                         "loc_id": loc_id,
                         "mat_id": mat_id,
                         "entry_date": inv_date_obj,
-                        "qty": float(line.quantity),
-                        "amt": float(cl["line_total"]),
-                        "gw": float(line.gross_weight) if line.gross_weight else 0.0,
-                        "nw": float(line.net_weight) if line.net_weight else 0.0,
+                        "qty": line.quantity,
+                        "amt": cl["line_total"],
+                        "gw": line.gross_weight if line.gross_weight else 0.0,
+                        "nw": line.net_weight if line.net_weight else 0.0,
                         "inv_id": invoice_id,
                         "inv_no": invoice_no,
                         "created_by": user_id
@@ -352,14 +377,15 @@ async def create_sales_invoice(
                 "pos": buyer_state,
                 "is_inter": is_inter_state,
                 "supply_type": supply_type,
-                "mat_hsn": computed_lines[0]["mat_hsn"] if computed_lines else '71131910',
-                "mat_val": float(total_material),
+                # Whatever the line actually carries; no jewellery-code default.
+                "mat_hsn": computed_lines[0]["mat_hsn"] if computed_lines else "",
+                "mat_val": total_material,
                 "mat_gst_rate": computed_lines[0]["mat_gst_rate"] if computed_lines else Decimal("3.0"),
-                "mak_val": float(total_making),
-                "igst": float(total_igst_mat + total_igst_mak),
-                "cgst": float(total_cgst_mat + total_cgst_mak),
-                "sgst": float(total_sgst_mat + total_sgst_mak),
-                "total_gst": float(total_gst),
+                "mak_val": total_making,
+                "igst": total_igst_mat + total_igst_mak,
+                "cgst": total_cgst_mat + total_cgst_mak,
+                "sgst": total_sgst_mat + total_sgst_mak,
+                "total_gst": total_gst,
                 "created_by": user_id
             }
         )
@@ -394,7 +420,7 @@ async def create_sales_invoice(
                 "inv_no": invoice_no,
                 "cust_name": customer["name"],
                 "inv_id": invoice_id,
-                "grand_total": float(grand_total),
+                "grand_total": grand_total,
                 "created_by": user_id,
                 "ip": ip_address,
                 "session_id": int(session_id) if str(session_id).isdigit() and int(session_id) > 0 else None,
@@ -426,7 +452,7 @@ async def create_sales_invoice(
                 "je_id": je_id,
                 "acc_id": cust_acc_id,
                 "party_id": str(payload.customer_id),
-                "dr": float(grand_total),
+                "dr": grand_total,
                 "narr": f"Customer — {customer['name']}"
             }
         )
@@ -438,21 +464,21 @@ async def create_sales_invoice(
         # omitted entirely, leaving every invoice carrying other charges out of
         # balance by exactly that amount.
         credit_lines = [
-            ("SAL-001", float(total_material), "Gold/Gem material sales"),
-            ("SAL-003", float(total_making), "Making charges income"),
-            ("SAL-004", float(total_other), "Other charges"),
+            ("SAL-001", total_material, "Gold/Gem material sales"),
+            ("SAL-003", total_making, "Making charges income"),
+            ("SAL-004", total_other, "Other charges"),
         ]
         if is_inter_state:
             credit_lines.extend([
-                ("GST-005", float(total_igst_mat), "IGST Output — Material 3%"),
-                ("GST-006", float(total_igst_mak), "IGST Output — Making 5%"),
+                ("GST-005", total_igst_mat, "IGST Output — Material 3%"),
+                ("GST-006", total_igst_mak, "IGST Output — Making 5%"),
             ])
         else:
             credit_lines.extend([
-                ("GST-001", float(total_cgst_mat), "CGST Output — Material 1.5%"),
-                ("GST-002", float(total_sgst_mat), "SGST Output — Material 1.5%"),
-                ("GST-003", float(total_cgst_mak), "CGST Output — Making 2.5%"),
-                ("GST-004", float(total_sgst_mak), "SGST Output — Making 2.5%"),
+                ("GST-001", total_cgst_mat, "CGST Output — Material 1.5%"),
+                ("GST-002", total_sgst_mat, "SGST Output — Material 1.5%"),
+                ("GST-003", total_cgst_mak, "CGST Output — Making 2.5%"),
+                ("GST-004", total_sgst_mak, "SGST Output — Making 2.5%"),
             ])
 
         seq = 2
@@ -610,7 +636,7 @@ async def delete_sales_invoice(
 
         inv_id = inv["id"]
         customer_id = inv["customer_id"]
-        grand_total = float(inv["grand_total"])
+        grand_total = to_decimal(inv["grand_total"])
 
         # 2. Update status to Cancelled
         await db.execute(
