@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,6 +35,7 @@ public class EmailController {
 
     @PostMapping("/send")
     @Operation(summary = "Send email notification")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailNotificationDTO> sendEmail(@RequestBody EmailNotificationDTO notification) {
         EmailNotification entity = entityMapper.toEmailNotificationEntity(notification);
         return ResponseEntity.ok(entityMapper.toEmailNotificationDTO(emailService.sendEmail(entity)));
@@ -40,12 +43,14 @@ public class EmailController {
 
     @GetMapping("/notifications/{id}")
     @Operation(summary = "Get notification by ID")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailNotificationDTO> getNotification(@PathVariable UUID id) {
         return ResponseEntity.ok(entityMapper.toEmailNotificationDTO(emailService.getNotification(id)));
     }
 
     @GetMapping("/notifications")
     @Operation(summary = "Get user notifications")
+    @PreAuthorize("hasRole('ADMIN') or #email == authentication.name")
     public ResponseEntity<Page<EmailNotificationDTO>> getNotifications(
             @RequestParam String email,
             @RequestParam(defaultValue = "0") int page,
@@ -70,12 +75,14 @@ public class EmailController {
 
     @GetMapping("/templates/{name}")
     @Operation(summary = "Get email template")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailTemplateDTO> getTemplate(@PathVariable String name) {
         return ResponseEntity.ok(entityMapper.toEmailTemplateDTO(emailService.getTemplate(name)));
     }
 
     @GetMapping("/templates")
     @Operation(summary = "Get all templates")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<EmailTemplateDTO>> getAllTemplates() {
         List<EmailTemplate> templates = emailService.getAllTemplates();
         return ResponseEntity.ok(templates.stream().map(entityMapper::toEmailTemplateDTO).collect(Collectors.toList()));

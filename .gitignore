@@ -49,5 +49,17 @@ backend/bin/
 backend/.settings/
 backend/.classpath
 backend/.project
+# Environment / secrets - ignore ALL variants, keep only examples
 .env
+.env.*
+*.env
+!.env.*.example
+
+# Scratch files containing credentials
+payload.json
+backend_logs.txt
+test_bcrypt.js
+test_login.js
+*.log
+backend/backend_server.log
 *.log

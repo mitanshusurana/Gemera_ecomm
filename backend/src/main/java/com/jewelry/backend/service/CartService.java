@@ -82,6 +82,12 @@ public class CartService {
                 .findFirst()
                 .orElse(null);
 
+        // Defence in depth: bean validation covers the HTTP path, but this method
+        // must never accept a non-positive quantity from any caller.
+        if (request.getQuantity() < 1) {
+            throw new IllegalArgumentException("Quantity must be at least 1");
+        }
+
         if (existingItem != null) {
             existingItem.setQuantity(existingItem.getQuantity() + request.getQuantity());
             cartItemRepository.save(existingItem);

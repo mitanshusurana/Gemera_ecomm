@@ -38,7 +38,7 @@ public class EmailService {
     @Autowired
     private EmailSubscriptionRepository subscriptionRepository;
 
-    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:mitanshusurana@gmail.com}")
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:}")
     private String fromEmail;
 
     public EmailNotification sendEmail(EmailNotification notification) {
@@ -49,9 +49,8 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
             helper.setFrom(fromEmail);
-            // Override To address as requested by the user
-            helper.setTo("mitanshusurana@gmail.com");
-            helper.setSubject(notification.getSubject() + " (Intended for: " + notification.getEmail() + ")");
+            helper.setTo(notification.getEmail());
+            helper.setSubject(notification.getSubject());
 
             String htmlContent = "";
 

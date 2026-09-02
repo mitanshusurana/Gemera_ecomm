@@ -11,29 +11,31 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import java.util.UUID;
 import java.util.logging.Logger;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class PaymentService {
 
     private static final Logger LOGGER = Logger.getLogger(PaymentService.class.getName());
 
-    @Value("${razorpay.key_id:mock_key}")
+    // No defaults. A mock secret here meant signatures verified against a
+    // publicly known key, so anyone could forge a PAID order.
+    @Value("${razorpay.key_id:}")
     private String razorpayKeyId;
 
-    @Value("${razorpay.key_secret:mock_secret}")
+    @Value("${razorpay.key_secret:}")
     private String razorpayKeySecret;
 
     private RazorpayClient razorpayClient;
 
-    // Fast random string generator
-    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-
     @PostConstruct
     public void init() {
         try {
-            if (!"mock_key".equals(razorpayKeyId)) {
+            if (razorpayKeyId != null && !razorpayKeyId.isBlank()
+                    && razorpayKeySecret != null && !razorpayKeySecret.isBlank()) {
                 this.razorpayClient = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
+            } else {
+                LOGGER.severe("Razorpay is not configured: set razorpay.key_id and "
+                        + "razorpay.key_secret. Payment endpoints will fail closed.");
             }
         } catch (Exception e) {
             LOGGER.warning("Failed to initialize Razorpay client: " + e.getMessage());
@@ -54,17 +56,14 @@ public class PaymentService {
                 return new RazorpayOrderResponse(order.get("id"), ((Integer)order.get("amount")), request.getCurrency(), order.get("status"));
             } catch (Exception e) {
                 LOGGER.severe("Razorpay create order failed: " + e.getMessage());
-                // Fallback to mock
+                throw new IllegalStateException("Payment gateway error. Order was not created.", e);
             }
         }
 
-        // Mock fallback
-        char[] randChars = new char[14];
-        for (int i = 0; i < 14; i++) {
-            randChars[i] = HEX_ARRAY[ThreadLocalRandom.current().nextInt(16)];
-        }
-        String mockId = "order_" + new String(randChars);
-        return new RazorpayOrderResponse(mockId, request.getAmount(), request.getCurrency(), "created");
+        // Previously this fabricated an order id and reported "created", so the
+        // caller could not distinguish a real gateway order from a mock one.
+        throw new IllegalStateException(
+                "Payment gateway is not configured. Order was not created.");
     }
 
     public Object initializePayment(InitializePaymentRequest request) {

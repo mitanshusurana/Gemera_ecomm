@@ -7,6 +7,7 @@ import com.jewelry.backend.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
@@ -31,7 +32,7 @@ public class CartController {
 
     @PostMapping("/items")
     @Operation(summary = "Add item to cart")
-    public ResponseEntity<CartDTO> addItem(@RequestBody AddToCartRequest request, Principal principal) {
+    public ResponseEntity<CartDTO> addItem(@Valid @RequestBody AddToCartRequest request, Principal principal) {
         return ResponseEntity.ok(entityMapper.toCartDTO(cartService.addItemToCart(principal.getName(), request)));
     }
 
@@ -39,7 +40,7 @@ public class CartController {
     @Operation(summary = "Update item quantity")
     public ResponseEntity<CartDTO> updateQuantity(
             @PathVariable UUID itemId,
-            @RequestBody UpdateCartItemRequest request,
+            @Valid @RequestBody UpdateCartItemRequest request,
             Principal principal) {
         return ResponseEntity.ok(entityMapper.toCartDTO(cartService.updateItemQuantity(principal.getName(), itemId, request.getQuantity())));
     }

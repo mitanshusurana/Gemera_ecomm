@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -46,6 +47,7 @@ public class TreasurePlanController {
 
     @GetMapping("/accounts")
     @Operation(summary = "Get all plans (Admin)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Iterable<TreasureChestAccountDTO>> getAllAccounts() {
         java.util.List<TreasureChestAccountDTO> dtoList = new java.util.ArrayList<>();
         treasurePlanService.getAllAccounts().forEach(account -> dtoList.add(entityMapper.toTreasureChestAccountDTO(account)));
@@ -54,18 +56,21 @@ public class TreasurePlanController {
 
     @PostMapping("/accounts/{id}/payment")
     @Operation(summary = "Record Payment (Admin)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TreasureChestAccountDTO> recordPayment(@PathVariable java.util.UUID id) {
         return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.recordPayment(id)));
     }
 
     @PostMapping("/accounts/{id}/skip")
     @Operation(summary = "Skip Month (Admin)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TreasureChestAccountDTO> skipMonth(@PathVariable java.util.UUID id) {
         return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.skipMonth(id)));
     }
 
     @PostMapping("/accounts/{id}/close")
     @Operation(summary = "Close Plan (Admin)")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TreasureChestAccountDTO> closePlan(@PathVariable java.util.UUID id) {
         return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.closePlan(id)));
     }
