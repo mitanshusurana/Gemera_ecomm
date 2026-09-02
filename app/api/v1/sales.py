@@ -1,0 +1,630 @@
+"""
+Caratloop ERP — Sales Invoice API
+[CGST Rule 56(4)] Dual-rate GST: 3% material + 5% making charges
+[CGST Rule 56(2)] Stock ledger update on sale
+[S44AA] Double-entry: Dr Customer / Cr Sales + GST Output
+[MCA-11g] Append-only, immutable audit trail
+"""
+from uuid import UUID
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Optional, List
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from pydantic import BaseModel
+
+from app.core.database import get_db, set_audit_context
+from app.core.security import get_current_user
+from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
+from app.core.config import settings
+
+router = APIRouter(tags=["Sales"])
+
+
+class InvoiceLineRequest(BaseModel):
+    product_id: Optional[UUID] = None
+    material_id: Optional[UUID] = None
+    hsn_sac_code: str = "71131910"           # Default HSN for gold jewelry
+    description: Optional[str] = None
+    quantity: float = 1.0
+    gross_weight: Optional[float] = None
+    net_weight: Optional[float] = None
+    stone_weight: Optional[float] = None
+    gold_weight: Optional[float] = None
+    purity: Optional[float] = None
+    material_value: float = 0.0              # Gold + gem component
+    making_charges: float = 0.0             # Labor/artisan component
+    other_charges: float = 0.0
+    discount_pct: float = 0.0
+
+
+class CreateSalesInvoiceRequest(BaseModel):
+    customer_id: UUID
+    invoice_date: date
+    place_of_supply: Optional[str] = "08"     # Buyer's state code (default 08 - Rajasthan)
+    lines: List[InvoiceLineRequest]
+    payment_terms: Optional[str] = "Immediate"
+    narration: Optional[str] = None
+    reason: str = "Sales invoice creation"
+
+
+@router.post("/invoices")
+async def create_sales_invoice(
+    payload: CreateSalesInvoiceRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Create a sales invoice with dual-rate GST calculation.
+
+    [CGST Rule 56(4)] GST computation:
+      - Material value (gold + gems): HSN 7113 → 3% GST
+      - Making charges (labor/artisan): SAC 9988 → 5% GST
+      - Intra-state (Rajasthan buyer): CGST 1.5% + SGST 1.5% on material
+                                       CGST 2.5% + SGST 2.5% on making
+      - Inter-state: IGST 3% on material, IGST 5% on making
+
+    Posts:
+      1. Sales invoice record
+      2. [CGST-R56-4] GST output tax register entry
+      3. [CGST-R56-2] Stock outward ledger entry per line
+      4. [S44AA] Double-entry journal:
+           Dr. Customer A/c (grand total)
+           Cr. Gold Jewelry Sales A/c (material value)
+           Cr. Making Charges Income A/c (making charges)
+           Cr. CGST Output A/c
+           Cr. SGST Output A/c (or IGST Output A/c)
+    """
+    user_id = str(current_user["id"])
+    company_id = current_user["company_id"]
+    ip_address = request.client.host if request.client else "0.0.0.0"
+    session_id = current_user.get("session_id", "0")
+
+    # Fetch customer details to determine inter/intra state
+    cust_result = await db.execute(
+        text("SELECT * FROM caratloop.parties WHERE id = :id AND company_id = :cid"),
+        {"id": str(payload.customer_id), "cid": company_id},
+    )
+    customer = cust_result.mappings().first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    # Determine inter-state vs intra-state
+    buyer_state = payload.place_of_supply.strip()
+    seller_state = settings.COMPANY_STATE_CODE  # "08" = Rajasthan
+
+    # [MCA-11g] Set audit context
+    await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+
+    # ─── Compute line-level GST ───────────────────────────────────────────────
+    total_material = Decimal("0")
+    total_making = Decimal("0")
+    total_other = Decimal("0")
+    total_igst_mat = Decimal("0")
+    total_igst_mak = Decimal("0")
+    total_cgst_mat = Decimal("0")
+    total_sgst_mat = Decimal("0")
+    total_cgst_mak = Decimal("0")
+    total_sgst_mak = Decimal("0")
+
+    computed_lines = []
+    for line in payload.lines:
+        mat_gst_rate = 3.0
+        mat_hsn = line.hsn_sac_code or "71131910"
+        if line.material_id:
+            m_res = await db.execute(
+                text("SELECT gst_tax_rate, hsn_code FROM caratloop.materials WHERE id = :mid OR code = :mcode LIMIT 1"),
+                {"mid": str(line.material_id), "mcode": str(line.material_id)}
+            )
+            m_row = m_res.mappings().first()
+            if m_row:
+                mat_gst_rate = float(m_row["gst_tax_rate"] if m_row["gst_tax_rate"] is not None else 3.0)
+                mat_hsn = m_row["hsn_code"] or mat_hsn
+
+        taxable_mat = Decimal(str(line.material_value)) * (1 - Decimal(str(line.discount_pct)) / 100)
+        taxable_mak = Decimal(str(line.making_charges)) * (1 - Decimal(str(line.discount_pct)) / 100)
+
+        gst = calculate_jewelry_gst(
+            material_value=float(taxable_mat),
+            making_charges=float(taxable_mak),
+            seller_state_code=seller_state,
+            buyer_state_code=buyer_state,
+            material_gst_rate=mat_gst_rate,
+        )
+
+        line_total = (taxable_mat + taxable_mak + Decimal(str(line.other_charges))
+                      + gst.total_gst)
+
+        total_material += taxable_mat
+        total_making += taxable_mak
+        total_other += Decimal(str(line.other_charges))
+        total_igst_mat += gst.igst_material
+        total_igst_mak += gst.igst_making
+        total_cgst_mat += gst.cgst_material
+        total_sgst_mat += gst.sgst_material
+        total_cgst_mak += gst.cgst_making
+        total_sgst_mak += gst.sgst_making
+
+        computed_lines.append({
+            "line": line,
+            "gst": gst,
+            "mat_gst_rate": mat_gst_rate,
+            "mat_hsn": mat_hsn,
+            "taxable_mat": taxable_mat,
+            "taxable_mak": taxable_mak,
+            "line_total": line_total,
+        })
+
+    total_gst = total_igst_mat + total_igst_mak + total_cgst_mat + total_sgst_mat + total_cgst_mak + total_sgst_mak
+    grand_total = total_material + total_making + total_other + total_gst
+
+    try:
+        # ─── Generate invoice number ──────────────────────────────────────────
+        fy_result = await db.execute(
+            text("SELECT id, year_label FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
+            {"cid": company_id},
+        )
+        fy = fy_result.mappings().first()
+        if not fy:
+            raise HTTPException(status_code=400, detail="No active fiscal year found")
+
+        inv_count_result = await db.execute(
+            text("""
+                SELECT COUNT(*) FROM caratloop.sales_invoices
+                WHERE company_id = :cid AND fiscal_year_id = :fyid
+            """),
+            {"cid": company_id, "fyid": str(fy["id"])},
+        )
+        inv_count = inv_count_result.scalar() + 1
+        invoice_no = f"CL/{fy['year_label']}/{inv_count:05d}"
+
+        inv_date_obj = date.fromisoformat(str(payload.invoice_date)) if isinstance(payload.invoice_date, str) else payload.invoice_date
+        is_inter_state = buyer_state != seller_state
+        inv_result = await db.execute(
+            text("""
+                INSERT INTO caratloop.sales_invoices (
+                    company_id, fiscal_year_id, invoice_no, invoice_date,
+                    customer_id, customer_gstin, customer_state_code,
+                    place_of_supply, is_inter_state,
+                    subtotal_material_value, subtotal_making_charges, subtotal_other_charges,
+                    taxable_material_value, taxable_making_value,
+                    igst_material, igst_making,
+                    cgst_material, sgst_material, cgst_making, sgst_making,
+                    total_gst, grand_total,
+                    payment_terms,
+                    narration, status, created_by
+                ) VALUES (
+                    :cid, :fyid, :inv_no, :inv_date,
+                    :cust_id, :cust_gstin, :cust_state,
+                    :pos, :is_inter,
+                    :mat_val, :mak_val, :other_val,
+                    :mat_val, :mak_val,
+                    :igst_mat, :igst_mak,
+                    :cgst_mat, :sgst_mat, :cgst_mak, :sgst_mak,
+                    :total_gst, :grand_total,
+                    :payment_terms,
+                    :narration, 'Posted', :created_by
+                )
+                RETURNING id
+            """),
+            {
+                "cid": company_id,
+                "fyid": str(fy["id"]),
+                "inv_no": invoice_no,
+                "inv_date": inv_date_obj,
+                "cust_id": str(payload.customer_id),
+                "cust_gstin": customer["gstin"],
+                "cust_state": buyer_state,
+                "pos": buyer_state,
+                "is_inter": is_inter_state,
+                "mat_val": float(total_material),
+                "mak_val": float(total_making),
+                "other_val": float(total_other),
+                "igst_mat": float(total_igst_mat),
+                "igst_mak": float(total_igst_mak),
+                "cgst_mat": float(total_cgst_mat),
+                "sgst_mat": float(total_sgst_mat),
+                "cgst_mak": float(total_cgst_mak),
+                "sgst_mak": float(total_sgst_mak),
+                "total_gst": float(total_gst),
+                "grand_total": float(grand_total),
+                "payment_terms": payload.payment_terms,
+                "narration": payload.narration,
+                "created_by": user_id,
+            },
+        )
+        invoice_id = inv_result.scalar()
+
+        # ─── Post Stock Ledger Entries Outward [CGST-R56-2] ──────────────────────
+        loc_res = await db.execute(
+            text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"),
+            {"cid": company_id}
+        )
+        loc_id = loc_res.scalar()
+
+        for cl in computed_lines:
+            line = cl["line"]
+            mat_res = await db.execute(
+                text("SELECT id FROM caratloop.materials WHERE (id = :mid OR code = :mcode) AND company_id = :cid LIMIT 1"),
+                {"mid": str(line.material_id) if line.material_id else None, "mcode": str(line.material_id), "cid": company_id}
+            )
+            mat_id = mat_res.scalar()
+            if mat_id and loc_id:
+                await db.execute(
+                    text("""
+                        INSERT INTO caratloop.stock_ledger_entries (
+                            company_id, fiscal_year_id, location_id, material_id, entry_date,
+                            direction, transaction_type, quantity, amount, gross_weight, net_weight,
+                            source_document_type, source_document_id, source_document_no, sequence_no, created_by
+                        ) VALUES (
+                            :cid, :fyid, :loc_id, :mat_id, :entry_date,
+                            'O', 'Sale_Delivery', :qty, :amt, :gw, :nw,
+                            'SalesInvoice', :inv_id, :inv_no, COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, CAST(:created_by AS UUID)
+                        )
+                    """),
+                    {
+                        "cid": company_id,
+                        "fyid": str(fy["id"]),
+                        "loc_id": loc_id,
+                        "mat_id": mat_id,
+                        "entry_date": inv_date_obj,
+                        "qty": float(line.quantity),
+                        "amt": float(cl["line_total"]),
+                        "gw": float(line.gross_weight) if line.gross_weight else 0.0,
+                        "nw": float(line.net_weight) if line.net_weight else 0.0,
+                        "inv_id": invoice_id,
+                        "inv_no": invoice_no,
+                        "created_by": user_id
+                    }
+                )
+
+        # ─── Post to GST Output Tax Register [CGST-R56-4] ────────────────────
+        return_period = get_return_period(payload.invoice_date)
+        supply_type = "B2B" if customer.get("gstin") else "B2C_Large"
+        await db.execute(
+            text("""
+                INSERT INTO caratloop.gst_output_tax_register (
+                    company_id, fiscal_year_id, return_period,
+                    invoice_id, invoice_no, invoice_date,
+                    party_id, party_gstin, place_of_supply, is_inter_state, supply_type,
+                    hsn_material, hsn_making,
+                    taxable_material_value, material_gst_rate,
+                    taxable_making_value, making_gst_rate,
+                    igst_amount, cgst_amount, sgst_amount, total_tax,
+                    created_by
+                ) VALUES (
+                    :cid, :fyid, :period,
+                    :inv_id, :inv_no, :inv_date,
+                    :party_id, :party_gstin, :pos, :is_inter, :supply_type,
+                    :mat_hsn, '998821',
+                    :mat_val, :mat_gst_rate,
+                    :mak_val, 5.00,
+                    :igst, :cgst, :sgst, :total_gst,
+                    :created_by
+                )
+            """),
+            {
+                "cid": company_id,
+                "fyid": str(fy["id"]),
+                "period": return_period,
+                "inv_id": invoice_id,
+                "inv_no": invoice_no,
+                "inv_date": inv_date_obj,
+                "party_id": str(payload.customer_id),
+                "party_gstin": customer.get("gstin"),
+                "pos": buyer_state,
+                "is_inter": is_inter_state,
+                "supply_type": supply_type,
+                "mat_hsn": computed_lines[0]["mat_hsn"] if computed_lines else '71131910',
+                "mat_val": float(total_material),
+                "mat_gst_rate": float(computed_lines[0]["mat_gst_rate"]) if computed_lines else 3.0,
+                "mak_val": float(total_making),
+                "igst": float(total_igst_mat + total_igst_mak),
+                "cgst": float(total_cgst_mat + total_cgst_mak),
+                "sgst": float(total_sgst_mat + total_sgst_mak),
+                "total_gst": float(total_gst),
+                "created_by": user_id
+            }
+        )
+
+        # ─── Post Journal Entry [S44AA] [DENTRY] ─────────────────────────────
+        je_no_result = await db.execute(
+            text("SELECT 'JV/' || :fy_label || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+            {"fy_label": fy["year_label"]},
+        )
+        je_no = je_no_result.scalar()
+
+        je_result = await db.execute(
+            text("""
+                INSERT INTO caratloop.journal_entries (
+                    company_id, fiscal_year_id, entry_no, entry_date, entry_type,
+                    narration, reference_no, reference_type, reference_id,
+                    total_debit, total_credit, created_by, ip_address, session_id, sequence_no
+                ) VALUES (
+                    :cid, :fyid, :je_no, :entry_date, 'Sales',
+                    'Sales Invoice ' || :inv_no || ' — ' || :cust_name,
+                    :inv_no, 'SalesInvoice', :inv_id,
+                    :grand_total, :grand_total,
+                    :created_by, CAST(:ip AS INET), :session_id,
+                    nextval('caratloop.journal_entry_seq')
+                ) RETURNING id, entry_uuid
+            """),
+            {
+                "cid": company_id,
+                "fyid": str(fy["id"]),
+                "je_no": je_no,
+                "entry_date": inv_date_obj,
+                "inv_no": invoice_no,
+                "cust_name": customer["name"],
+                "inv_id": invoice_id,
+                "grand_total": float(grand_total),
+                "created_by": user_id,
+                "ip": ip_address,
+                "session_id": int(session_id) if str(session_id).isdigit() and int(session_id) > 0 else None,
+            },
+        )
+        row = je_result.mappings().first()
+        je_id = row["id"]
+        je_uuid = row["entry_uuid"]
+
+        # 1. Dr. Customer Account (using customer's specific ledger account_id)
+        cust_acc_id = customer.get("account_id")
+        if not cust_acc_id:
+            # Lookup by party relationship
+            acc_res = await db.execute(
+                text("SELECT account_id FROM caratloop.parties WHERE id = :cid LIMIT 1"),
+                {"cid": str(payload.customer_id)}
+            )
+            cust_acc_id = acc_res.scalar()
+        if not cust_acc_id:
+            raise HTTPException(status_code=400, detail="Customer ledger account not configured. Please add the customer to party master first.")
+
+        await db.execute(
+            text("""
+                INSERT INTO caratloop.journal_entry_lines
+                    (journal_entry_id, sequence_no, account_id, party_id, dr_amount, cr_amount, narration)
+                VALUES (:je_id, 1, :acc_id, :party_id, :dr, 0, :narr)
+            """),
+            {
+                "je_id": je_id,
+                "acc_id": cust_acc_id,
+                "party_id": str(payload.customer_id),
+                "dr": float(grand_total),
+                "narr": f"Customer — {customer['name']}"
+            }
+        )
+
+        # 2. Cr. Sales & GST Output Accounts
+        credit_lines = [
+            ("SAL-001", float(total_material), "Gold/Gem material sales"),
+            ("SAL-003", float(total_making), "Making charges income"),
+        ]
+        if is_inter_state:
+            credit_lines.extend([
+                ("GST-005", float(total_igst_mat), "IGST Output — Material 3%"),
+                ("GST-006", float(total_igst_mak), "IGST Output — Making 5%"),
+            ])
+        else:
+            credit_lines.extend([
+                ("GST-001", float(total_cgst_mat), "CGST Output — Material 1.5%"),
+                ("GST-002", float(total_sgst_mat), "SGST Output — Material 1.5%"),
+                ("GST-003", float(total_cgst_mak), "CGST Output — Making 2.5%"),
+                ("GST-004", float(total_sgst_mak), "SGST Output — Making 2.5%"),
+            ])
+
+        seq = 2
+        for acc_code, cr_val, narr in credit_lines:
+            if cr_val <= 0:
+                continue
+            await db.execute(
+                text("""
+                    INSERT INTO caratloop.journal_entry_lines
+                        (journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration)
+                    SELECT :je_id, :seq, a.id, 0, :cr, :narr
+                    FROM caratloop.accounts a
+                    WHERE a.code = :code AND a.company_id = :cid
+                """),
+                {"je_id": je_id, "seq": seq, "cr": cr_val, "narr": narr, "code": acc_code, "cid": company_id},
+            )
+            seq += 1
+
+        # Update invoice with journal entry UUID reference
+        await db.execute(
+            text("UPDATE caratloop.sales_invoices SET journal_entry_id = :je_uuid WHERE id = :inv_id"),
+            {"je_uuid": str(je_uuid), "inv_id": invoice_id},
+        )
+
+        await db.commit()
+
+        return {
+            "status": "success",
+            "invoice_no": invoice_no,
+            "invoice_id": invoice_id,
+            "journal_entry_no": je_no,
+            "is_inter_state": is_inter_state,
+            "tax_summary": {
+                "material_value": float(total_material),
+                "making_charges": float(total_making),
+                "total_igst": float(total_igst_mat + total_igst_mak),
+                "total_cgst": float(total_cgst_mat + total_cgst_mak),
+                "total_sgst": float(total_sgst_mat + total_sgst_mak),
+                "total_gst": float(total_gst),
+                "grand_total": float(grand_total),
+            },
+            "compliance": {
+                "cgst_rule_56_4": "Posted to GST output tax register",
+                "section_44aa": f"Journal entry {je_no} posted",
+                "mca_rule_11g": "Audit trail recorded",
+            },
+        }
+
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Invoice creation failed: {str(e)}")
+
+
+@router.get("/invoices")
+async def list_sales_invoices(
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    customer_id: Optional[UUID] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """List sales invoices — Sales Register [S44AA]."""
+    query = """
+        SELECT
+            si.id, si.invoice_no, si.invoice_date, si.status, si.payment_status,
+            p.name AS customer_name, p.trade_name AS customer_trade_name, p.gstin AS customer_gstin,
+            p.pan AS customer_pan, p.address_line1 AS customer_address1, p.address_line2 AS customer_address2,
+            p.city AS customer_city, p.state_name AS customer_state_name, p.state_code AS customer_state_code,
+            p.pincode AS customer_pincode, p.phone AS customer_phone, p.email AS customer_email,
+            si.is_inter_state, si.place_of_supply,
+            si.subtotal_material_value, si.subtotal_making_charges,
+            si.total_gst, si.grand_total
+        FROM caratloop.sales_invoices si
+        JOIN caratloop.parties p ON p.id = si.customer_id
+        WHERE si.company_id = :cid
+    """
+    params = {"cid": current_user["company_id"]}
+    if from_date:
+        query += " AND si.invoice_date >= :from_date"
+        params["from_date"] = from_date
+    if to_date:
+        query += " AND si.invoice_date <= :to_date"
+        params["to_date"] = to_date
+    if customer_id:
+        query += " AND si.customer_id = :cust_id"
+        params["cust_id"] = str(customer_id)
+    query += " ORDER BY si.invoice_date DESC"
+
+    result = await db.execute(text(query), params)
+    return {"invoices": [dict(r) for r in result.mappings().all()]}
+
+
+@router.delete("/invoices/by-no/{invoice_no}")
+async def delete_sales_invoice(
+    invoice_no: str,
+    request: Request,
+    reason: str = Query("Sales invoice cancellation"),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Cancel/Delete a Sales Invoice and reverse GL ledger entries & stock outward entries.
+    """
+    user_id = str(current_user["id"])
+    company_id = current_user["company_id"]
+    ip_address = request.client.host if request.client else "0.0.0.0"
+    session_id = current_user.get("session_id", "0")
+
+    await set_audit_context(db, user_id, session_id, ip_address, reason)
+
+    try:
+        # 1. Fetch invoice
+        inv_res = await db.execute(
+            text("SELECT * FROM caratloop.sales_invoices WHERE invoice_no = :inv_no AND company_id = :cid"),
+            {"inv_no": invoice_no, "cid": company_id}
+        )
+        inv = inv_res.mappings().first()
+        if not inv:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        if inv["status"] == "Cancelled":
+            return {"status": "already_cancelled"}
+
+        inv_id = inv["id"]
+        customer_id = inv["customer_id"]
+        grand_total = float(inv["grand_total"])
+
+        # 2. Update status to Cancelled
+        await db.execute(
+            text("UPDATE caratloop.sales_invoices SET status = 'Cancelled' WHERE id = :id"),
+            {"id": str(inv_id)}
+        )
+
+        # 3. Create reversal Journal Entry
+        je_original_res = await db.execute(
+            text("SELECT id, entry_no FROM caratloop.journal_entries WHERE reference_no = :inv_no AND reference_type = 'SalesInvoice'"),
+            {"inv_no": invoice_no}
+        )
+        orig_je = je_original_res.mappings().first()
+
+        if orig_je:
+            orig_je_id = orig_je["id"]
+            
+            # Create new reversing entry
+            rev_no_res = await db.execute(
+                text("SELECT COUNT(*) FROM caratloop.journal_entries WHERE company_id = :cid"),
+                {"cid": company_id}
+            )
+            cnt = (rev_no_res.scalar() or 0) + 1
+            rev_vno = f"JV/2026-27/{cnt:05d}"
+            
+            je_res = await db.execute(
+                text("""
+                    INSERT INTO caratloop.journal_entries (
+                        company_id, entry_no, entry_date, entry_type,
+                        reference_no, reference_type, reference_id, narration, created_by
+                    ) VALUES (
+                        :cid, :vno, CURRENT_DATE, 'Sales Reversal',
+                        :ref_no, 'SalesInvoice', :inv_id, :narr, CAST(:created_by AS UUID)
+                    ) RETURNING id
+                """),
+                {
+                    "cid": company_id,
+                    "vno": rev_vno,
+                    "ref_no": f"CNCL-{invoice_no}",
+                    "inv_id": inv_id,
+                    "narr": f"Cancellation of Sales Invoice {invoice_no}",
+                    "created_by": user_id
+                }
+            )
+            rev_je_id = je_res.scalar()
+            
+            # Reverse lines by swapping dr and cr
+            await db.execute(
+                text("""
+                    INSERT INTO caratloop.journal_entry_lines (
+                        journal_entry_id, account_id, party_id, dr_amount, cr_amount, narration
+                    )
+                    SELECT :rev_je_id, account_id, party_id, cr_amount, dr_amount, 'Reversal of ' || COALESCE(narration, '')
+                    FROM caratloop.journal_entry_lines
+                    WHERE journal_entry_id = :orig_je_id
+                """),
+                {"rev_je_id": rev_je_id, "orig_je_id": orig_je_id}
+            )
+
+        # 4. Reverse Stock Ledger Entries
+        await db.execute(
+            text("""
+                INSERT INTO caratloop.stock_ledger_entries (
+                    company_id, fiscal_year_id, location_id, material_id, entry_date,
+                    direction, transaction_type, quantity, amount, gross_weight, net_weight,
+                    source_document_type, source_document_id, source_document_no, sequence_no, created_by
+                )
+                SELECT company_id, fiscal_year_id, location_id, material_id, CURRENT_DATE,
+                    'I', 'Sale_Return', quantity, amount, gross_weight, net_weight,
+                    'SalesInvoice', source_document_id, 'CNCL-' || source_document_no, COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, CAST(:created_by AS UUID)
+                FROM caratloop.stock_ledger_entries
+                WHERE source_document_no = :inv_no AND direction = 'O'
+            """),
+            {"inv_no": invoice_no, "created_by": user_id}
+        )
+
+        # 5. Reverse GST output tax
+        await db.execute(
+            text("DELETE FROM caratloop.gst_output_tax_register WHERE invoice_no = :inv_no"),
+            {"inv_no": invoice_no}
+        )
+
+        await db.commit()
+        return {"status": "success", "invoice_no": invoice_no, "message": f"Invoice {invoice_no} cancelled successfully"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete invoice: {str(e)}")
+
