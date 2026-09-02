@@ -4,6 +4,7 @@ Caratloop ERP — API Router v1
 from fastapi import APIRouter
 from app.api.v1 import auth, inventory, production, sales, gst, accounting, reports
 from app.api.v1 import parties, ledger, vouchers, banking, books, purchases
+from app.api.v1 import job_work
 
 api_router = APIRouter()
 
@@ -20,3 +21,4 @@ api_router.include_router(vouchers.router,    prefix="/vouchers",  tags=["Vouche
 api_router.include_router(banking.router,     prefix="/banking",   tags=["Banking & BRS"])
 api_router.include_router(books.router,       prefix="/books",     tags=["Books of Accounts"])
 api_router.include_router(purchases.router,   prefix="/purchases", tags=["Purchases"])
+api_router.include_router(job_work.router,    prefix="",           tags=["Job Work [CGST s.143]"])

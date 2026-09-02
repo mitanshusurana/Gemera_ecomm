@@ -231,10 +231,10 @@ def calculate_rcm_old_gold(
 
 
 def calculate_gst_for_job_work(
-    making_charges: float,
+    making_charges: Money,
     seller_state_code: str = "08",
     buyer_state_code: str = "08",
-    gst_rate: float = 5.00,
+    gst_rate: Money = Decimal("5.00"),
 ) -> dict:
     """
     Calculate GST on job work / karigar making charges.
@@ -242,10 +242,12 @@ def calculate_gst_for_job_work(
     If karigar is unregistered and providing pure labor → may be exempt.
     If registered → 5% on making charges.
     """
-    mak = Decimal(str(making_charges))
-    rate = Decimal(str(gst_rate)) / 100
+    mak = _money(making_charges)
+    rate = _money(gst_rate) / 100
     total_tax = _round(mak * rate)
-    is_inter = seller_state_code != buyer_state_code
+    # Same normalisation as calculate_jewelry_gst: '8' and '08' are one state,
+    # and a raw compare charged IGST on an intra-state supply.
+    is_inter = _normalise_state(seller_state_code) != _normalise_state(buyer_state_code)
 
     if is_inter:
         return {"igst": total_tax, "cgst": Decimal("0"), "sgst": Decimal("0"), "total": total_tax}
