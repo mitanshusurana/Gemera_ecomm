@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, D
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CartService } from '../services/cart.service';
+import { CartService, CART_PRICING } from '../services/cart.service';
 import { ToastService } from '../services/toast.service';
 import { Cart, CartItem } from '../core/models';
 import { CurrencyService } from '../services/currency.service';
@@ -14,194 +14,169 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   imports: [CommonModule, RouterLink, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-surface">
-      <!-- Breadcrumb -->
-      <div class="bg-diamond-50 border-b border-diamond-200">
-        <div class="container-luxury py-4">
-          <div class="flex items-center gap-2 text-sm">
-            <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-ink">/</span>
-            <span class="text-ink">Shopping Cart</span>
-          </div>
+    <!-- APPLE DESIGN SYSTEM: SHOPPING BAG (DESIGN.md) -->
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+      
+      <!-- Top Parchment Header -->
+      <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-10 px-6 text-center">
+        <div class="max-w-[980px] mx-auto">
+          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2 block">Checkout Bag</span>
+          <h1 class="font-display font-semibold text-3xl sm:text-4xl text-[#1d1d1f] tracking-tight">
+            Review Your Shopping Bag.
+          </h1>
+          <p class="text-xs text-[#7a7a7a] mt-2">Free insured delivery and complimentary 30-day returns on all items.</p>
         </div>
-      </div>
+      </section>
 
-      <div class="container-luxury section-padding">
-        <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-12">
-          Shopping Cart
-        </h1>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <!-- Cart Items -->
-          <div class="lg:col-span-2">
+      <main class="max-w-[1440px] mx-auto px-4 md:px-12 py-12">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          <!-- Left List: Bag Items -->
+          <div class="lg:col-span-8">
+            
             <div *ngIf="!isEmpty()" class="space-y-6">
-              <div *ngFor="let item of cartItems()" class="card p-6 flex flex-col sm:flex-row gap-6">
-                <!-- Image -->
-                <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto sm:mx-0 bg-diamond-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                   <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" fill sizes="(max-width: 640px) 96px, 128px" class="absolute inset-0 object-cover">
-                   <span *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="text-3xl">💎</span>
+              
+              <!-- Item Card -->
+              <article *ngFor="let item of cartItems()" class="store-utility-card flex flex-col sm:flex-row gap-6 p-6 items-center sm:items-start">
+                
+                <!-- Viewport Thumbnail -->
+                <div class="w-28 h-28 bg-[#f5f5f7] rounded-[12px] overflow-hidden flex-shrink-0 relative flex items-center justify-center p-2">
+                  <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" fill sizes="112px" class="object-contain" [alt]="item.product.name">
+                  <div *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="w-12 h-12 text-[#D4AF37]">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a8 8 0 100-16 8 8 0 000 16zm0-16V2m-3 2h6M9 6l3-4 3 4" /></svg>
+                  </div>
                 </div>
 
-                <!-- Details -->
-                <div class="flex-1">
-                  <div class="flex justify-between items-start mb-4">
+                <!-- Content & Controls -->
+                <div class="flex-1 w-full">
+                  <div class="flex justify-between items-start mb-2">
                     <div>
-                      <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ item.product.category }}</p>
-                      <h3 class="font-semibold text-ink text-lg">{{ item.product.name }}</h3>
-                      <div class="text-sm text-ink mt-1 space-y-1">
-                        <p *ngIf="item.selectedMetal">Metal: {{ item.selectedMetal }}</p>
-                        <p *ngIf="item.selectedDiamond">Diamond: {{ item.selectedDiamond }}</p>
+                      <span class="text-[11px] text-[#7a7a7a] font-mono uppercase tracking-wider block mb-0.5">{{ item.product.category }}</span>
+                      <h3 class="font-sans font-semibold text-lg text-[#1d1d1f]">{{ item.product.name }}</h3>
+                      <div class="text-xs text-[#7a7a7a] mt-1 space-y-0.5">
+                        <p *ngIf="item.selectedMetal">Metal Spec: {{ item.selectedMetal }}</p>
+                        <p *ngIf="item.selectedDiamond">Gem Grade: {{ item.selectedDiamond }}</p>
                       </div>
                     </div>
-                    <button (click)="removeItem(item.id)" class="text-red-500 hover:text-red-700 transition-colors">
-                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
-                      </svg>
+                    
+                    <button (click)="removeItem(item.id)" class="w-8 h-8 rounded-full bg-[#f5f5f7] hover:bg-[#e0e0e0] flex items-center justify-center text-xs text-[#1d1d1f] transition-all" title="Remove">
+                      ✕
                     </button>
                   </div>
 
-                  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="flex items-center gap-4">
-                      <button (click)="decreaseQuantity(item.id)" class="w-8 h-8 border border-diamond-300 rounded hover:border-gold-500 flex items-center justify-center">
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-[#f0f0f0]">
+                    <!-- Quantity Stepper Pill -->
+                    <div class="flex items-center gap-3 bg-[#f5f5f7] rounded-full border border-[#e0e0e0] px-3 py-1 text-xs">
+                      <button (click)="decreaseQuantity(item.id)" class="w-5 h-5 flex items-center justify-center text-[#1d1d1f] font-bold">
                         −
                       </button>
-                      <span class="font-semibold w-8 text-center">{{ item.quantity }}</span>
-                      <button (click)="increaseQuantity(item.id)" class="w-8 h-8 border border-diamond-300 rounded hover:border-gold-500 flex items-center justify-center">
+                      <span class="font-semibold px-2 text-[#1d1d1f]">{{ item.quantity }}</span>
+                      <button (click)="increaseQuantity(item.id)" class="w-5 h-5 flex items-center justify-center text-[#1d1d1f] font-bold">
                         +
                       </button>
                     </div>
-                    <span class="text-2xl font-bold text-diamond-900">{{ (item.price * item.quantity) | currencyConvert }}</span>
+
+                    <!-- Line Total Price -->
+                    <span class="font-sans font-semibold text-xl text-[#1d1d1f]">
+                      {{ (item.price * item.quantity) | currencyConvert }}
+                    </span>
                   </div>
+
+                </div>
+
+              </article>
+
+              <!-- Coupon Code Card -->
+              <div class="store-utility-card p-6">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Apply Promotional Code</h4>
+                <div class="flex gap-3">
+                  <input type="text" #couponInput placeholder="Enter coupon code" class="flex-1 bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-5 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]">
+                  <button (click)="applyCoupon(couponInput.value)" class="btn-apple-pill-secondary text-xs !py-2 !px-5">Apply</button>
                 </div>
               </div>
 
-              <!-- Coupon Section -->
-              <div class="card p-6">
-                <h3 class="font-semibold text-ink mb-4">Have a Coupon Code?</h3>
-                <div class="flex gap-2">
-                  <input type="text" #couponInput placeholder="Enter coupon code" class="input-field flex-1">
-                  <button (click)="applyCoupon(couponInput.value)" class="btn-outline">Apply</button>
-                </div>
-              </div>
-
-              <!-- Gift Wrapping (New) -->
-              <div class="card p-6 flex items-center justify-between bg-gold-50 border border-gold-200">
+              <!-- Gift Option Strip -->
+              <div class="store-utility-card p-6 flex items-center justify-between bg-[#fafafc]">
                 <div class="flex items-center gap-3">
-                  <span class="text-2xl">🎁</span>
+                  <div class="w-8 h-8 text-[#D4AF37]">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                  </div>
                   <div>
-                    <h3 class="font-bold text-ink">Add Premium Gift Wrapping</h3>
-                    <p class="text-sm text-ink">Includes handwritten note & signature box</p>
+                    <h4 class="font-semibold text-sm text-[#1d1d1f]">Signature Gift Box & Handwritten Note</h4>
+                    <p class="text-xs text-[#7a7a7a]">Includes velvet presentation case and luxury ribbon.</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-gold-700">+{{ 5 | currencyConvert }}</span>
-                  <input type="checkbox" [checked]="isGiftWrapped()" (change)="toggleGiftWrap($event)" class="w-5 h-5 text-gold-600 focus:ring-gold-500 border-ink rounded">
+                <div class="flex items-center gap-3">
+                  <span class="font-semibold text-xs text-[#D4AF37]">+{{ 5 | currencyConvert }}</span>
+                  <input type="checkbox" [checked]="isGiftWrapped()" (change)="toggleGiftWrap($event)" class="w-4 h-4 rounded text-[#D4AF37] focus:ring-[#D4AF37]">
                 </div>
               </div>
+
             </div>
 
-            <!-- Empty Cart -->
-            <div *ngIf="isEmpty()" class="card p-12 text-center">
-              <div class="text-6xl mb-6">🛍️</div>
-              <h2 class="text-2xl font-bold text-ink mb-4">Your Cart is Empty</h2>
-              <p class="text-ink mb-6">Discover our collection of fine jewellery and add items to your cart.</p>
-              <a routerLink="/products" class="btn-primary">
-                Continue Shopping
+            <!-- Empty Bag State -->
+            <div *ngIf="isEmpty()" class="store-utility-card p-16 text-center">
+              <div class="w-20 h-20 mx-auto text-[#D4AF37] mb-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              </div>
+              <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-2">Your Shopping Bag is Empty</h2>
+              <p class="text-sm text-[#7a7a7a] mb-6">Discover our curated fine jewelry collections and solitaire ring studio.</p>
+              <a routerLink="/products" class="btn-apple-pill">
+                Explore Collections
               </a>
             </div>
+
           </div>
 
-          <!-- Order Summary -->
-          <div class="lg:col-span-1">
-            <div class="card p-8 sticky top-24">
-              <h3 class="font-display text-2xl font-bold text-diamond-900 mb-6">Order Summary</h3>
+          <!-- Right Column: Order Summary Card -->
+          <div class="lg:col-span-4">
+            <div class="store-utility-card p-8 sticky top-[120px] shadow-sm">
+              <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6 pb-4 border-b border-[#e0e0e0]">Summary</h3>
 
-              <div class="space-y-4 mb-6 pb-6 border-b border-diamond-200">
+              <div class="space-y-3.5 mb-6 text-xs text-[#7a7a7a]">
                 <div class="flex justify-between">
-                  <span class="text-ink">Subtotal</span>
-                  <span class="font-semibold">{{ subtotal() | currencyConvert }}</span>
+                  <span>Bag Subtotal</span>
+                  <span class="font-semibold text-[#1d1d1f]">{{ subtotal() | currencyConvert }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-ink">Shipping</span>
-                  <span class="font-semibold">{{ shipping() | currencyConvert }}</span>
+                  <span>Insured Express Shipping</span>
+                  <span class="font-semibold text-[#1d1d1f]">{{ shipping() | currencyConvert }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-ink">Tax</span>
-                  <span class="font-semibold">{{ tax() | currencyConvert }}</span>
+                  <span>Estimated Tax</span>
+                  <span class="font-semibold text-[#1d1d1f]">{{ tax() | currencyConvert }}</span>
                 </div>
-                <div *ngIf="isGiftWrapped()" class="flex justify-between text-gold-700">
-                  <span>Gift Wrapping</span>
-                  <span class="font-semibold">{{ 5 | currencyConvert }}</span>
+                <div *ngIf="isGiftWrapped()" class="flex justify-between text-[#D4AF37]">
+                  <span>Gift Box & Packaging</span>
+                  <span class="font-semibold">{{ giftWrapFee | currencyConvert }}</span>
                 </div>
                 <div *ngIf="discount() > 0" class="flex justify-between text-emerald-600">
-                  <span>Discount</span>
+                  <span>Promotional Savings</span>
                   <span class="font-semibold">-{{ discount() | currencyConvert }}</span>
                 </div>
               </div>
 
-              <div class="flex justify-between mb-8 text-xl">
-                <span class="font-bold text-ink">Total</span>
-                <span class="font-bold text-2xl text-gold-600">{{ total() | currencyConvert }}</span>
+              <div class="flex justify-between items-center py-4 border-t border-b border-[#e0e0e0] mb-6">
+                <span class="font-semibold text-base text-[#1d1d1f]">Total</span>
+                <span class="font-semibold text-2xl text-[#1d1d1f]">{{ total() | currencyConvert }}</span>
               </div>
 
-              <!-- High Value Optimization -->
-              <div *ngIf="total() > 50000" class="mb-4 p-4 bg-primary rounded-lg border border-primary">
-                <p class="text-sm text-ink font-semibold mb-2">Need help checking out?</p>
-                <a href="https://wa.me/1234567890" target="_blank" class="w-full bg-[#25D366] text-surface font-bold py-2 rounded-lg hover:bg-[#128C7E] transition-colors uppercase tracking-wider text-xs flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
-                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
-                  </svg>
-                  Call us on WhatsApp
-                </a>
-              </div>
-
-              <a routerLink="/checkout" class="w-full btn-primary block text-center mb-4">
+              <a routerLink="/checkout" class="btn-apple-pill w-full text-center !py-3 text-sm block">
                 Proceed to Checkout
               </a>
 
-              <a routerLink="/products" class="w-full btn-ghost border border-diamond-300 block text-center">
-                Continue Shopping
-              </a>
-
-              <div class="mt-8 pt-8 border-t border-diamond-200 space-y-3">
-                <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">Free insured worldwide shipping</p>
-                </div>
-                <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">30-day money-back guarantee</p>
-                </div>
-                <div class="flex items-start gap-3">
-                  <span class="text-green-600 font-bold mt-0.5">🔒</span>
-                  <p class="text-sm text-ink font-semibold">Secure SSL encrypted checkout</p>
-                </div>
-                <!-- Trust Badges -->
-                <div class="mt-6 grid grid-cols-2 gap-3">
-                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
-                    <span class="text-lg">🛡️</span>
-                    <span class="text-xs font-semibold text-diamond-800">Fully Insured Shipping</span>
-                  </div>
-                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
-                    <span class="text-lg">💎</span>
-                    <span class="text-xs font-semibold text-diamond-800">Lifetime Exchange Policy</span>
-                  </div>
-                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
-                    <span class="text-lg">🔒</span>
-                    <span class="text-xs font-semibold text-diamond-800">Secure Checkout</span>
-                  </div>
-                  <div class="flex items-center gap-2.5 p-3 bg-diamond-50 border border-diamond-200 rounded-lg">
-                    <span class="text-lg">✅</span>
-                    <span class="text-xs font-semibold text-diamond-800">Certificate of Authenticity</span>
-                  </div>
-                </div>
-              </div>
+              <p class="text-[11px] text-[#7a7a7a] text-center mt-4">
+                🔒 Encrypted SSL Checkout & 30-Day Money-Back Guarantee
+              </p>
             </div>
           </div>
+
         </div>
-      </div>
+
+      </main>
     </div>
-  `,
+  `
 })
 export class CartComponent implements OnInit {
   cartService = inject(CartService);
@@ -214,11 +189,14 @@ export class CartComponent implements OnInit {
   cartItems = signal<CartItem[]>([]);
   isEmpty = signal(true);
   isGiftWrapped = computed(() => this.cart()?.giftWrap || false);
+  readonly giftWrapFee = CART_PRICING.giftWrapFee;
 
   subtotal = computed(() => this.cart()?.subtotal || 0);
   shipping = computed(() => this.cart()?.shipping || 0);
   tax = computed(() => this.cart()?.tax || 0);
-  discount = computed(() => this.cart()?.discount || 0);
+  discount = computed(
+    () => this.cart()?.appliedDiscount ?? this.cart()?.discount ?? 0,
+  );
   total = computed(() => this.cart()?.total || 0);
 
 

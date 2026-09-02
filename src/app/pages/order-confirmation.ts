@@ -225,9 +225,26 @@ import { environment } from "../../environments/environment";
                     orderSummary().subtotal | currencyConvert
                   }}</span>
                 </div>
+                <div
+                  *ngIf="orderSummary().discount > 0"
+                  class="flex justify-between text-emerald-600"
+                >
+                  <span>Discount</span>
+                  <span class="font-semibold"
+                    >-{{ orderSummary().discount | currencyConvert }}</span
+                  >
+                </div>
                 <div class="flex justify-between">
                   <span class="text-ink">Shipping</span>
-                  <span class="font-semibold">FREE</span>
+                  <span
+                    class="font-semibold"
+                    [class.text-emerald-600]="orderSummary().shipping === 0"
+                    >{{
+                      orderSummary().shipping === 0
+                        ? 'FREE'
+                        : (orderSummary().shipping | currencyConvert)
+                    }}</span
+                  >
                 </div>
                 <div class="flex justify-between">
                   <span class="text-ink">Tax</span>
@@ -325,7 +342,7 @@ export class OrderConfirmationComponent implements OnInit {
     zipCode: "",
     country: "",
   });
-  orderSummary = signal({ subtotal: 0, tax: 0, total: 0 });
+  orderSummary = signal({ subtotal: 0, tax: 0, shipping: 0, discount: 0, total: 0 });
 
   constructor(
     private route: ActivatedRoute,
@@ -353,14 +370,20 @@ export class OrderConfirmationComponent implements OnInit {
         this.orderNumber.set(order.orderNumber || `ORD-${order.id?.substring(0, 8)}`);
         this.orderItems.set(order.items);
 
-        const subtotal = order.items.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0,
-        );
-        const tax = subtotal * 0.1;
-        const total = subtotal + tax;
+        // Use what the server charged. This previously recomputed a subtotal
+        // from the line items and applied 10% tax -- against a 3% cart -- so
+        // the customer was shown a total they had not been charged. The API
+        // returns the real breakdown; only fall back to summing lines if a
+        // field is genuinely absent.
+        const subtotal =
+          order.subtotal ??
+          order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const tax = order.tax ?? 0;
+        const shipping = order.shipping ?? 0;
+        const discount = order.discount ?? 0;
+        const total = order.total ?? subtotal - discount + tax + shipping;
 
-        this.orderSummary.set({ subtotal, tax, total });
+        this.orderSummary.set({ subtotal, tax, shipping, discount, total });
 
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + 3);

@@ -10,6 +10,8 @@ import { isPlatformBrowser } from '@angular/common';
 export interface CartItemOptions {
   metal?: string;
   diamond?: string;
+  size?: string;
+  category?: string;
   price?: number;
   stoneId?: string;
   stoneName?: string;
@@ -17,6 +19,18 @@ export interface CartItemOptions {
   engraving?: string;
   product?: any; // Replace later when Product model is strictly imported
 }
+
+/**
+ * Cart pricing rules, mirroring the backend's application.yml defaults.
+ * Changing one without the other makes the displayed total disagree with the
+ * amount charged.
+ */
+export const CART_PRICING = {
+  freeShippingThreshold: 1000,  // app.cart.shipping-threshold
+  standardShippingFee: 50,      // app.cart.standard-shipping-fee
+  giftWrapFee: 5,               // app.cart.gift-wrap-fee
+  gstRate: 0.03,                // 3% on jewellery (HSN 7113)
+} as const;
 
 @Injectable({
   providedIn: 'root',
@@ -284,16 +298,52 @@ export class CartService {
     return cart;
   }
 
+  /**
+   * Totals for a GUEST cart only. A signed-in cart is priced by the server and
+   * those values are displayed as-is.
+   *
+   * These rules mirror CartService.recalculateCart on the backend. They must
+   * stay in step: the customer sees this number and is charged the server's.
+   * The threshold used to be 500 here against 1000 there, so a 700-rupee cart
+   * showed FREE shipping and was then charged 50.
+   *
+   * Backend source of truth: app.cart.shipping-threshold /
+   * standard-shipping-fee / gift-wrap-fee in application.yml.
+   */
   private recalculateTotals(cart: Cart) {
     cart.subtotal = cart.items.reduce((sum, item) => {
       const itemPrice =
         typeof item.price === 'string' ? parseFloat(item.price) : item.price;
       return sum + itemPrice * item.quantity;
     }, 0);
-    cart.tax = cart.subtotal * 0.03; // GST on Jewelry is 3%
-    cart.shipping = cart.subtotal > 500 ? 0 : 50;
-    cart.total =
-      cart.subtotal + cart.tax + cart.shipping - cart.appliedDiscount;
+
+    const discount = cart.appliedDiscount || 0;
+    const taxable = Math.max(cart.subtotal - discount, 0);
+
+    // Flat 3%. The server applies per-category rates from global settings, so
+    // a mixed cart can differ slightly; the server figure is the one charged.
+    cart.tax = this.round2(taxable * CART_PRICING.gstRate);
+
+    cart.shipping =
+      cart.subtotal > CART_PRICING.freeShippingThreshold
+        ? 0
+        : CART_PRICING.standardShippingFee;
+
+    // Gift wrap is charged by the server but was never added here, so the
+    // displayed total was short by the fee.
+    const giftWrap = cart.giftWrap ? CART_PRICING.giftWrapFee : 0;
+
+    cart.total = this.round2(
+      cart.subtotal - discount + cart.tax + cart.shipping + giftWrap,
+    );
+
+    // Keep the legacy alias in step; templates read both.
+    cart.discount = discount;
+  }
+
+  /** Money to paise. Repeated float addition otherwise shows 1234.5600000000001. */
+  private round2(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 
   private normalizeCart(cart: Cart): void {

@@ -11,7 +11,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { CartService } from '../services/cart.service';
+import { CartService, CART_PRICING } from '../services/cart.service';
 import { OrderService } from '../services/order.service';
 import { PaymentService } from '../services/payment.service';
 import { CurrencyService } from '../services/currency.service';
@@ -559,7 +559,21 @@ export interface PendingOrderData {
                 </div>
                 <div class="flex justify-between">
                   <span class="text-ink">Shipping</span>
-                  <span class="font-semibold text-emerald-600">FREE</span>
+                  <span
+                    class="font-semibold"
+                    [class.text-emerald-600]="cartShipping() === 0"
+                    >{{
+                      cartShipping() === 0
+                        ? 'FREE'
+                        : (cartShipping() | currencyConvert)
+                    }}</span
+                  >
+                </div>
+                <div *ngIf="cartGiftWrap()" class="flex justify-between">
+                  <span class="text-ink">Gift wrapping</span>
+                  <span class="font-semibold">{{
+                    giftWrapFee | currencyConvert
+                  }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-ink">Tax</span>
@@ -622,6 +636,9 @@ export class CheckoutComponent implements OnInit {
   cartSubtotal = signal(0);
   cartTax = signal(0);
   cartDiscount = signal(0);
+  cartShipping = signal(0);
+  cartGiftWrap = signal(false);
+  readonly giftWrapFee = CART_PRICING.giftWrapFee;
   isProcessing = signal(false);
   isRecovering = signal(false);
   pendingOrderData: any = null;
@@ -736,7 +753,11 @@ export class CheckoutComponent implements OnInit {
         this.cartTotal.set(cart.total);
         this.cartSubtotal.set(cart.subtotal || 0);
         this.cartTax.set(cart.tax || 0);
-        this.cartDiscount.set(cart.discount || 0);
+        this.cartShipping.set(cart.shipping || 0);
+        this.cartGiftWrap.set(!!cart.giftWrap);
+        // The totals engine writes appliedDiscount; reading only `discount`
+        // meant an applied coupon reduced the total with no line to show it.
+        this.cartDiscount.set(cart.appliedDiscount ?? cart.discount ?? 0);
       },
       error: (error) => {
         // Error loading cart
@@ -955,7 +976,10 @@ export class CheckoutComponent implements OnInit {
       paymentMethod: 'COD',
       shippingMethod: 'EXPRESS',
       items: sanitizedItems,
-      total: this.cartTotal(),
+      // `total` is deliberately not sent. OrderService prices the order from
+      // the server-side cart (order.setTotal(cart.getTotal())) and never reads
+      // a client-supplied total. Sending one implies it is authoritative and
+      // invites someone to start trusting it.
       paymentDetails: {}, // Empty for COD
     };
 
@@ -1084,7 +1108,10 @@ export class CheckoutComponent implements OnInit {
       paymentMethod: 'RAZORPAY',
       shippingMethod: 'EXPRESS',
       items: sanitizedItems,
-      total: this.cartTotal(),
+      // `total` is deliberately not sent. OrderService prices the order from
+      // the server-side cart (order.setTotal(cart.getTotal())) and never reads
+      // a client-supplied total. Sending one implies it is authoritative and
+      // invites someone to start trusting it.
       paymentDetails: {
         razorpay_payment_id: response.razorpay_payment_id,
         razorpay_order_id: response.razorpay_order_id,

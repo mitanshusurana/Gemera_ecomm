@@ -157,6 +157,12 @@ export interface Order {
   items: OrderItem[];
   status: string;
   total: number;
+  // The API has always returned these (OrderDTO / EntityMapper), but the model
+  // omitted them, so the confirmation page recomputed its own totals instead.
+  subtotal?: number;
+  tax?: number;
+  shipping?: number;
+  discount?: number;
   trackingNumber?: string;
   estimatedDelivery?: string;
   createdAt: string;
