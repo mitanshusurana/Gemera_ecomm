@@ -105,7 +105,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    codes = ", ".join(f"'{c}'" for c, _, _, _ in ACCOUNTS)
-    op.execute(f"DELETE FROM caratloop.accounts WHERE code IN ({codes}) AND is_system")
+    # Remove every system account before the groups they reference. Scoping
+    # this to only the codes THIS migration inserted left behind those added by
+    # later migrations, and the account_groups delete then failed on a foreign
+    # key -- which is exactly what happened the first time these downgrades
+    # were run end to end.
+    op.execute("DELETE FROM caratloop.accounts WHERE is_system")
     op.execute("DELETE FROM caratloop.units_of_measure")
     op.execute("DELETE FROM caratloop.account_groups")

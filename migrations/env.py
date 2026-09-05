@@ -49,7 +49,9 @@ def run_migrations_offline() -> None:
         target_metadata=None,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        version_table_schema="caratloop",
+        # Deliberately NOT in the caratloop schema: 0001 drops that schema,
+        # which would delete this table mid-downgrade.
+        version_table_schema="public",
         include_schemas=True,
     )
     with context.begin_transaction():
@@ -65,15 +67,16 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        # The version table lives inside the application schema, which the first
-        # migration creates.
+        # Ensure the application schema exists before migrations reference it.
         connection.exec_driver_sql("CREATE SCHEMA IF NOT EXISTS caratloop")
         connection.commit()
 
         context.configure(
             connection=connection,
             target_metadata=None,
-            version_table_schema="caratloop",
+            # See the offline note: keeping the version table in public
+            # means `downgrade base` can drop the caratloop schema safely.
+            version_table_schema="public",
             include_schemas=True,
         )
         with context.begin_transaction():
