@@ -49,14 +49,34 @@ async def get_output_tax_register(
     )
     rows = result.mappings().all()
 
-    # Summary
+    # The register lists every row, credit notes included -- that is what a
+    # register is for, and GSTR-1 Table 9B reports them. The SUMMARY must not:
+    # this added a credit note to the liability, so a cancelled invoice still
+    # counted as tax payable and the business would have over-declared and
+    # over-paid. A credit note reduces output tax; it is netted off here and
+    # disclosed on its own so nothing is hidden by the netting.
+    #
+    # Every other endpoint on this router already filters NOT is_credit_note.
+    invoices = [r for r in rows if not r["is_credit_note"]]
+    credit_notes = [r for r in rows if r["is_credit_note"]]
+
+    def total(records, field):
+        return sum(r[field] or 0 for r in records)
+
     summary = {
-        "total_taxable_material": sum(r["taxable_material_value"] or 0 for r in rows),
-        "total_taxable_making": sum(r["taxable_making_value"] or 0 for r in rows),
-        "total_igst": sum(r["igst_amount"] or 0 for r in rows),
-        "total_cgst": sum(r["cgst_amount"] or 0 for r in rows),
-        "total_sgst": sum(r["sgst_amount"] or 0 for r in rows),
-        "total_output_tax": sum(r["total_tax"] or 0 for r in rows),
+        "total_taxable_material": total(invoices, "taxable_material_value")
+        - total(credit_notes, "taxable_material_value"),
+        "total_taxable_making": total(invoices, "taxable_making_value")
+        - total(credit_notes, "taxable_making_value"),
+        "total_igst": total(invoices, "igst_amount") - total(credit_notes, "igst_amount"),
+        "total_cgst": total(invoices, "cgst_amount") - total(credit_notes, "cgst_amount"),
+        "total_sgst": total(invoices, "sgst_amount") - total(credit_notes, "sgst_amount"),
+        "total_output_tax": total(invoices, "total_tax") - total(credit_notes, "total_tax"),
+        # What the netting is made of, so the figure can be traced.
+        "gross_output_tax": total(invoices, "total_tax"),
+        "credit_note_tax": total(credit_notes, "total_tax"),
+        "invoice_count": len(invoices),
+        "credit_note_count": len(credit_notes),
     }
 
     return {
@@ -218,10 +238,43 @@ async def get_gstr1_data(
         {"period": period, "cid": current_user["company_id"]},
     )
 
+    # Credit and debit notes to registered persons -- GSTR-1 Table 9B.
+    #
+    # The return had no CDNR section at all, so a credit note raised against a
+    # cancelled invoice was declared nowhere. The invoice stayed in Table 4 at
+    # its full value and the reduction was never claimed: the business declared
+    # and paid output tax on a sale it had reversed.
+    cdnr = await db.execute(
+        text("""
+            SELECT
+                r.invoice_no AS note_no,
+                r.invoice_date AS note_date,
+                r.party_gstin,
+                r.place_of_supply, r.is_inter_state,
+                orig.invoice_no AS original_invoice_no,
+                orig.invoice_date AS original_invoice_date,
+                'C' AS note_type,
+                r.taxable_material_value + r.taxable_making_value AS taxable_value,
+                r.igst_amount, r.cgst_amount, r.sgst_amount, r.total_tax,
+                r.remarks
+            FROM caratloop.gst_output_tax_register r
+            LEFT JOIN caratloop.gst_output_tax_register orig
+                   ON orig.invoice_id = r.invoice_id
+                  AND orig.company_id = r.company_id
+                  AND NOT orig.is_credit_note
+            WHERE r.return_period = :period AND r.company_id = :cid
+              AND r.is_credit_note
+              AND r.party_gstin IS NOT NULL
+            ORDER BY r.invoice_date, r.invoice_no
+        """),
+        {"period": period, "cid": current_user["company_id"]},
+    )
+
     return {
         "period": period,
         "return_type": "GSTR-1",
         "b2b": [dict(r) for r in b2b.mappings().all()],
+        "cdnr": [dict(r) for r in cdnr.mappings().all()],
         "hsn_summary": [dict(r) for r in hsn_summary.mappings().all()],
     }
 
@@ -238,15 +291,23 @@ async def get_gstr3b_summary(
     Table 4: ITC Available
     Table 3.1(d): RCM Inward Supplies
     """
-    # Output tax
+    # Output tax, Table 3.1(a).
+    #
+    # This excluded credit notes rather than deducting them, so a cancelled
+    # sale was still declared at its full value: the business paid tax on
+    # turnover it had reversed. GSTR-3B is filed on net outward supply, so each
+    # credit note is subtracted from the invoices in the same period.
     output = await db.execute(
         text("""
             SELECT
-                SUM(taxable_material_value + taxable_making_value) AS taxable_value,
-                SUM(igst_amount) AS igst, SUM(cgst_amount) AS cgst, SUM(sgst_amount) AS sgst,
-                SUM(total_tax) AS total_output_tax
+                SUM(CASE WHEN is_credit_note THEN -1 ELSE 1 END
+                    * (taxable_material_value + taxable_making_value)) AS taxable_value,
+                SUM(CASE WHEN is_credit_note THEN -igst_amount ELSE igst_amount END) AS igst,
+                SUM(CASE WHEN is_credit_note THEN -cgst_amount ELSE cgst_amount END) AS cgst,
+                SUM(CASE WHEN is_credit_note THEN -sgst_amount ELSE sgst_amount END) AS sgst,
+                SUM(CASE WHEN is_credit_note THEN -total_tax ELSE total_tax END) AS total_output_tax
             FROM caratloop.gst_output_tax_register
-            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
+            WHERE return_period = :period AND company_id = :cid
         """),
         {"period": period, "cid": current_user["company_id"]},
     )

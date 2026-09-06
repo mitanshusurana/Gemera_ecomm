@@ -841,24 +841,56 @@ async def delete_sales_invoice(
             {"inv_no": invoice_no, "created_by": user_id}
         )
 
-        # 5. Reverse GST output tax.
+        # 5. Reverse GST output tax with a credit note.
         #
-        # Previously this DELETEd the register row. If the period was already
-        # filed, that silently desynchronised the books from the submitted
-        # GSTR-1 and destroyed the evidence trail. Mark it as a credit note
-        # instead: the is_credit_note column already exists and every GSTR
-        # query filters on NOT is_credit_note, so reported figures are
-        # unchanged while the record survives for audit.
+        # This has been wrong twice. It first DELETEd the register row, which
+        # desynchronised the books from an already-filed GSTR-1 and destroyed
+        # the evidence. It then flipped the invoice's own row to
+        # is_credit_note = TRUE, which is not a credit note: it erased the
+        # invoice. The register was left holding a credit note against a sale
+        # that, on the face of the record, never happened, and the period
+        # netted to minus the tax rather than to nil.
         #
-        # Note: a full CDNR (credit note) table entry for GSTR-1 is still not
-        # generated -- that remains outstanding.
+        # A credit note is a second document (GSTR-1 Table 9B). The invoice row
+        # stays exactly as filed and a mirror row is added against it, so the
+        # two net to zero and both remain on the record.
         await db.execute(
-            text(
-                "UPDATE caratloop.gst_output_tax_register "
-                "SET is_credit_note = TRUE "
-                "WHERE invoice_no = :inv_no AND company_id = :cid"
-            ),
-            {"inv_no": invoice_no, "cid": company_id}
+            text("""
+                INSERT INTO caratloop.gst_output_tax_register (
+                    company_id, fiscal_year_id, return_period,
+                    invoice_id, invoice_no, invoice_date,
+                    party_id, party_gstin, place_of_supply, is_inter_state,
+                    supply_type, hsn_material, hsn_making,
+                    taxable_material_value, material_gst_rate,
+                    taxable_making_value, making_gst_rate,
+                    igst_amount, cgst_amount, sgst_amount, total_tax,
+                    is_credit_note, credit_note_id, remarks, created_by
+                )
+                SELECT
+                    r.company_id, r.fiscal_year_id, r.return_period,
+                    r.invoice_id, :cn_no, CURRENT_DATE,
+                    r.party_id, r.party_gstin, r.place_of_supply, r.is_inter_state,
+                    r.supply_type, r.hsn_material, r.hsn_making,
+                    r.taxable_material_value, r.material_gst_rate,
+                    r.taxable_making_value, r.making_gst_rate,
+                    r.igst_amount, r.cgst_amount, r.sgst_amount, r.total_tax,
+                    -- credit_note_id references caratloop.credit_notes, the
+                    -- credit-note document table. A cancellation does not
+                    -- create one of those, so the link back to the sale is
+                    -- invoice_id, carried above.
+                    TRUE, NULL, :remarks, CAST(:cb AS UUID)
+                FROM caratloop.gst_output_tax_register r
+                WHERE r.invoice_no = :inv_no
+                  AND r.company_id = :cid
+                  AND NOT r.is_credit_note
+            """),
+            {
+                "cn_no": f"CN/{invoice_no}",
+                "inv_no": invoice_no,
+                "cid": company_id,
+                "remarks": f"Credit note against cancelled invoice {invoice_no}",
+                "cb": user_id,
+            },
         )
 
         # The reversal must itself balance.
