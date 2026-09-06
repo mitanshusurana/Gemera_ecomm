@@ -243,7 +243,13 @@ async def get_dashboard_stats(
 
     # 4. Live Net GST Liability [CGST Rule 56(4)]
     gst_out_res = await db.execute(
-        text("SELECT COALESCE(SUM(total_tax), 0) AS out_tax FROM caratloop.gst_output_tax_register WHERE company_id = :cid"),
+        # Signed: a credit note reduces output tax. Summing every row counted a
+        # cancelled sale twice -- once as the invoice, once as its credit note
+        # -- and reported a liability that did not exist.
+        text(
+            "SELECT COALESCE(SUM(CASE WHEN is_credit_note THEN -total_tax ELSE total_tax END), 0) "
+            "AS out_tax FROM caratloop.gst_output_tax_register WHERE company_id = :cid"
+        ),
         {"cid": cid},
     )
     itc_res = await db.execute(
@@ -557,6 +563,7 @@ async def get_gst_tax_register(
                 gtr.taxable_making_value AS making_taxable_value,
                 gtr.cgst_amount, gtr.sgst_amount, gtr.igst_amount,
                 gtr.total_tax AS total_tax_amount,
+                gtr.is_credit_note,
                 (gtr.taxable_material_value + gtr.taxable_making_value + gtr.total_tax) AS grand_total,
                 p.name AS customer_name
             FROM caratloop.gst_output_tax_register gtr
@@ -609,7 +616,11 @@ async def get_gst_tax_register(
 
     tot_material_taxable = sum(float(r.get("material_taxable_value") or 0) for r in output_entries)
     tot_making_taxable = sum(float(r.get("making_taxable_value") or 0) for r in output_entries)
-    tot_output_tax = sum(float(r.get("total_tax_amount") or 0) for r in output_entries)
+    # Credit notes are listed but subtracted, for the same reason as above.
+    tot_output_tax = sum(
+        (-1 if r.get("is_credit_note") else 1) * float(r.get("total_tax_amount") or 0)
+        for r in output_entries
+    )
     tot_itc_tax = sum(float(r.get("cgst_itc", 0) + r.get("sgst_itc", 0) + r.get("igst_itc", 0)) for r in itc_entries if not r.get("is_ineligible"))
     tot_rcm_tax = sum(float(r.get("total_tax") or 0) for r in rcm_entries)
 
