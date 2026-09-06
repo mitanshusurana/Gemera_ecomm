@@ -29,6 +29,7 @@ from app.core.pagination import Page, paginate
 from app.core.roles import CAN_MOVE_STOCK, require
 from app.core.security import get_current_user
 from app.core.stock import assert_stock_available
+from app.core.tenancy import resolve_fiscal_year, resolve_stock_location
 from app.tax.job_work import (
     GOODS_TYPE_INPUT,
     days_remaining,
@@ -115,16 +116,7 @@ async def create_challan(
         if not worker:
             raise HTTPException(status_code=404, detail="Job worker not found")
 
-        fy_res = await db.execute(
-            text(
-                "SELECT id, year_label FROM caratloop.fiscal_years "
-                "WHERE company_id = :cid AND is_active = TRUE LIMIT 1"
-            ),
-            {"cid": company_id},
-        )
-        fy = fy_res.mappings().first()
-        if not fy:
-            raise HTTPException(status_code=400, detail="No active fiscal year found")
+        fy = await resolve_fiscal_year(db, company_id)
 
         seq_res = await db.execute(
             text("SELECT caratloop.next_document_number(:cid, :fyid, 'JobWorkChallan')"),
@@ -155,11 +147,7 @@ async def create_challan(
         )
         challan_id = ch_res.scalar()
 
-        loc_res = await db.execute(
-            text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"),
-            {"cid": company_id},
-        )
-        loc_id = loc_res.scalar()
+        loc_id = await resolve_stock_location(db, company_id)
 
         for seq, line in enumerate(payload.lines, 1):
             # The goods are still ours, but they are leaving the premises, so
@@ -193,9 +181,10 @@ async def create_challan(
                     "(company_id, fiscal_year_id, location_id, material_id, entry_date, "
                     " direction, transaction_type, quantity, amount, gross_weight, "
                     " net_weight, purity, source_document_type, source_document_id, "
-                    " source_document_no, created_by, ip_address) "
+                    " source_document_no, sequence_no, created_by, ip_address) "
                     "VALUES (:cid, :fyid, :loc, :mid, :edate, 'O', 'JobWork_Issue', "
                     "        :qty, :amt, :gw, :nw, :pur, 'JobWorkChallan', :chid, :no, "
+                    "        COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, "
                     "        CAST(:cb AS UUID), CAST(:ip AS INET))"
                 ),
                 {
@@ -286,11 +275,7 @@ async def receive_against_challan(
         )
         receipt_id = rc_res.scalar()
 
-        loc_res = await db.execute(
-            text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"),
-            {"cid": company_id},
-        )
-        loc_id = loc_res.scalar()
+        loc_id = await resolve_stock_location(db, company_id)
 
         for line in payload.lines:
             cl_res = await db.execute(
@@ -364,9 +349,10 @@ async def receive_against_challan(
                         "(company_id, fiscal_year_id, location_id, material_id, entry_date, "
                         " direction, transaction_type, quantity, amount, gross_weight, "
                         " net_weight, source_document_type, source_document_id, "
-                        " source_document_no, created_by, ip_address) "
+                        " source_document_no, sequence_no, created_by, ip_address) "
                         "VALUES (:cid, :fyid, :loc, :mid, :edate, 'I', 'JobWork_Receipt', "
                         "        :qty, :amt, :gw, :nw, 'JobWorkReceipt', :rid, :no, "
+                        "        COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, "
                         "        CAST(:cb AS UUID), CAST(:ip AS INET))"
                     ),
                     {

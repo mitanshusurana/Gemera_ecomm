@@ -263,13 +263,16 @@ async def create_party(
         account_id = acc_result.scalar()
 
         if not account_id:
-            # Fallback if group matching failed, pick any DEBTORS/CREDITORS group
+            # Fall back to this company's own DEBTORS/CREDITORS group. Scoped to
+            # :cid: an unscoped lookup filed the party under another
+            # company's group, crossing the two companies' books.
             acc_result = await db.execute(
                 text("""
                     INSERT INTO caratloop.accounts (
                         company_id, group_id, code, name, account_type, normal_balance, currency, gstin, created_by
                     ) VALUES (
-                        :cid, (SELECT id FROM caratloop.account_groups WHERE code = :group_code LIMIT 1),
+                        :cid, (SELECT id FROM caratloop.account_groups
+                                WHERE code = :group_code AND company_id = :cid LIMIT 1),
                         :code, :name, :acc_type, :nb, 'INR', :gstin, :created_by
                     ) RETURNING id
                 """),

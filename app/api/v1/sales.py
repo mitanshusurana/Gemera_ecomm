@@ -503,7 +503,9 @@ async def create_sales_invoice(
         credit_lines = [
             ("SAL-001", total_material, "Gold/Gem material sales"),
             ("SAL-003", total_making, "Making charges income"),
-            ("SAL-004", total_other, "Other charges"),
+            # SAL-004 is "Scrap / Polishing Dust Sales" in the chart of accounts;
+            # other charges get their own code rather than polluting scrap revenue.
+            ("SAL-005", total_other, "Other charges"),
         ]
         if is_inter_state:
             credit_lines.extend([
@@ -759,15 +761,27 @@ async def delete_sales_invoice(
             # The financial year was hardcoded to 2026-27 here.
             rev_vno = f"JV/{fy_label}/{cnt:05d}"
             
+            # fiscal_year_id, total_debit, total_credit and sequence_no are
+            # all NOT NULL, and this statement supplied none of them, so
+            # cancelling any invoice failed outright at the database. The
+            # totals are taken from the entry being reversed: a reversal moves
+            # exactly the same money the other way, and the original is
+            # balanced, so its two totals are equal.
             je_res = await db.execute(
                 text("""
                     INSERT INTO caratloop.journal_entries (
-                        company_id, entry_no, entry_date, entry_type,
-                        reference_no, reference_type, reference_id, narration, created_by
-                    ) VALUES (
-                        :cid, :vno, CURRENT_DATE, 'Sales Reversal',
-                        :ref_no, 'SalesInvoice', :inv_id, :narr, CAST(:created_by AS UUID)
-                    ) RETURNING id
+                        company_id, fiscal_year_id, entry_no, entry_date, entry_type,
+                        reference_no, reference_type, reference_id, narration,
+                        total_debit, total_credit, sequence_no, created_by
+                    )
+                    SELECT
+                        :cid, orig.fiscal_year_id, :vno, CURRENT_DATE, 'Sales Reversal',
+                        :ref_no, 'SalesInvoice', :inv_id, :narr,
+                        orig.total_credit, orig.total_debit,
+                        NEXTVAL('caratloop.journal_entry_seq'), CAST(:created_by AS UUID)
+                    FROM caratloop.journal_entries orig
+                    WHERE orig.id = :orig_je_id
+                    RETURNING id
                 """),
                 {
                     "cid": company_id,
@@ -775,7 +789,8 @@ async def delete_sales_invoice(
                     "ref_no": f"CNCL-{invoice_no}",
                     "inv_id": inv_id,
                     "narr": f"Cancellation of Sales Invoice {invoice_no}",
-                    "created_by": user_id
+                    "created_by": user_id,
+                    "orig_je_id": orig_je_id,
                 }
             )
             rev_je_id = je_res.scalar()
@@ -784,11 +799,14 @@ async def delete_sales_invoice(
             await db.execute(
                 text("""
                     INSERT INTO caratloop.journal_entry_lines (
-                        journal_entry_id, account_id, party_id, dr_amount, cr_amount, narration
+                        journal_entry_id, sequence_no, account_id, party_id,
+                        dr_amount, cr_amount, narration
                     )
-                    SELECT :rev_je_id, account_id, party_id, cr_amount, dr_amount, 'Reversal of ' || COALESCE(narration, '')
+                    SELECT :rev_je_id, sequence_no, account_id, party_id,
+                           cr_amount, dr_amount, 'Reversal of ' || COALESCE(narration, '')
                     FROM caratloop.journal_entry_lines
                     WHERE journal_entry_id = :orig_je_id
+                    ORDER BY sequence_no
                 """),
                 {"rev_je_id": rev_je_id, "orig_je_id": orig_je_id}
             )

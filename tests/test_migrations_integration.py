@@ -63,23 +63,60 @@ def engine():
 
 @pytest.fixture()
 def company(engine):
-    """A company, which the 0007 trigger provisions accounts for."""
+    """A company, and the masters the provisioning trigger gives it.
+
+    Nothing here inserts a fiscal year, a stock location or a unit of measure:
+    migration 0003 provisions the first two per company and 0002 seeds units of
+    measure globally. The fixture reads them back instead, which also asserts
+    that a company created through the ordinary path is immediately able to
+    transact -- the property the provisioning exists for.
+    """
     with engine.begin() as c:
         cid = c.execute(
             text(
-                "INSERT INTO caratloop.companies (legal_name, state_code) "
-                "VALUES ('Test Co', '08') RETURNING id"
+                # The merged schema keeps the baseline's companies table, where `name`
+                # is NOT NULL alongside legal_name.
+                "INSERT INTO caratloop.companies (name, legal_name, state_code) "
+                "VALUES ('Test Co', 'Test Co Pvt Ltd', '08') RETURNING id"
             )
         ).scalar()
+
         fy = c.execute(
             text(
-                "INSERT INTO caratloop.fiscal_years "
-                "(company_id, year_label, start_date, end_date, is_active) "
-                "VALUES (:cid, '2026-27', '2026-04-01', '2027-03-31', TRUE) RETURNING id"
+                "SELECT id FROM caratloop.fiscal_years "
+                "WHERE company_id = :cid AND is_active"
             ),
             {"cid": cid},
         ).scalar()
-    return {"id": cid, "fy": fy}
+        assert fy is not None, "provisioning left the company with no active fiscal year"
+
+        loc = c.execute(
+            text(
+                "SELECT id FROM caratloop.stock_locations "
+                "WHERE company_id = :cid AND is_default"
+            ),
+            {"cid": cid},
+        ).scalar()
+        assert loc is not None, "provisioning left the company with no default location"
+
+        uom = c.execute(
+            text("SELECT id FROM caratloop.units_of_measure WHERE code = 'gm'")
+        ).scalar()
+        assert uom is not None, "units of measure are not seeded"
+
+        # Documents carry created_by NOT NULL, so the fixture needs a real
+        # user. 'admin' is one of the seven values chk_user_role permits.
+        user = c.execute(
+            text(
+                "INSERT INTO caratloop.users "
+                "(company_id, email, password_hash, full_name, role) "
+                "VALUES (:cid, 'fixture@test.local', '$2b$12$x', 'Fixture', 'admin') "
+                "RETURNING id"
+            ),
+            {"cid": cid},
+        ).scalar()
+
+    return {"id": cid, "fy": fy, "uom": uom, "loc": loc, "user": user}
 
 
 # ── schema shape ──────────────────────────────────────────────────────────
@@ -118,10 +155,10 @@ def test_stock_direction_rejects_the_wrong_convention(engine, company):
     with engine.begin() as c:
         mid = c.execute(
             text(
-                "INSERT INTO caratloop.materials (company_id, code, name, category) "
-                "VALUES (:cid, 'M-DIR', 'Gold', 'Gold') RETURNING id"
+                "INSERT INTO caratloop.materials (company_id, uom_id, code, name, category) "
+                "VALUES (:cid, :uom, 'M-DIR', 'Gold', 'Gold') RETURNING id"
             ),
-            {"cid": company["id"]},
+            {"cid": company["id"], "uom": company["uom"]},
         ).scalar()
 
     with pytest.raises(DBAPIError):
@@ -143,10 +180,10 @@ def test_purity_rejects_millesimal(engine, company):
     with engine.begin() as c:
         mid = c.execute(
             text(
-                "INSERT INTO caratloop.materials (company_id, code, name, category) "
-                "VALUES (:cid, 'M-PUR', 'Gold', 'Gold') RETURNING id"
+                "INSERT INTO caratloop.materials (company_id, uom_id, code, name, category) "
+                "VALUES (:cid, :uom, 'M-PUR', 'Gold', 'Gold') RETURNING id"
             ),
-            {"cid": company["id"]},
+            {"cid": company["id"], "uom": company["uom"]},
         ).scalar()
 
     with pytest.raises(DBAPIError):
@@ -168,17 +205,19 @@ def test_journal_line_cannot_be_both_debit_and_credit(engine, company):
         je = c.execute(
             text(
                 "INSERT INTO caratloop.journal_entries "
-                "(company_id, fiscal_year_id, entry_no, entry_date, entry_type) "
-                "VALUES (:cid, :fy, 'JV/T/1', CURRENT_DATE, 'Journal') RETURNING id"
+                "(company_id, fiscal_year_id, entry_no, entry_date, entry_type, narration, "
+                " total_debit, total_credit, sequence_no, created_by) "
+                "VALUES (:cid, :fy, 'JV/T/1', CURRENT_DATE, 'Journal', 'integration test', "
+                "        0, 0, NEXTVAL('caratloop.journal_entry_seq'), :usr) RETURNING id"
             ),
-            {"cid": company["id"], "fy": company["fy"]},
+            {"cid": company["id"], "fy": company["fy"], "usr": company["user"]},
         ).scalar()
         acc = c.execute(
             text(
                 "SELECT id FROM caratloop.accounts "
                 "WHERE company_id=:cid AND code='CRD-001'"
             ),
-            {"cid": company["id"]},
+            {"cid": company["id"], "uom": company["uom"]},
         ).scalar()
 
     with pytest.raises(IntegrityError):
@@ -200,7 +239,7 @@ def test_duplicate_invoice_number_is_rejected(engine, company):
     with engine.begin() as c:
         acc = c.execute(
             text("SELECT id FROM caratloop.accounts WHERE company_id=:cid AND code='CRD-001'"),
-            {"cid": company["id"]},
+            {"cid": company["id"], "uom": company["uom"]},
         ).scalar()
         cust = c.execute(
             text(
@@ -213,10 +252,12 @@ def test_duplicate_invoice_number_is_rejected(engine, company):
         c.execute(
             text(
                 "INSERT INTO caratloop.sales_invoices "
-                "(company_id, fiscal_year_id, customer_id, invoice_no, invoice_date, place_of_supply) "
-                "VALUES (:cid, :fy, :cust, 'CL/2026-27/00001', CURRENT_DATE, '08')"
+                "(company_id, fiscal_year_id, customer_id, invoice_no, invoice_date, "
+                " place_of_supply, created_by) "
+                "VALUES (:cid, :fy, :cust, 'CL/2026-27/00001', CURRENT_DATE, '08', :usr)"
             ),
-            {"cid": company["id"], "fy": company["fy"], "cust": cust},
+            {"cid": company["id"], "fy": company["fy"], "cust": cust,
+             "usr": company["user"]},
         )
 
     with pytest.raises(IntegrityError):
@@ -224,10 +265,12 @@ def test_duplicate_invoice_number_is_rejected(engine, company):
             c.execute(
                 text(
                     "INSERT INTO caratloop.sales_invoices "
-                    "(company_id, fiscal_year_id, customer_id, invoice_no, invoice_date, place_of_supply) "
-                    "VALUES (:cid, :fy, :cust, 'CL/2026-27/00001', CURRENT_DATE, '08')"
+                    "(company_id, fiscal_year_id, customer_id, invoice_no, invoice_date, "
+                    " place_of_supply, created_by) "
+                    "VALUES (:cid, :fy, :cust, 'CL/2026-27/00001', CURRENT_DATE, '08', :usr)"
                 ),
-                {"cid": company["id"], "fy": company["fy"], "cust": cust},
+                {"cid": company["id"], "fy": company["fy"], "cust": cust,
+             "usr": company["user"]},
             )
 
 
@@ -240,7 +283,7 @@ def test_audit_trigger_records_the_session_context(engine, company):
             text(
                 "INSERT INTO caratloop.users "
                 "(company_id, email, password_hash, full_name, role) "
-                "VALUES (:cid, 'audit@test.local', '$2b$12$x', 'A', 'Admin') RETURNING id"
+                "VALUES (:cid, 'audit@test.local', '$2b$12$x', 'A', 'admin') RETURNING id"
             ),
             {"cid": company["id"]},
         ).scalar()
@@ -255,10 +298,10 @@ def test_audit_trigger_records_the_session_context(engine, company):
         )
         c.execute(
             text(
-                "INSERT INTO caratloop.materials (company_id, code, name, category) "
-                "VALUES (:cid, 'M-AUDIT', 'Silver', 'Silver')"
+                "INSERT INTO caratloop.materials (company_id, uom_id, code, name, category) "
+                "VALUES (:cid, :uom, 'M-AUDIT', 'Silver', 'Silver')"
             ),
-            {"cid": company["id"]},
+            {"cid": company["id"], "uom": company["uom"]},
         )
 
     with engine.connect() as c:
@@ -281,6 +324,22 @@ def test_audit_trigger_records_the_session_context(engine, company):
 ])
 def test_audit_log_is_append_only(engine, company, statement):
     from sqlalchemy.exc import DBAPIError
+
+    # There has to be a row to tamper with. Without one, min(id) is NULL, the
+    # statement matches nothing, no row-level trigger fires and the test passes
+    # for the wrong reason -- which is exactly how it passed before.
+    with engine.begin() as c:
+        c.execute(
+            text(
+                "INSERT INTO caratloop.materials (company_id, uom_id, code, name, category) "
+                "VALUES (:cid, :uom, 'M-TAMPER', 'Gold', 'Gold')"
+            ),
+            {"cid": company["id"], "uom": company["uom"]},
+        )
+    with engine.connect() as c:
+        assert c.execute(
+            text("SELECT count(*) FROM caratloop.audit_log")
+        ).scalar() > 0, "nothing was audited, so the tamper test would be vacuous"
 
     with pytest.raises(DBAPIError) as exc:
         with engine.begin() as c:
@@ -328,8 +387,10 @@ def test_a_new_company_gets_its_chart_of_accounts(engine):
     with engine.begin() as c:
         cid = c.execute(
             text(
-                "INSERT INTO caratloop.companies (legal_name, state_code) "
-                "VALUES ('Brand New Co', '27') RETURNING id"
+                # The merged schema keeps the baseline's companies table, where `name`
+                # is NOT NULL alongside legal_name.
+                "INSERT INTO caratloop.companies (name, legal_name, state_code) "
+                "VALUES ('Brand New Co', 'Brand New Co Pvt Ltd', '27') RETURNING id"
             )
         ).scalar()
         codes = set(
@@ -340,7 +401,7 @@ def test_a_new_company_gets_its_chart_of_accounts(engine):
         )
 
     required = {
-        "SAL-001", "SAL-003", "SAL-004", "COGS-001", "MFG-LOSS",
+        "SAL-001", "SAL-003", "SAL-005", "COGS-001", "MFG-002",
         "STK-001", "GST-001", "ITC-004", "RCM-001", "CRD-001", "PUR-001",
     }
     assert required <= codes, f"missing on a new company: {sorted(required - codes)}"

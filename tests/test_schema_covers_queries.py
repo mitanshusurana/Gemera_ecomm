@@ -44,9 +44,16 @@ def _source_text() -> str:
 
 
 def _migration_text() -> str:
-    return "\n".join(
-        io.open(f, encoding="utf-8").read() for f in sorted(MIGRATIONS.glob("*.py"))
-    )
+    """The Python wrappers plus the SQL they execute.
+
+    After the merge with the legacy baseline the DDL lives in
+    migrations/sql/*.sql and the .py files are thin wrappers. Reading only the
+    .py files made every account-code assertion pass against an empty haystack.
+    """
+    parts = [io.open(f, encoding="utf-8").read() for f in sorted(MIGRATIONS.glob("*.py"))]
+    sql_dir = ROOT / "migrations" / "sql"
+    parts += [io.open(f, encoding="utf-8").read() for f in sorted(sql_dir.glob("*.sql"))]
+    return "\n".join(parts)
 
 
 def _created_objects(mig: str) -> set[str]:
@@ -86,8 +93,11 @@ def test_audit_trigger_function_is_defined():
     """app/core/audit.py sets session vars for a function that must exist."""
     mig = _migration_text()
     assert "fn_audit_trigger" in mig
-    assert "current_setting('app.user_id'" in mig
-    assert "current_setting('app.reason'" in mig
+    # The baseline reads the same session variables and additionally chains
+    # rows with prev_hash, which the reconstruction's version did not.
+    assert "app.user_id" in mig
+    assert "app.reason" in mig
+    assert "prev_hash" in mig
 
 
 def test_audit_log_is_append_only():
@@ -111,28 +121,35 @@ def test_money_columns_are_numeric_not_float():
 def test_stock_direction_is_constrained_to_the_convention():
     """Writers store 'I'/'O'; a report once filtered on 'IN'/'OUT' and read zero."""
     mig = _migration_text()
-    assert "sle_direction_known" in mig
-    assert "direction IN ('I','O')" in mig
+    # The baseline's own name, and its form: ANY (ARRAY[...]) rather than IN.
+    assert "chk_sle_direction" in mig
+    assert "'I'" in mig and "'O'" in mig
 
 
 def test_invoice_numbering_is_unique_per_year():
     """COUNT(*)+1 numbering races across the four uvicorn workers."""
     mig = _migration_text()
-    assert "sales_invoice_no_unique" in mig
-    assert "UNIQUE (company_id, fiscal_year_id, invoice_no)" in mig
+    # uq_sales_invoice_no is the baseline's name for the same constraint.
+    assert "uq_sales_invoice_no" in mig
+    assert "company_id, fiscal_year_id, invoice_no" in mig
 
 
 def test_journal_lines_cannot_be_double_sided():
+    """The baseline's chk_jel_debit_credit is stricter than the reconstruction's.
+
+    It requires exactly one side to be non-zero; the reconstruction only
+    forbade both being positive, which allowed a line that was zero on both.
+    """
     mig = _migration_text()
-    assert "jel_single_sided" in mig
+    assert "chk_jel_debit_credit" in mig
 
 
 @pytest.mark.parametrize("code", [
-    "SAL-001", "SAL-003", "SAL-004",
+    "SAL-001", "SAL-003", "SAL-005",
     "GST-001", "GST-002", "GST-003", "GST-004", "GST-005", "GST-006",
     "ITC-001", "ITC-002", "ITC-003", "ITC-004",
     "RCM-001", "RCM-002",
-    "CRD-001", "PUR-001", "MFG-LOSS",
+    "CRD-001", "PUR-001", "MFG-002",
     "STK-001", "STK-003", "STK-004", "STK-005",
     "STK-006", "STK-007", "STK-008", "STK-009",
     "COGS-001",
@@ -142,3 +159,43 @@ def test_every_hardcoded_account_code_is_seeded(code):
     assert code in _migration_text(), (
         f"account code {code} is referenced in application SQL but never seeded"
     )
+
+
+def test_role_vocabulary_matches_the_database_check():
+    """Every role the code names must be one the users.role CHECK permits.
+
+    These two lists drifted apart completely: the code knew superadmin,
+    storekeeper and viewer -- none of which the CHECK allows, so no user could
+    ever hold them -- and did not know owner, production_manager, store_keeper
+    or read_only, which are the values it does allow. Since auth.py issues the
+    token straight from the stored row, an owner matched no permission group
+    and was refused every posting and amendment endpoint in the application.
+    """
+    from app.core.roles import ALL_ROLES
+
+    mig = _migration_text()
+    match = re.search(
+        r"CONSTRAINT\s+chk_user_role\s+CHECK\s*\((.*?)\)\s*\)\s*\)", mig, re.I | re.S
+    )
+    assert match, "chk_user_role is not in the migrations"
+    permitted = {v.lower() for v in re.findall(r"'([a-z_]+)'::character varying", match.group(1))}
+    assert permitted, "could not read the permitted roles out of chk_user_role"
+
+    assert ALL_ROLES == permitted, (
+        f"roles.py and the database disagree; "
+        f"code-only={sorted(ALL_ROLES - permitted)}, "
+        f"database-only={sorted(permitted - ALL_ROLES)}"
+    )
+
+
+def test_every_role_can_do_something():
+    """A role in the CHECK that appears in no permission group is a lockout."""
+    from app.core import roles
+
+    groups = (
+        roles.CAN_POST | roles.CAN_MOVE_STOCK
+        | roles.CAN_AMEND | roles.CAN_READ_FULL_AUDIT
+    )
+    # read_only is deliberately in no group: it reads, it does not act.
+    orphans = roles.ALL_ROLES - groups - {roles.READ_ONLY}
+    assert not orphans, f"roles that can do nothing: {sorted(orphans)}"

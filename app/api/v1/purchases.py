@@ -19,6 +19,7 @@ from app.tax.purchase_tax import PurchaseLineInput, compute_purchase_totals
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
+from app.core.tenancy import resolve_default_uom, resolve_fiscal_year, resolve_stock_location
 
 logger = logging.getLogger(__name__)
 
@@ -110,14 +111,7 @@ async def create_purchase_invoice(
         raise HTTPException(status_code=404, detail="Purchase invoice not found")
 
     try:
-        fy_res = await db.execute(
-            text("SELECT id, year_label FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
-            {"cid": company_id}
-        )
-        fy = fy_res.mappings().first()
-        if not fy:
-            fy_res = await db.execute(text("SELECT id, year_label FROM caratloop.fiscal_years LIMIT 1"))
-            fy = fy_res.mappings().first()
+        fy = await resolve_fiscal_year(db, company_id)
 
         supp_res = await db.execute(
             text("SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties WHERE id = :id AND company_id = :cid LIMIT 1"),
@@ -191,17 +185,9 @@ async def create_purchase_invoice(
         )
         invoice_id = pi_res.scalar()
 
-        loc_res = await db.execute(
-            text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"),
-            {"cid": company_id}
-        )
-        loc_id = loc_res.scalar()
-        if not loc_id:
-            loc_res = await db.execute(text("SELECT id FROM caratloop.stock_locations LIMIT 1"))
-            loc_id = loc_res.scalar()
+        loc_id = await resolve_stock_location(db, company_id)
 
-        uom_res = await db.execute(text("SELECT id FROM caratloop.units_of_measure LIMIT 1"))
-        uom_id = uom_res.scalar()
+        uom_id = await resolve_default_uom(db)
 
         seq_idx = 1
         for item in payload.items:
@@ -479,14 +465,7 @@ async def update_purchase_invoice(
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
     try:
-        fy_res = await db.execute(
-            text("SELECT id, year_label FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
-            {"cid": company_id}
-        )
-        fy = fy_res.mappings().first()
-        if not fy:
-            fy_res = await db.execute(text("SELECT id, year_label FROM caratloop.fiscal_years LIMIT 1"))
-            fy = fy_res.mappings().first()
+        fy = await resolve_fiscal_year(db, company_id)
 
         supp_res = await db.execute(
             text("SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties WHERE id = :id LIMIT 1"),
@@ -566,14 +545,9 @@ async def update_purchase_invoice(
         await db.execute(text("DELETE FROM caratloop.journal_entries WHERE reference_id::text = :pid AND reference_type = 'PurchaseInvoice'"), {"pid": str(id)})
 
         # ─── RE-POST UPDATED LINES & STOCK MOVEMENTS ──────────────────────────────
-        loc_res = await db.execute(text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"), {"cid": company_id})
-        loc_id = loc_res.scalar()
-        if not loc_id:
-            loc_res = await db.execute(text("SELECT id FROM caratloop.stock_locations LIMIT 1"))
-            loc_id = loc_res.scalar()
+        loc_id = await resolve_stock_location(db, company_id)
 
-        uom_res = await db.execute(text("SELECT id FROM caratloop.units_of_measure LIMIT 1"))
-        uom_id = uom_res.scalar()
+        uom_id = await resolve_default_uom(db)
 
         seq_idx = 1
         for item in payload.items:

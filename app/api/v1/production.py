@@ -22,6 +22,7 @@ from app.core.stock import assert_stock_available
 from app.core.roles import CAN_MOVE_STOCK, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
+from app.core.tenancy import resolve_fiscal_year
 
 logger = logging.getLogger(__name__)
 
@@ -174,14 +175,7 @@ async def create_production_order(
             bom_id = new_bom.scalar()
 
         # 3. Get Fiscal Year
-        fy_res = await db.execute(
-            text("SELECT id, year_label FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
-            {"cid": company_id}
-        )
-        fy = fy_res.mappings().first()
-        if not fy:
-            fy_res = await db.execute(text("SELECT id, year_label FROM caratloop.fiscal_years LIMIT 1"))
-            fy = fy_res.mappings().first()
+        fy = await resolve_fiscal_year(db, company_id)
 
         # 4. Generate Order No
         cnt_res = await db.execute(
@@ -417,7 +411,7 @@ async def complete_production_order(
         #
         # Enforce the order's own wastage ceiling. allowed_wastage_pct was
         # captured when the order was raised and then never checked, so any
-        # quantity of gold could be written off to MFG-LOSS with no limit and
+        # quantity of gold could be written off to MFG-002 with no limit and
         # no approval step.
         total_consumed = sum(to_decimal(c.qty_issued) for c in payload.consumption_lines)
         total_lost = sum(to_decimal(w.qty_lost) for w in (payload.wastage_lines or []))
@@ -643,7 +637,7 @@ async def complete_production_order(
             seq += 1
 
         # 3. Wastage leg
-        mfg_loss_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'MFG-LOSS' AND company_id = :cid LIMIT 1"), {"cid": current_user["company_id"]})
+        mfg_loss_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'MFG-002' AND company_id = :cid LIMIT 1"), {"cid": current_user["company_id"]})
         # .scalar() consumes the cursor; calling it twice raises ResourceClosedError.
         _mfg_loss_row = mfg_loss_res.scalar()
         mfg_loss_id = str(_mfg_loss_row) if _mfg_loss_row else wip_account_id

@@ -16,6 +16,7 @@ from app.core.money import to_decimal
 from app.core.roles import CAN_AMEND, CAN_MOVE_STOCK, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
+from app.core.tenancy import resolve_fiscal_year, resolve_stock_location, resolve_uom
 
 logger = logging.getLogger(__name__)
 
@@ -207,14 +208,7 @@ async def create_item(
 
     try:
         # Fetch uom_id
-        uom_res = await db.execute(
-            text("SELECT id FROM caratloop.units_of_measure WHERE code = :code LIMIT 1"),
-            {"code": payload.uom}
-        )
-        uom_id = uom_res.scalar()
-        if not uom_id:
-            uom_res = await db.execute(text("SELECT id FROM caratloop.units_of_measure LIMIT 1"))
-            uom_id = uom_res.scalar()
+        uom_id = await resolve_uom(db, payload.uom)
 
         item_res = await db.execute(
             text("""
@@ -241,23 +235,9 @@ async def create_item(
 
         # If opening stock specified
         if payload.opening_qty > 0:
-            fy_res = await db.execute(
-                text("SELECT id FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
-                {"cid": company_id}
-            )
-            fy_id = fy_res.scalar()
-            if not fy_id:
-                fy_res = await db.execute(text("SELECT id FROM caratloop.fiscal_years LIMIT 1"))
-                fy_id = fy_res.scalar()
+            fy_id = (await resolve_fiscal_year(db, company_id))["id"]
             
-            loc_res = await db.execute(
-                text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"),
-                {"cid": company_id}
-            )
-            loc_id = loc_res.scalar()
-            if not loc_id:
-                loc_res = await db.execute(text("SELECT id FROM caratloop.stock_locations LIMIT 1"))
-                loc_id = loc_res.scalar()
+            loc_id = await resolve_stock_location(db, company_id)
 
             if loc_id and fy_id:
                 await db.execute(
@@ -457,23 +437,9 @@ async def record_opening_stock(
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
     try:
-        fy_res = await db.execute(
-            text("SELECT id FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
-            {"cid": company_id}
-        )
-        fy_id = fy_res.scalar()
-        if not fy_id:
-            fy_res = await db.execute(text("SELECT id FROM caratloop.fiscal_years LIMIT 1"))
-            fy_id = fy_res.scalar()
+        fy_id = (await resolve_fiscal_year(db, company_id))["id"]
 
-        loc_res = await db.execute(
-            text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"),
-            {"cid": company_id}
-        )
-        loc_id = loc_res.scalar()
-        if not loc_id:
-            loc_res = await db.execute(text("SELECT id FROM caratloop.stock_locations LIMIT 1"))
-            loc_id = loc_res.scalar()
+        loc_id = await resolve_stock_location(db, company_id)
 
         inserted_count = 0
         for item in payload.items:

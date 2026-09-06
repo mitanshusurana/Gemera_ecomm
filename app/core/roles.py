@@ -19,27 +19,44 @@ from fastapi import Depends, HTTPException
 
 from app.core.security import get_current_user
 
-# Ordered loosely from most to least privileged. These match the CHECK
-# constraint on caratloop.users.role.
-SUPER_ADMIN = "superadmin"
+# The vocabulary below is not a matter of taste: caratloop.users.role carries a
+# CHECK constraint permitting exactly these seven values, and every role that
+# reaches an authorisation check is read from that column (auth.py issues the
+# token from the stored row; this service never creates users). Any constant
+# here that is not in the CHECK is unreachable, and any CHECK value missing
+# here is a user locked out.
+#
+# The previous set had three names the database cannot store -- superadmin,
+# storekeeper, viewer -- and was missing four it does: owner,
+# production_manager, store_keeper, read_only. The effect was not cosmetic. An
+# owner, the proprietor of the business, matched no group and was refused every
+# posting, amendment and audit-trail endpoint; a store_keeper (spelt with the
+# underscore in the database, without it here) could not move stock. Only
+# admin, accountant and auditor worked at all.
+OWNER = "owner"
 ADMIN = "admin"
 ACCOUNTANT = "accountant"
-STORE_KEEPER = "storekeeper"
+PRODUCTION_MANAGER = "production_manager"
+STORE_KEEPER = "store_keeper"
 AUDITOR = "auditor"
-VIEWER = "viewer"
+READ_ONLY = "read_only"
 
 ALL_ROLES = frozenset(
-    {SUPER_ADMIN, ADMIN, ACCOUNTANT, STORE_KEEPER, AUDITOR, VIEWER}
+    {OWNER, ADMIN, ACCOUNTANT, PRODUCTION_MANAGER, STORE_KEEPER, AUDITOR, READ_ONLY}
 )
 
 # Who may post or alter financial documents.
-CAN_POST = frozenset({SUPER_ADMIN, ADMIN, ACCOUNTANT})
-# Who may move stock.
-CAN_MOVE_STOCK = frozenset({SUPER_ADMIN, ADMIN, ACCOUNTANT, STORE_KEEPER})
+CAN_POST = frozenset({OWNER, ADMIN, ACCOUNTANT})
+# Who may move stock. A production manager necessarily moves it -- issuing
+# metal to the floor and receiving finished pieces is the job -- so the role is
+# here even though it cannot post the accounting side.
+CAN_MOVE_STOCK = frozenset({OWNER, ADMIN, ACCOUNTANT, STORE_KEEPER, PRODUCTION_MANAGER})
 # Who may cancel or reverse a posted document, or rewrite opening balances.
-CAN_AMEND = frozenset({SUPER_ADMIN, ADMIN})
-# Who may read the full audit trail rather than only their own actions.
-CAN_READ_FULL_AUDIT = frozenset({SUPER_ADMIN, ADMIN, AUDITOR})
+CAN_AMEND = frozenset({OWNER, ADMIN})
+# Who may read the full audit trail rather than only their own actions. The
+# auditor is here precisely to read it; read_only is not, because seeing every
+# user's actions is a wider grant than seeing the books.
+CAN_READ_FULL_AUDIT = frozenset({OWNER, ADMIN, AUDITOR})
 
 
 def normalise(role: str | None) -> str:
