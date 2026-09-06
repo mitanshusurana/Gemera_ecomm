@@ -1,6 +1,19 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+/**
+ * Printed where a required particular is absent.
+ *
+ * CGST Rule 46 lists what a tax invoice must carry: a consecutive serial
+ * number, the recipient's name and address, the place of supply, the HSN. This
+ * engine used to substitute plausible values for any of those that were
+ * missing -- a serial number copied from a sample, "Jaipur, Rajasthan" as the
+ * recipient's address, "08 - Rajasthan" as the place of supply. The customer
+ * claims input tax credit against this document, so a fabricated particular is
+ * worse than a visible gap: it looks correct and is not.
+ */
+const MISSING = '— MISSING —';
+
 // Helper to format currency numbers cleanly in PDF
 const formatPdfMoney = (val: number | string) => {
   const num = typeof val === 'number' ? val : parseFloat(val || '0');
@@ -65,14 +78,14 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(30, 30, 30);
-  doc.text(`Invoice No: ${invoice.invoice_no || 'CL/2026-27/00001'}`, rightX, y + 6);
+  doc.text(`Invoice No: ${invoice.invoice_no || MISSING}`, rightX, y + 6);
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(50, 50, 50);
   const invDate = invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
   doc.text(`Date: ${invDate}`, rightX, y + 11);
-  doc.text(`Place of Supply: ${invoice.place_of_supply || '08 - Rajasthan'}`, rightX, y + 15);
+  doc.text(`Place of Supply: ${invoice.place_of_supply || MISSING}`, rightX, y + 15);
   doc.text(`Payment Terms: ${invoice.payment_terms || 'Immediate'}`, rightX, y + 20);
   doc.text(`Reverse Charge (RCM): ${invoice.is_rcm ? 'YES' : 'NO'}`, rightX, y + 24);
 
@@ -92,18 +105,18 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(30, 30, 30);
-  doc.text(invoice.customer_name || 'Customer Name', 13, y + 10);
+  doc.text(invoice.customer_name || MISSING, 13, y + 10);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(60, 60, 60);
-  const addr = [invoice.customer_address1, invoice.customer_city, invoice.customer_state_name].filter(Boolean).join(', ') || 'Jaipur, Rajasthan';
+  const addr = [invoice.customer_address1, invoice.customer_city, invoice.customer_state_name].filter(Boolean).join(', ') || MISSING;
   doc.text(addr, 13, y + 15);
 
   doc.setFont('helvetica', 'bold');
   doc.text(`GSTIN: ${invoice.customer_gstin || 'Unregistered'}`, width - 75, y + 10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`State Code: ${invoice.customer_state_code || '08'} (${invoice.customer_state_name || 'Rajasthan'})`, width - 75, y + 15);
+  doc.text(`State Code: ${invoice.customer_state_code || MISSING} (${invoice.customer_state_name || MISSING})`, width - 75, y + 15);
 
   y += 26;
 
@@ -126,8 +139,8 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
     const taxable = matVal + makVal;
     return [
       (i + 1).toString(),
-      l.description || 'Gold Jewelry Article',
-      l.hsn_sac_code || '71131910',
+      l.description || MISSING,
+      l.hsn_sac_code || MISSING,
       (l.quantity || 1).toString(),
       l.gross_weight ? `${l.gross_weight} gm` : '—',
       l.net_weight ? `${l.net_weight} gm` : '—',
@@ -313,12 +326,12 @@ export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'p
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(30, 30, 30);
-  doc.text(`Bill No: ${voucher.bill_no || 'PI/2026-27/00017'}`, rightX, y + 6);
+  doc.text(`Bill No: ${voucher.bill_no || MISSING}`, rightX, y + 6);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text(`Vendor Inv No: ${voucher.vendor_inv_no || '123'}`, rightX, y + 11);
+  doc.text(`Vendor Inv No: ${voucher.vendor_inv_no || MISSING}`, rightX, y + 11);
   doc.text(`Bill Date: ${voucher.bill_date || new Date().toLocaleDateString('en-IN')}`, rightX, y + 15);
-  doc.text(`Place of Supply: ${voucher.place_of_supply || '08 - Rajasthan'}`, rightX, y + 20);
+  doc.text(`Place of Supply: ${voucher.place_of_supply || MISSING}`, rightX, y + 20);
 
   y += 30;
 
@@ -333,12 +346,12 @@ export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'p
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(30, 30, 30);
-  doc.text(voucher.vendor_name || 'Vendor Master Record', 13, y + 10);
+  doc.text(voucher.vendor_name || MISSING, 13, y + 10);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(60, 60, 60);
-  doc.text(voucher.address_line1 || 'Jaipur, Rajasthan', 13, y + 15);
+  doc.text(voucher.address_line1 || MISSING, 13, y + 15);
 
   doc.setFont('helvetica', 'bold');
   doc.text(`GSTIN: ${voucher.vendor_gstin || 'Unregistered / Exempt'}`, width - 75, y + 10);
@@ -360,8 +373,8 @@ export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'p
 
   const tableBody = items.map((item: any, idx: number) => [
     (idx + 1).toString(),
-    item.material_name || item.description || 'Raw Material Stock Item',
-    item.hsn_sac_code || '71131910',
+    item.material_name || item.description || MISSING,
+    item.hsn_sac_code || MISSING,
     (item.quantity || 1).toString(),
     `${item.gross_weight || 0} gm`,
     `${item.net_weight || 0} gm`,

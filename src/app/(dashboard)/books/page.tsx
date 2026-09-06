@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { booksApi, bankingApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { financialYearStart } from '@/lib/fiscal';
 
 export default function BooksPage() {
   const [activeTab, setActiveTab] = useState('Day Book');
@@ -15,7 +16,7 @@ export default function BooksPage() {
   const [dayBookDate, setDayBookDate] = useState(new Date().toISOString().split('T')[0]);
   
   // States for Cash/Bank Book
-  const [fromDate, setFromDate] = useState('2026-04-01');
+  const [fromDate, setFromDate] = useState(financialYearStart());
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedAccount, setSelectedAccount] = useState('');
 

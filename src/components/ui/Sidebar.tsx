@@ -23,6 +23,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { financialYearLabel } from '@/lib/fiscal';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, group: 'Main' },
@@ -125,7 +126,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-border mt-auto">
         <div className="text-xs text-textSecondary text-center">
           <p className="font-semibold text-white">Caratloop Pvt Ltd</p>
-          <p>FY 2026-27</p>
+          <p>FY {financialYearLabel()}</p>
         </div>
       </div>
     </div>

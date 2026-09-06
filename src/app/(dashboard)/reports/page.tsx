@@ -6,6 +6,7 @@ import Badge from '@/components/ui/Badge';
 import DataTable from '@/components/ui/DataTable';
 import { formatCurrency } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
+import { financialYearStart } from '@/lib/fiscal';
 
 export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState('Trial Balance');
@@ -14,7 +15,7 @@ export default function ReportsPage() {
 
   // Filter States
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
-  const [fromDate, setFromDate] = useState('2026-04-01');
+  const [fromDate, setFromDate] = useState(financialYearStart());
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
   const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7));
 

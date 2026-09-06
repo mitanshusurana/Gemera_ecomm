@@ -7,11 +7,12 @@ import Modal from '@/components/ui/Modal';
 import { FileUp, Landmark, CheckCircle, Clock, Check, X, Printer, ArrowRightLeft, AlertCircle, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
+import { previousPeriod } from '@/lib/fiscal';
 
 export default function BankingPage() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedAccount, setSelectedAccount] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('2026-08');
+  const [selectedMonth, setSelectedMonth] = useState(previousPeriod());
   const [unreconciled, setUnreconciled] = useState<any[]>([]);
   const [statementEntries, setStatementEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);

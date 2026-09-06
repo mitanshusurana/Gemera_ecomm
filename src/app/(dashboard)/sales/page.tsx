@@ -10,6 +10,7 @@ import TaxInvoicePrint from '@/components/print/TaxInvoicePrint';
 import PartySelect from '@/components/ui/PartySelect';
 import { formatCurrency } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
+import { financialYearStart } from '@/lib/fiscal';
 
 export default function SalesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,7 +19,7 @@ export default function SalesPage() {
   const [selectedPrintInvoice, setSelectedPrintInvoice] = useState<any | null>(null);
 
   // Filters
-  const [fromDate, setFromDate] = useState('2026-04-01');
+  const [fromDate, setFromDate] = useState(financialYearStart());
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');

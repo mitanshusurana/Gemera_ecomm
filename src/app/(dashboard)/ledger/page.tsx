@@ -5,10 +5,11 @@ import PartySelect from '@/components/ui/PartySelect';
 import { formatCurrency } from '@/lib/utils';
 import { Printer, AlertCircle } from 'lucide-react';
 import { ledgerApi, apiClient } from '@/lib/api';
+import { financialYearStart } from '@/lib/fiscal';
 
 export default function LedgerPage() {
   const [selectedParty, setSelectedParty] = useState('');
-  const [fromDate, setFromDate] = useState('2026-04-01');
+  const [fromDate, setFromDate] = useState(financialYearStart());
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
   const [ledgerData, setLedgerData] = useState<any[]>([]);
   const [partyDetails, setPartyDetails] = useState<any>(null);

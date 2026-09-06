@@ -6,10 +6,11 @@ import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
 import { Download, FileJson, FileSpreadsheet, Loader2, Calendar, ShieldCheck, AlertCircle, FileText } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import { previousPeriod } from '@/lib/fiscal';
 
 export default function GSTPage() {
   const [activeTab, setActiveTab] = useState('Output Tax');
-  const [selectedPeriod, setSelectedPeriod] = useState('2026-08');
+  const [selectedPeriod, setSelectedPeriod] = useState(previousPeriod());
   const [loading, setLoading] = useState(true);
   
   const [outputTaxData, setOutputTaxData] = useState<any>(null);

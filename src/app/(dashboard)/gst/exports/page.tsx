@@ -5,9 +5,10 @@ import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import api, { gstExportApi } from '@/lib/api';
+import { previousPeriod } from '@/lib/fiscal';
 
 export default function GstExportsPage() {
-  const [period, setPeriod] = useState('2026-08');
+  const [period, setPeriod] = useState(previousPeriod());
   const [summary, setSummary] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);

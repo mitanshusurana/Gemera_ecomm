@@ -7,6 +7,7 @@ import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
 import { formatCurrency } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
+import { financialYearStart } from '@/lib/fiscal';
 
 interface LineItem {
   id: number;
@@ -64,7 +65,7 @@ const INDIAN_STATES = [
 ];
 
 export default function PurchasesPage() {
-  const [fromDate, setFromDate] = useState('2026-04-01');
+  const [fromDate, setFromDate] = useState(financialYearStart());
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -477,12 +478,12 @@ export default function PurchasesPage() {
           />
         </div>
 
-        {(searchQuery || selectedSupplierId || fromDate !== '2026-04-01') && (
+        {(searchQuery || selectedSupplierId || fromDate !== financialYearStart()) && (
           <button
             onClick={() => {
               setSearchQuery('');
               setSelectedSupplierId('');
-              setFromDate('2026-04-01');
+              setFromDate(financialYearStart());
               setToDate(new Date().toISOString().split('T')[0]);
             }}
             className="px-3 py-2 bg-surface border border-border text-textSecondary hover:text-white rounded-lg text-xs font-semibold"

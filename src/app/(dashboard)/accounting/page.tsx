@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Search, Calendar, Plus, Save, Loader2, BookOpen, Layers } from 'lucide-react';
 
 import { apiClient } from '@/lib/api';
+import { financialYearStart } from '@/lib/fiscal';
 
 export default function AccountingPage() {
   const [activeTab, setActiveTab] = useState('Trial Balance');
@@ -22,7 +23,7 @@ export default function AccountingPage() {
   // General Ledger State
   const [accounts, setAccounts] = useState<any[]>([]);
   const [glAccountId, setGlAccountId] = useState('');
-  const [glFromDate, setGlFromDate] = useState('2026-04-01');
+  const [glFromDate, setGlFromDate] = useState(financialYearStart());
   const [glToDate, setGlToDate] = useState(new Date().toISOString().split('T')[0]);
   const [glData, setGlData] = useState<any[]>([]);
   const [glLoading, setGlLoading] = useState(false);
