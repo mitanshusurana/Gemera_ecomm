@@ -12,6 +12,7 @@ from app.core.ledger import assert_journal_balanced
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
+from app.core.tenancy import resolve_fiscal_year
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +65,7 @@ class DebitNotePayload(BaseModel):
     date: date
 
 async def get_fy(db, company_id):
-    fy_result = await db.execute(
-        text("SELECT id, year_label FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
-        {"cid": company_id},
-    )
-    return fy_result.mappings().first()
+    return await resolve_fiscal_year(db, company_id)
 
 async def post_journal(db, cid, fy_id, je_no, entry_date, entry_type, narration, ref_no, amount, created_by, ip, sid, lines):
     # Convert entry_date if string

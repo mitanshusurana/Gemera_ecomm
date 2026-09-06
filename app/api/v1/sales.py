@@ -28,7 +28,9 @@ from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
+from app.tax.job_work import JOB_WORK_SAC
 from app.core.config import settings
+from app.core.tenancy import resolve_fiscal_year, resolve_stock_location
 
 logger = logging.getLogger(__name__)
 
@@ -221,13 +223,7 @@ async def create_sales_invoice(
 
     try:
         # ─── Generate invoice number ──────────────────────────────────────────
-        fy_result = await db.execute(
-            text("SELECT id, year_label FROM caratloop.fiscal_years WHERE company_id = :cid AND is_active = TRUE LIMIT 1"),
-            {"cid": company_id},
-        )
-        fy = fy_result.mappings().first()
-        if not fy:
-            raise HTTPException(status_code=400, detail="No active fiscal year found")
+        fy = await resolve_fiscal_year(db, company_id)
 
         # Atomic allocation. COUNT(*)+1 raced across workers and minted
         # duplicate invoice numbers.
@@ -296,11 +292,11 @@ async def create_sales_invoice(
         invoice_id = inv_result.scalar()
 
         # ─── Post Stock Ledger Entries Outward [CGST-R56-2] ──────────────────────
-        loc_res = await db.execute(
-            text("SELECT id FROM caratloop.stock_locations WHERE company_id = :cid LIMIT 1"),
-            {"cid": company_id}
-        )
-        loc_id = loc_res.scalar()
+        # LIMIT 1 with no ORDER BY returned whatever the heap gave, so the
+        # availability check below ran against an arbitrary location: a sale of
+        # stock sitting in the vault was refused because the query happened to
+        # pick the karigar's workshop, where the balance is zero.
+        loc_id = await resolve_stock_location(db, company_id)
 
         # Cost of goods sold, accumulated per stock account so the journal can
         # relieve each one correctly.
@@ -395,7 +391,7 @@ async def create_sales_invoice(
                     :cid, :fyid, :period,
                     :inv_id, :inv_no, :inv_date,
                     :party_id, :party_gstin, :pos, :is_inter, :supply_type,
-                    :mat_hsn, '998821',
+                    :mat_hsn, :making_sac,
                     :mat_val, :mat_gst_rate,
                     :mak_val, 5.00,
                     :igst, :cgst, :sgst, :total_gst,
@@ -416,6 +412,10 @@ async def create_sales_invoice(
                 "supply_type": supply_type,
                 # Whatever the line actually carries; no jewellery-code default.
                 "mat_hsn": computed_lines[0]["mat_hsn"] if computed_lines else "",
+                # SAC for the making-charges half. Shared with job work so the
+                # two cannot drift; it was hardcoded here as 998821, the
+                # textile code.
+                "making_sac": JOB_WORK_SAC,
                 "mat_val": total_material,
                 "mat_gst_rate": computed_lines[0]["mat_gst_rate"] if computed_lines else Decimal("3.0"),
                 "mak_val": total_making,
@@ -600,7 +600,9 @@ async def create_sales_invoice(
 
         # Double-entry invariant. Catches, among others, the case where
         # other_charges is debited to the customer but credited to no account.
-        await assert_journal_balanced(db, je_uuid, context="sales invoice journal entry")
+        # je_id, not je_uuid: journal_entry_lines references the bigint id.
+        # entry_uuid is the stable external reference stored on the invoice.
+        await assert_journal_balanced(db, je_id, context="sales invoice journal entry")
 
         await db.commit()
 
@@ -686,7 +688,13 @@ async def list_sales_invoices(
     return {"invoices": [dict(r) for r in result.mappings().all()]}
 
 
-@router.delete("/invoices/by-no/{invoice_no}", dependencies=[Depends(require(*CAN_AMEND))])
+# {invoice_no:path}, not {invoice_no}. Invoice numbers are formatted
+# "CL/2026-27/00001", so the plain converter stopped at the first slash and the
+# route never matched: the UI's own call, DELETE /sales/invoices/by-no/CL/...,
+# returned 404 and no invoice could be cancelled from the interface at all.
+# Percent-encoding is not a fix either -- nginx normalises %2F back to a slash
+# before FastAPI sees it.
+@router.delete("/invoices/by-no/{invoice_no:path}", dependencies=[Depends(require(*CAN_AMEND))])
 async def delete_sales_invoice(
     invoice_no: str,
     request: Request,
@@ -775,7 +783,12 @@ async def delete_sales_invoice(
                         total_debit, total_credit, sequence_no, created_by
                     )
                     SELECT
-                        :cid, orig.fiscal_year_id, :vno, CURRENT_DATE, 'Sales Reversal',
+                        -- 'Reversal', not 'Sales Reversal': chk_je_type permits
+                        -- Sales / Purchase / Receipt / Payment / Contra / Journal /
+                        -- Opening / Closing / Depreciation / RCM_Payment /
+                        -- ITC_Utilization / Stock_Adjustment / Reversal /
+                        -- Bank_Reconciliation, and nothing else.
+                        :cid, orig.fiscal_year_id, :vno, CURRENT_DATE, 'Reversal',
                         :ref_no, 'SalesInvoice', :inv_id, :narr,
                         orig.total_credit, orig.total_debit,
                         NEXTVAL('caratloop.journal_entry_seq'), CAST(:created_by AS UUID)
@@ -820,7 +833,7 @@ async def delete_sales_invoice(
                     source_document_type, source_document_id, source_document_no, sequence_no, created_by
                 )
                 SELECT company_id, fiscal_year_id, location_id, material_id, CURRENT_DATE,
-                    'I', 'Sale_Return', quantity, amount, gross_weight, net_weight,
+                    'I', 'Return_Inward', quantity, amount, gross_weight, net_weight,
                     'SalesInvoice', source_document_id, 'CNCL-' || source_document_no, COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, CAST(:created_by AS UUID)
                 FROM caratloop.stock_ledger_entries
                 WHERE source_document_no = :inv_no AND direction = 'O'

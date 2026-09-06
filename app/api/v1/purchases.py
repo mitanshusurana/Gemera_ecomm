@@ -51,6 +51,20 @@ class CreatePurchaseInvoiceRequest(BaseModel):
     reason: str = "Purchase invoice creation"
 
 
+def _as_uuid(value) -> str | None:
+    """The value if it is a UUID, else None.
+
+    Material lines may name an item by id or by code. Comparing a code against
+    a uuid column made Postgres fail the cast before the code branch of the OR
+    was ever considered, so "GOLD-22K" returned 500 instead of finding the
+    material. NULL simply fails that half of the comparison.
+    """
+    try:
+        return str(UUID(str(value)))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
 async def _resolve_line_rates(db, company_id, items):
     """Resolve each line's GST rate from the item master.
 
@@ -98,17 +112,6 @@ async def create_purchase_invoice(
     session_id = current_user.get("session_id", "0")
 
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
-
-    # Ownership guard. Every mutation below (one UPDATE and five DELETEs across
-    # the ledger, stock and ITC tables) is addressed by invoice id alone, so the
-    # caller's right to touch this invoice must be established up front.
-    owner_res = await db.execute(
-        text("SELECT company_id FROM caratloop.purchase_invoices WHERE id = :id LIMIT 1"),
-        {"id": str(id)}
-    )
-    owner_company = owner_res.scalar()
-    if owner_company is None or str(owner_company) != str(company_id):
-        raise HTTPException(status_code=404, detail="Purchase invoice not found")
 
     try:
         fy = await resolve_fiscal_year(db, company_id)
@@ -190,14 +193,22 @@ async def create_purchase_invoice(
         uom_id = await resolve_default_uom(db)
 
         seq_idx = 1
-        for item in payload.items:
+        for line_idx, item in enumerate(payload.items):
+            gst_rate = priced[line_idx].gst_rate
             mat_id = None
+            line_uom_id = uom_id
             if item.material_id and str(item.material_id).strip():
                 mat_res = await db.execute(
-                    text("SELECT id FROM caratloop.materials WHERE (id = :mid OR code = :mcode) AND company_id = :cid LIMIT 1"),
-                    {"mid": str(item.material_id), "mcode": str(item.material_id), "cid": company_id}
+                    text(
+                        "SELECT id, uom_id FROM caratloop.materials "
+                        "WHERE (id = CAST(:mid AS UUID) OR code = :mcode) AND company_id = :cid LIMIT 1"
+                    ),
+                    {"mid": _as_uuid(item.material_id), "mcode": str(item.material_id), "cid": company_id}
                 )
-                mat_id = mat_res.scalar()
+                mat_row = mat_res.mappings().first()
+                mat_id = mat_row["id"] if mat_row else None
+                if mat_row and mat_row["uom_id"]:
+                    line_uom_id = mat_row["uom_id"]
 
             if not mat_id:
                 raise HTTPException(status_code=400, detail=f"Stock material '{item.material_id}' not found in master records.")
@@ -224,7 +235,7 @@ async def create_purchase_invoice(
                     "hsn": item.hsn_code or "71131910",
                     "desc": item.description or "Stock Material Purchase",
                     "qty": item.quantity,
-                    "uom": uom_id,
+                    "uom": line_uom_id,
                     "gw": item.gross_weight or 0.0,
                     "nw": item.net_weight or 0.0,
                     "purity": item.purity or 1.0,
@@ -464,14 +475,32 @@ async def update_purchase_invoice(
 
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
+    # Ownership guard. Every mutation below (one UPDATE and five DELETEs across
+    # the ledger, stock and ITC tables) is addressed by invoice id alone, so the
+    # caller's right to touch this invoice must be established up front.
+    owner_res = await db.execute(
+        text("SELECT company_id FROM caratloop.purchase_invoices WHERE id = :id LIMIT 1"),
+        {"id": str(id)}
+    )
+    owner_company = owner_res.scalar()
+    if owner_company is None or str(owner_company) != str(company_id):
+        raise HTTPException(status_code=404, detail="Purchase invoice not found")
+
     try:
         fy = await resolve_fiscal_year(db, company_id)
 
+        # Scoped to the company: without it a caller could name another
+        # company's party as the supplier on their own invoice.
         supp_res = await db.execute(
-            text("SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties WHERE id = :id LIMIT 1"),
-            {"id": str(payload.supplier_id)}
+            text(
+                "SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties "
+                "WHERE id = :id AND company_id = :cid LIMIT 1"
+            ),
+            {"id": str(payload.supplier_id), "cid": company_id}
         )
         supplier = supp_res.mappings().first()
+        if supplier is None:
+            raise HTTPException(status_code=404, detail="Supplier not found")
 
         supp_gstin = (supplier.get("gstin") or "").strip().upper() if supplier else ""
         is_unregistered = not supp_gstin or supp_gstin in ["UNREGISTERED", "N/A", "NONE", ""]
@@ -550,14 +579,22 @@ async def update_purchase_invoice(
         uom_id = await resolve_default_uom(db)
 
         seq_idx = 1
-        for item in payload.items:
+        for line_idx, item in enumerate(payload.items):
+            gst_rate = priced[line_idx].gst_rate
             mat_id = item.material_id
+            line_uom_id = uom_id
             if mat_id and str(mat_id).strip():
                 mat_res = await db.execute(
-                    text("SELECT id FROM caratloop.materials WHERE (id = :mid OR code = :mcode) AND company_id = :cid LIMIT 1"),
-                    {"mid": str(mat_id), "mcode": str(mat_id), "cid": company_id}
+                    text(
+                        "SELECT id, uom_id FROM caratloop.materials "
+                        "WHERE (id = CAST(:mid AS UUID) OR code = :mcode) AND company_id = :cid LIMIT 1"
+                    ),
+                    {"mid": _as_uuid(mat_id), "mcode": str(mat_id), "cid": company_id}
                 )
-                mat_id = mat_res.scalar()
+                mat_row = mat_res.mappings().first()
+                mat_id = mat_row["id"] if mat_row else None
+                if mat_row and mat_row["uom_id"]:
+                    line_uom_id = mat_row["uom_id"]
 
             if not mat_id:
                 raise HTTPException(status_code=400, detail=f"Stock material '{item.material_id}' not found in master records.")
@@ -584,7 +621,7 @@ async def update_purchase_invoice(
                     "hsn": item.hsn_code or "71131910",
                     "desc": item.description or "Stock Material Purchase",
                     "qty": item.quantity,
-                    "uom": uom_id,
+                    "uom": line_uom_id,
                     "gw": item.gross_weight or 0.0,
                     "nw": item.net_weight or 0.0,
                     "purity": item.purity or 1.0,

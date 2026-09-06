@@ -25,8 +25,18 @@ CAPITAL_GOODS_RETURN_YEARS = 3
 GOODS_TYPE_INPUT = "Input"
 GOODS_TYPE_CAPITAL = "CapitalGoods"
 
-# Making charges / job work: SAC 9988.
-JOB_WORK_SAC = "998821"
+# Making charges / job work on jewellery.
+#
+# SAC 9988 is "manufacturing services on physical inputs owned by others". The
+# six-digit code matters: this was 998821, which is TEXTILE manufacturing
+# services. Every making-charges line, every job work challan and the GSTR-1
+# Table 12 HSN summary reported jewellery work under a textile code, so the
+# return did not describe the business that filed it.
+#
+# 998892 is "Jewellery manufacturing services", within group 99889 (other
+# manufacturing services). Imitation jewellery is 998893 and would be wrong
+# here for hallmarked gold.
+JOB_WORK_SAC = "998892"
 JOB_WORK_GST_RATE = Decimal("5")
 
 

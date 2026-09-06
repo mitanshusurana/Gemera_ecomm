@@ -332,7 +332,10 @@ async def complete_production_order(
                     )
                     SELECT
                         po.company_id, po.fiscal_year_id, :entry_date, :material_id,
-                        COALESCE(po.production_location_id, (SELECT id FROM caratloop.stock_locations WHERE company_id = po.company_id LIMIT 1)),
+                        COALESCE(po.production_location_id,
+                                 (SELECT id FROM caratloop.stock_locations
+                                   WHERE company_id = po.company_id AND is_active
+                                   ORDER BY is_default DESC, code LIMIT 1)),
                         :batch_no, 'Production_Consumption',
                         :qty, 'O', :rate, :amount,
                         :gross_wt, :net_wt, :purity, :fine_wt,
@@ -491,7 +494,10 @@ async def complete_production_order(
                     )
                     SELECT
                         po.company_id, po.fiscal_year_id, :entry_date, :material_id,
-                        COALESCE(po.production_location_id, (SELECT id FROM caratloop.stock_locations WHERE company_id = po.company_id LIMIT 1)),
+                        COALESCE(po.production_location_id,
+                                 (SELECT id FROM caratloop.stock_locations
+                                   WHERE company_id = po.company_id AND is_active
+                                   ORDER BY is_default DESC, code LIMIT 1)),
                         'Production_Output',
                         :qty, 'I', :rate, :amount,
                         :gross_wt, :net_wt,

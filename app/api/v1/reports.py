@@ -631,6 +631,17 @@ async def get_gst_tax_register(
     }
 
 
+def normalise_party_type_for_aging(value: str | None) -> str:
+    """Which side of the ledger the caller is asking about.
+
+    The interface says "Supplier"; the schema stores "Vendor". Anything that is
+    not recognisably a supplier is treated as the receivables side, which is
+    the historical default.
+    """
+    v = (value or "").strip().lower()
+    return "Vendor" if v in {"vendor", "supplier", "creditor", "payable", "payables"} else "Customer"
+
+
 @router.get("/outstanding-aging")
 async def get_outstanding_aging(
     as_of_date: Optional[date] = None,
@@ -647,37 +658,67 @@ async def get_outstanding_aging(
     elif isinstance(as_of_date, str):
         as_of_date = date.fromisoformat(as_of_date)
 
+    # party_type was accepted, echoed back in the response, and then ignored:
+    # the query always aggregated sales invoices. The Payables tab of the
+    # outstanding report therefore showed receivables -- money owed TO the
+    # business -- under the heading of money it owes. Both sides are now real.
+    #
+    # Two whole statements rather than one assembled from fragments: the join
+    # and the date column both change, and building SQL by interpolation is
+    # exactly what tests/test_sql_parses.py forbids -- rightly, because the
+    # next person to add a "small" fragment may take it from the request.
+    RECEIVABLES_AGING = """
+        SELECT
+            p.id AS party_id, p.name AS party_name, p.trade_name, p.gstin,
+            p.phone, p.credit_limit, p.credit_days,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date <= 30           THEN si.grand_total ELSE 0 END), 0) AS bucket_0_30,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 31 AND 60 THEN si.grand_total ELSE 0 END), 0) AS bucket_31_60,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 61 AND 90 THEN si.grand_total ELSE 0 END), 0) AS bucket_61_90,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date > 90            THEN si.grand_total ELSE 0 END), 0) AS bucket_over_90,
+            COALESCE(SUM(si.grand_total), 0) AS total_outstanding
+        FROM caratloop.parties p
+        JOIN caratloop.sales_invoices si
+          ON si.customer_id = p.id AND si.company_id = p.company_id
+        WHERE p.company_id = :cid
+          AND si.payment_status != 'Paid'
+          AND si.status != 'Cancelled'
+          AND si.invoice_date <= CAST(:as_of_date AS DATE)
+        GROUP BY p.id, p.name, p.trade_name, p.gstin, p.phone, p.credit_limit, p.credit_days
+        ORDER BY total_outstanding DESC
+    """
+
+    PAYABLES_AGING = """
+        SELECT
+            p.id AS party_id, p.name AS party_name, p.trade_name, p.gstin,
+            p.phone, p.credit_limit, p.credit_days,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date <= 30            THEN pi.grand_total ELSE 0 END), 0) AS bucket_0_30,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date BETWEEN 31 AND 60 THEN pi.grand_total ELSE 0 END), 0) AS bucket_31_60,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date BETWEEN 61 AND 90 THEN pi.grand_total ELSE 0 END), 0) AS bucket_61_90,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date > 90             THEN pi.grand_total ELSE 0 END), 0) AS bucket_over_90,
+            COALESCE(SUM(pi.grand_total), 0) AS total_outstanding
+        FROM caratloop.parties p
+        JOIN caratloop.purchase_invoices pi
+          ON pi.vendor_id = p.id AND pi.company_id = p.company_id
+        WHERE p.company_id = :cid
+          AND pi.payment_status != 'Paid'
+          AND pi.status != 'Cancelled'
+          AND pi.bill_date <= CAST(:as_of_date AS DATE)
+        GROUP BY p.id, p.name, p.trade_name, p.gstin, p.phone, p.credit_limit, p.credit_days
+        ORDER BY total_outstanding DESC
+    """
+
+    is_payables = normalise_party_type_for_aging(party_type) == "Vendor"
+
     res = await db.execute(
-        text("""
-            SELECT
-                p.id AS party_id,
-                p.name AS party_name,
-                p.trade_name,
-                p.gstin,
-                p.phone,
-                p.credit_limit,
-                p.credit_days,
-                COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date <= 30 THEN si.grand_total ELSE 0 END), 0) AS bucket_0_30,
-                COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 31 AND 60 THEN si.grand_total ELSE 0 END), 0) AS bucket_31_60,
-                COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 61 AND 90 THEN si.grand_total ELSE 0 END), 0) AS bucket_61_90,
-                COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date > 90 THEN si.grand_total ELSE 0 END), 0) AS bucket_over_90,
-                COALESCE(SUM(si.grand_total), 0) AS total_outstanding
-            FROM caratloop.parties p
-            JOIN caratloop.sales_invoices si ON si.customer_id = p.id
-            WHERE p.company_id = :cid
-              AND si.payment_status != 'Paid'
-              AND si.status != 'Cancelled'
-              AND si.invoice_date <= CAST(:as_of_date AS DATE)
-            GROUP BY p.id, p.name, p.trade_name, p.gstin, p.phone, p.credit_limit, p.credit_days
-            ORDER BY total_outstanding DESC
-        """),
+        text(PAYABLES_AGING if is_payables else RECEIVABLES_AGING),
         {"cid": cid, "as_of_date": as_of_date},
     )
     receivables = [dict(r) for r in res.mappings().all()]
 
     return {
         "as_of_date": str(as_of_date),
-        "party_type": party_type,
+        "party_type": "Vendor" if is_payables else "Customer",
+        "basis": "purchase_invoices" if is_payables else "sales_invoices",
         "aging_report": receivables,
         "totals": {
             "bucket_0_30": sum(float(r["bucket_0_30"]) for r in receivables),

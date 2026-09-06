@@ -205,7 +205,7 @@ async def get_gstr1_data(
             UNION ALL
 
             SELECT
-                COALESCE(NULLIF(hsn_making, ''), '998821') AS hsn_code,
+                COALESCE(NULLIF(hsn_making, ''), '998892') AS hsn_code,
                 'Services - making charges' AS description,
                 'NOS' AS uqc, 'NOS' AS uqc2,
                 SUM(taxable_making_value) AS taxable_value,
@@ -213,7 +213,7 @@ async def get_gstr1_data(
             FROM caratloop.gst_output_tax_register
             WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
               AND taxable_making_value > 0
-            GROUP BY COALESCE(NULLIF(hsn_making, ''), '998821')
+            GROUP BY COALESCE(NULLIF(hsn_making, ''), '998892')
         """),
         {"period": period, "cid": current_user["company_id"]},
     )

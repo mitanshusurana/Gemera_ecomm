@@ -28,6 +28,8 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 
+from uuid import UUID
+
 from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,7 +61,29 @@ async def assert_journal_balanced(
 
     Returns the (debit, credit) totals actually stored, so callers may log them.
     """
-    je_id = str(journal_entry_id)
+    # journal_entries.id is BIGINT. This coerced it with str(), and asyncpg
+    # binds by the parameter's inferred type, so it rejected '1' where an
+    # integer was expected: every balance check raised DataError and rolled the
+    # whole posting back. A SQL-side CAST does not help -- the driver infers
+    # the argument type from the cast target and still wants an int.
+    # int(UUID) does not raise: it returns the 128-bit value, so passing an
+    # entry_uuid here reached Postgres as an out-of-range bigint rather than
+    # failing at the call site. Reject a UUID by name.
+    if isinstance(journal_entry_id, UUID):
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"Cannot verify {context}: journal_entry_lines references the "
+                "numeric entry id, not entry_uuid."
+            ),
+        )
+    try:
+        je_id = int(journal_entry_id)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=500,
+            detail=f"Cannot verify {context}: {journal_entry_id!r} is not a journal entry id.",
+        )
 
     res = await db.execute(
         text(

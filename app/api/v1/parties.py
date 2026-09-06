@@ -181,8 +181,41 @@ async def fetch_gstin_details(
     token = os.environ.get("SUREPASS_TOKEN", "")
     return await fetch_gstin_from_surepass(gstin, token)
 
+# caratloop.parties.party_type is CHECK-constrained to Customer / Vendor /
+# Both. The whole user interface says "Supplier" -- which is the word the trade
+# uses -- and sent it straight through, so creating a supplier failed with a
+# 500 from the database, and the supplier dropdown, which filters on the same
+# word, matched nothing that could ever have been stored. Accept the word the
+# interface uses and store the one the schema permits.
+PARTY_TYPE_ALIASES = {
+    "customer": "Customer",
+    "debtor": "Customer",
+    "vendor": "Vendor",
+    "supplier": "Vendor",
+    "creditor": "Vendor",
+    "both": "Both",
+}
+
+
+def normalise_party_type(value: str | None) -> str:
+    """Map an incoming party type onto the value the schema stores.
+
+    Raises 422 rather than letting an unrecognised value reach the CHECK
+    constraint, where it surfaced as an opaque 500.
+    """
+    stored = PARTY_TYPE_ALIASES.get((value or "").strip().lower())
+    if stored is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Unknown party type '{value}'. Use Customer, Supplier or Both."
+            ),
+        )
+    return stored
+
+
 class CreatePartyRequest(BaseModel):
-    party_type: str  # Customer, Supplier, Both, Vendor
+    party_type: str  # Customer, Supplier/Vendor, or Both
     party_code: Optional[str] = None
     name: str
     trade_name: Optional[str] = None
@@ -222,9 +255,11 @@ async def create_party(
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
     try:
+        party_type = normalise_party_type(payload.party_type)
+
         # Auto-generate party_code if omitted
         if not payload.party_code:
-            prefix = "CUST" if payload.party_type == "Customer" else "SUPP"
+            prefix = "CUST" if party_type == "Customer" else "SUPP"
             count_res = await db.execute(
                 text("SELECT caratloop.next_document_number(:cid, NULL, :dtype)"),
                 {"cid": company_id, "dtype": f"Party:{prefix}"}
@@ -235,7 +270,11 @@ async def create_party(
             party_code = payload.party_code
 
         # Map Group Code to match account_groups table: 'DEBTORS' or 'CREDITORS'
-        acc_group_code = "DEBTORS" if payload.party_type in ["Customer", "Both"] else "CREDITORS"
+        # A 'Both' party is filed under Sundry Debtors, so its account must be
+        # a Debtor too. Branching on == "Customer" gave it a Creditor account
+        # inside the Debtors group, which no trial balance could reconcile.
+        is_debtor = party_type in ("Customer", "Both")
+        acc_group_code = "DEBTORS" if is_debtor else "CREDITORS"
         
         acc_result = await db.execute(
             text("""
@@ -252,8 +291,8 @@ async def create_party(
                 "group_code": acc_group_code,
                 "code": f"ACC-{party_code}",
                 "name": payload.name,
-                "acc_type": "Debtor" if payload.party_type == "Customer" else "Creditor",
-                "nb": "D" if payload.party_type == "Customer" else "C",
+                "acc_type": "Debtor" if is_debtor else "Creditor",
+                "nb": "D" if is_debtor else "C",
                 "gstin": payload.gstin,
                 "op_bal": payload.opening_balance or 0,
                 "op_type": payload.opening_bal_type[:1] if payload.opening_bal_type else 'D',
@@ -281,8 +320,8 @@ async def create_party(
                     "group_code": acc_group_code,
                     "code": f"ACC-{party_code}",
                     "name": payload.name,
-                    "acc_type": "Debtor" if payload.party_type == "Customer" else "Creditor",
-                    "nb": "D" if payload.party_type == "Customer" else "C",
+                    "acc_type": "Debtor" if is_debtor else "Creditor",
+                    "nb": "D" if is_debtor else "C",
                     "gstin": payload.gstin,
                     "created_by": user_id
                 }
@@ -306,7 +345,7 @@ async def create_party(
                 ) RETURNING id
             """),
             {
-                "cid": company_id, "acc_id": account_id, "ptype": payload.party_type,
+                "cid": company_id, "acc_id": account_id, "ptype": party_type,
                 "pcode": party_code, "name": payload.name, "tname": payload.trade_name,
                 "gstin": payload.gstin, "pan": payload.pan or (payload.gstin[2:12] if payload.gstin and len(payload.gstin)>=12 else None),
                 "aadhaar": payload.aadhaar_no, "kyc_docs": kyc_json,
@@ -362,8 +401,10 @@ async def list_parties(
     params = {"cid": current_user["company_id"], "limit": limit}
 
     if type:
+        # Normalised for the same reason as on write: the interface asks for
+        # "Supplier", which is stored as "Vendor".
         query += " AND (p.party_type = :type OR p.party_type = 'Both')"
-        params["type"] = type
+        params["type"] = normalise_party_type(type)
     if q:
         query += " AND (p.name ILIKE :q OR p.party_code ILIKE :q OR p.gstin ILIKE :q)"
         params["q"] = f"%{q}%"

@@ -182,7 +182,7 @@ async def create_challan(
                     " direction, transaction_type, quantity, amount, gross_weight, "
                     " net_weight, purity, source_document_type, source_document_id, "
                     " source_document_no, sequence_no, created_by, ip_address) "
-                    "VALUES (:cid, :fyid, :loc, :mid, :edate, 'O', 'JobWork_Issue', "
+                    "VALUES (:cid, :fyid, :loc, :mid, :edate, 'O', 'Job_Work_Out', "
                     "        :qty, :amt, :gw, :nw, :pur, 'JobWorkChallan', :chid, :no, "
                     "        COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, "
                     "        CAST(:cb AS UUID), CAST(:ip AS INET))"
@@ -350,7 +350,7 @@ async def receive_against_challan(
                         " direction, transaction_type, quantity, amount, gross_weight, "
                         " net_weight, source_document_type, source_document_id, "
                         " source_document_no, sequence_no, created_by, ip_address) "
-                        "VALUES (:cid, :fyid, :loc, :mid, :edate, 'I', 'JobWork_Receipt', "
+                        "VALUES (:cid, :fyid, :loc, :mid, :edate, 'I', 'Job_Work_In', "
                         "        :qty, :amt, :gw, :nw, 'JobWorkReceipt', :rid, :no, "
                         "        COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, "
                         "        CAST(:cb AS UUID), CAST(:ip AS INET))"
@@ -467,6 +467,76 @@ async def list_challans(
         row["days_remaining"] = days_remaining(row["return_due_date"], today)
         row["is_overdue"] = is_overdue(row["return_due_date"], today)
     return {"challans": rows, **page.envelope(rows)}
+
+
+@router.get("/challans/{challan_id}")
+async def get_challan(
+    challan_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """One challan with its lines and what is still outstanding on each.
+
+    There was no way to read a challan's lines. POST /challans/{id}/receive
+    requires a challan_line_id for every line being returned, and no endpoint
+    ever disclosed one, so the return half of job work -- the half that closes
+    the s.143 window and keeps the goods off the deemed-supply clock -- could
+    not be called at all.
+
+    quantity_outstanding is what the caller needs to fill a receipt: what was
+    sent, less everything already received or written off as wastage.
+    """
+    cid = current_user["company_id"]
+
+    head_res = await db.execute(
+        text(
+            "SELECT c.id, c.challan_no, c.challan_date, c.goods_type, "
+            "       c.return_due_date, c.status, c.nature_of_work, "
+            "       c.place_of_supply, c.is_inter_state, c.remarks, "
+            "       p.id AS job_worker_id, p.name AS job_worker_name, "
+            "       p.gstin AS job_worker_gstin "
+            "FROM caratloop.job_work_challans c "
+            "JOIN caratloop.parties p ON p.id = c.job_worker_id "
+            "WHERE c.id = :id AND c.company_id = :cid"
+        ),
+        {"id": str(challan_id), "cid": cid},
+    )
+    head = head_res.mappings().first()
+    if head is None:
+        raise HTTPException(status_code=404, detail="Job work challan not found")
+
+    line_res = await db.execute(
+        text(
+            "SELECT l.id, l.sequence_no, l.material_id, m.code AS material_code, "
+            "       m.name AS material_name, u.code AS uom, l.description, "
+            "       l.hsn_code, l.quantity_sent, l.gross_weight, l.net_weight, "
+            "       l.purity, l.taxable_value, "
+            "       COALESCE(r.received, 0) AS quantity_received, "
+            "       COALESCE(r.wastage, 0)  AS quantity_wastage, "
+            "       l.quantity_sent - COALESCE(r.received, 0) - COALESCE(r.wastage, 0) "
+            "           AS quantity_outstanding "
+            "FROM caratloop.job_work_challan_lines l "
+            "LEFT JOIN caratloop.materials m ON m.id = l.material_id "
+            "LEFT JOIN caratloop.units_of_measure u ON u.id = l.uom_id "
+            "LEFT JOIN ( "
+            "    SELECT challan_line_id, "
+            "           SUM(quantity_received) AS received, "
+            "           SUM(quantity_wastage)  AS wastage "
+            "    FROM caratloop.job_work_receipt_lines GROUP BY challan_line_id "
+            ") r ON r.challan_line_id = l.id "
+            "WHERE l.challan_id = :id "
+            "ORDER BY l.sequence_no"
+        ),
+        {"id": str(challan_id)},
+    )
+    lines = [dict(r) for r in line_res.mappings().all()]
+
+    today = date.today()
+    out = dict(head)
+    out["days_remaining"] = days_remaining(head["return_due_date"], today)
+    out["is_overdue"] = is_overdue(head["return_due_date"], today)
+    out["lines"] = lines
+    return out
 
 
 @router.get("/overdue")
