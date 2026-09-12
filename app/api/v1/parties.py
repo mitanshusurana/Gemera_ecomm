@@ -66,6 +66,32 @@ STATE_NAMES = {
     "27": "Maharashtra", "29": "Karnataka", "30": "Goa", "32": "Kerala", "33": "Tamil Nadu", "36": "Telangana", "37": "Andhra Pradesh"
 }
 
+# A GSTIN is 2 state digits + 10-character PAN + entity code + 'Z' + a check
+# digit over the first 14 characters (base-36, alternating weights 1 and 2).
+#
+# Validating it costs nothing and needs no provider, which matters because the
+# lookup is the slow, billable, sometimes-unavailable part: a mistyped number
+# can be caught before anyone waits on the network.
+#
+# ADVISORY ONLY. It is reported to the caller, never used to reject input. The
+# algorithm matches the published examples it was checked against, but it has
+# not been run over a body of real supplier GSTINs -- do not turn it into a
+# hard validation until it has been.
+_GSTIN_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def gstin_checksum_ok(gstin: str) -> bool | None:
+    """True/False if the check digit can be evaluated, None if it cannot."""
+    g = (gstin or "").strip().upper()
+    if len(g) != 15 or any(c not in _GSTIN_ALPHABET for c in g):
+        return None
+    total = 0
+    for i, ch in enumerate(g[:14]):
+        product = _GSTIN_ALPHABET.index(ch) * (2 if i % 2 else 1)
+        total += product // 36 + product % 36
+    return _GSTIN_ALPHABET[(36 - total % 36) % 36] == g[14]
+
+
 async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
     gstin = gstin.strip().upper()
     if len(gstin) != 15:
@@ -91,6 +117,10 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
                     d = body['data']
                     addr_str = d.get('address') or ''
                     return {
+                        'gstin': gstin,
+                        'verified': True,
+                        'source': 'gstinapi.in',
+                        'checksum_valid': gstin_checksum_ok(gstin),
                         'legal_name': d.get('legal_name', ''),
                         'trade_name': d.get('trade_name') or d.get('legal_name', ''),
                         'status': d.get('status', 'Active'),
@@ -127,6 +157,10 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
                     if data and data.get('legal_name'):
                         addr = data.get('pradr', {}).get('addr', {})
                         return {
+                            'gstin': gstin,
+                            'verified': True,
+                            'source': 'surepass',
+                            'checksum_valid': gstin_checksum_ok(gstin),
                             'legal_name': data.get('legal_name', ''),
                             'trade_name': data.get('trade_name', data.get('legal_name', '')),
                             'status': data.get('sts', 'Active'),
@@ -148,13 +182,34 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
         except Exception as err:
             logger.warning("Surepass lookup failed: %s", err)
 
-    # Clean structure strictly based on GSTIN format (no dummy hardcoded text)
+    # Nothing verified this GSTIN.
+    #
+    # This used to return status='Active', registration_type='Regular' and
+    # business_type='Proprietorship' regardless -- asserting the registration
+    # was live when no provider had been reached. A supplier whose registration
+    # is cancelled or suspended would have been recorded as Active, and input
+    # tax credit claimed against them is not available. An unchecked field must
+    # read as unchecked.
+    #
+    # state_code, state_name and pan are still returned: they are decoded from
+    # the GSTIN string itself, not looked up, so they are true without any
+    # provider. The caller is told which is which by 'verified'.
     return {
+        'gstin': gstin,
+        'verified': False,
+        'source': None,
+        'reason': (
+            'GSTIN lookup is not configured: set GSTIN_API_KEY (or SUREPASS_TOKEN) '
+            'in .env and restart the backend.'
+            if not api_key and not token
+            else 'The GSTIN lookup provider did not answer. Enter the details manually.'
+        ),
+        'checksum_valid': gstin_checksum_ok(gstin),
         'legal_name': '',
         'trade_name': '',
-        'status': 'Active',
-        'registration_type': 'Regular',
-        'business_type': 'Proprietorship',
+        'status': None,
+        'registration_type': None,
+        'business_type': None,
         'registration_date': '',
         'state_code': state_code,
         'state_name': state_name,
@@ -162,10 +217,10 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
         'address': {
             'building_no': '',
             'street': '',
-            'city': 'Jaipur' if state_code == '08' else '',
+            'city': '',
             'pincode': ''
         },
-        'einvoice_eligible': False
+        'einvoice_eligible': None
     }
 
 @router.get("/gstin/{gstin}")
