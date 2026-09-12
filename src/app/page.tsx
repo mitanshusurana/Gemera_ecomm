@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+// Relative, like every other call in the app. This page alone used an
+// absolute NEXT_PUBLIC_API_URL, which Next.js inlines into the bundle at
+// build time from .env.local -- so the shipped bundle POSTed the login to
+// http://localhost:8000, the BROWSER's own machine. It worked on the server
+// and from nowhere else. nginx fronts both apps; the frontend never needs to
+// know where the backend lives.
+const API_URL = '/api/v1';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,7 +38,12 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.response?.data?.detail || 'Invalid email or password. Please try again.');
+      if (err.response?.status === 429) {
+        // nginx throttles this endpoint to a handful of attempts a minute.
+        setError('Too many sign-in attempts. Wait a minute and try again.');
+      } else {
+        setError(err.response?.data?.detail || 'Invalid email or password. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

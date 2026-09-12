@@ -3,18 +3,23 @@
 import { formatCurrency } from '@/lib/utils';
 import { Printer, X } from 'lucide-react';
 
+import { useCompany } from '@/lib/company';
+
 interface TaxInvoicePrintProps {
   invoice: any;
   onClose: () => void;
 }
 
 export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintProps) {
-  if (!invoice) return null;
-
   // Seller identity is company master data. It was previously hardcoded --
   // including a placeholder GSTIN (08AAACC1234F1Z9, dummy PAN AAACC1234F) --
   // so every printed invoice carried a false GSTIN under a Rule 46 heading.
-  const company = invoice.company || {};
+  // It then read invoice.company, which nothing populated, so every invoice
+  // went out headed "COMPANY NOT CONFIGURED". The company master is the source.
+  const { company: masterCompany } = useCompany();
+  if (!invoice) return null;
+
+  const company = invoice.company || masterCompany || {};
   const seller = {
     legal_name: company.legal_name || company.trade_name || 'COMPANY NOT CONFIGURED',
     address_line1: company.address_line1 || '',
@@ -130,7 +135,7 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
               <p className="font-bold text-sm text-gray-900">{invoice.customer_name || 'Customer Name'}</p>
               {invoice.customer_trade_name && <p className="text-xs italic text-gray-600">({invoice.customer_trade_name})</p>}
               <p className="text-xs text-gray-700 mt-1">
-                {[invoice.customer_address1, invoice.customer_address2, invoice.customer_city, invoice.customer_state_name, invoice.customer_pincode].filter(Boolean).join(', ') || 'Jaipur, Rajasthan — 302003'}
+                {[invoice.customer_address1, invoice.customer_address2, invoice.customer_city, invoice.customer_state_name, invoice.customer_pincode].filter(Boolean).join(', ') || '— address not on record —'}
               </p>
               {invoice.customer_phone && <p className="text-xs text-gray-600 mt-0.5">Phone: {invoice.customer_phone}</p>}
             </div>
@@ -181,10 +186,25 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
           {/* Totals & Tax Split */}
           <div className="grid grid-cols-2 gap-4">
             <div className="border border-black p-3 space-y-2">
-              <h4 className="font-bold text-xs uppercase text-gray-700">Bank Account Details for NEFT/RTGS:</h4>
-              <p className="text-xs">Bank Name: State Bank of India (Jaipur Main Branch)</p>
-              <p className="text-xs font-mono">A/C No: 409988776611</p>
-              <p className="text-xs font-mono">IFSC: SBIN0001234</p>
+              {/* Only the company's own remittance details, from the company
+                  master. This printed a literal bank, account number and IFSC
+                  on every invoice -- details belonging to nobody. A customer
+                  paying against them paid into nothing. */}
+              {company.bank ? (
+                <>
+                  <h4 className="font-bold text-xs uppercase text-gray-700">Bank Account Details for NEFT/RTGS:</h4>
+                  <p className="text-xs">
+                    Bank Name: {company.bank.bank_name}
+                    {company.bank.bank_branch ? ` (${company.bank.bank_branch})` : ''}
+                  </p>
+                  <p className="text-xs font-mono">A/C No: {company.bank.account_no}</p>
+                  <p className="text-xs font-mono">IFSC: {company.bank.ifsc}</p>
+                </>
+              ) : (
+                <p className="text-xs text-gray-500 italic">
+                  Remittance details not on record. Add the bank account to the company master to print them here.
+                </p>
+              )}
             </div>
             <div className="border border-black p-3 space-y-1 text-right text-xs">
               <div className="flex justify-between">
@@ -232,7 +252,7 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
             </div>
             <div className="text-center font-semibold text-xs border-t border-black pt-2 px-8">
               Authorized Signatory<br/>
-              <span className="text-[10px] text-gray-500 font-normal">For Caratloop Manufacturing ERP</span>
+              <span className="text-[10px] text-gray-500 font-normal">For {company.legal_name || company.trade_name || company.name || "—"}</span>
             </div>
           </div>
         </div>

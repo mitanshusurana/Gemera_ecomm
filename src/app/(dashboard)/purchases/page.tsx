@@ -8,6 +8,7 @@ import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
 import { formatCurrency } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
+import { useCompany, stateLabel, addressLine } from '@/lib/company';
 
 interface LineItem {
   id: number;
@@ -65,6 +66,8 @@ const INDIAN_STATES = [
 ];
 
 export default function PurchasesPage() {
+  // Seller identity for the printed voucher, from the company master.
+  const { company } = useCompany();
   const [fromDate, setFromDate] = useState(financialYearStart());
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -923,24 +926,34 @@ export default function PurchasesPage() {
             {/* Header Voucher Box */}
             <div className="grid grid-cols-2 gap-6 border border-gray-300 p-4 rounded-lg bg-gray-50 text-xs">
               <div className="space-y-1">
-                <p className="font-bold text-gray-900 text-sm">{process.env.NEXT_PUBLIC_COMPANY_NAME || 'CARATLOOP MANUFACTURING LLP'}</p>
-                <p className="text-gray-600">Export Jewellery Zone, Sitapura Industrial Area, Jaipur, Rajasthan</p>
-                <p className="text-gray-700"><strong>State Code:</strong> 08 - Rajasthan | <strong>HSN Chapter:</strong> 71 (Precious Metals & Gems)</p>
+                {/* The buyer named here is the person claiming the input tax
+                    credit on this document. It was a hardcoded literal -- a
+                    different legal entity, an address in Sitapura, state 08 --
+                    regardless of which company was signed in. */}
+                <p className="font-bold text-gray-900 text-sm">
+                  {company?.legal_name || company?.name || '— COMPANY NOT CONFIGURED —'}
+                </p>
+                {addressLine(company) && <p className="text-gray-600">{addressLine(company)}</p>}
+                <p className="text-gray-700">
+                  {company?.gstin && (<><strong>GSTIN:</strong> <span className="font-mono">{company.gstin}</span> | </>)}
+                  <strong>State Code:</strong> {stateLabel(company) || '—'} | <strong>HSN Chapter:</strong> 71 (Precious Metals & Gems)
+                </p>
               </div>
               <div className="space-y-1 text-right">
                 <p className="text-gray-800"><strong>Bill No:</strong> <span className="font-mono font-bold text-gray-900">{selectedInvoice.bill_no}</span></p>
                 <p className="text-gray-800"><strong>Vendor Inv No:</strong> <span className="font-mono text-gray-900">{selectedInvoice.vendor_inv_no}</span></p>
                 <p className="text-gray-800"><strong>Vendor Inv Date:</strong> <span className="font-mono text-gray-900">{selectedInvoice.vendor_invoice_date || selectedInvoice.bill_date}</span></p>
                 <p className="text-gray-800"><strong>Posting Date:</strong> {selectedInvoice.bill_date}</p>
-                <p className="text-gray-800"><strong>Place of Supply:</strong> {selectedInvoice.place_of_supply || '08 - Rajasthan'}</p>
+                <p className="text-gray-800"><strong>Place of Supply:</strong> {selectedInvoice.place_of_supply || '—'}</p>
               </div>
             </div>
 
             {/* Vendor Box */}
             <div className="border border-gray-300 p-4 rounded-lg bg-gray-50 text-xs space-y-1">
               <p className="font-bold text-gray-700 uppercase tracking-wider text-[10px]">VENDOR / SUPPLIER (SUNDRY CREDITORS)</p>
-              <p className="font-bold text-gray-900 text-sm">{selectedInvoice.vendor_name || 'Supplier Master Record'}</p>
-              <p className="text-gray-600">{selectedInvoice.address_line1 || 'Main Bazaar'}, {selectedInvoice.city || 'Jaipur'}, Rajasthan</p>
+              <p className="font-bold text-gray-900 text-sm">{selectedInvoice.vendor_name || '—'}</p>
+              {/* No invented address: "Main Bazaar, Jaipur, Rajasthan" was printed for any supplier without one on file. */}
+              <p className="text-gray-600">{[selectedInvoice.address_line1, selectedInvoice.city].filter(Boolean).join(', ') || '—'}</p>
               <p className="text-gray-800"><strong>GSTIN:</strong> {selectedInvoice.vendor_gstin || 'Unregistered / Exempt'}</p>
             </div>
 
@@ -1022,7 +1035,7 @@ export default function PurchasesPage() {
               <div className="text-center">
                 <div className="h-12"></div>
                 <p className="font-bold text-gray-900">Authorized Signatory</p>
-                <p className="text-[10px] text-gray-500">For Caratloop Manufacturing ERP</p>
+                <p className="text-[10px] text-gray-500">For {company?.legal_name || company?.name || "—"}</p>
               </div>
             </div>
           </div>
