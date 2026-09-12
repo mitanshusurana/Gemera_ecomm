@@ -24,10 +24,6 @@ export class InquiryService {
     return this.http.post<CustomInquiry>(this.apiUrl, formData);
   }
 
-  getAllInquiries(): Observable<CustomInquiry[]> {
-    return this.http.get<CustomInquiry[]>(this.apiUrl);
-  }
-
   updateStatus(id: string, status: string): Observable<CustomInquiry> {
     return this.http.patch<CustomInquiry>(`${this.apiUrl}/${id}/status`, { status });
   }

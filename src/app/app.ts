@@ -22,7 +22,7 @@ import { CookieConsentComponent } from './components/cookie-consent';
     </div>
 
     <app-header></app-header>
-    <main id="main-content" class="min-h-screen" [@routeAnimations]="o.isActivated ? o.activatedRoute : ''">
+    <main id="main-content" class="min-h-screen pt-[96px]" [@routeAnimations]="o.isActivated ? o.activatedRoute : ''">
       <router-outlet #o="outlet"></router-outlet>
     </main>
     <app-footer></app-footer>

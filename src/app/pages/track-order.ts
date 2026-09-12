@@ -5,7 +5,6 @@ import { ActivatedRoute } from '@angular/router';
 import { OrderService } from '../services/order.service';
 import { ToastService } from '../services/toast.service';
 import { Order } from '../core/models';
-import { CurrencyService } from '../services/currency.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
@@ -13,54 +12,58 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   standalone: true,
   imports: [CommonModule, FormsModule, CurrencyConvertPipe, NgOptimizedImage],
   template: `
-    <div class="min-h-screen bg-surface font-sans text-[#115e59]">
-      <div class="container mx-auto px-4 py-12 max-w-2xl">
-        <h1 class="text-3xl font-serif font-bold text-center mb-8 text-[#115e59]">Track Your Order</h1>
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
+      <div class="max-w-[720px] mx-auto px-6 py-16">
+        <div class="text-center mb-10">
+          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2 block">Order Tracking</span>
+          <h1 class="font-display font-semibold text-3xl sm:text-4xl text-[#1d1d1f] tracking-tight">Track Your Order</h1>
+        </div>
 
-        <div class="bg-surface p-8 rounded-2xl border border-ink shadow-sm">
+        <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8">
           <div class="space-y-6">
             <div>
-              <label class="block text-sm font-bold text-ink mb-2">Order Number</label>
+              <label for="track-order-number" class="block text-sm font-semibold text-[#1d1d1f] mb-2">Order Number</label>
               <input type="text"
+                     id="track-order-number"
                      [(ngModel)]="orderId"
                      placeholder="e.g. ORD-12345"
-                     class="w-full px-4 py-3 border border-ink rounded-lg focus:outline-none focus:border-[#115e59] focus:ring-1 focus:ring-[#115e59]">
+                     class="input-field">
             </div>
 
             <button (click)="trackOrder()"
                     [disabled]="loading()"
-                    class="w-full bg-[#115e59] text-surface font-bold py-3 rounded-lg hover:bg-[#042f2e] transition-colors disabled:opacity-50">
+                    class="btn-apple-pill w-full">
               {{ loading() ? 'Tracking...' : 'Track Order' }}
             </button>
           </div>
         </div>
 
         <!-- Result -->
-        <div *ngIf="order()" class="mt-8 bg-surface p-6 rounded-2xl border border-ink shadow-lg animate-fade-in">
-           <div class="flex justify-between items-start mb-6 pb-6 border-b border-ink">
+        <div *ngIf="order()" class="mt-8 bg-white border border-[#e0e0e0] rounded-[18px] p-6 animate-fade-in">
+           <div class="flex justify-between items-start mb-6 pb-6 border-b border-[#e0e0e0]">
               <div>
-                 <h2 class="text-xl font-bold text-[#115e59]">Order Status: {{ order()?.status }}</h2>
-                 <p class="text-sm text-ink mt-1">Order #{{ order()?.orderNumber }}</p>
+                 <h2 class="font-display font-semibold text-xl text-[#1d1d1f]">Order Status: {{ order()?.status }}</h2>
+                 <p class="text-sm text-[#6e6e73] mt-1">Order #{{ order()?.orderNumber }}</p>
               </div>
               <div class="text-right">
-                 <p class="text-xs text-ink uppercase tracking-wide">Estimated Delivery</p>
-                 <p class="font-bold text-ink">{{ order()?.estimatedDelivery | date:'mediumDate' }}</p>
+                 <p class="text-xs text-[#6e6e73] uppercase tracking-wide">Estimated Delivery</p>
+                 <p class="font-semibold text-[#1d1d1f]">{{ order()?.estimatedDelivery | date:'mediumDate' }}</p>
               </div>
            </div>
 
            <div class="space-y-4">
-              <div *ngFor="let item of order()?.items" class="flex items-center gap-4 bg-surface p-3 rounded-lg">
-                 <div class="w-16 h-16 bg-surface rounded border border-ink flex items-center justify-center overflow-hidden">
-                    <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" width="64" height="64" class="w-full h-full object-cover">
+              <div *ngFor="let item of order()?.items" class="flex items-center gap-4 bg-[#f5f5f7] p-3 rounded-[12px]">
+                 <div class="w-16 h-16 bg-white rounded-[12px] border border-[#e0e0e0] flex items-center justify-center overflow-hidden">
+                    <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" width="64" height="64" class="w-full h-full object-cover" [alt]="item.product.name">
                     <span *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="text-xl">💎</span>
                  </div>
                  <div class="flex-1">
-                    <h4 class="font-bold text-sm text-ink">{{ item.product.name }}</h4>
-                    <p class="text-xs text-ink">{{ item.selectedMetal?.name }} {{ item.selectedDiamond?.name }}</p>
+                    <h4 class="font-sans font-semibold text-sm text-[#1d1d1f]">{{ item.product.name }}</h4>
+                    <p class="text-xs text-[#6e6e73]">{{ item.selectedMetal?.name }} {{ item.selectedDiamond?.name }}</p>
                  </div>
                  <div class="text-right">
-                    <p class="font-bold text-[#115e59]">{{ item.price | currencyConvert }}</p>
-                    <p class="text-xs text-ink">Qty: {{ item.quantity }}</p>
+                    <p class="font-semibold text-[#1d1d1f]">{{ item.price | currencyConvert }}</p>
+                    <p class="text-xs text-[#6e6e73]">Qty: {{ item.quantity }}</p>
                  </div>
               </div>
            </div>
@@ -77,7 +80,6 @@ export class TrackOrderComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
   private toastService = inject(ToastService);
-  private currencyService = inject(CurrencyService);
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {

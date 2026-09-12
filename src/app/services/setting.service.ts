@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -19,15 +19,13 @@ export class SettingService {
     companyFacebook: environment.companyFacebook
   });
 
-  public settings$ = this.settingsSubject.asObservable();
-
   constructor(private http: HttpClient) {
     this.loadSettings();
   }
 
   loadSettings() {
     this.http.get<any>(this.apiUrl).pipe(
-      catchError(err => {
+      catchError(() => {
         console.warn('Failed to load settings from API, using defaults');
         return of({});
       })
@@ -39,6 +37,6 @@ export class SettingService {
   }
 
   getSettings(): Observable<any> {
-    return this.settings$;
+    return this.settingsSubject.asObservable();
   }
 }

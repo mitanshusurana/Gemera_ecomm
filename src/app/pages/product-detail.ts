@@ -10,8 +10,6 @@ import {
   ViewEncapsulation,
   ViewChild,
   ElementRef,
-  ViewChildren,
-  QueryList,
   CUSTOM_ELEMENTS_SCHEMA,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -25,22 +23,18 @@ import {
   ProductDetail,
   Product,
   CustomizationOption,
-  PriceBreakup,
 } from '../core/models';
 import { ToastService } from '../services/toast.service';
 import { FormsModule } from '@angular/forms';
 import { SizeGuideModalComponent } from '../components/size-guide-modal';
 import { HistoryService } from '../services/history.service';
 import { SettingService } from '../services/setting.service';
-import { CurrencyService } from '../services/currency.service';
 import { RING_CATEGORIES } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { environment } from '../../environments/environment';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AppointmentService } from '../services/appointment.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SeoService } from '../services/seo.service';
-import { EmiCalculatorComponent } from '../components/emi-calculator';
 import { VirtualTryOnComponent } from '../components/virtual-try-on';
 
 @Component({
@@ -61,7 +55,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
   encapsulation: ViewEncapsulation.None,
   template: `
     <!-- APPLE DESIGN SYSTEM: PRODUCT DETAIL & CONFIGURATOR (DESIGN.md) -->
-    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
       
       <!-- Sub-Nav Breadcrumb -->
       <nav class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-3 px-6 md:px-12">
@@ -84,18 +78,18 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
         <!-- Loading Skeleton -->
         <div *ngIf="loading()" class="animate-pulse lg:flex lg:gap-12 relative">
           <div class="lg:w-[58%] space-y-6">
-            <div class="w-full aspect-square bg-[#f5f5f7] rounded-[24px]"></div>
+            <div class="w-full aspect-square bg-[#f5f5f7] rounded-[18px]"></div>
             <div class="grid grid-cols-4 gap-4">
-              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
-              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
-              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
-              <div class="h-24 bg-[#f5f5f7] rounded-[14px]"></div>
+              <div class="h-24 bg-[#f5f5f7] rounded-[12px]"></div>
+              <div class="h-24 bg-[#f5f5f7] rounded-[12px]"></div>
+              <div class="h-24 bg-[#f5f5f7] rounded-[12px]"></div>
+              <div class="h-24 bg-[#f5f5f7] rounded-[12px]"></div>
             </div>
           </div>
           <div class="lg:w-[42%] space-y-6">
             <div class="h-8 bg-[#f5f5f7] rounded-full w-3/4"></div>
             <div class="h-12 bg-[#f5f5f7] rounded-full w-1/2"></div>
-            <div class="h-40 bg-[#f5f5f7] rounded-[24px]"></div>
+            <div class="h-40 bg-[#f5f5f7] rounded-[18px]"></div>
           </div>
         </div>
 
@@ -130,10 +124,9 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     (click)="scrollToMedia(0)"
                     role="tab"
                     [attr.aria-selected]="selectedMediaIndex() === 0"
-                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-black rounded-[14px] overflow-hidden border border-[#e0e0e0] cursor-pointer hover:opacity-90 transition-all shrink-0 flex items-center justify-center"
+                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-black rounded-[12px] overflow-hidden border border-[#e0e0e0] cursor-pointer hover:opacity-90 transition-all shrink-0 flex items-center justify-center"
                     [class.!border-2]="selectedMediaIndex() === 0"
                     [class.!border-[#D4AF37]]="selectedMediaIndex() === 0"
-                    [class.shadow-sm]="selectedMediaIndex() === 0"
                   >
                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
                       <svg class="w-6 h-6 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
@@ -159,10 +152,9 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     (click)="scrollToMedia(product()?.videoUrl ? i + 1 : i)"
                     role="tab"
                     [attr.aria-selected]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
-                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-[#f5f5f7] rounded-[14px] overflow-hidden border border-[#e0e0e0] cursor-pointer hover:opacity-90 transition-all shrink-0 flex items-center justify-center p-1.5"
+                    class="snap-start relative w-20 h-20 md:w-full md:h-24 bg-[#f5f5f7] rounded-[12px] overflow-hidden border border-[#e0e0e0] cursor-pointer hover:opacity-90 transition-all shrink-0 flex items-center justify-center p-1.5"
                     [class.!border-2]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
                     [class.!border-[#D4AF37]]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
-                    [class.shadow-sm]="selectedMediaIndex() === (product()?.videoUrl ? i + 1 : i)"
                   >
                     <img
                       *ngIf="img"
@@ -180,7 +172,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                   #scrollContainer
                   (scroll)="onGalleryScroll($event)"
                   id="main-media-scroll"
-                  class="scroll-smooth order-1 md:order-2 flex-1 relative bg-[#f5f5f7] rounded-[24px] overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-[#e0e0e0] aspect-square product-surface-shadow"
+                  class="scroll-smooth order-1 md:order-2 flex-1 relative bg-[#f5f5f7] rounded-[18px] overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar flex items-center border border-[#e0e0e0] aspect-square product-surface-shadow"
                 >
                   <!-- Stock & Badge Pill -->
                   <div class="absolute top-5 left-5 z-10 flex flex-col gap-2">
@@ -190,7 +182,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     <span *ngIf="product()?.stock === 0" class="bg-red-100 text-red-800 text-[11px] font-semibold px-3 py-1 rounded-full border border-red-300">
                       Vault Reserved
                     </span>
-                    <span *ngIf="hasCertification('GIA')" class="bg-white/90 backdrop-blur-md text-[#1d1d1f] text-[11px] font-semibold px-3 py-1 rounded-full border border-[#e0e0e0] shadow-sm">
+                    <span *ngIf="hasCertification('GIA')" class="bg-white/90 backdrop-blur-md text-[#1d1d1f] text-[11px] font-semibold px-3 py-1 rounded-full border border-[#e0e0e0]">
                       GIA Certified
                     </span>
                   </div>
@@ -236,13 +228,14 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     </div>
 
                     <!-- Luxury Frosted Control Pill Bar -->
-                    <div class="absolute bottom-4 inset-x-4 md:inset-x-8 z-20 bg-black/70 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl flex items-center gap-3 transition-opacity duration-300 opacity-90 hover:opacity-100 shadow-2xl">
+                    <div class="absolute bottom-4 inset-x-4 md:inset-x-8 z-20 bg-black/70 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-full flex items-center gap-3 transition-opacity duration-300 opacity-90 hover:opacity-100 shadow-2xl">
                       
                       <!-- Play/Pause Toggle -->
                       <button
                         (click)="toggleVideoPlay(luxuryVideo)"
                         class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
                         [title]="isVideoPlaying() ? 'Pause' : 'Play'"
+                        [attr.aria-label]="isVideoPlaying() ? 'Pause video' : 'Play video'"
                       >
                         <svg *ngIf="isVideoPlaying()" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                         <svg *ngIf="!isVideoPlaying()" class="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -251,7 +244,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                       <!-- Progress Bar -->
                       <div class="flex-1 flex items-center gap-2">
                         <div class="relative w-full h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer" (click)="seekVideo($event, luxuryVideo)">
-                          <div class="h-full bg-gradient-to-r from-[#D4AF37] to-[#f3e5ab] rounded-full transition-all duration-100" [style.width.%]="videoProgress()"></div>
+                          <div class="h-full bg-[#D4AF37] rounded-full transition-all duration-100" [style.width.%]="videoProgress()"></div>
                         </div>
                       </div>
 
@@ -260,6 +253,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                         (click)="toggleVideoMute(luxuryVideo)"
                         class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
                         [title]="isVideoMuted() ? 'Unmute' : 'Mute'"
+                        [attr.aria-label]="isVideoMuted() ? 'Unmute video' : 'Mute video'"
                       >
                         <svg *ngIf="isVideoMuted()" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                         <svg *ngIf="!isVideoMuted()" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
@@ -270,6 +264,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                         (click)="toggleVideoFullscreen(luxuryVideo)"
                         class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
                         title="Expand Fullscreen"
+                        aria-label="Toggle fullscreen"
                       >
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
                       </button>
@@ -311,7 +306,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
             </div>
 
             <!-- COMPREHENSIVE PRODUCT SPECIFICATIONS -->
-            <div class="store-utility-card p-8 rounded-[24px] space-y-8">
+            <div class="store-utility-card p-8 space-y-8">
               
               <!-- Description -->
               <div *ngIf="product()?.description">
@@ -433,7 +428,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     Setting Stone Inventory
                   </h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div *ngFor="let s of product()?.stoneDetails" class="bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-xl text-xs space-y-1">
+                    <div *ngFor="let s of product()?.stoneDetails" class="bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-[12px] text-xs space-y-1">
                       <div class="flex justify-between">
                         <span class="text-[#7a7a7a]">Stone Type</span>
                         <span class="font-semibold text-[#1d1d1f]">{{ s.stoneType || 'Diamond' }}</span>
@@ -459,7 +454,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                   <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
                     Diamond Setting Details
                   </h4>
-                  <div class="overflow-x-auto border border-[#e0e0e0] rounded-xl">
+                  <div class="overflow-x-auto border border-[#e0e0e0] rounded-[12px]">
                     <table class="w-full text-xs text-left">
                       <thead class="bg-[#f5f5f7] text-[#1d1d1f] font-semibold border-b border-[#e0e0e0]">
                         <tr>
@@ -504,7 +499,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
 
           <!-- RIGHT COLUMN: Sticky Buy & Configurator Box -->
           <div class="lg:w-[42%] relative mt-8 lg:mt-0">
-            <div class="sticky top-[110px] bg-white p-8 rounded-[24px] border border-[#e0e0e0] shadow-sm space-y-6">
+            <div class="sticky top-[110px] bg-white p-8 rounded-[18px] border border-[#e0e0e0] space-y-6">
               
               <!-- Title & Reviews -->
               <div>
@@ -545,7 +540,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                   <span>{{ showPriceBreakup() ? '▲' : '▼' }}</span>
                 </button>
 
-                <div *ngIf="showPriceBreakup() && hasPriceBreakup()" class="mt-4 bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-xl text-xs space-y-2 animate-fadeIn">
+                <div *ngIf="showPriceBreakup() && hasPriceBreakup()" class="mt-4 bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-[12px] text-xs space-y-2 animate-fadeIn">
                   <div class="flex justify-between text-[#7a7a7a]">
                     <span>Precious Metal (18K)</span>
                     <span class="font-semibold text-[#1d1d1f]">{{ currentPriceBreakup()!.metal | currencyConvert }}</span>
@@ -621,6 +616,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                   <select
                     [ngModel]="selectedSize()"
                     (ngModelChange)="selectedSize.set($event)"
+                    aria-label="Ring size"
                     class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-5 py-2.5 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]"
                   >
                     <option [ngValue]="null">Select Ring Size (US)</option>
@@ -642,6 +638,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                       [ngModel]="pincode()"
                       (ngModelChange)="pincode.set($event)"
                       placeholder="Enter postal code"
+                      aria-label="Postal code"
                       class="flex-1 bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-5 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]"
                     />
                     <button (click)="checkDelivery()" class="btn-apple-pill-secondary text-xs !py-2 !px-4">Check</button>
@@ -799,35 +796,36 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
       >
         <div
-          class="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative"
+          class="bg-white rounded-[18px] w-full max-w-md overflow-hidden shadow-2xl relative"
         >
           <button
             (click)="tryAtHomeOpen.set(false)"
-            class="absolute top-4 right-4 text-ink hover:text-ink text-xl z-10"
+            aria-label="Close"
+            class="absolute top-4 right-4 text-[#7a7a7a] hover:text-[#1d1d1f] text-xl z-10"
           >
             &times;
           </button>
           <div
-            class="bg-gradient-to-r from-primary to-primary text-surface p-6 text-center"
+            class="bg-[#f5f5f7] border-b border-[#e0e0e0] text-[#1d1d1f] p-6 text-center"
           >
-            <h3 class="font-serif font-bold text-xl">Book {{ appointmentType() === 'TRY_AT_HOME' ? 'Try at Home' : (appointmentType() === 'STORE_VISIT' ? 'Store Visit' : 'Video Consult') }}</h3>
+            <h3 class="font-display font-semibold text-xl text-[#1d1d1f]">Book {{ appointmentType() === 'TRY_AT_HOME' ? 'Try at Home' : (appointmentType() === 'STORE_VISIT' ? 'Store Visit' : 'Video Consult') }}</h3>
           </div>
           <form [formGroup]="appointmentForm" (ngSubmit)="confirmTryAtHome()" class="p-6 space-y-4">
-            <p class="text-sm text-ink text-center mb-4">
+            <p class="text-sm text-[#6e6e73] text-center mb-4">
               {{ appointmentType() === 'TRY_AT_HOME' ? 'Our consultant will bring this jewellery to your doorstep.' : (appointmentType() === 'STORE_VISIT' ? 'Book a VIP consultation at our store.' : 'Our expert will guide you via WhatsApp Video call.') }}
             </p>
 
             <div class="space-y-3">
-              <input type="text" formControlName="name" placeholder="Your Name" class="w-full p-2 border rounded border-ink" required />
-              <input type="email" formControlName="email" placeholder="Email Address" class="w-full p-2 border rounded border-ink" required />
-              <input type="tel" formControlName="phone" placeholder="Phone Number" class="w-full p-2 border rounded border-ink" required />
-              <input type="date" formControlName="requestedDate" class="w-full p-2 border rounded border-ink" required />
+              <input type="text" formControlName="name" placeholder="Your Name" aria-label="Your name" class="input-field" required />
+              <input type="email" formControlName="email" placeholder="Email Address" aria-label="Email address" class="input-field" required />
+              <input type="tel" formControlName="phone" placeholder="Phone Number" aria-label="Phone number" class="input-field" required />
+              <input type="date" formControlName="requestedDate" aria-label="Requested date" class="input-field" required />
             </div>
 
             <button
               type="submit"
               [disabled]="appointmentForm.invalid || submittingAppointment()"
-              class="w-full bg-primary text-surface py-3 rounded font-bold disabled:opacity-50"
+              class="btn-apple-pill w-full"
             >
               {{ submittingAppointment() ? 'Booking...' : 'Confirm' }}
             </button>
@@ -837,26 +835,26 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
 
       <!-- Write a Review Modal -->
       <div *ngIf="showReviewModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-        <div class="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative p-6">
-          <button (click)="showReviewModal.set(false)" class="absolute top-4 right-4 text-ink hover:text-ink text-xl z-10">&times;</button>
-          <h3 class="font-serif font-bold text-xl mb-4 text-ink">Write a Review</h3>
-          
+        <div class="bg-white rounded-[18px] w-full max-w-md overflow-hidden shadow-2xl relative p-6">
+          <button (click)="showReviewModal.set(false)" aria-label="Close" class="absolute top-4 right-4 text-[#7a7a7a] hover:text-[#1d1d1f] text-xl z-10">&times;</button>
+          <h3 class="font-display font-semibold text-xl mb-4 text-[#1d1d1f]">Write a Review</h3>
+
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-bold text-ink mb-2">Rating</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-[#1d1d1f] mb-2">Rating</label>
               <div class="flex gap-2">
-                <button *ngFor="let star of [1,2,3,4,5]" (click)="reviewRating.set(star)" class="text-2xl" [class.text-orange-400]="star <= reviewRating()" [class.text-ink]="star > reviewRating()">
+                <button *ngFor="let star of [1,2,3,4,5]" (click)="reviewRating.set(star)" [attr.aria-label]="'Rate ' + star + ' out of 5'" class="text-2xl active-press" [class.text-amber-500]="star <= reviewRating()" [class.text-[#e0e0e0]]="star > reviewRating()">
                   ★
                 </button>
               </div>
             </div>
-            
+
             <div>
-              <label class="block text-sm font-bold text-ink mb-2">Comment</label>
-              <textarea [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)" rows="4" class="w-full p-3 border rounded border-ink bg-transparent text-ink" placeholder="Share your experience..."></textarea>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-[#1d1d1f] mb-2">Comment</label>
+              <textarea [ngModel]="reviewComment()" (ngModelChange)="reviewComment.set($event)" rows="4" aria-label="Review comment" class="input-field" placeholder="Share your experience..."></textarea>
             </div>
-            
-            <button (click)="submitReview()" [disabled]="submittingReview() || !reviewComment()" class="w-full bg-primary text-surface py-3 rounded-lg font-bold disabled:opacity-50">
+
+            <button (click)="submitReview()" [disabled]="submittingReview() || !reviewComment()" class="btn-apple-pill w-full">
               {{ submittingReview() ? 'Submitting...' : 'Submit Review' }}
             </button>
           </div>
@@ -878,50 +876,6 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
         display: block;
         overflow-x: hidden;
       }
-
-      .hide-scrollbar::-webkit-scrollbar {
-        width: 4px;
-      }
-      .hide-scrollbar::-webkit-scrollbar-thumb {
-        background: #e5e7eb;
-        border-radius: 10px;
-      }
-
-      .glass-tag {
-        padding: 0.375rem 0.75rem;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-radius: 0.5rem;
-        border-width: 1px;
-        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        display: inline-flex;
-        align-items: center;
-      }
-
-      /* Neutral/White Glass */
-      .glass-neutral {
-        background-color: rgb(255 255 255 / 0.7);
-        border-color: rgb(255 255 255 / 0.4);
-        color: rgb(31 41 55);
-      }
-
-      /* Warning/Low Stock Glass */
-      .glass-warning {
-        background-color: rgb(255 247 237 / 0.6);
-        border-color: rgb(254 215 170 / 0.5);
-        color: rgb(194 65 12);
-      }
-
-      /* Error/OOS Glass */
-      .glass-error {
-        background-color: rgb(254 242 242 / 0.6);
-        border-color: rgb(254 202 202 / 0.5);
-        color: rgb(185 28 28);
-      }
     `,
   ],
 })
@@ -934,8 +888,6 @@ export class ProductDetailComponent
   private router = inject(Router);
   private toastService = inject(ToastService);
   private historyService = inject(HistoryService);
-  private currencyService = inject(CurrencyService);
-  private sanitizer = inject(DomSanitizer);
   private settingService = inject(SettingService);
 
   /** Store settings, used to decide which promises may be made. */
@@ -958,7 +910,6 @@ export class ProductDetailComponent
   appointmentType = signal<'TRY_AT_HOME' | 'STORE_VISIT' | 'VIDEO_CONSULT'>('TRY_AT_HOME');
   tryOnOpen = signal(false);
   product = signal<ProductDetail | null>(null);
-  isWishlistLoading = signal(false);
 
   // Reviews & Recommendations
   private authService = inject(AuthService);
@@ -975,7 +926,6 @@ export class ProductDetailComponent
   isAuthenticated = computed(() => !!this.authService.currentUser());
 
   // UI State
-  selectedImage = signal<string | null>(null);
   selectedMediaIndex = signal<number>(0);
   sizeGuideOpen = signal(false);
   showPriceBreakup = signal(true);
@@ -1235,7 +1185,6 @@ export class ProductDetailComponent
         this.product.set(data);
         this.historyService.add(data);
         this.loading.set(false);
-        this.selectedImage.set(null);
 
         // Update SEO Tags
         this.seoService.updateTags({
@@ -1385,14 +1334,6 @@ export class ProductDetailComponent
     }
   }
 
-  openWhatsApp(): void {
-    const p = this.product();
-    if (!p) return;
-    const text = `Hi, I am interested in ${p.name} (SKU: ${p.specifications?.productDetails?.sku || p.sku}). Can you help me?`;
-    const url = `https://wa.me/${environment.whatsappNumber}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-  }
-
   togglePriceBreakup() {
     this.showPriceBreakup.set(!this.showPriceBreakup());
   }
@@ -1419,12 +1360,6 @@ export class ProductDetailComponent
   }
   openTryAtHome() {
     this.appointmentType.set('TRY_AT_HOME');
-    this.tryAtHomeOpen.set(true);
-    this.appointmentForm.reset();
-  }
-
-  openStoreVisit() {
-    this.appointmentType.set('STORE_VISIT');
     this.tryAtHomeOpen.set(true);
     this.appointmentForm.reset();
   }

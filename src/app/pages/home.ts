@@ -1,6 +1,6 @@
 import { Component, signal, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
-import { RouterLink, Router } from "@angular/router";
+import { RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
@@ -9,6 +9,7 @@ import { SeoService } from "../services/seo.service";
 import { ToastService } from "../services/toast.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { VirtualTryOnComponent } from "../components/virtual-try-on";
+import { EmailNotificationService } from "../services/email-notification.service";
 
 @Component({
   selector: "app-home",
@@ -24,7 +25,7 @@ import { VirtualTryOnComponent } from "../components/virtual-try-on";
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- APPLE DESIGN SYSTEM: FLAGSHIP HAUTE JOAILLERIE HOMEPAGE -->
-    <main class="w-full overflow-hidden font-sans pt-[96px] bg-white text-[#1d1d1f]">
+    <div class="w-full overflow-hidden font-sans bg-white text-[#1d1d1f]">
       
       <!-- HERO TILE: PURE LIGHT LUXURY SHOWCASE -->
       <section class="relative min-h-[90vh] flex flex-col justify-between py-16 md:py-24 border-b border-[#e0e0e0] bg-gradient-to-b from-[#fafafc] to-white">
@@ -77,7 +78,7 @@ import { VirtualTryOnComponent } from "../components/virtual-try-on";
             <img ngSrc="https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=1600"
                  fill
                  priority
-                 sizes="(max-width: 1200px) 100vw, 960px"
+                 sizes="(max-width: 1200px) 100vw, 80vw"
                  class="object-cover hover:scale-105 transition-transform duration-1000"
                  alt="Gemera Fine Solitaire Diamond Ring">
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-8">
@@ -336,7 +337,7 @@ import { VirtualTryOnComponent } from "../components/virtual-try-on";
         (closeEvent)="tryOnOpen.set(false)">
       </app-virtual-try-on>
 
-    </main>
+    </div>
   `,
 })
 export class HomeComponent implements OnInit {
@@ -344,6 +345,7 @@ export class HomeComponent implements OnInit {
   private cartService = inject(CartService);
   private seoService = inject(SeoService);
   private toastService = inject(ToastService);
+  private emailService = inject(EmailNotificationService);
 
   featuredProducts = signal<Product[]>([]);
   tryOnOpen = signal(false);
@@ -430,9 +432,14 @@ export class HomeComponent implements OnInit {
 
   handleSubscribe(event: Event) {
     event.preventDefault();
-    if (this.emailInput) {
-      this.toastService.show('Thank you! You have been added to the Gemera Atelier Circle.', 'success');
-      this.emailInput = '';
-    }
+    const email = this.emailInput.trim();
+    if (!email) return;
+    this.emailService.subscribeToNotifications(email).subscribe({
+      next: () => {
+        this.toastService.show('Thank you! You have been added to the Gemera Atelier Circle.', 'success');
+        this.emailInput = '';
+      },
+      error: () => this.toastService.show('Could not subscribe right now. Please try again.', 'error')
+    });
   }
 }

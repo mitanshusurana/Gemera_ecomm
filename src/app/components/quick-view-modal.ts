@@ -1,7 +1,6 @@
-import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy, HostListener, ViewChild, ElementRef } from "@angular/core";
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, HostListener, ViewChild, ElementRef } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ProductDetail } from "../core/models";
-import { CurrencyService } from "../services/currency.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 
 @Component({
@@ -22,19 +21,20 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
     >
       <div
         #modalContainer
-        class="bg-surface rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        class="bg-white rounded-[18px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto font-sans"
         (click)="$event.stopPropagation()"
       >
         <!-- Close Button -->
         <div
-          class="flex justify-between items-center p-6 border-b border-diamond-200"
+          class="flex justify-between items-center p-6 border-b border-[#e0e0e0]"
         >
-          <h2 class="text-2xl font-display font-bold text-diamond-900">
+          <h2 class="text-2xl font-display font-semibold tracking-tight text-[#1d1d1f]">
             Quick View
           </h2>
           <button
             (click)="close.emit()"
-            class="text-ink hover:text-ink transition-colors"
+            aria-label="Close quick view"
+            class="text-[#6e6e73] hover:text-[#1d1d1f] transition-colors active-press"
           >
             <svg
               class="w-6 h-6"
@@ -58,7 +58,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
             <!-- Image -->
             <div>
               <div
-                class="relative bg-gradient-to-br from-gold-100 to-diamond-100 rounded-xl overflow-hidden aspect-square flex items-center justify-center"
+                class="relative bg-[#f5f5f7] rounded-[12px] overflow-hidden aspect-square flex items-center justify-center"
               >
                 <!-- Use imageUrl or images array if available, else emoji -->
                 <img *ngIf="product?.imageUrl || product?.images?.[0]" [ngSrc]="product?.imageUrl || product?.images?.[0] || ''" fill class="w-full h-full object-cover" [alt]="product?.name">
@@ -68,7 +68,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
               </div>
 
               <!-- Stock Status -->
-              <div class="mt-4 p-4 rounded-lg" [ngClass]="getStockClass()">
+              <div class="mt-4 p-4 rounded-[12px]" [ngClass]="getStockClass()">
                 <p class="text-sm font-semibold">{{ getStockMessage() }}</p>
               </div>
             </div>
@@ -78,38 +78,38 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
               <!-- Category & Badge -->
               <div class="flex items-start justify-between mb-3">
                 <span
-                  class="text-xs text-gold-600 font-bold uppercase tracking-widest"
+                  class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37]"
                 >
                   {{ product?.category || "Product" }}
                 </span>
               </div>
 
               <!-- Name -->
-              <h3 class="text-2xl font-semibold text-ink mb-3">
+              <h3 class="text-2xl font-display font-semibold tracking-tight text-[#1d1d1f] mb-3">
                 {{ product?.name || "Product" }}
               </h3>
 
               <!-- Rating -->
               <div class="flex items-center gap-2 mb-4">
                 <div class="flex gap-0.5">
-                  <span *ngFor="let i of [1, 2, 3, 4, 5]" class="text-gold-500"
+                  <span *ngFor="let i of [1, 2, 3, 4, 5]" class="text-[#D4AF37]"
                     >★</span
                   >
                 </div>
-                <span class="text-sm text-ink"
+                <span class="text-sm text-[#6e6e73]"
                   >({{ product?.reviewCount || 0 }} reviews)</span
                 >
               </div>
 
               <!-- Price -->
-              <div class="mb-6 pb-6 border-b border-diamond-200">
+              <div class="mb-6 pb-6 border-b border-[#e0e0e0]">
                 <div class="flex items-baseline gap-3">
-                  <span class="text-3xl font-bold text-diamond-900">
+                  <span class="text-3xl font-semibold text-[#1d1d1f]">
                     {{ (product?.price || 0) | currencyConvert }}
                   </span>
                   <span
                     *ngIf="product && product.originalPrice"
-                    class="text-lg text-ink line-through"
+                    class="text-lg text-[#6e6e73] line-through"
                   >
                     {{ product.originalPrice | currencyConvert }}
                   </span>
@@ -117,50 +117,50 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
               </div>
 
               <!-- Description -->
-              <p class="text-ink text-sm mb-6">
+              <p class="text-[#6e6e73] text-sm mb-6">
                 {{ product?.description || "No description available" }}
               </p>
 
               <!-- Specifications -->
               <div *ngIf="product && product.specifications" class="mb-6">
-                <h4 class="font-semibold text-ink mb-3">Key Specs</h4>
+                <h4 class="font-semibold text-[#1d1d1f] mb-3">Key Specs</h4>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                   <div *ngIf="product.specifications?.carat">
-                    <p class="text-ink">
+                    <p class="text-[#6e6e73]">
                       Carat:
-                      <span class="font-semibold">{{
+                      <span class="font-semibold text-[#1d1d1f]">{{
                         product.specifications.carat
                       }}</span>
                     </p>
                   </div>
                   <div *ngIf="product.specifications?.clarity">
-                    <p class="text-ink">
+                    <p class="text-[#6e6e73]">
                       Clarity:
-                      <span class="font-semibold">{{
+                      <span class="font-semibold text-[#1d1d1f]">{{
                         product.specifications.clarity
                       }}</span>
                     </p>
                   </div>
                   <div *ngIf="product.specifications?.color">
-                    <p class="text-ink">
+                    <p class="text-[#6e6e73]">
                       Color:
-                      <span class="font-semibold">{{
+                      <span class="font-semibold text-[#1d1d1f]">{{
                         product.specifications.color
                       }}</span>
                     </p>
                   </div>
                   <div *ngIf="product.specifications?.cut">
-                    <p class="text-ink">
+                    <p class="text-[#6e6e73]">
                       Cut:
-                      <span class="font-semibold">{{
+                      <span class="font-semibold text-[#1d1d1f]">{{
                         product.specifications.cut
                       }}</span>
                     </p>
                   </div>
                   <div *ngIf="product.metal">
-                    <p class="text-ink">
+                    <p class="text-[#6e6e73]">
                       Metal:
-                      <span class="font-semibold">{{
+                      <span class="font-semibold text-[#1d1d1f]">{{
                         product.metal
                       }}</span>
                     </p>
@@ -173,7 +173,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                 <button
                   (click)="onAddToCart()"
                   [disabled]="product?.stock === 0"
-                  class="flex-1 btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="flex-1 btn-apple-pill">
                   {{ product?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
                 </button>
               </div>
@@ -181,7 +181,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
               <!-- View Full Details Link -->
               <button
                 (click)="onViewDetails()"
-                class="w-full mt-3 px-4 py-2 text-gold-600 hover:text-gold-700 font-semibold transition-colors"
+                class="btn-ghost w-full mt-3"
               >
                 View Full Details →
               </button>
@@ -202,8 +202,6 @@ export class QuickViewModalComponent {
     product: any;
   }>();
   @Output() viewDetails = new EventEmitter<string>();
-
-  private currencyService = inject(CurrencyService);
 
   onBackdropClick(): void {
     this.close.emit();
@@ -239,10 +237,10 @@ export class QuickViewModalComponent {
   }
 
   getStockClass(): string {
-    if (!this.product) return "bg-surface";
-    if (this.product.stock > 10) return "bg-green-100 text-green-800";
-    if (this.product.stock > 0) return "bg-yellow-100 text-yellow-800";
-    return "bg-red-100 text-red-800";
+    if (!this.product) return "bg-[#f5f5f7] text-[#6e6e73]";
+    if (this.product.stock > 10) return "bg-green-50 text-green-600";
+    if (this.product.stock > 0) return "bg-amber-50 text-amber-600";
+    return "bg-red-50 text-red-600";
   }
 
   getStockMessage(): string {
@@ -254,8 +252,8 @@ export class QuickViewModalComponent {
     return "✗ Out of Stock";
   }
 
-  @HostListener('document:keydown.escape', ['$event'])
-  onKeydownHandler(event: Event) {
+  @HostListener('document:keydown.escape')
+  onKeydownHandler() {
     if (this.isOpen) {
       this.close.emit();
     }
@@ -266,13 +264,13 @@ export class QuickViewModalComponent {
   @HostListener('document:keydown.tab', ['$event'])
   onTabHandler(event: any) {
     if (!this.isOpen || !this.modalContainer) return;
-    
+
     const focusableElements = this.modalContainer.nativeElement.querySelectorAll(
       'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
     );
-    
+
     if (focusableElements.length === 0) return;
-    
+
     const firstElement = focusableElements[0] as HTMLElement;
     const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 

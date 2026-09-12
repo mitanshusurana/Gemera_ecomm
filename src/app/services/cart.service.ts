@@ -2,7 +2,7 @@ import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, forkJoin } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
-import { Cart, CartItem } from '../core/models';
+import { Cart } from '../core/models';
 import { AuthService } from './auth.service';
 import { ApiConfigService } from './api-config.service';
 import { isPlatformBrowser } from '@angular/common';

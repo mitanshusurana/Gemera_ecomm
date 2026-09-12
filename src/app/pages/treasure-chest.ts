@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { TreasureService } from '../services/treasure.service';
 import { CurrencyService } from '../services/currency.service';
 import { ToastService } from '../services/toast.service';
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-treasure-chest',
@@ -12,7 +11,7 @@ import { RouterLink } from '@angular/router';
   imports: [CommonModule, FormsModule],
   template: `
     <!-- APPLE DESIGN SYSTEM: TREASURE PLAN (DESIGN.md) -->
-    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
       
       <!-- Top Parchment Header -->
       <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-16 px-6 text-center">
@@ -40,8 +39,8 @@ import { RouterLink } from '@angular/router';
       </section>
 
       <!-- Main Calculator Card Section -->
-      <main class="max-w-[1000px] mx-auto px-6 py-12">
-        <div class="store-utility-card !p-0 overflow-hidden shadow-sm">
+      <div class="max-w-[1000px] mx-auto px-6 py-12">
+        <div class="store-utility-card !p-0 overflow-hidden">
           <div class="grid grid-cols-1 md:grid-cols-2">
             
             <!-- Left: Input Controls -->
@@ -51,7 +50,7 @@ import { RouterLink } from '@angular/router';
 
               <div class="mb-8">
                 <label for="installmentAmount" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-4">Select Installment Amount</label>
-                <div class="flex items-center gap-3 mb-6 bg-[#f5f5f7] border border-[#e0e0e0] rounded-xl p-4">
+                <div class="flex items-center gap-3 mb-6 bg-[#f5f5f7] border border-[#e0e0e0] rounded-[12px] p-4">
                   <span class="text-2xl font-bold text-[#D4AF37]">₹</span>
                   <input type="number" id="installmentAmount" aria-label="Installment Amount" [ngModel]="installment()" (ngModelChange)="updateInstallment($event)"
                          min="1000" max="50000" step="500"
@@ -96,14 +95,14 @@ import { RouterLink } from '@angular/router';
                 </div>
               </div>
 
-              <div class="bg-white p-4 rounded-xl border border-[#e0e0e0] text-xs text-[#7a7a7a]">
+              <div class="bg-white p-4 rounded-[12px] border border-[#e0e0e0] text-xs text-[#7a7a7a]">
                 ✦ Redeemable on all certified diamonds and gold creations across our collections.
               </div>
             </div>
 
           </div>
         </div>
-      </main>
+      </div>
     </div>
   `
 })

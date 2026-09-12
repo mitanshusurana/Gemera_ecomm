@@ -3,17 +3,14 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ActivatedRoute, RouterLink, Router } from "@angular/router";
 import { FormsModule } from "@angular/forms";
-import { Title } from '@angular/platform-browser';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { SeoService } from '../services/seo.service';
 import { ProductService } from "../services/product.service";
 import { CartService } from "../services/cart.service";
-import { Product, Category, ProductDetail } from "../core/models";
+import { Product, ProductDetail } from "../core/models";
 import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
-import { CurrencyService } from '../services/currency.service';
-import { OCCASIONS_LIST, STYLES_LIST } from '../core/constants';
+import { OCCASIONS_LIST } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
@@ -23,7 +20,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- APPLE DESIGN SYSTEM: FINE JEWELRY ARCHIVES (100% SCREEN UTILIZATION) -->
-    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px]">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
       
       <!-- Top Parchment Header -->
       <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-12 px-6 text-center">
@@ -51,7 +48,6 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               [class.border-2]="selectedCategories().length === 0"
               [class.text-[#1d1d1f]]="selectedCategories().length === 0"
               [class.font-semibold]="selectedCategories().length === 0"
-              [class.shadow-sm]="selectedCategories().length === 0"
               [class.text-[#7a7a7a]]="selectedCategories().length > 0"
               class="px-4 py-2 rounded-full border border-[#e0e0e0] whitespace-nowrap active-press transition-all hover:text-[#1d1d1f]"
             >
@@ -66,7 +62,6 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               [class.border-2]="selectedCategories().includes(cat.name)"
               [class.text-[#1d1d1f]]="selectedCategories().includes(cat.name)"
               [class.font-semibold]="selectedCategories().includes(cat.name)"
-              [class.shadow-sm]="selectedCategories().includes(cat.name)"
               [class.text-[#7a7a7a]]="!selectedCategories().includes(cat.name)"
               class="px-4 py-2 rounded-full border border-[#e0e0e0] whitespace-nowrap active-press transition-all hover:text-[#1d1d1f]"
             >
@@ -96,6 +91,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 [(ngModel)]="searchQuery"
                 (keyup.enter)="loadProducts()"
                 placeholder="Search gems, rings..."
+                aria-label="Search products"
                 class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full pl-9 pr-4 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37] transition-colors"
               />
               <svg class="w-4 h-4 text-[#7a7a7a] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,6 +147,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               <select
                 [(ngModel)]="sortBy"
                 (change)="loadProducts()"
+                aria-label="Sort products"
                 class="bg-white border border-[#e0e0e0] rounded-full px-4 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37] appearance-none pr-8 cursor-pointer"
               >
                 <option value="newest">Sort: Newest</option>
@@ -168,7 +165,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
       </section>
 
       <!-- Main Content: Full Screen Width 4-Column Utility Grid (100% Screen Utilization) -->
-      <main class="max-w-[1440px] mx-auto px-4 md:px-12 py-8">
+      <div class="max-w-[1440px] mx-auto px-4 md:px-12 py-8">
         
         <!-- Results Counter Bar -->
         <div class="flex justify-between items-center mb-6 text-xs text-[#7a7a7a]">
@@ -200,12 +197,12 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 </div>
 
                 <!-- Circular Floating Translucent Actions -->
-                <button (click)="handleWishlist($event, product.id)" class="absolute top-3 left-3 w-8 h-8 bg-white/80 hover:bg-white text-[#1d1d1f] rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm" title="Wishlist">
+                <button (click)="handleWishlist($event, product.id)" class="absolute top-3 left-3 w-8 h-8 bg-white/80 hover:bg-white text-[#1d1d1f] rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm" title="Wishlist" aria-label="Add to wishlist">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                   </svg>
                 </button>
-                <button (click)="handleAddToCompare($event, product)" class="absolute top-3 right-3 w-8 h-8 bg-white/80 hover:bg-white text-[#1d1d1f] rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm" title="Compare">
+                <button (click)="handleAddToCompare($event, product)" class="absolute top-3 right-3 w-8 h-8 bg-white/80 hover:bg-white text-[#1d1d1f] rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm" title="Compare" aria-label="Add to compare">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
                 </button>
               </div>
@@ -270,7 +267,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
         <div *ngIf="!isLoading() && products().length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-[#e0e0e0] pt-6">
           <div class="flex items-center gap-2 text-xs text-[#7a7a7a]">
             <label>Items per page:</label>
-            <select [(ngModel)]="pagination().pageSize" (change)="onPageSizeChange()" class="bg-white border border-[#e0e0e0] rounded-full px-3 py-1 text-xs">
+            <select [(ngModel)]="pagination().pageSize" (change)="onPageSizeChange()" aria-label="Items per page" class="bg-white border border-[#e0e0e0] rounded-full px-3 py-1 text-xs">
               <option value="12">12</option>
               <option value="24">24</option>
               <option value="48">48</option>
@@ -281,6 +278,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             <button
               (click)="previousPage()"
               [disabled]="pagination().currentPage <= 1"
+              aria-label="Previous page"
               class="w-9 h-9 rounded-full border border-[#e0e0e0] flex items-center justify-center text-sm disabled:opacity-30 hover:bg-[#f5f5f7] transition-colors"
             >
               ‹
@@ -289,13 +287,14 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             <button
               (click)="nextPage()"
               [disabled]="pagination().currentPage >= pagination().totalPages"
+              aria-label="Next page"
               class="w-9 h-9 rounded-full border border-[#e0e0e0] flex items-center justify-center text-sm disabled:opacity-30 hover:bg-[#f5f5f7] transition-colors"
             >
               ›
             </button>
           </div>
         </div>
-      </main>
+      </div>
 
       <!-- APPLE REFINE SLIDE-OVER DRAWER (MODAL) -->
       <div *ngIf="isFilterOpen()" class="fixed inset-0 z-50 overflow-hidden animate-fadeIn">
@@ -311,7 +310,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <h3 class="font-display font-semibold text-xl text-[#1d1d1f]">Refine Jewelry</h3>
                   <p class="text-xs text-[#7a7a7a]">Filter by price, certifications, metals, and gemstones.</p>
                 </div>
-                <button (click)="isFilterOpen.set(false)" class="w-8 h-8 rounded-full bg-[#f5f5f7] flex items-center justify-center text-xs text-[#1d1d1f] hover:bg-[#e0e0e0]">
+                <button (click)="isFilterOpen.set(false)" aria-label="Close filters" class="w-8 h-8 rounded-full bg-[#f5f5f7] flex items-center justify-center text-xs text-[#1d1d1f] hover:bg-[#e0e0e0]">
                   ✕
                 </button>
               </div>
@@ -426,7 +425,6 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 export class ProductsComponent implements OnInit {
   categories: any[] = [];
   occasionsList = OCCASIONS_LIST;
-  stylesList = STYLES_LIST;
   gemstoneTypes: any[] = [];
   metalTypes = ['Gold', 'Platinum', 'Silver', 'White Gold'];
   certificationsList = ['GIA', 'IGI', 'AGS', 'BIS'];
@@ -436,10 +434,7 @@ export class ProductsComponent implements OnInit {
   private activatedRoute = inject(ActivatedRoute);
   private compareService = inject(CompareService);
   private toastService = inject(ToastService);
-  private titleService = inject(Title);
   private seoService = inject(SeoService);
-  private sanitizer = inject(DomSanitizer);
-  private currencyService = inject(CurrencyService);
   private destroyRef = inject(DestroyRef);
 
   // State management
@@ -457,12 +452,8 @@ export class ProductsComponent implements OnInit {
   sortBy = "newest";
   isLoading = signal(false);
 
-  trackByProductId(index: number, product: Product): any {
+  trackByProductId(_index: number, product: Product): any {
     return product.id;
-  }
-  
-  trackByIndex(index: number, item: any): any {
-    return index;
   }
 
   // Price Ranges
@@ -498,8 +489,6 @@ export class ProductsComponent implements OnInit {
   });
 
   private router = inject(Router);
-
-  schemaHtml: SafeHtml = '';
 
   ngOnInit(): void {
     this.seoService.updateTags({
@@ -540,10 +529,6 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  isGemstoneCategorySelected(): boolean {
-    return this.selectedCategories().includes('gemstones');
-  }
-
   loadProducts(): void {
     this.isLoading.set(true);
     const filters = {
@@ -575,7 +560,7 @@ export class ProductsComponent implements OnInit {
                 }));
                 this.isLoading.set(false);
             },
-            error: (err) => {
+            error: () => {
                 this.isLoading.set(false);
             }
         });
@@ -673,7 +658,7 @@ export class ProductsComponent implements OnInit {
     this.loadProducts();
   }
 
-  handleWishlist(event: Event, productId: string): void {
+  handleWishlist(event: Event, _productId: string): void {
     event.preventDefault();
     event.stopPropagation();
     this.toastService.show('Added to Wishlist', 'success');
@@ -757,54 +742,6 @@ export class ProductsComponent implements OnInit {
   onPageSizeChange(): void {
     this.pagination.update(p => ({ ...p, currentPage: 1, pageSize: parseInt(p.pageSize.toString()) }));
     this.loadProducts();
-  }
-
-  visiblePages(): number[] {
-    const pages: number[] = [];
-    const currentPage = this.pagination().currentPage;
-    const total = this.pagination().totalPages;
-    const maxVisible = 5;
-
-    if (total <= maxVisible) {
-      for (let i = 1; i <= total; i++) {
-        pages.push(i);
-      }
-    } else {
-      let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-      let end = Math.min(total, start + maxVisible - 1);
-
-      if (end - start < maxVisible - 1) {
-        start = Math.max(1, end - maxVisible + 1);
-      }
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-    }
-
-    return pages;
-  }
-
-  shouldShowEllipsis(): boolean {
-    const pages = this.visiblePages();
-    return pages.length > 0 && pages[pages.length - 1] < this.pagination().totalPages;
-  }
-
-  getProductEmoji(category: string): string {
-    const emojiMap: { [key: string]: string } = {
-      "Engagement Ring": "💍",
-      "Loose Gemstone": "💎",
-      "Spiritual Idol": "🕉️",
-      "Gemstone Ring": "👑",
-      "Precious Metal": "🏆",
-      "Diamond": "💎",
-      "Gemstone": "💎",
-      "Gold": "🏆",
-      "Platinum": "✨",
-      "Pearl": "⭐",
-      "Custom": "🎨",
-    };
-    return emojiMap[category] || emojiMap[category.split(' ')[0]] || "✦";
   }
 
   private scrollToTop(): void {

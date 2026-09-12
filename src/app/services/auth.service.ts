@@ -2,8 +2,8 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpBackend } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { tap, catchError, finalize } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { tap, finalize } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthResponse, User, Address } from '../core/models';
 import { LoginRequest, RegisterRequest } from '../core/dtos';
@@ -126,10 +126,6 @@ export class AuthService {
 
   resetPassword(token: string, newPassword: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/reset-password`, { token, newPassword });
-  }
-
-  changePassword(oldPassword: string, newPassword: string): Observable<any> {
-    return this.http.post(`${this.usersUrl}/change-password`, { oldPassword, newPassword });
   }
 
   // Helper to fetch user if token exists but user is null (page reload)

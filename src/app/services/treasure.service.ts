@@ -35,10 +35,6 @@ export class TreasureService {
     );
   }
 
-  getPlanConfig(): Observable<TreasurePlanConfig> {
-    return of(this.configSignal());
-  }
-
   calculateMaturity(installmentAmount: number): { youPay: number; weAdd: number; total: number } {
     const config = this.configSignal();
     const installments = config.durationMonths - config.bonusMonths;

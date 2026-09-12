@@ -17,7 +17,6 @@ async function initServer() {
     console.log('Initializing Angular SSR application...');
 
     const appEngineManifestPath = join(serverDistFolder, 'angular-app-engine-manifest.mjs');
-    const appManifestPath = join(serverDistFolder, 'angular-app-manifest.mjs');
 
     if (!existsSync(appEngineManifestPath)) {
       console.error(`ERROR: App engine manifest not found at ${appEngineManifestPath}`);
@@ -26,15 +25,10 @@ async function initServer() {
 
     // Load manifests first, then Angular imports
     try {
-      console.log('Loading Angular app-engine-manifest...');
       // @ts-ignore
       const appEngineManifest = await import('./angular-app-engine-manifest.mjs');
-      console.log('✓ Manifest loaded');
-
-      console.log('Loading Angular app-manifest...');
       // @ts-ignore
       const appManifest = await import('./angular-app-manifest.mjs');
-      console.log('✓ App manifest loaded');
 
       // Import the manifest setter functions (internal APIs)
       const { ɵsetAngularAppManifest, ɵsetAngularAppEngineManifest } = await import('@angular/ssr');
@@ -50,7 +44,6 @@ async function initServer() {
       // Set the manifests using the proper SSR API
       ɵsetAngularAppManifest(appManifest.default);
       ɵsetAngularAppEngineManifest(appEngineManifest.default);
-      console.log('✓ Manifests set via SSR API');
     } catch (error: any) {
       console.error('Failed to load manifests:', error.message);
       process.exit(1);
@@ -71,13 +64,11 @@ async function initServer() {
       process.exit(1);
     }
 
-    console.log('Creating AngularNodeAppEngine...');
     const app = express();
     let angularApp: any;
 
     try {
       angularApp = new AngularNodeAppEngine();
-      console.log('✓ AngularNodeAppEngine initialized');
     } catch (error: any) {
       console.error('ERROR: Failed to initialize AngularNodeAppEngine');
       console.error('Details:', error.message);
@@ -99,20 +90,13 @@ async function initServer() {
      * Handle all other requests by rendering the Angular application.
      */
     app.use((req: any, res: any, next: any) => {
-      console.log(`SSR Request: ${req.method} ${req.url} from ${req.headers.host}`);
-
       try {
         const result = angularApp.handle(req);
-        console.log('SSR handle called, awaiting result...');
 
         result.then((response: any) => {
-          console.log(`SSR Response received: ${response ? 'response object' : 'null'}`);
           if (response) {
-            console.log('Writing response...');
             writeResponseToNodeResponse(response, res);
-            console.log('Response written');
           } else {
-            console.log('No response from Angular, calling next()');
             next();
           }
         }).catch((error: any) => {

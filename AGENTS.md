@@ -1,190 +1,39 @@
-# Fusion Angular Tailwind Starter
+# Working in this repository
 
-A production-ready Angular application template with TypeScript, TailwindCSS 3, and modern tooling.
+Read `README.md` first for the layout. This file records the conventions an agent or contributor must keep.
 
-## Tech Stack
+## Storefront (`src/`)
 
-- **Frontend**: Angular 20 + TypeScript + TailwindCSS 3.4.11
-- **Styling**: TailwindCSS 3 with Typography Plugin + PostCSS + Autoprefixer
-- **Testing**: Angular Testing Framework (Jasmine + Karma via `ng test`)
-- **Build Tool**: Angular CLI with Vite
-- **Package Manager**: npm
+- Angular 20, standalone components, inline `template:` strings, signals for state, `ChangeDetectionStrategy.OnPush`
+  on presentational components. Routes are lazy `loadComponent` entries in `src/app/app.routes.ts`.
+- Tailwind CSS **v4**. `src/styles.css` imports Tailwind, loads `tailwind.config.js` via `@config`, and defines the
+  shared classes. There is no `@tailwind base/components/utilities` and no PostCSS `tailwindcss` plugin; the
+  `.postcssrc.json` uses `@tailwindcss/postcss`.
+- Design language: `DESIGN.md` (Apple-style canvases, ink text, hairlines, pill buttons) with `#D4AF37` gold as the
+  only action colour. Reuse `btn-apple-pill`, `btn-apple-pill-secondary`, `btn-outline`, `input-field`,
+  `store-utility-card`, `badge`, `active-press` before writing new button or card markup. No gradients as
+  backgrounds and no shadows on cards, buttons or text; `product-surface-shadow` is the one product shadow.
+- Layout: `app.ts` renders the only `<main>` and pads it `pt-[96px]` for the fixed header. Pages use `<div>` /
+  `<section>` roots and never add their own header offset.
+- Colours: use the hex tokens already in use (`#1d1d1f` ink, `#6e6e73`/`#7a7a7a` muted, `#e0e0e0` hairline,
+  `#f5f5f7` parchment, `#fafafc` pearl, `#1c1c1e` dark tile). Legacy `gold-*` / `diamond-*` scales still resolve
+  (they map onto the same ramp) but new code should use the hex tokens or the named tokens in `tailwind.config.js`.
+- API base URL comes from `environment.apiUrl`; HTTP calls go through the services in `src/app/services` and the
+  interceptors in `src/app/interceptors`. Do not read `window`/`document` without a platform check: the app is SSR.
+- The repository is public. Never commit secrets; `.env*` files are ignored for that reason.
 
-## Project Structure
-
-```
-src/                     # Angular application source
-├── app/                 # Main application module
-│   ├── app.html         # Main app template
-│   ├── app.ts           # App component
-│   ├── app.config.ts    # App configuration
-│   ├── app.routes.ts    # Route definitions
-│   └── app.spec.ts      # App component tests
-├── styles.css           # Global styles with TailwindCSS imports
-├── index.html           # Main HTML entry point
-└── main.ts              # Application bootstrap
-
-public/                  # Static assets
-├── favicon.ico          # Site favicon
-└── ...                  # Other static files
-```
-
-## Key Features
-
-### Angular Standalone Components
-
-The application uses Angular's modern standalone component architecture:
-
-- Standalone components with self-contained dependencies
-- Functional route guards and resolvers
-- Minimal bundle size with tree-shaking
-
-### Styling System
-
-- **Primary**: TailwindCSS 3.4.11 utility classes
-- **Typography**: `@tailwindcss/typography` plugin for rich text styling
-- **PostCSS**: Autoprefixer for cross-browser compatibility
-- **Configuration**: `tailwind.config.js` for custom theming
-
-```typescript
-// Example of TailwindCSS usage in Angular templates
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-  <div class="text-center">
-    <h1 class="text-2xl font-semibold text-slate-800">Welcome to Fusion</h1>
-  </div>
-</div>
-```
-
-### Routing System
-
-Angular Router with standalone route configuration:
-
-```typescript
-// app.routes.ts
-import { Routes } from "@angular/router";
-
-export const routes: Routes = [
-  { path: "", component: AppComponent },
-  // Add more routes here
-];
-```
-
-### Development Commands
+## Checks before finishing
 
 ```bash
-npm start          # Start development server
-npm run build      # Production build
-npm run watch      # Build with watch mode
-npm test          # Run Angular tests (ng test)
-ng serve          # Alternative dev server command
+npx tsc --noEmit -p tsconfig.app.json                      # storefront types
+npx ng build fusion-angular-tailwind-starter --configuration production
+npx ng build admin --configuration production               # when the admin changed
 ```
 
-## Adding Features
+The storefront build prints one Beasties warning ("1 rules skipped due to selector errors"); it is a critical-CSS
+inlining notice, not a build failure.
 
-### New Components
+## Git hygiene
 
-1. Create component in `src/app/components/`:
-
-```typescript
-// my-component.ts
-import { Component } from "@angular/core";
-
-@Component({
-  selector: "app-my-component",
-  standalone: true,
-  template: `
-    <div class="p-4 bg-white rounded-lg shadow">
-      <h2 class="text-xl font-bold text-gray-900">My Component</h2>
-      <p class="text-gray-600">This is my new component.</p>
-    </div>
-  `,
-})
-export class MyComponent {}
-```
-
-2. Import in your app or other components:
-
-```typescript
-import { MyComponent } from "./components/my-component";
-```
-
-### New Routes
-
-1. Create component in `src/app/pages/`:
-
-```typescript
-// pages/my-page.ts
-import { Component } from "@angular/core";
-
-@Component({
-  selector: "app-my-page",
-  standalone: true,
-  template: `
-    <div class="container mx-auto px-4 py-8">
-      <h1 class="text-3xl font-bold text-gray-900">My Page</h1>
-    </div>
-  `,
-})
-export class MyPageComponent {}
-```
-
-2. Add route in `src/app/app.routes.ts`:
-
-```typescript
-import { MyPageComponent } from "./pages/my-page";
-
-export const routes: Routes = [
-  { path: "", component: AppComponent },
-  { path: "my-page", component: MyPageComponent },
-  // Add more routes here
-];
-```
-
-### Custom TailwindCSS Configuration
-
-1. Update `tailwind.config.js` for custom theming:
-
-```javascript
-module.exports = {
-  content: ["./src/**/*.{html,ts}"],
-  theme: {
-    extend: {
-      colors: {
-        primary: "#3b82f6",
-        secondary: "#64748b",
-      },
-    },
-  },
-  plugins: [require("@tailwindcss/typography")],
-};
-```
-
-2. Add custom styles in `src/styles.css`:
-
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer components {
-  .btn-primary {
-    @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
-  }
-}
-```
-
-## Production Deployment
-
-- **Standard**: `npm run build` creates optimized production build
-- **Development**: `npm start` for local development
-- **Testing**: `npm test` runs Angular tests with Jasmine/Karma
-
-## Architecture Notes
-
-- Angular 20 with standalone components
-- TypeScript throughout the application
-- TailwindCSS 3.4.11 for utility-first styling
-- Typography plugin for rich text content
-- PostCSS with Autoprefixer for cross-browser support
-- Angular Testing Framework (Jasmine + Karma) for unit testing
-- Angular CLI for development and build tooling
+This working tree often carries unrelated in-progress changes (backend Gradle files, compose files). Stage files
+explicitly by path rather than `git add -A`.

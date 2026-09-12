@@ -1,80 +1,53 @@
-# FusionAngularTailwindStarter
+# Gemera / Caratloop e-commerce
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.2.
+Three deployables live in this repository:
 
-## Development server
+| Path | What it is | Stack |
+|---|---|---|
+| `src/` | Public storefront (SSR) | Angular 20 standalone components, Tailwind CSS v4, Express SSR |
+| `projects/admin/` | Back-office admin app | Angular 20, Tailwind CSS v4 |
+| `backend/` | REST API | Spring Boot, PostgreSQL, Razorpay, Cloudflare R2 |
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Storefront
 
 ```bash
-ng generate component component-name
+npm install
+npm start                 # http://localhost:4200, expects the API at http://localhost:8080/api/v1
+npm run build:prod        # production browser + server bundles in dist/fusion-angular-tailwind-starter
+npm run build:prod:ssr    # same, then validates the SSR output (scripts/validate-build.js)
+npm run serve:ssr:fusion-angular-tailwind-starter   # run the built SSR server
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Runtime configuration for the storefront comes from `src/environments/` at build time and from
+`env-subst.sh` inside the Docker image. Copy `.env.frontend.example` to `.env` for local Docker runs.
+
+### Design system
+
+The storefront follows the Apple-style system documented in `DESIGN.md` with the brand's champagne gold
+as the single action colour. Tokens live in `tailwind.config.js`; shared component classes
+(`btn-apple-pill`, `input-field`, `store-utility-card`, ...) live in `src/styles.css`. Pages are standalone
+components with inline templates under `src/app/pages`, shared UI under `src/app/components`. The fixed
+two-tier header is 96px tall and `app.ts` pads `<main>` for it, so pages must not add their own top offset.
+
+## Admin
 
 ```bash
-ng generate --help
+npx ng serve admin        # http://localhost:4300 by default in docker-compose.local.yml
+npx ng build admin --configuration production
 ```
 
-## Building
+The admin has its own `projects/admin/tailwind.config.js`.
 
-To build the project run:
+## Backend
 
-```bash
-ng build
-```
+See `backend/` (Gradle). Required environment variables are listed in `.env.backend.example`; the
+service refuses to start without `JWT_SECRET`, admin credentials and Razorpay keys.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Deployment
 
-## Running unit tests
+`DEPLOYMENT_GUIDE.md` describes the two-VM topology. Docker definitions: `frontend.Dockerfile`,
+`admin.Dockerfile`, `backend/Dockerfile`, and the `docker-compose.*.yml` files. GitHub Actions
+(`.github/workflows/docker-build-push.yml`) builds and pushes the backend and storefront images on
+every push to `main`.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-# Force rebuild with SSR fixes
-
----
-
-## Production Deployment (Multi-VM Split)
-
-To resolve memory constraints, the production architecture is split across two Virtual Machines (VMs).
-
-**1. Original VM (Backend, Admin, & DB)**
-This machine hosts the Spring Boot backend, the PostgreSQL database, and the NGINX-served Angular Admin app.
-*   **Deployment file:** `docker-compose.prod.backend.yml`
-*   **Command:** `docker-compose --env-file .env -f docker-compose.prod.backend.yml up -d`
-
-**2. New VM (Frontend SSR)**
-This machine is dedicated entirely to the Angular Server-Side Rendered (SSR) Node.js application.
-*   **Deployment file:** `docker-compose.prod.frontend.yml`
-*   **Command:** `docker-compose --env-file .env -f docker-compose.prod.frontend.yml up -d`
-
-**Configuration (`.env`)**
-*   Copy `.env.template` to `.env` on both machines.
-*   Crucially, on the **New VM**, ensure `FRONTEND_API_URL` points to the public IP or domain of the **Original VM** (where the backend runs).
+This repository is public: never commit `.env*` files with real values.

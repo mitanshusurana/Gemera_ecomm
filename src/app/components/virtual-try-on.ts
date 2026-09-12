@@ -8,10 +8,10 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
   template: `
     <div *ngIf="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-xl p-3 sm:p-6 animate-fadeIn font-sans">
-      <div class="bg-white w-full max-w-5xl rounded-[24px] overflow-hidden shadow-2xl relative flex flex-col lg:flex-row h-full max-h-[850px] border border-white/20">
-        
+      <div class="bg-white w-full max-w-5xl rounded-[18px] overflow-hidden shadow-2xl relative flex flex-col lg:flex-row h-full max-h-[850px] border border-white/20">
+
         <!-- Header Close Button -->
-        <button (click)="close()" class="absolute top-4 right-4 z-30 w-9 h-9 bg-black/50 hover:bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all active-press" title="Close AR Studio">
+        <button (click)="close()" class="absolute top-4 right-4 z-30 w-9 h-9 bg-black/50 hover:bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all active-press" title="Close AR Studio" aria-label="Close AR Studio">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
@@ -103,19 +103,19 @@ import { FormsModule } from '@angular/forms';
                         [class.bg-[#1d1d1f]]="tryOnMode() === 'webcam'"
                         [class.text-white]="tryOnMode() === 'webcam'"
                         [class.bg-white]="tryOnMode() !== 'webcam'"
-                        class="py-2 px-2 rounded-xl border border-[#e0e0e0] text-center font-medium transition-all active-press">
+                        class="py-2 px-2 rounded-lg border border-[#e0e0e0] text-center font-medium transition-all active-press">
                   📹 Live
                 </button>
                 <button (click)="setMode('model')"
                         [class.bg-[#1d1d1f]]="tryOnMode() === 'model'"
                         [class.text-white]="tryOnMode() === 'model'"
                         [class.bg-white]="tryOnMode() !== 'model'"
-                        class="py-2 px-2 rounded-xl border border-[#e0e0e0] text-center font-medium transition-all active-press">
+                        class="py-2 px-2 rounded-lg border border-[#e0e0e0] text-center font-medium transition-all active-press">
                   👤 Model
                 </button>
-                <label class="py-2 px-2 rounded-xl border border-[#e0e0e0] text-center font-medium transition-all active-press cursor-pointer bg-white hover:bg-[#f0f0f0] flex items-center justify-center">
+                <label class="py-2 px-2 rounded-lg border border-[#e0e0e0] text-center font-medium transition-all active-press cursor-pointer bg-white hover:bg-[#f0f0f0] flex items-center justify-center">
                   📁 Photo
-                  <input type="file" (change)="handlePhotoUpload($event)" accept="image/*" class="hidden">
+                  <input type="file" (change)="handlePhotoUpload($event)" accept="image/*" aria-label="Upload a photo" class="hidden">
                 </label>
               </div>
             </div>

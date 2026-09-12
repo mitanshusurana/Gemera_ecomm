@@ -23,41 +23,31 @@ import { Address, CartItem } from '../core/models';
 import { environment } from '../../environments/environment';
 import { COUNTRIES } from '../core/countries';
 
-export interface PendingOrderData {
-  shippingAddress: any;
-  billingAddress: any;
-  paymentMethod: string;
-  shippingMethod: string;
-  items: any[];
-  total: number;
-  paymentDetails: any;
-}
-
 @Component({
   selector: 'app-checkout',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-surface">
+    <div class="min-h-screen bg-[#f5f5f7] font-sans text-[#1d1d1f]">
       <!-- Breadcrumb -->
-      <div class="bg-diamond-50 border-b border-diamond-200">
-        <div class="container-luxury py-4">
+      <div class="bg-white border-b border-[#e0e0e0]">
+        <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-4">
           <div class="flex items-center gap-2 text-sm">
-            <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-ink">/</span>
-            <a routerLink="/cart" class="text-gold-600 hover:text-gold-700"
+            <a routerLink="/" class="text-[#6e6e73] hover:text-[#D4AF37]">Home</a>
+            <span class="text-[#a1a1a6]">/</span>
+            <a routerLink="/cart" class="text-[#6e6e73] hover:text-[#D4AF37]"
               >Cart</a
             >
-            <span class="text-ink">/</span>
-            <span class="text-ink">Checkout</span>
+            <span class="text-[#a1a1a6]">/</span>
+            <span class="text-[#1d1d1f] font-medium">Checkout</span>
           </div>
         </div>
       </div>
 
-      <div class="container-luxury section-padding">
+      <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-12 md:py-16">
         <h1
-          class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-12"
+          class="font-display font-semibold text-4xl md:text-5xl tracking-tight text-[#1d1d1f] mb-10"
         >
           Checkout
         </h1>
@@ -66,25 +56,25 @@ export interface PendingOrderData {
         <div class="mb-12">
           <div class="flex gap-4 items-center">
             <div
-              class="flex items-center justify-center w-10 h-10 rounded-full"
+              class="flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold transition-colors"
               [ngClass]="
                 currentStep() >= 1
-                  ? 'bg-gold-500 text-surface'
-                  : 'bg-diamond-200 text-ink'
+                  ? 'bg-[#1d1d1f] text-white'
+                  : 'bg-white border border-[#e0e0e0] text-[#6e6e73]'
               "
             >
               1
             </div>
             <div
-              class="flex-1 h-1"
-              [ngClass]="currentStep() >= 2 ? 'bg-gold-500' : 'bg-diamond-200'"
+              class="flex-1 h-px"
+              [ngClass]="currentStep() >= 2 ? 'bg-[#D4AF37]' : 'bg-[#e0e0e0]'"
             ></div>
             <div
-              class="flex items-center justify-center w-10 h-10 rounded-full"
+              class="flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold transition-colors"
               [ngClass]="
                 currentStep() >= 2
-                  ? 'bg-gold-500 text-surface'
-                  : 'bg-diamond-200 text-ink'
+                  ? 'bg-[#1d1d1f] text-white'
+                  : 'bg-white border border-[#e0e0e0] text-[#6e6e73]'
               "
             >
               2
@@ -93,12 +83,12 @@ export interface PendingOrderData {
           <div class="flex justify-between mt-4 text-sm">
             <span
               class="font-semibold"
-              [ngClass]="currentStep() >= 1 ? 'text-gold-600' : 'text-ink'"
+              [ngClass]="currentStep() >= 1 ? 'text-[#1d1d1f]' : 'text-[#6e6e73]'"
               >Shipping</span
             >
             <span
               class="font-semibold"
-              [ngClass]="currentStep() >= 2 ? 'text-gold-600' : 'text-ink'"
+              [ngClass]="currentStep() >= 2 ? 'text-[#1d1d1f]' : 'text-[#6e6e73]'"
               >Confirm & Pay</span
             >
           </div>
@@ -107,18 +97,18 @@ export interface PendingOrderData {
         <!-- Guest Checkout Banner -->
         <div
           *ngIf="!isAuthenticated()"
-          class="bg-diamond-50 border border-diamond-200 rounded-lg p-4 mb-8 flex justify-between items-center animate-fade-in-up"
+          class="bg-white border border-[#e0e0e0] rounded-[18px] p-5 mb-8 flex justify-between items-center gap-4 animate-fade-in-up"
         >
           <div class="flex items-center gap-3">
             <span class="text-2xl">👤</span>
             <div>
-              <p class="font-bold text-diamond-900">Already have an account?</p>
-              <p class="text-sm text-ink">
+              <p class="font-semibold text-[#1d1d1f]">Already have an account?</p>
+              <p class="text-sm text-[#6e6e73]">
                 Sign in for a faster checkout experience.
               </p>
             </div>
           </div>
-          <a routerLink="/login" [queryParams]="{returnUrl: '/checkout'}" class="btn-outline text-sm px-4 py-2"
+          <a routerLink="/login" [queryParams]="{returnUrl: '/checkout'}" class="btn-outline text-sm !py-2 !px-4 whitespace-nowrap"
             >Sign In</a
           >
         </div>
@@ -129,12 +119,12 @@ export interface PendingOrderData {
             <!-- Recovery State -->
             <div *ngIf="isRecovering()" class="card p-8 animate-slideUp text-center mb-8">
                <div class="flex justify-center mb-6">
-                 <div class="w-12 h-12 border-4 border-gold-200 border-t-gold-500 rounded-full animate-spin"></div>
+                 <div class="w-12 h-12 border-4 border-[#e0e0e0] border-t-[#D4AF37] rounded-full animate-spin"></div>
                </div>
-               <h2 class="text-2xl font-bold text-diamond-900 mb-3">Finalizing Your Order</h2>
-               <p class="text-ink mb-2">Your payment was received successfully. We're placing your order now.</p>
-               <p class="text-sm text-gold-600 font-semibold mb-8">Please do not refresh or close this page.</p>
-               <button *ngIf="!isProcessing()" (click)="retryOrderPlacement()" class="text-sm text-ink hover:text-gold-600 underline transition-colors">
+               <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-3">Finalizing Your Order</h2>
+               <p class="text-[#6e6e73] mb-2">Your payment was received successfully. We're placing your order now.</p>
+               <p class="text-sm text-[#D4AF37] font-semibold mb-8">Please do not refresh or close this page.</p>
+               <button *ngIf="!isProcessing()" (click)="retryOrderPlacement()" class="text-sm text-[#6e6e73] hover:text-[#D4AF37] underline transition-colors">
                  Try again manually
                </button>
             </div>
@@ -142,12 +132,12 @@ export interface PendingOrderData {
             <!-- Step 1: Shipping Address -->
             <div *ngIf="currentStep() === 1 && !isRecovering()" class="card p-8 animate-slideUp">
               <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-diamond-900">
+                <h2 class="font-display font-semibold text-2xl text-[#1d1d1f]">
                   Shipping Address
                 </h2>
                 <span
                   *ngIf="!isAuthenticated()"
-                  class="text-xs font-semibold text-ink bg-surface px-2 py-1 rounded"
+                  class="badge"
                   >GUEST CHECKOUT</span
                 >
               </div>
@@ -157,29 +147,29 @@ export interface PendingOrderData {
                 *ngIf="isAuthenticated() && savedAddresses().length > 0"
                 class="mb-8 space-y-4"
               >
-                <h3 class="font-semibold text-ink">Saved Addresses</h3>
+                <h3 class="font-sans font-semibold text-base text-[#1d1d1f]">Saved Addresses</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div
                     *ngFor="let address of savedAddresses()"
                     (click)="selectAddress(address)"
-                    class="border-2 rounded-lg p-4 cursor-pointer hover:border-gold-500 transition-all"
+                    class="border rounded-[12px] p-4 cursor-pointer hover:border-[#D4AF37] transition-colors"
                     [ngClass]="
                       selectedAddressId() === address.id
-                        ? 'border-gold-500 bg-gold-50'
-                        : 'border-diamond-200'
+                        ? 'border-[#D4AF37] bg-[#fbf8ef]'
+                        : 'border-[#e0e0e0] bg-white'
                     "
                   >
                     <div class="flex justify-between">
-                      <span class="font-bold text-ink"
+                      <span class="font-semibold text-[#1d1d1f]"
                         >{{ address.firstName }} {{ address.lastName }}</span
                       >
                       <span
                         *ngIf="address.isDefault"
-                        class="text-xs text-gold-600 font-bold"
+                        class="text-xs text-[#D4AF37] font-semibold"
                         >DEFAULT</span
                       >
                     </div>
-                    <p class="text-sm text-ink mt-1">
+                    <p class="text-sm text-[#6e6e73] mt-1">
                       {{ address.street }}<br />
                       {{ address.city }}, {{ address.state }}
                       {{ address.zipCode }}
@@ -189,10 +179,10 @@ export interface PendingOrderData {
                   <!-- New Address Option -->
                   <div
                     (click)="selectNewAddress()"
-                    class="border-2 border-dashed border-diamond-300 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-gold-500 hover:text-gold-600 text-ink transition-all"
+                    class="border border-dashed border-[#d2d2d7] rounded-[12px] p-4 flex items-center justify-center cursor-pointer hover:border-[#D4AF37] hover:text-[#D4AF37] text-[#6e6e73] transition-colors"
                     [ngClass]="
                       selectedAddressId() === 'new'
-                        ? 'border-gold-500 bg-gold-50 text-gold-600'
+                        ? 'border-[#D4AF37] bg-[#fbf8ef] text-[#D4AF37]'
                         : ''
                     "
                   >
@@ -210,137 +200,151 @@ export interface PendingOrderData {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="checkout-first-name"
+                      class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                       >First Name</label
                     >
                     <input
+                      id="checkout-first-name"
                       type="text"
                       formControlName="firstName"
                       class="input-field"
                       placeholder="John"
                     />
-                    <div *ngIf="shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched" class="text-red-500 text-xs mt-1">First name is required</div>
+                    <div *ngIf="shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched" class="text-red-600 text-xs mt-1">First name is required</div>
                   </div>
                   <div>
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="checkout-last-name"
+                      class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                       >Last Name</label
                     >
                     <input
+                      id="checkout-last-name"
                       type="text"
                       formControlName="lastName"
                       class="input-field"
                       placeholder="Doe"
                     />
-                    <div *ngIf="shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched" class="text-red-500 text-xs mt-1">Last name is required</div>
+                    <div *ngIf="shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched" class="text-red-600 text-xs mt-1">Last name is required</div>
                   </div>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2"
+                  <label for="checkout-email" class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                     >Email Address</label
                   >
                   <input
+                    id="checkout-email"
                     type="email"
                     formControlName="email"
                     class="input-field"
                     placeholder="john@example.com"
                   />
-                  <div *ngIf="shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched" class="text-red-500 text-xs mt-1">Valid email is required</div>
+                  <div *ngIf="shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched" class="text-red-600 text-xs mt-1">Valid email is required</div>
                 </div>
 
                 <div *ngIf="!isAuthenticated()">
                   <div
-                    class="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-2 space-y-2"
+                    class="bg-[#f5f5f7] border border-[#e0e0e0] rounded-[12px] p-4 mt-2 space-y-2"
                   >
-                    <p class="text-sm text-blue-800 font-semibold">
+                    <p class="text-sm text-[#1d1d1f] font-semibold">
                       An account will be created so you can track this order
                     </p>
-                    <p class="text-xs text-blue-700">
+                    <p class="text-xs text-[#6e6e73]">
                       We need it to process and track your order. We will email
                       you the sign-in address &mdash; never a password. You can
                       set one later from &lsquo;Forgot password&rsquo;.
                     </p>
                     <label class="flex items-center gap-3 cursor-pointer pt-1">
-                      <input type="checkbox" [ngModel]="marketingOptIn" (ngModelChange)="marketingOptIn = $event" [ngModelOptions]="{standalone: true}" class="w-4 h-4 text-blue-600 rounded">
-                      <span class="text-sm text-blue-800">Also email me new arrivals and offers</span>
+                      <input type="checkbox" [ngModel]="marketingOptIn" (ngModelChange)="marketingOptIn = $event" [ngModelOptions]="{standalone: true}" class="w-4 h-4 rounded accent-[#D4AF37]">
+                      <span class="text-sm text-[#1d1d1f]">Also email me new arrivals and offers</span>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2"
+                  <label for="checkout-phone" class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                     >Phone Number</label
                   >
                   <input
+                    id="checkout-phone"
                     type="tel"
                     formControlName="phone"
                     class="input-field"
                     placeholder="+1 (555) 000-0000"
                   />
-                  <div *ngIf="shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched" class="text-red-500 text-xs mt-1">Valid phone number is required</div>
+                  <div *ngIf="shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched" class="text-red-600 text-xs mt-1">Valid phone number is required</div>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2"
+                  <label for="checkout-street" class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                     >Street Address</label
                   >
                   <input
+                    id="checkout-street"
                     type="text"
                     formControlName="street"
                     class="input-field"
                     placeholder="123 Main Street"
                   />
-                  <div *ngIf="shippingForm.get('street')?.invalid && shippingForm.get('street')?.touched" class="text-red-500 text-xs mt-1">Street address is required</div>
+                  <div *ngIf="shippingForm.get('street')?.invalid && shippingForm.get('street')?.touched" class="text-red-600 text-xs mt-1">Street address is required</div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="checkout-city"
+                      class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                       >City</label
                     >
                     <input
+                      id="checkout-city"
                       type="text"
                       formControlName="city"
                       class="input-field"
                       placeholder="New York"
                     />
-                    <div *ngIf="shippingForm.get('city')?.invalid && shippingForm.get('city')?.touched" class="text-red-500 text-xs mt-1">City is required</div>
+                    <div *ngIf="shippingForm.get('city')?.invalid && shippingForm.get('city')?.touched" class="text-red-600 text-xs mt-1">City is required</div>
                   </div>
                   <div>
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="checkout-state"
+                      class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                       >State/Province</label
                     >
                     <input
+                      id="checkout-state"
                       type="text"
                       formControlName="state"
                       class="input-field"
                       placeholder="NY"
                     />
-                    <div *ngIf="shippingForm.get('state')?.invalid && shippingForm.get('state')?.touched" class="text-red-500 text-xs mt-1">State is required</div>
+                    <div *ngIf="shippingForm.get('state')?.invalid && shippingForm.get('state')?.touched" class="text-red-600 text-xs mt-1">State is required</div>
                   </div>
                   <div>
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="checkout-zip"
+                      class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                       >ZIP Code</label
                     >
                     <input
+                      id="checkout-zip"
                       type="text"
                       formControlName="zipCode"
                       class="input-field"
                       placeholder="10001"
                     />
-                    <div *ngIf="shippingForm.get('zipCode')?.invalid && shippingForm.get('zipCode')?.touched" class="text-red-500 text-xs mt-1">ZIP code is required</div>
+                    <div *ngIf="shippingForm.get('zipCode')?.invalid && shippingForm.get('zipCode')?.touched" class="text-red-600 text-xs mt-1">ZIP code is required</div>
                   </div>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2"
+                  <label for="checkout-country" class="block text-sm font-semibold text-[#1d1d1f] mb-2"
                     >Country</label
                   >
                   <select
+                    id="checkout-country"
                     formControlName="country"
                     class="input-field"
                   >
@@ -359,9 +363,9 @@ export interface PendingOrderData {
                     [ngModel]="billingSameAsShipping"
                     (ngModelChange)="billingSameAsShipping = $event"
                     [ngModelOptions]="{standalone: true}"
-                    class="mt-1"
+                    class="mt-1 w-4 h-4 rounded accent-[#D4AF37]"
                   />
-                  <span class="text-ink"
+                  <span class="text-sm text-[#1d1d1f]"
                     >Billing address is same as shipping</span
                   >
                 </label>
@@ -369,7 +373,7 @@ export interface PendingOrderData {
                 <button
                   type="submit"
                   [disabled]="!shippingForm.valid || isProcessing()"
-                  class="w-full btn-primary"
+                  class="w-full btn-apple-pill"
                 >
                   {{
                     isProcessing() ? 'Creating Account...' : 'Continue to Pay'
@@ -382,7 +386,7 @@ export interface PendingOrderData {
                 *ngIf="selectedAddressId() !== 'new' && isAuthenticated()"
                 class="mt-8 animate-fade-in-up"
               >
-                <button (click)="nextStep()" class="w-full btn-primary">
+                <button (click)="nextStep()" class="w-full btn-apple-pill">
                   Continue to Pay
                 </button>
               </div>
@@ -391,17 +395,17 @@ export interface PendingOrderData {
             <!-- Step 2: Order Review & Pay -->
             <div *ngIf="currentStep() === 2 && !isRecovering()" class="space-y-6 animate-slideUp">
               <div class="card p-8">
-                <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">
                   Review & Pay
                 </h2>
 
                 <div class="space-y-6">
                   <div>
-                    <h3 class="font-semibold text-ink mb-4">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                       Shipping Address
                     </h3>
                     <div
-                      class="bg-diamond-50 rounded-lg p-4 text-sm text-ink"
+                      class="bg-[#f5f5f7] rounded-[12px] p-4 text-sm text-[#1d1d1f]"
                     >
                       <p>
                         {{ shippingForm.value.firstName }} {{ shippingForm.value.lastName }}
@@ -415,42 +419,42 @@ export interface PendingOrderData {
                     </div>
                   </div>
 
-                  <div class="border-t border-diamond-200 pt-6">
-                    <h3 class="font-semibold text-ink mb-4">
+                  <div class="border-t border-[#e0e0e0] pt-6">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                       Shipping Method
                     </h3>
                     <div class="space-y-2">
                       <label
-                        class="flex items-center gap-3 p-4 border-2 border-gold-500 rounded-lg bg-gold-50"
+                        class="flex items-center gap-3 p-4 border border-[#D4AF37] rounded-[12px] bg-[#fbf8ef]"
                       >
                         <input
                           type="radio"
                           name="shipping"
                           value="express"
                           checked
-                          class="w-4 h-4"
+                          class="w-4 h-4 accent-[#D4AF37]"
                         />
                         <div>
-                          <p class="font-semibold text-ink">
+                          <p class="font-semibold text-[#1d1d1f]">
                             Express Shipping (2-3 days)
                           </p>
-                          <p class="text-sm text-ink">FREE</p>
+                          <p class="text-sm text-[#6e6e73]">FREE</p>
                         </div>
                       </label>
                     </div>
                   </div>
 
-                  <div class="border-t border-diamond-200 pt-6">
-                    <h3 class="font-semibold text-ink mb-4">
+                  <div class="border-t border-[#e0e0e0] pt-6">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                       Payment Method
                     </h3>
                     <div class="space-y-3">
                       <label
-                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors"
+                        class="flex items-center gap-3 p-4 border rounded-[12px] cursor-pointer transition-colors"
                         [ngClass]="
                           selectedPaymentMethod === 'RAZORPAY'
-                            ? 'border-gold-500 bg-gold-50'
-                            : 'border-ink hover:border-gold-300'
+                            ? 'border-[#D4AF37] bg-[#fbf8ef]'
+                            : 'border-[#e0e0e0] hover:border-[#1d1d1f]'
                         "
                       >
                         <input
@@ -458,23 +462,23 @@ export interface PendingOrderData {
                           name="paymentMethod"
                           value="RAZORPAY"
                           [(ngModel)]="selectedPaymentMethod"
-                          class="w-4 h-4 text-gold-600"
+                          class="w-4 h-4 accent-[#D4AF37]"
                         />
                         <div>
-                          <p class="font-semibold text-ink">
+                          <p class="font-semibold text-[#1d1d1f]">
                             Pay Online (Cards, UPI, NetBanking)
                           </p>
-                          <p class="text-sm text-ink">
+                          <p class="text-sm text-[#6e6e73]">
                             Secure payment via Razorpay
                           </p>
                         </div>
                       </label>
                       <label
-                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors"
+                        class="flex items-center gap-3 p-4 border rounded-[12px] cursor-pointer transition-colors"
                         [ngClass]="
                           selectedPaymentMethod === 'COD'
-                            ? 'border-gold-500 bg-gold-50'
-                            : 'border-ink hover:border-gold-300'
+                            ? 'border-[#D4AF37] bg-[#fbf8ef]'
+                            : 'border-[#e0e0e0] hover:border-[#1d1d1f]'
                         "
                       >
                         <input
@@ -482,13 +486,13 @@ export interface PendingOrderData {
                           name="paymentMethod"
                           value="COD"
                           [(ngModel)]="selectedPaymentMethod"
-                          class="w-4 h-4 text-gold-600"
+                          class="w-4 h-4 accent-[#D4AF37]"
                         />
                         <div>
-                          <p class="font-semibold text-ink">
+                          <p class="font-semibold text-[#1d1d1f]">
                             Cash on Delivery (COD)
                           </p>
-                          <p class="text-sm text-ink">
+                          <p class="text-sm text-[#6e6e73]">
                             Pay when your order is delivered
                           </p>
                         </div>
@@ -496,13 +500,13 @@ export interface PendingOrderData {
                     </div>
                   </div>
 
-                  <div class="border-t border-diamond-200 pt-6">
-                    <h3 class="font-semibold text-ink mb-4">
+                  <div class="border-t border-[#e0e0e0] pt-6">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                       Have a Coupon?
                     </h3>
                     <div class="flex gap-2">
-                      <input type="text" [(ngModel)]="couponCode" name="couponCode" placeholder="Enter coupon code" class="input-field flex-1" />
-                      <button type="button" (click)="applyCoupon()" class="btn-outline px-4 py-2 text-sm">Apply</button>
+                      <input type="text" [(ngModel)]="couponCode" name="couponCode" placeholder="Enter coupon code" aria-label="Coupon code" class="input-field flex-1" />
+                      <button type="button" (click)="applyCoupon()" class="btn-outline text-sm !py-2.5 !px-5">Apply</button>
                     </div>
                   </div>
                 </div>
@@ -512,14 +516,14 @@ export interface PendingOrderData {
                 <button
                   type="button"
                   (click)="previousStep()"
-                  class="flex-1 btn-ghost border border-diamond-300"
+                  class="flex-1 btn-outline"
                   [disabled]="isProcessing()"
                 >
                   Back
                 </button>
                 <button
                   (click)="placeOrder()"
-                  class="flex-1 btn-primary"
+                  class="flex-1 btn-apple-pill"
                   [disabled]="isProcessing()"
                 >
                   {{
@@ -536,19 +540,19 @@ export interface PendingOrderData {
 
           <!-- Order Summary Sidebar -->
           <div class="lg:col-span-1">
-            <div class="card p-8 sticky top-24">
-              <h3 class="font-display text-2xl font-bold text-diamond-900 mb-6">
+            <div class="card p-8 sticky top-[120px]">
+              <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">
                 Order Summary
               </h3>
 
               <div
-                class="space-y-3 mb-4 pb-4 border-b border-diamond-200 max-h-64 overflow-y-auto"
+                class="space-y-3 mb-4 pb-4 border-b border-[#e0e0e0] max-h-64 overflow-y-auto"
               >
                 <ng-container *ngFor="let item of cartItems()">
                   <div
-                    class="flex justify-between text-sm border-b border-diamond-100 pb-2"
+                    class="flex justify-between text-sm border-b border-[#f0f0f0] pb-2"
                   >
-                    <span class="text-ink">{{ item.product.name }}</span>
+                    <span class="text-[#6e6e73]">{{ item.product.name }}</span>
                     <span class="font-semibold">{{
                       item.price * item.quantity | currencyConvert
                     }}</span>
@@ -556,15 +560,15 @@ export interface PendingOrderData {
                 </ng-container>
               </div>
 
-              <div class="space-y-4 mb-4 pb-4 border-b border-diamond-200">
+              <div class="space-y-4 mb-4 pb-4 border-b border-[#e0e0e0] text-sm">
                 <div class="flex justify-between">
-                  <span class="text-ink">Subtotal</span>
+                  <span class="text-[#6e6e73]">Subtotal</span>
                   <span class="font-semibold">{{
                     cartSubtotal() | currencyConvert
                   }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-ink">Shipping</span>
+                  <span class="text-[#6e6e73]">Shipping</span>
                   <span
                     class="font-semibold"
                     [class.text-emerald-600]="cartShipping() === 0"
@@ -576,13 +580,13 @@ export interface PendingOrderData {
                   >
                 </div>
                 <div *ngIf="cartGiftWrap()" class="flex justify-between">
-                  <span class="text-ink">Gift wrapping</span>
+                  <span class="text-[#6e6e73]">Gift wrapping</span>
                   <span class="font-semibold">{{
                     giftWrapFee | currencyConvert
                   }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-ink">Tax</span>
+                  <span class="text-[#6e6e73]">Tax</span>
                   <span class="font-semibold">{{
                     cartTax() | currencyConvert
                   }}</span>
@@ -598,35 +602,35 @@ export interface PendingOrderData {
                 </div>
               </div>
 
-              <div class="flex justify-between mb-6 text-xl">
-                <span class="font-bold text-ink">Total</span>
-                <span class="font-bold text-2xl text-gold-600">{{
+              <div class="flex justify-between items-center mb-6">
+                <span class="font-semibold text-base text-[#1d1d1f]">Total</span>
+                <span class="font-semibold text-2xl text-[#1d1d1f]">{{
                   cartTotal() | currencyConvert
                 }}</span>
               </div>
 
               <div class="space-y-4">
-                <div class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                <div class="flex items-start gap-3 p-3 bg-[#f5f5f7] rounded-[12px]">
                   <span class="text-lg">🛡️</span>
                   <div>
-                    <p class="text-sm font-bold text-diamond-900">Free Insured Shipping</p>
-                    <p class="text-xs text-ink mt-0.5">Your package is fully insured until delivery</p>
+                    <p class="text-sm font-semibold text-[#1d1d1f]">Free Insured Shipping</p>
+                    <p class="text-xs text-[#6e6e73] mt-0.5">Your package is fully insured until delivery</p>
                   </div>
                 </div>
-                <div *ngIf="returnPolicyDays() as days" class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                <div *ngIf="returnPolicyDays() as days" class="flex items-start gap-3 p-3 bg-[#f5f5f7] rounded-[12px]">
                   <span class="text-lg">🔄</span>
                   <div>
-                    <p class="text-sm font-bold text-diamond-900">{{ days }}-Day Returns</p>
-                    <p class="text-xs text-ink mt-0.5">
+                    <p class="text-sm font-semibold text-[#1d1d1f]">{{ days }}-Day Returns</p>
+                    <p class="text-xs text-[#6e6e73] mt-0.5">
                       <a routerLink="/returns" class="underline">See our returns policy</a>
                     </p>
                   </div>
                 </div>
-                <div *ngIf="warrantyLabel()" class="flex items-start gap-3 p-3 bg-diamond-50 rounded-lg">
+                <div *ngIf="warrantyLabel()" class="flex items-start gap-3 p-3 bg-[#f5f5f7] rounded-[12px]">
                   <span class="text-lg">💎</span>
                   <div>
-                    <p class="text-sm font-bold text-diamond-900">{{ warrantyLabel() }}</p>
-                    <p class="text-xs text-ink mt-0.5">
+                    <p class="text-sm font-semibold text-[#1d1d1f]">{{ warrantyLabel() }}</p>
+                    <p class="text-xs text-[#6e6e73] mt-0.5">
                       <a routerLink="/returns" class="underline">See warranty terms</a>
                     </p>
                   </div>
@@ -652,7 +656,6 @@ export class CheckoutComponent implements OnInit {
   isProcessing = signal(false);
   isRecovering = signal(false);
   pendingOrderData: any = null;
-  private recoveryTimeout: ReturnType<typeof setTimeout> | undefined;
   // Marketing consent. The previous flag (createAccountForGuest) was bound
   // to a checkbox and read nowhere, and it implied the account was optional
   // when the order cannot be placed without one. This governs the only part
@@ -733,7 +736,7 @@ export class CheckoutComponent implements OnInit {
         this.pendingOrderData = JSON.parse(pending);
         this.isRecovering.set(true);
         // Auto-retry order placement after 2 seconds
-        this.recoveryTimeout = setTimeout(() => {
+        setTimeout(() => {
           this.retryOrderPlacement();
         }, 2000);
       }
@@ -796,7 +799,7 @@ export class CheckoutComponent implements OnInit {
         // meant an applied coupon reduced the total with no line to show it.
         this.cartDiscount.set(cart.appliedDiscount ?? cart.discount ?? 0);
       },
-      error: (error) => {
+      error: () => {
         // Error loading cart
       },
     });
@@ -926,7 +929,7 @@ export class CheckoutComponent implements OnInit {
                 this.currentStep.set(this.currentStep() + 1);
               }, 500);
             },
-            error: (err) => {
+            error: () => {
               this.isProcessing.set(false);
               this.toastService.show(
                 'Account created but login failed. Please sign in.',
@@ -936,7 +939,7 @@ export class CheckoutComponent implements OnInit {
             },
           });
       },
-      error: (err) => {
+      error: () => {
         this.isProcessing.set(false);
         this.toastService.show(
           'Failed to create account. Please try again or sign in.',
@@ -1034,7 +1037,7 @@ export class CheckoutComponent implements OnInit {
         sessionStorage.setItem('lastOrderId', order.id);
         this.router.navigate(['/order-confirmation']);
       },
-      error: (error) => {
+      error: () => {
         this.isProcessing.set(false);
         this.toastService.show(
           'Order placement failed. Please contact support.',
@@ -1068,7 +1071,7 @@ export class CheckoutComponent implements OnInit {
       next: (response) => {
         this.openRazorpayModal(response);
       },
-      error: (error) => {
+      error: () => {
         this.isProcessing.set(false);
         this.toastService.show(
           'Failed to initiate payment. Please try again.',
@@ -1171,7 +1174,7 @@ export class CheckoutComponent implements OnInit {
         sessionStorage.setItem('lastOrderId', order.id);
         this.router.navigate(['/order-confirmation']);
       },
-      error: (error) => {
+      error: () => {
         this.isProcessing.set(false);
         this.toastService.show(
           'Payment successful but order placement failed. We saved your payment details, please try again.',
@@ -1193,7 +1196,7 @@ export class CheckoutComponent implements OnInit {
         sessionStorage.setItem('lastOrderId', order.id);
         this.router.navigate(['/order-confirmation']);
       },
-      error: (error) => {
+      error: () => {
         this.isProcessing.set(false);
         this.toastService.show('Still unable to place order. Please contact support with your payment ID.', 'error');
       }

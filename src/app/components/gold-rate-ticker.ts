@@ -8,19 +8,20 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   standalone: true,
   imports: [CommonModule, CurrencyConvertPipe],
   template: `
-    <div *ngIf="prices()" class="bg-ink text-surface py-1.5 px-4 text-xs font-semibold uppercase tracking-widest flex items-center justify-between lg:justify-center gap-6 overflow-hidden">
+    <!-- Rendered inside the black top nav: gold markers and values, soft grey labels -->
+    <div *ngIf="prices()" class="text-[#cccccc] text-[11px] font-sans font-medium tracking-tight flex items-center justify-between lg:justify-center gap-6 overflow-hidden">
       <div class="flex animate-marquee lg:animate-none gap-8 whitespace-nowrap">
         <span class="flex items-center gap-2">
-          <span class="text-gold-400">●</span> 24K Gold Rate: 
-          <span class="text-gold-200">{{ prices()!['24k'] | currencyConvert }} / g</span>
+          <span class="text-[#D4AF37]">●</span> 24K Gold Rate:
+          <span class="text-[#D4AF37]">{{ prices()!['24k'] | currencyConvert }} / g</span>
         </span>
         <span class="flex items-center gap-2">
-          <span class="text-gold-400">●</span> 22K Gold Rate: 
-          <span class="text-gold-200">{{ prices()!['22k'] | currencyConvert }} / g</span>
+          <span class="text-[#D4AF37]">●</span> 22K Gold Rate:
+          <span class="text-[#D4AF37]">{{ prices()!['22k'] | currencyConvert }} / g</span>
         </span>
         <span class="flex items-center gap-2">
-          <span class="text-gold-400">●</span> 18K Gold Rate: 
-          <span class="text-gold-200">{{ prices()!['18k'] | currencyConvert }} / g</span>
+          <span class="text-[#D4AF37]">●</span> 18K Gold Rate:
+          <span class="text-[#D4AF37]">{{ prices()!['18k'] | currencyConvert }} / g</span>
         </span>
       </div>
     </div>

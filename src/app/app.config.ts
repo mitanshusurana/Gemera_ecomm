@@ -1,10 +1,9 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, ErrorHandler, isDevMode, APP_INITIALIZER } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, ErrorHandler, APP_INITIALIZER } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideClientHydration } from '@angular/platform-browser';
-import { provideServiceWorker } from '@angular/service-worker';
-import { IMAGE_LOADER, ImageLoaderConfig, provideImgixLoader } from '@angular/common';
+import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 
 import { routes } from './app.routes';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -28,7 +27,9 @@ export const appConfig: ApplicationConfig = {
         // Some users mention images don't load. If it's returning empty, handle it.
         if (!config.src) return '';
         let url = config.src;
-        if (!config.src.startsWith('http://') && !config.src.startsWith('https://')) {
+        // Files under public/ ("/logo.png") are served by this app; everything else is an R2 object key.
+        const isLocal = config.src.startsWith('/') || config.src.startsWith('http://') || config.src.startsWith('https://');
+        if (!isLocal) {
           url = `https://pub-edd8f524b4784df1b5961ce0d431f767.r2.dev/${config.src}`;
         }
         if (config.width) {

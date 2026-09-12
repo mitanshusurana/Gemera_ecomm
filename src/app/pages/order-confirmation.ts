@@ -11,44 +11,44 @@ import { environment } from "../../environments/environment";
   imports: [CommonModule, RouterLink, NgOptimizedImage, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-gradient-to-b from-gold-50 to-white">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
       <!-- Breadcrumb -->
-      <div class="bg-diamond-50 border-b border-diamond-200">
-        <div class="container-luxury py-4">
+      <div class="bg-[#f5f5f7] border-b border-[#e0e0e0]">
+        <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-4">
           <div class="flex items-center gap-2 text-sm">
-            <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-ink">/</span>
-            <span class="text-ink">Order Confirmation</span>
+            <a routerLink="/" class="text-[#6e6e73] hover:text-[#D4AF37]">Home</a>
+            <span class="text-[#a1a1a6]">/</span>
+            <span class="text-[#1d1d1f] font-medium">Order Confirmation</span>
           </div>
         </div>
       </div>
 
-      <div class="container-luxury section-padding">
+      <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-16">
         <!-- Success Animation -->
         <div class="text-center mb-12">
           <div class="mb-6 inline-block">
             <div
-              class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center animate-scaleIn"
+              class="w-24 h-24 rounded-full bg-[#f5f5f7] border border-[#e0e0e0] flex items-center justify-center animate-scaleUp"
             >
-              <span class="text-5xl">✓</span>
+              <svg class="w-12 h-12 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
             </div>
           </div>
 
           <h1
-            class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4"
+            class="font-display font-semibold text-4xl md:text-5xl tracking-tight text-[#1d1d1f] mb-4"
           >
             Thank You!
           </h1>
-          <p class="text-xl text-ink mb-8">
+          <p class="text-lg text-[#6e6e73] mb-8">
             Your order has been confirmed successfully
           </p>
 
           <!-- Order Number -->
           <div
-            class="inline-block bg-surface border-2 border-gold-500 rounded-lg px-8 py-4 mb-12"
+            class="inline-block bg-white border border-[#e0e0e0] rounded-[18px] px-8 py-4 mb-12"
           >
-            <p class="text-sm text-ink mb-2">Order Number</p>
-            <p class="text-3xl font-bold text-gold-600">{{ orderNumber() }}</p>
+            <p class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2">Order Number</p>
+            <p class="font-display font-semibold text-3xl text-[#1d1d1f]">{{ orderNumber() }}</p>
           </div>
         </div>
 
@@ -57,48 +57,48 @@ import { environment } from "../../environments/environment";
           <div class="lg:col-span-2 space-y-8">
             <!-- Order Details -->
             <div class="card p-8">
-              <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+              <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">
                 Order Details
               </h2>
 
               <div class="space-y-6">
                 <!-- Order Status -->
                 <div>
-                  <h3 class="font-semibold text-ink mb-4">Status</h3>
+                  <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">Status</h3>
                   <div
-                    class="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg"
+                    class="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-100 rounded-[12px]"
                   >
                     <span class="w-3 h-3 rounded-full bg-blue-500"></span>
                     <span class="font-semibold text-blue-900">Processing</span>
                   </div>
-                  <p class="text-sm text-ink mt-2">
+                  <p class="text-sm text-[#6e6e73] mt-2">
                     Your order is being prepared for shipment. We'll notify you
                     when it ships.
                   </p>
                 </div>
 
                 <!-- Estimated Delivery -->
-                <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-ink mb-4">
+                <div class="border-t border-[#e0e0e0] pt-6">
+                  <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                     Estimated Delivery
                   </h3>
-                  <div class="bg-diamond-50 rounded-lg p-4">
-                    <p class="text-lg font-bold text-ink">
+                  <div class="bg-[#f5f5f7] rounded-[12px] p-4">
+                    <p class="text-lg font-semibold text-[#1d1d1f]">
                       {{ estimatedDelivery() }}
                     </p>
-                    <p class="text-sm text-ink mt-2">
+                    <p class="text-sm text-[#6e6e73] mt-2">
                       Free insured shipping worldwide
                     </p>
                   </div>
                 </div>
 
                 <!-- Shipping Address -->
-                <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-ink mb-4">
+                <div class="border-t border-[#e0e0e0] pt-6">
+                  <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                     Shipping Address
                   </h3>
                   <div
-                    class="bg-diamond-50 rounded-lg p-4 text-sm text-ink space-y-1"
+                    class="bg-[#f5f5f7] rounded-[12px] p-4 text-sm text-[#1d1d1f] space-y-1"
                   >
                     <p>
                       {{ shippingAddress().firstName }}
@@ -115,34 +115,34 @@ import { environment } from "../../environments/environment";
                 </div>
 
                 <!-- Order Items -->
-                <div class="border-t border-diamond-200 pt-6">
-                  <h3 class="font-semibold text-ink mb-4">Items</h3>
+                <div class="border-t border-[#e0e0e0] pt-6">
+                  <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">Items</h3>
                   <div class="space-y-4">
                     <ng-container *ngFor="let item of orderItems()">
                       <div
-                        class="flex gap-4 pb-4 border-b border-diamond-200 last:border-b-0"
+                        class="flex gap-4 pb-4 border-b border-[#f0f0f0] last:border-b-0"
                       >
                         <img
                           [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''"
                           [alt]="item.product.name"
                           width="80"
                           height="80"
-                          class="rounded-lg object-cover"
+                          class="rounded-[12px] object-cover"
                           *ngIf="item.product.imageUrl || item.product.images?.[0]"
                         />
                         <div class="flex-1">
-                          <p class="font-semibold text-ink">
+                          <p class="font-semibold text-[#1d1d1f]">
                             {{ item.product.name }}
                           </p>
-                          <p class="text-sm text-ink">
+                          <p class="text-sm text-[#6e6e73]">
                             SKU: {{ item.product.sku || 'N/A' }}
                           </p>
-                          <p class="text-sm text-ink">
+                          <p class="text-sm text-[#6e6e73]">
                             Qty: {{ item.quantity }}
                           </p>
                         </div>
                         <div class="text-right">
-                          <p class="font-semibold text-ink">
+                          <p class="font-semibold text-[#1d1d1f]">
                             {{ (item.price * item.quantity) | currencyConvert }}
                           </p>
                         </div>
@@ -155,23 +155,23 @@ import { environment } from "../../environments/environment";
 
             <!-- Next Steps -->
             <div
-              class="bg-sapphire-50 border border-sapphire-200 rounded-lg p-8"
+              class="bg-[#f5f5f7] border border-[#e0e0e0] rounded-[18px] p-8"
             >
-              <h3 class="text-xl font-bold text-diamond-900 mb-6">
+              <h3 class="font-display font-semibold text-xl text-[#1d1d1f] mb-6">
                 What's Next?
               </h3>
               <div class="space-y-4">
                 <div class="flex gap-4">
                   <span
-                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-surface flex items-center justify-center font-bold"
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-[#1d1d1f] text-white flex items-center justify-center text-sm font-semibold"
                   >
                     1
                   </span>
                   <div>
-                    <p class="font-semibold text-ink">
+                    <p class="font-semibold text-[#1d1d1f]">
                       Confirmation Email
                     </p>
-                    <p class="text-sm text-ink">
+                    <p class="text-sm text-[#6e6e73]">
                       Check your email for order confirmation and tracking
                       details.
                     </p>
@@ -179,15 +179,15 @@ import { environment } from "../../environments/environment";
                 </div>
                 <div class="flex gap-4">
                   <span
-                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-surface flex items-center justify-center font-bold"
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-[#1d1d1f] text-white flex items-center justify-center text-sm font-semibold"
                   >
                     2
                   </span>
                   <div>
-                    <p class="font-semibold text-ink">
+                    <p class="font-semibold text-[#1d1d1f]">
                       Quality Inspection
                     </p>
-                    <p class="text-sm text-ink">
+                    <p class="text-sm text-[#6e6e73]">
                       Our team will inspect your items for quality and
                       authenticity.
                     </p>
@@ -195,13 +195,13 @@ import { environment } from "../../environments/environment";
                 </div>
                 <div class="flex gap-4">
                   <span
-                    class="flex-shrink-0 w-8 h-8 rounded-full bg-sapphire-600 text-surface flex items-center justify-center font-bold"
+                    class="flex-shrink-0 w-8 h-8 rounded-full bg-[#1d1d1f] text-white flex items-center justify-center text-sm font-semibold"
                   >
                     3
                   </span>
                   <div>
-                    <p class="font-semibold text-ink">Shipment</p>
-                    <p class="text-sm text-ink">
+                    <p class="font-semibold text-[#1d1d1f]">Shipment</p>
+                    <p class="text-sm text-[#6e6e73]">
                       Your items will be shipped with tracking number within 2-3
                       business days.
                     </p>
@@ -213,14 +213,14 @@ import { environment } from "../../environments/environment";
 
           <!-- Order Summary Sidebar -->
           <div class="lg:col-span-1">
-            <div class="card p-8 sticky top-24">
-              <h3 class="font-display text-2xl font-bold text-diamond-900 mb-6">
+            <div class="card p-8 sticky top-[120px]">
+              <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">
                 Order Summary
               </h3>
 
-              <div class="space-y-4 mb-4 pb-4 border-b border-diamond-200">
+              <div class="space-y-4 mb-4 pb-4 border-b border-[#e0e0e0] text-sm">
                 <div class="flex justify-between">
-                  <span class="text-ink">Subtotal</span>
+                  <span class="text-[#6e6e73]">Subtotal</span>
                   <span class="font-semibold">{{
                     orderSummary().subtotal | currencyConvert
                   }}</span>
@@ -235,7 +235,7 @@ import { environment } from "../../environments/environment";
                   >
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-ink">Shipping</span>
+                  <span class="text-[#6e6e73]">Shipping</span>
                   <span
                     class="font-semibold"
                     [class.text-emerald-600]="orderSummary().shipping === 0"
@@ -247,16 +247,16 @@ import { environment } from "../../environments/environment";
                   >
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-ink">Tax</span>
+                  <span class="text-[#6e6e73]">Tax</span>
                   <span class="font-semibold">{{
                     orderSummary().tax | currencyConvert
                   }}</span>
                 </div>
               </div>
 
-              <div class="flex justify-between mb-6 text-xl">
-                <span class="font-bold text-ink">Total</span>
-                <span class="font-bold text-2xl text-gold-600">{{
+              <div class="flex justify-between items-center mb-6">
+                <span class="font-semibold text-base text-[#1d1d1f]">Total</span>
+                <span class="font-semibold text-2xl text-[#1d1d1f]">{{
                   orderSummary().total | currencyConvert
                 }}</span>
               </div>
@@ -264,17 +264,17 @@ import { environment } from "../../environments/environment";
               <div class="space-y-3 mb-6">
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">Free insured shipping</p>
+                  <p class="text-sm text-[#6e6e73]">Free insured shipping</p>
                 </div>
                 <div class="flex items-start gap-3">
                   <span class="text-green-600 font-bold mt-0.5">✓</span>
-                  <p class="text-sm text-ink">
+                  <p class="text-sm text-[#6e6e73]">
                     <a routerLink="/returns" class="underline">Returns and warranty terms</a>
                   </p>
                 </div>
               </div>
 
-              <button routerLink="/" class="w-full btn-primary">
+              <button routerLink="/" class="w-full btn-apple-pill">
                 Continue Shopping
               </button>
             </div>
@@ -282,19 +282,19 @@ import { environment } from "../../environments/environment";
         </div>
 
         <!-- Help Section -->
-        <div class="mt-16 bg-diamond-50 rounded-lg p-8 text-center">
-          <h3 class="text-xl font-bold text-diamond-900 mb-4">Need Help?</h3>
-          <p class="text-ink mb-6">
+        <div class="mt-16 bg-[#f5f5f7] border border-[#e0e0e0] rounded-[18px] p-8 text-center">
+          <h3 class="font-display font-semibold text-xl text-[#1d1d1f] mb-4">Need Help?</h3>
+          <p class="text-[#6e6e73] mb-6">
             Have questions about your order? Our customer support team is here
             to help.
           </p>
           <div class="flex gap-4 justify-center flex-wrap">
-            <a routerLink="/contact" class="btn-primary">Contact Us</a>
+            <a routerLink="/contact" class="btn-apple-pill">Contact Us</a>
             <a
               [href]="whatsappUrl"
               target="_blank"
               rel="noopener"
-              class="btn-ghost border border-diamond-300"
+              class="btn-outline"
             >
               WhatsApp Support
             </a>
@@ -303,24 +303,6 @@ import { environment } from "../../environments/environment";
       </div>
     </div>
   `,
-  styles: [
-    `
-      @keyframes scaleIn {
-        from {
-          transform: scale(0);
-          opacity: 0;
-        }
-        to {
-          transform: scale(1);
-          opacity: 1;
-        }
-      }
-
-      .animate-scaleIn {
-        animation: scaleIn 0.5s ease-out;
-      }
-    `,
-  ],
 })
 export class OrderConfirmationComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
@@ -407,7 +389,7 @@ export class OrderConfirmationComponent implements OnInit {
           }),
         );
       },
-      error: (error) => {
+      error: () => {
         // Error loading order
       },
     });

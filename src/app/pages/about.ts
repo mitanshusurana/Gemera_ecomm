@@ -1,15 +1,15 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { RouterLink } from '@angular/router';
 import { SeoService } from '../services/seo.service';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <!-- APPLE DESIGN SYSTEM: ABOUT ATELIER (DESIGN.md) -->
-    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
       
       <!-- Top Parchment Hero -->
       <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-20 px-6 text-center">
@@ -24,7 +24,7 @@ import { SeoService } from '../services/seo.service';
         </div>
       </section>
 
-      <main class="max-w-[1440px] mx-auto px-6 md:px-12 py-16 space-y-16">
+      <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-16 space-y-16">
         
         <!-- Story Grid -->
         <section class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -88,13 +88,12 @@ import { SeoService } from '../services/seo.service';
           </article>
         </section>
 
-      </main>
+      </div>
     </div>
   `,
 })
 export class AboutComponent implements OnInit {
   private seoService = inject(SeoService);
-  private sanitizer = inject(DomSanitizer);
 
   ngOnInit() {
     this.seoService.updateTags({

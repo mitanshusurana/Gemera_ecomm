@@ -11,20 +11,20 @@ import { ToastService } from "../services/toast.service";
   imports: [CommonModule, FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-diamond-50 to-gold-50">
-      <div class="container-luxury section-padding">
+    <div class="min-h-screen bg-[#f5f5f7] font-sans text-[#1d1d1f]">
+      <div class="max-w-[1080px] mx-auto px-6 md:px-12 py-16 md:py-24">
         <div class="max-w-md mx-auto">
-          <div class="card p-8">
-            <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2 text-center">
+          <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 md:p-10 animate-fadeIn">
+            <h1 class="font-display font-semibold text-3xl md:text-4xl tracking-tight text-[#1d1d1f] mb-2 text-center">
               Reset Password
             </h1>
-            <p class="text-ink mb-8 text-center">
+            <p class="text-[#6e6e73] mb-8 text-center">
               Please enter your new password below.
             </p>
 
             <form (ngSubmit)="submit()" #resetForm="ngForm" class="space-y-6">
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">
                   New Password
                 </label>
                 <input
@@ -39,7 +39,7 @@ import { ToastService } from "../services/toast.service";
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">
                   Confirm New Password
                 </label>
                 <input
@@ -55,20 +55,20 @@ import { ToastService } from "../services/toast.service";
               <button
                 type="submit"
                 [disabled]="isLoading() || !resetForm.valid || newPassword !== confirmPassword"
-                class="w-full btn-primary"
+                class="btn-apple-pill w-full"
               >
                 {{ isLoading() ? "Resetting..." : "Reset Password" }}
               </button>
             </form>
 
-            <div *ngIf="errorMessage()" class="mt-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-600 text-sm">
+            <div *ngIf="errorMessage()" class="mt-6 bg-red-50 border border-red-200 rounded-[12px] p-4 text-red-600 text-sm">
               {{ errorMessage() }}
             </div>
-            
-            <div *ngIf="successMessage()" class="mt-6 bg-green-50 border border-green-200 rounded-lg p-4 text-green-600 text-sm text-center">
+
+            <div *ngIf="successMessage()" class="mt-6 bg-green-50 border border-green-200 rounded-[12px] p-4 text-green-600 text-sm text-center">
               {{ successMessage() }}
               <div class="mt-2">
-                <a routerLink="/login" class="text-gold-600 font-semibold hover:underline">Click here to log in</a>
+                <a routerLink="/login" class="text-[#D4AF37] font-medium hover:underline">Click here to log in</a>
               </div>
             </div>
           </div>
@@ -81,7 +81,7 @@ export class ResetPasswordComponent implements OnInit {
   token = "";
   newPassword = "";
   confirmPassword = "";
-  
+
   isLoading = signal(false);
   errorMessage = signal("");
   successMessage = signal("");
@@ -118,7 +118,7 @@ export class ResetPasswordComponent implements OnInit {
         this.toastService.show("Password reset successful", "success");
         setTimeout(() => this.router.navigate(['/login']), 3000);
       },
-      error: (error) => {
+      error: () => {
         this.isLoading.set(false);
         this.errorMessage.set("Failed to reset password. The link might be expired or invalid.");
       }

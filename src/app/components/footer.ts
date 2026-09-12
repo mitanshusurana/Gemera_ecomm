@@ -1,4 +1,3 @@
-import { ProductService } from "../services/product.service";
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from "@angular/core";
 import { SettingService } from '../services/setting.service';
 import { CommonModule, NgOptimizedImage } from "@angular/common";
@@ -117,9 +116,7 @@ import { environment } from "../../environments/environment";
   `,
 })
 export class FooterComponent implements OnInit {
-  private productService = inject(ProductService);
   env = environment;
-  categories: any[] = [];
   settings: any = null;
   emailControl = new FormControl('', [Validators.required, Validators.email]);
   isSubscribing = false;
@@ -130,11 +127,6 @@ export class FooterComponent implements OnInit {
   private settingService = inject(SettingService);
 
   ngOnInit() {
-    this.productService.getCategories().subscribe((res: any) => {
-      this.categories = res.categories;
-      this.cdr.markForCheck();
-    });
-
     this.settingService.getSettings().subscribe({
       next: (data: any) => {
         this.settings = {
@@ -185,7 +177,7 @@ export class FooterComponent implements OnInit {
             this.isSubscribing = false;
             this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: () => {
             this.toastService.show('Failed to subscribe. Please try again.', 'error');
             this.isSubscribing = false;
             this.cdr.markForCheck();

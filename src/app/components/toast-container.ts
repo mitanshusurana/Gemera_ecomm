@@ -8,29 +8,29 @@ import { ToastService } from '../services/toast.service';
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
+    <div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none font-sans">
       <div *ngFor="let toast of toastService.toasts()"
-           class="pointer-events-auto min-w-[300px] max-w-sm rounded-lg shadow-lg p-4 flex items-start gap-3 transform transition-all duration-300 animate-slide-in-right"
+           class="pointer-events-auto min-w-[300px] max-w-sm bg-white border border-[#e0e0e0] border-l-4 rounded-[12px] shadow-lg p-4 flex items-start gap-3 transform transition-all duration-300 animate-slide-in-right"
            [ngClass]="{
-             'bg-surface border-l-4 border-emerald-500': toast.type === 'success',
-             'bg-surface border-l-4 border-red-500': toast.type === 'error',
-             'bg-surface border-l-4 border-blue-500': toast.type === 'info'
+             'border-l-green-500': toast.type === 'success',
+             'border-l-red-500': toast.type === 'error',
+             'border-l-blue-500': toast.type === 'info'
            }">
 
         <!-- Icon -->
         <div class="flex-shrink-0">
-          <span *ngIf="toast.type === 'success'" class="text-emerald-500 text-xl">✓</span>
-          <span *ngIf="toast.type === 'error'" class="text-red-500 text-xl">✕</span>
-          <span *ngIf="toast.type === 'info'" class="text-blue-500 text-xl">ℹ</span>
+          <span *ngIf="toast.type === 'success'" class="text-green-600 text-xl">✓</span>
+          <span *ngIf="toast.type === 'error'" class="text-red-600 text-xl">✕</span>
+          <span *ngIf="toast.type === 'info'" class="text-blue-600 text-xl">ℹ</span>
         </div>
 
         <!-- Content -->
         <div class="flex-1 pt-0.5">
-          <p class="text-sm font-medium text-ink">{{ toast.message }}</p>
+          <p class="text-sm font-medium text-[#1d1d1f]">{{ toast.message }}</p>
         </div>
 
         <!-- Close -->
-        <button (click)="toastService.remove(toast.id)" class="text-ink hover:text-ink">
+        <button (click)="toastService.remove(toast.id)" aria-label="Dismiss notification" class="text-[#6e6e73] hover:text-[#1d1d1f] active-press">
           ✕
         </button>
       </div>

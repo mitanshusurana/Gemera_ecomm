@@ -21,98 +21,101 @@ import { SeoService } from '../services/seo.service';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="max-w-3xl mx-auto px-6 py-16">
-      <h1 class="font-display text-4xl text-[#1d1d1f] mb-2">
-        Shipping, Returns &amp; Cancellations
-      </h1>
-      <p class="text-sm text-[#7a7a7a] mb-10" *ngIf="lastUpdated()">
-        Last updated: {{ lastUpdated() }}
-      </p>
-
-      <section class="mb-12" id="returns">
-        <h2 class="font-display text-2xl text-[#1d1d1f] mb-3">Returns &amp; refunds</h2>
-
-        <p *ngIf="returnDays() as days" class="text-[#1d1d1f] mb-4">
-          You may return an eligible item within
-          <strong>{{ days }} days</strong> of delivery.
+    <!-- APPLE DESIGN SYSTEM: LEGAL READING PAGE (DESIGN.md) -->
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
+      <div class="max-w-3xl mx-auto px-6 py-16">
+        <h1 class="font-display font-semibold text-4xl md:text-5xl text-[#1d1d1f] tracking-tight mb-2">
+          Shipping, Returns &amp; Cancellations
+        </h1>
+        <p class="text-sm text-[#6e6e73] mb-10" *ngIf="lastUpdated()">
+          Last updated: {{ lastUpdated() }}
         </p>
 
-        <div
-          *ngIf="returnsText(); else returnsMissing"
-          class="prose prose-sm max-w-none text-[#1d1d1f]"
-          [innerText]="returnsText()"
-        ></div>
+        <section class="mb-12" id="returns">
+          <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight mb-3">Returns &amp; refunds</h2>
 
-        <ng-template #returnsMissing>
-          <div class="border border-amber-300 bg-amber-50 rounded-lg p-4">
-            <p class="text-sm text-amber-900 font-semibold mb-1">
-              This policy has not been published yet.
+          <p *ngIf="returnDays() as days" class="text-[#1d1d1f] mb-4">
+            You may return an eligible item within
+            <strong>{{ days }} days</strong> of delivery.
+          </p>
+
+          <div
+            *ngIf="returnsText(); else returnsMissing"
+            class="prose prose-neutral max-w-none text-[#1d1d1f] prose-p:text-[#1d1d1f] prose-li:text-[#1d1d1f] prose-strong:text-[#1d1d1f] prose-code:text-[#1d1d1f] prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-[#1d1d1f] prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-3 prose-h3:text-xl prose-a:text-[#D4AF37] prose-a:no-underline hover:prose-a:underline"
+            [innerText]="returnsText()"
+          ></div>
+
+          <ng-template #returnsMissing>
+            <div class="border border-amber-300 bg-amber-50 rounded-[12px] p-4">
+              <p class="text-sm text-amber-900 font-semibold mb-1">
+                This policy has not been published yet.
+              </p>
+              <p class="text-sm text-amber-900">
+                Please
+                <a routerLink="/contact" class="text-[#D4AF37] font-semibold hover:underline">contact us</a>
+                before returning an item, and we will confirm the terms that apply
+                to your order in writing.
+              </p>
+            </div>
+          </ng-template>
+        </section>
+
+        <section class="mb-12" id="shipping">
+          <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight mb-3">Shipping</h2>
+          <div
+            *ngIf="shippingText(); else shippingMissing"
+            class="prose prose-neutral max-w-none text-[#1d1d1f] prose-p:text-[#1d1d1f] prose-li:text-[#1d1d1f] prose-strong:text-[#1d1d1f] prose-code:text-[#1d1d1f] prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-[#1d1d1f] prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-3 prose-h3:text-xl prose-a:text-[#D4AF37] prose-a:no-underline hover:prose-a:underline"
+            [innerText]="shippingText()"
+          ></div>
+          <ng-template #shippingMissing>
+            <p class="text-sm text-[#6e6e73]">
+              Shipping terms have not been published yet.
+              <a routerLink="/contact" class="text-[#D4AF37] font-semibold hover:underline">Contact us</a> for
+              delivery timelines and charges on your order.
             </p>
-            <p class="text-sm text-amber-900">
-              Please
-              <a routerLink="/contact" class="underline">contact us</a>
-              before returning an item, and we will confirm the terms that apply
-              to your order in writing.
+          </ng-template>
+        </section>
+
+        <section class="mb-12" id="cancellation">
+          <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight mb-3">Cancellations</h2>
+          <div
+            *ngIf="cancellationText(); else cancellationMissing"
+            class="prose prose-neutral max-w-none text-[#1d1d1f] prose-p:text-[#1d1d1f] prose-li:text-[#1d1d1f] prose-strong:text-[#1d1d1f] prose-code:text-[#1d1d1f] prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-[#1d1d1f] prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-3 prose-h3:text-xl prose-a:text-[#D4AF37] prose-a:no-underline hover:prose-a:underline"
+            [innerText]="cancellationText()"
+          ></div>
+          <ng-template #cancellationMissing>
+            <p class="text-sm text-[#6e6e73]">
+              Cancellation terms have not been published yet.
+              <a routerLink="/contact" class="text-[#D4AF37] font-semibold hover:underline">Contact us</a> as soon as
+              possible if you need to cancel an order.
             </p>
-          </div>
-        </ng-template>
-      </section>
+          </ng-template>
+        </section>
 
-      <section class="mb-12" id="shipping">
-        <h2 class="font-display text-2xl text-[#1d1d1f] mb-3">Shipping</h2>
-        <div
-          *ngIf="shippingText(); else shippingMissing"
-          class="prose prose-sm max-w-none text-[#1d1d1f]"
-          [innerText]="shippingText()"
-        ></div>
-        <ng-template #shippingMissing>
-          <p class="text-sm text-[#7a7a7a]">
-            Shipping terms have not been published yet.
-            <a routerLink="/contact" class="underline">Contact us</a> for
-            delivery timelines and charges on your order.
+        <section class="mb-12" id="warranty" *ngIf="warrantyText()">
+          <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight mb-3">Warranty</h2>
+          <div
+            class="prose prose-neutral max-w-none text-[#1d1d1f] prose-p:text-[#1d1d1f] prose-li:text-[#1d1d1f] prose-strong:text-[#1d1d1f] prose-code:text-[#1d1d1f] prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-[#1d1d1f] prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-3 prose-h3:text-xl prose-a:text-[#D4AF37] prose-a:no-underline hover:prose-a:underline"
+            [innerText]="warrantyText()"
+          ></div>
+        </section>
+
+        <section class="border-t border-[#e0e0e0] pt-8">
+          <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight mb-3">Grievance officer</h2>
+          <p class="text-sm text-[#1d1d1f]" *ngIf="grievanceOfficer(); else noOfficer">
+            {{ grievanceOfficer() }}
+            <span *ngIf="grievanceEmail()"> &middot; {{ grievanceEmail() }}</span>
           </p>
-        </ng-template>
-      </section>
-
-      <section class="mb-12" id="cancellation">
-        <h2 class="font-display text-2xl text-[#1d1d1f] mb-3">Cancellations</h2>
-        <div
-          *ngIf="cancellationText(); else cancellationMissing"
-          class="prose prose-sm max-w-none text-[#1d1d1f]"
-          [innerText]="cancellationText()"
-        ></div>
-        <ng-template #cancellationMissing>
-          <p class="text-sm text-[#7a7a7a]">
-            Cancellation terms have not been published yet.
-            <a routerLink="/contact" class="underline">Contact us</a> as soon as
-            possible if you need to cancel an order.
-          </p>
-        </ng-template>
-      </section>
-
-      <section class="mb-12" id="warranty" *ngIf="warrantyText()">
-        <h2 class="font-display text-2xl text-[#1d1d1f] mb-3">Warranty</h2>
-        <div
-          class="prose prose-sm max-w-none text-[#1d1d1f]"
-          [innerText]="warrantyText()"
-        ></div>
-      </section>
-
-      <section class="border-t border-[#e0e0e0] pt-8">
-        <h2 class="font-display text-xl text-[#1d1d1f] mb-2">Grievance officer</h2>
-        <p class="text-sm text-[#1d1d1f]" *ngIf="grievanceOfficer(); else noOfficer">
-          {{ grievanceOfficer() }}
-          <span *ngIf="grievanceEmail()"> &middot; {{ grievanceEmail() }}</span>
-        </p>
-        <ng-template #noOfficer>
-          <p class="text-sm text-[#7a7a7a]">
-            A grievance officer must be named here under the IT Rules 2021 and
-            the Consumer Protection (E-Commerce) Rules 2020. Set
-            <code>grievanceOfficerName</code> and
-            <code>grievanceOfficerEmail</code> in admin settings.
-          </p>
-        </ng-template>
-      </section>
+          <ng-template #noOfficer>
+            <p class="text-sm text-[#6e6e73]">
+              A grievance officer must be named here under the IT Rules 2021 and
+              the Consumer Protection (E-Commerce) Rules 2020. Set
+              <code>grievanceOfficerName</code> and
+              <code>grievanceOfficerEmail</code> in admin settings.
+            </p>
+          </ng-template>
+        </section>
+      </div>
     </div>
   `,
 })

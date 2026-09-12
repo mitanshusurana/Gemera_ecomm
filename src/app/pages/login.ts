@@ -11,34 +11,34 @@ import { ToastService } from "../services/toast.service";
   imports: [CommonModule, FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-diamond-50 to-gold-50">
+    <div class="min-h-screen bg-[#f5f5f7] font-sans text-[#1d1d1f]">
       <!-- Breadcrumb -->
-      <div class="bg-surface border-b border-diamond-200">
-        <div class="container-luxury py-4">
+      <div class="border-b border-[#e0e0e0]">
+        <div class="max-w-[1080px] mx-auto px-6 md:px-12 py-4">
           <div class="flex items-center gap-2 text-sm">
-            <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-ink">/</span>
-            <span class="text-ink">{{
+            <a routerLink="/" class="text-[#D4AF37] hover:underline">Home</a>
+            <span class="text-[#6e6e73]">/</span>
+            <span class="text-[#1d1d1f]">{{
               isLogin() ? "Login" : "Register"
             }}</span>
           </div>
         </div>
       </div>
 
-      <div class="container-luxury section-padding">
+      <div class="max-w-[1080px] mx-auto px-6 md:px-12 py-16 md:py-24">
         <div class="max-w-md mx-auto">
           <!-- Login Form -->
-          <div *ngIf="isLogin()" class="card p-8">
-            <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">
+          <div *ngIf="isLogin()" class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 md:p-10 animate-fadeIn">
+            <h1 class="font-display font-semibold text-3xl md:text-4xl tracking-tight text-[#1d1d1f] mb-2">
               Welcome Back
             </h1>
-            <p class="text-ink mb-8">
+            <p class="text-[#6e6e73] mb-8">
               Sign in to your account to continue shopping
             </p>
 
             <form (ngSubmit)="login()" #loginForm="ngForm" class="space-y-6">
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">
                   Email Address
                 </label>
                 <input
@@ -52,14 +52,14 @@ import { ToastService } from "../services/toast.service";
                   [ngClass]="{'border-red-500': loginEmail.invalid && (loginEmail.dirty || loginEmail.touched)}"
                   placeholder="you@example.com"
                 />
-                <div *ngIf="loginEmail.invalid && (loginEmail.dirty || loginEmail.touched)" class="text-red-500 text-xs mt-1">
+                <div *ngIf="loginEmail.invalid && (loginEmail.dirty || loginEmail.touched)" class="text-red-600 text-xs mt-1">
                   <span *ngIf="loginEmail.errors?.['required']">Email is required.</span>
                   <span *ngIf="loginEmail.errors?.['email']">Please enter a valid email address.</span>
                 </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">
                   Password
                 </label>
                 <input
@@ -72,7 +72,7 @@ import { ToastService } from "../services/toast.service";
                   [ngClass]="{'border-red-500': loginPassword.invalid && (loginPassword.dirty || loginPassword.touched)}"
                   placeholder="••••••••"
                 />
-                <div *ngIf="loginPassword.invalid && (loginPassword.dirty || loginPassword.touched)" class="text-red-500 text-xs mt-1">
+                <div *ngIf="loginPassword.invalid && (loginPassword.dirty || loginPassword.touched)" class="text-red-600 text-xs mt-1">
                   <span *ngIf="loginPassword.errors?.['required']">Password is required.</span>
                 </div>
               </div>
@@ -83,13 +83,13 @@ import { ToastService } from "../services/toast.service";
                     type="checkbox"
                     [(ngModel)]="rememberMe"
                     name="rememberMe"
-                    class="w-4 h-4 rounded border-diamond-300"
+                    class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]"
                   />
-                  <span class="text-ink">Remember me</span>
+                  <span class="text-[#1d1d1f]">Remember me</span>
                 </label>
                 <a
                   routerLink="/forgot-password"
-                  class="text-gold-600 hover:text-gold-700 font-semibold"
+                  class="text-[#D4AF37] hover:underline font-medium"
                 >
                   Forgot password?
                 </a>
@@ -98,17 +98,17 @@ import { ToastService } from "../services/toast.service";
               <button
                 type="submit"
                 [disabled]="isLoading() || !loginForm.valid"
-                class="w-full btn-primary"
+                class="btn-apple-pill w-full"
               >
                 {{ isLoading() ? "Signing in..." : "Sign In" }}
               </button>
 
-              <div class="text-center text-sm text-ink">
+              <div class="text-center text-sm text-[#6e6e73]">
                 Don't have an account?
                 <button
                   type="button"
                   (click)="toggleMode()"
-                  class="text-gold-600 hover:text-gold-700 font-semibold"
+                  class="text-[#D4AF37] hover:underline font-medium"
                 >
                   Create one
                 </button>
@@ -117,11 +117,11 @@ import { ToastService } from "../services/toast.service";
           </div>
 
           <!-- Register Form -->
-          <div *ngIf="!isLogin()" class="card p-8">
-            <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">
+          <div *ngIf="!isLogin()" class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 md:p-10 animate-fadeIn">
+            <h1 class="font-display font-semibold text-3xl md:text-4xl tracking-tight text-[#1d1d1f] mb-2">
               Create Account
             </h1>
-            <p class="text-ink mb-8">
+            <p class="text-[#6e6e73] mb-8">
               Join us to start shopping our fine collection
             </p>
 
@@ -132,45 +132,45 @@ import { ToastService } from "../services/toast.service";
             >
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2">First Name</label>
+                  <label class="block text-sm font-medium text-[#1d1d1f] mb-2">First Name</label>
                   <input type="text" [(ngModel)]="firstName" name="firstName" required #regFirstName="ngModel" class="input-field" [ngClass]="{'border-red-500': regFirstName.invalid && (regFirstName.dirty || regFirstName.touched)}" placeholder="John" />
-                  <div *ngIf="regFirstName.invalid && (regFirstName.dirty || regFirstName.touched)" class="text-red-500 text-xs mt-1">First name is required.</div>
+                  <div *ngIf="regFirstName.invalid && (regFirstName.dirty || regFirstName.touched)" class="text-red-600 text-xs mt-1">First name is required.</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2">Last Name</label>
+                  <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Last Name</label>
                   <input type="text" [(ngModel)]="lastName" name="lastName" required #regLastName="ngModel" class="input-field" [ngClass]="{'border-red-500': regLastName.invalid && (regLastName.dirty || regLastName.touched)}" placeholder="Doe" />
-                  <div *ngIf="regLastName.invalid && (regLastName.dirty || regLastName.touched)" class="text-red-500 text-xs mt-1">Last name is required.</div>
+                  <div *ngIf="regLastName.invalid && (regLastName.dirty || regLastName.touched)" class="text-red-600 text-xs mt-1">Last name is required.</div>
                 </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">Email Address</label>
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Email Address</label>
                 <input type="email" [(ngModel)]="email" name="email" required email #regEmail="ngModel" class="input-field" [ngClass]="{'border-red-500': regEmail.invalid && (regEmail.dirty || regEmail.touched)}" placeholder="you@example.com" />
-                <div *ngIf="regEmail.invalid && (regEmail.dirty || regEmail.touched)" class="text-red-500 text-xs mt-1">
+                <div *ngIf="regEmail.invalid && (regEmail.dirty || regEmail.touched)" class="text-red-600 text-xs mt-1">
                   <span *ngIf="regEmail.errors?.['required']">Email is required.</span>
                   <span *ngIf="regEmail.errors?.['email']">Please enter a valid email address.</span>
                 </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">Phone Number</label>
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Phone Number</label>
                 <input type="tel" [(ngModel)]="phone" name="phone" required #regPhone="ngModel" class="input-field" [ngClass]="{'border-red-500': regPhone.invalid && (regPhone.dirty || regPhone.touched)}" placeholder="+1 (555) 000-0000" />
-                <div *ngIf="regPhone.invalid && (regPhone.dirty || regPhone.touched)" class="text-red-500 text-xs mt-1">Phone number is required.</div>
+                <div *ngIf="regPhone.invalid && (regPhone.dirty || regPhone.touched)" class="text-red-600 text-xs mt-1">Phone number is required.</div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">Password</label>
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Password</label>
                 <input type="password" [(ngModel)]="password" name="password" required minlength="8" #regPassword="ngModel" class="input-field" [ngClass]="{'border-red-500': regPassword.invalid && (regPassword.dirty || regPassword.touched)}" placeholder="••••••••" />
-                <div *ngIf="regPassword.invalid && (regPassword.dirty || regPassword.touched)" class="text-red-500 text-xs mt-1">
+                <div *ngIf="regPassword.invalid && (regPassword.dirty || regPassword.touched)" class="text-red-600 text-xs mt-1">
                   <span *ngIf="regPassword.errors?.['required']">Password is required.</span>
                   <span *ngIf="regPassword.errors?.['minlength']">Password must be at least 8 characters.</span>
                 </div>
               </div>
 
               <div>
-                <label class="block text-sm font-semibold text-ink mb-2">Confirm Password</label>
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Confirm Password</label>
                 <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required #regConfirm="ngModel" class="input-field" [ngClass]="{'border-red-500': (regConfirm.invalid || password !== confirmPassword) && (regConfirm.dirty || regConfirm.touched)}" placeholder="••••••••" />
-                <div *ngIf="(regConfirm.invalid || password !== confirmPassword) && (regConfirm.dirty || regConfirm.touched)" class="text-red-500 text-xs mt-1">
+                <div *ngIf="(regConfirm.invalid || password !== confirmPassword) && (regConfirm.dirty || regConfirm.touched)" class="text-red-600 text-xs mt-1">
                   <span *ngIf="regConfirm.errors?.['required']">Please confirm your password.</span>
                   <span *ngIf="!regConfirm.errors?.['required'] && password !== confirmPassword">Passwords do not match.</span>
                 </div>
@@ -180,20 +180,20 @@ import { ToastService } from "../services/toast.service";
                 <input
                   type="checkbox"
                   required
-                  class="w-4 h-4 mt-1 rounded border-diamond-300"
+                  class="w-4 h-4 mt-1 rounded border-[#e0e0e0] accent-[#D4AF37]"
                 />
-                <span class="text-sm text-ink">
+                <span class="text-sm text-[#1d1d1f]">
                   I agree to the
                   <a
                     href="#"
-                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                    class="text-[#D4AF37] hover:underline font-medium"
                   >
                     Terms of Service
                   </a>
                   and
                   <a
                     href="#"
-                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                    class="text-[#D4AF37] hover:underline font-medium"
                   >
                     Privacy Policy
                   </a>
@@ -207,17 +207,17 @@ import { ToastService } from "../services/toast.service";
                   !registerForm.valid ||
                   password !== confirmPassword
                 "
-                class="w-full btn-primary"
+                class="btn-apple-pill w-full"
               >
                 {{ isLoading() ? "Creating account..." : "Create Account" }}
               </button>
 
-              <div class="text-center text-sm text-ink">
+              <div class="text-center text-sm text-[#6e6e73]">
                 Already have an account?
                 <button
                   type="button"
                   (click)="toggleMode()"
-                  class="text-gold-600 hover:text-gold-700 font-semibold"
+                  class="text-[#D4AF37] hover:underline font-medium"
                 >
                   Sign in
                 </button>
@@ -228,7 +228,7 @@ import { ToastService } from "../services/toast.service";
           <!-- Error Message -->
           <div
             *ngIf="errorMessage()"
-            class="mt-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-600 text-sm"
+            class="mt-6 bg-red-50 border border-red-200 rounded-[12px] p-4 text-red-600 text-sm"
           >
             {{ errorMessage() }}
           </div>
@@ -271,7 +271,7 @@ export class LoginComponent {
         this.router.navigateByUrl(returnUrl);
         this.toastService.show('Logged in successfully', 'success');
       },
-      error: (error) => {
+      error: () => {
         this.isLoading.set(false);
         this.errorMessage.set("Invalid email or password. Please try again.");
       },
@@ -302,7 +302,7 @@ export class LoginComponent {
           this.isLogin.set(true);
           this.toastService.show("Account created successfully! You can now log in with your credentials.", 'success');
         },
-        error: (error) => {
+        error: () => {
           this.isLoading.set(false);
           this.errorMessage.set("Failed to create account. Please try again.");
         },

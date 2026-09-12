@@ -7,7 +7,6 @@ import { BuilderService, JewelryCategoryType } from '../services/builder.service
 import { ProductService } from '../services/product.service';
 import { CartService } from '../services/cart.service';
 import { Product } from '../core/models';
-import { CurrencyService } from '../services/currency.service';
 import { ToastService } from '../services/toast.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { VirtualTryOnComponent } from '../components/virtual-try-on';
@@ -18,7 +17,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
   imports: [CommonModule, FormsModule, CurrencyConvertPipe, VirtualTryOnComponent],
   template: `
     <!-- APPLE DESIGN SYSTEM: BESPOKE FINE JEWELRY ATELIER (ANY PIECE) -->
-    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-28">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-28">
       
       <!-- Sticky Frosted Stepper Header -->
       <div class="sub-nav-frosted sticky top-[96px] z-30 py-4 px-6 md:px-12 border-b border-[#e0e0e0]">
@@ -87,7 +86,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
         </div>
       </div>
 
-      <main class="max-w-[1440px] mx-auto px-4 md:px-12 py-12">
+      <div class="max-w-[1440px] mx-auto px-4 md:px-12 py-12">
 
         <!-- STEP 1: JEWELRY CATEGORY SELECTION -->
         <div *ngIf="builder.currentStep() === 1" class="animate-fadeIn">
@@ -108,10 +107,9 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
               class="store-utility-card cursor-pointer group transition-all p-8 flex flex-col justify-between"
               [class.!border-[#D4AF37]]="builder.selectedCategory() === cat.id"
               [class.!border-2]="builder.selectedCategory() === cat.id"
-              [class.shadow-xl]="builder.selectedCategory() === cat.id"
             >
               <div>
-                <div class="w-16 h-16 rounded-2xl bg-[#f5f5f7] flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform">
+                <div class="w-16 h-16 rounded-[12px] bg-[#f5f5f7] flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform">
                   {{ cat.icon }}
                 </div>
                 <h3 class="font-display font-semibold text-xl text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2">
@@ -147,7 +145,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                 [class.bg-[#1d1d1f]]="builder.selectedMetal() === metal.id"
                 [class.text-white]="builder.selectedMetal() === metal.id"
                 [class.bg-white]="builder.selectedMetal() !== metal.id"
-                class="px-4 py-2 rounded-full border border-[#e0e0e0] text-xs font-medium transition-all shadow-sm flex items-center gap-2"
+                class="px-4 py-2 rounded-full border border-[#e0e0e0] text-xs font-medium transition-all active-press flex items-center gap-2"
               >
                 <span class="w-3 h-3 rounded-full" [style.background-color]="metal.colorCode"></span>
                 <span>{{ metal.name }}</span>
@@ -167,7 +165,6 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
               class="store-utility-card cursor-pointer group transition-all"
               [class.!border-[#D4AF37]]="builder.selectedSetting()?.id === product.id"
               [class.!border-2]="builder.selectedSetting()?.id === product.id"
-              [class.shadow-lg]="builder.selectedSetting()?.id === product.id"
             >
               <div class="w-full aspect-square bg-[#f5f5f7] rounded-[12px] overflow-hidden relative mb-6 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center p-4">
                 <img *ngIf="product.imageUrl || product.images?.[0]" [src]="product.imageUrl || product.images?.[0]" class="w-full h-full object-contain" [alt]="product.name">
@@ -206,7 +203,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                 [class.bg-[#1d1d1f]]="selectedGemFamily() === fam.id"
                 [class.text-white]="selectedGemFamily() === fam.id"
                 [class.bg-white]="selectedGemFamily() !== fam.id"
-                class="px-4 py-2 rounded-full border border-[#e0e0e0] text-xs font-medium transition-all shadow-sm"
+                class="px-4 py-2 rounded-full border border-[#e0e0e0] text-xs font-medium transition-all active-press"
               >
                 {{ fam.name }}
               </button>
@@ -220,7 +217,6 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
               class="store-utility-card cursor-pointer group transition-all"
               [class.!border-[#D4AF37]]="builder.selectedStone()?.id === product.id"
               [class.!border-2]="builder.selectedStone()?.id === product.id"
-              [class.shadow-lg]="builder.selectedStone()?.id === product.id"
             >
               <div class="w-full aspect-square bg-[#f5f5f7] rounded-[12px] overflow-hidden relative mb-6 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center p-4">
                 <img *ngIf="product.imageUrl || product.images?.[0]" [src]="product.imageUrl || product.images?.[0]" class="w-full h-full object-contain" [alt]="product.name">
@@ -234,7 +230,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                 </span>
                 <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2">{{ product.name }}</h3>
                 
-                <div class="grid grid-cols-3 gap-2 text-[11px] text-[#7a7a7a] mb-4 bg-[#f5f5f7] p-2.5 rounded-lg border border-[#e0e0e0]">
+                <div class="grid grid-cols-3 gap-2 text-[11px] text-[#7a7a7a] mb-4 bg-[#f5f5f7] p-2.5 rounded-[12px] border border-[#e0e0e0]">
                   <div>
                     <span class="block text-[9px] uppercase tracking-wider text-[#1d1d1f]">Carat</span>
                     <span class="font-semibold text-[#1d1d1f]">{{ product.caratWeight || product.specifications?.carat || '1.0' }} ct</span>
@@ -271,7 +267,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
           <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             
             <!-- Left: Visual Atelier Showcase & Virtual Try-On -->
-            <div class="lg:col-span-7 bg-[#f5f5f7] rounded-[28px] border border-[#e0e0e0] p-8 md:p-12 flex flex-col items-center justify-center text-center product-surface-shadow relative">
+            <div class="lg:col-span-7 bg-[#f5f5f7] rounded-[18px] border border-[#e0e0e0] p-8 md:p-12 flex flex-col items-center justify-center text-center product-surface-shadow relative">
               
               <!-- AR Try-On Action Button -->
               <button (click)="tryOnOpen.set(true)"
@@ -305,7 +301,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
             </div>
 
             <!-- Right: Personalization & Summary Box -->
-            <div class="lg:col-span-5 bg-white border border-[#e0e0e0] rounded-[28px] p-8 shadow-sm space-y-6">
+            <div class="lg:col-span-5 bg-white border border-[#e0e0e0] rounded-[18px] p-8 space-y-6">
               <h3 class="font-semibold text-base text-[#1d1d1f] border-b border-[#e0e0e0] pb-3">Bespoke Specifications</h3>
 
               <!-- Sizing Selector -->
@@ -314,6 +310,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                   {{ getSizingLabel() }}
                 </span>
                 <select [(ngModel)]="selectedSize" (ngModelChange)="builder.selectedSizeOrLength.set($event)"
+                        [attr.aria-label]="getSizingLabel()"
                         class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-4 py-2.5 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]">
                   <option *ngFor="let s of getSizingOptions()" [value]="s">{{ s }}</option>
                 </select>
@@ -330,6 +327,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                        (ngModelChange)="builder.customEngraving.set($event)"
                        maxlength="20"
                        placeholder="e.g. Forever & Always • 2026"
+                       aria-label="Laser engraving text"
                        class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full px-4 py-2.5 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]">
               </div>
 
@@ -373,7 +371,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
           </div>
         </div>
 
-      </main>
+      </div>
 
       <!-- Apple Floating Sticky Bar -->
       <div *ngIf="builder.selectedSetting() || builder.selectedStone()" class="fixed bottom-0 left-0 w-full bg-[#f5f5f7]/95 backdrop-blur-xl border-t border-[#e0e0e0] py-3.5 px-6 md:px-12 z-40 shadow-2xl">
@@ -414,7 +412,6 @@ export class BuilderComponent implements OnInit {
   builder = inject(BuilderService);
   productService = inject(ProductService);
   cartService = inject(CartService);
-  currency = inject(CurrencyService);
   toast = inject(ToastService);
   router = inject(Router);
 

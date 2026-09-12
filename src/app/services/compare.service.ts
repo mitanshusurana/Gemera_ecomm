@@ -29,12 +29,4 @@ export class CompareService {
     this.compareList.update(list => list.filter(p => p.id !== productId));
     this.toastService.show('Removed from comparison', 'info');
   }
-
-  clearCompare() {
-      this.compareList.set([]);
-  }
-
-  isInCompare(productId: string): boolean {
-      return !!this.compareList().find(p => p.id === productId);
-  }
 }

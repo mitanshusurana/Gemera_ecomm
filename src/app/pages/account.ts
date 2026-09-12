@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { User, Order, Address, OrderItem } from '../core/models';
-import { CurrencyService } from '../services/currency.service';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
 import { ToastService } from '../services/toast.service';
@@ -17,20 +16,20 @@ import { COUNTRIES } from '../core/countries';
   imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink, CurrencyConvertPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-surface">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
       <!-- Breadcrumb -->
-      <div class="bg-diamond-50 border-b border-diamond-200">
-        <div class="container-luxury py-4">
+      <div class="bg-[#f5f5f7] border-b border-[#e0e0e0]">
+        <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-4">
           <div class="flex items-center gap-2 text-sm">
-            <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-ink">/</span>
-            <span class="text-ink">My Account</span>
+            <a routerLink="/" class="text-[#D4AF37] hover:underline">Home</a>
+            <span class="text-[#6e6e73]">/</span>
+            <span class="text-[#1d1d1f]">My Account</span>
           </div>
         </div>
       </div>
 
-      <div class="container-luxury section-padding">
-        <h1 class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-12">
+      <div class="max-w-[1440px] mx-auto px-6 md:px-12 py-16">
+        <h1 class="font-display font-semibold text-4xl md:text-5xl tracking-tight text-[#1d1d1f] mb-12">
           My Account
         </h1>
 
@@ -38,68 +37,68 @@ import { COUNTRIES } from '../core/countries';
           <!-- Sidebar Navigation -->
           <div class="md:col-span-1">
             <!-- Desktop Sidebar -->
-            <div class="hidden md:block card p-4 space-y-2 sticky top-24">
-              <button (click)="activeTab.set('profile')" 
-                      [ngClass]="activeTab() === 'profile' ? 'bg-gold-50 text-gold-600 border-l-4 border-gold-600' : 'text-ink hover:bg-diamond-50'"
-                      class="w-full text-left px-4 py-3 font-medium transition-all duration-300">
+            <div class="hidden md:block bg-white border border-[#e0e0e0] rounded-[18px] p-3 space-y-1 sticky top-[112px]">
+              <button (click)="activeTab.set('profile')"
+                      [ngClass]="activeTab() === 'profile' ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f] hover:bg-[#f5f5f7]'"
+                      class="w-full text-left px-4 py-2.5 rounded-full text-sm font-medium transition-colors duration-200 active-press">
                 Profile Information
               </button>
-              <button (click)="activeTab.set('orders')" 
-                      [ngClass]="activeTab() === 'orders' ? 'bg-gold-50 text-gold-600 border-l-4 border-gold-600' : 'text-ink hover:bg-diamond-50'"
-                      class="w-full text-left px-4 py-3 font-medium transition-all duration-300">
+              <button (click)="activeTab.set('orders')"
+                      [ngClass]="activeTab() === 'orders' ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f] hover:bg-[#f5f5f7]'"
+                      class="w-full text-left px-4 py-2.5 rounded-full text-sm font-medium transition-colors duration-200 active-press">
                 My Orders
               </button>
-              <button (click)="activeTab.set('addresses')" 
-                      [ngClass]="activeTab() === 'addresses' ? 'bg-gold-50 text-gold-600 border-l-4 border-gold-600' : 'text-ink hover:bg-diamond-50'"
-                      class="w-full text-left px-4 py-3 font-medium transition-all duration-300">
+              <button (click)="activeTab.set('addresses')"
+                      [ngClass]="activeTab() === 'addresses' ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f] hover:bg-[#f5f5f7]'"
+                      class="w-full text-left px-4 py-2.5 rounded-full text-sm font-medium transition-colors duration-200 active-press">
                 Addresses
               </button>
-              <button (click)="activeTab.set('wishlist')" 
-                      [ngClass]="activeTab() === 'wishlist' ? 'bg-gold-50 text-gold-600 border-l-4 border-gold-600' : 'text-ink hover:bg-diamond-50'"
-                      class="w-full text-left px-4 py-3 font-medium transition-all duration-300">
+              <button (click)="activeTab.set('wishlist')"
+                      [ngClass]="activeTab() === 'wishlist' ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f] hover:bg-[#f5f5f7]'"
+                      class="w-full text-left px-4 py-2.5 rounded-full text-sm font-medium transition-colors duration-200 active-press">
                 Wishlist
               </button>
-              <button (click)="activeTab.set('settings')" 
-                      [ngClass]="activeTab() === 'settings' ? 'bg-gold-50 text-gold-600 border-l-4 border-gold-600' : 'text-ink hover:bg-diamond-50'"
-                      class="w-full text-left px-4 py-3 font-medium transition-all duration-300">
+              <button (click)="activeTab.set('settings')"
+                      [ngClass]="activeTab() === 'settings' ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f] hover:bg-[#f5f5f7]'"
+                      class="w-full text-left px-4 py-2.5 rounded-full text-sm font-medium transition-colors duration-200 active-press">
                 Settings
               </button>
-              <hr class="my-2 border-diamond-200">
-              <button (click)="logout()" class="w-full text-left px-4 py-3 font-medium text-red-600 hover:bg-red-50 transition-all duration-300">
+              <hr class="my-2 border-[#f0f0f0]">
+              <button (click)="logout()" class="w-full text-left px-4 py-2.5 rounded-full text-sm font-medium text-red-600 hover:bg-red-50 transition-colors duration-200 active-press">
                 Logout
               </button>
             </div>
 
             <!-- Mobile Navigation (Horizontal Scroll) -->
-            <div class="md:hidden mb-6 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+            <div class="md:hidden mb-6 overflow-x-auto pb-2 -mx-6 px-6 no-scrollbar">
                <div class="flex gap-2">
                   <button (click)="activeTab.set('profile')"
-                          [class]="activeTab() === 'profile' ? 'bg-[#115e59] text-surface border-[#115e59]' : 'bg-surface text-ink border-ink'"
-                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                          [class]="activeTab() === 'profile' ? 'bg-[#1d1d1f] text-white border-[#1d1d1f]' : 'bg-white text-[#1d1d1f] border-[#e0e0e0]'"
+                          class="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-colors active-press">
                      Profile
                   </button>
                   <button (click)="activeTab.set('orders')"
-                          [class]="activeTab() === 'orders' ? 'bg-[#115e59] text-surface border-[#115e59]' : 'bg-surface text-ink border-ink'"
-                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                          [class]="activeTab() === 'orders' ? 'bg-[#1d1d1f] text-white border-[#1d1d1f]' : 'bg-white text-[#1d1d1f] border-[#e0e0e0]'"
+                          class="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-colors active-press">
                      Orders
                   </button>
                   <button (click)="activeTab.set('addresses')"
-                          [class]="activeTab() === 'addresses' ? 'bg-[#115e59] text-surface border-[#115e59]' : 'bg-surface text-ink border-ink'"
-                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                          [class]="activeTab() === 'addresses' ? 'bg-[#1d1d1f] text-white border-[#1d1d1f]' : 'bg-white text-[#1d1d1f] border-[#e0e0e0]'"
+                          class="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-colors active-press">
                      Addresses
                   </button>
                   <button (click)="activeTab.set('wishlist')"
-                          [class]="activeTab() === 'wishlist' ? 'bg-[#115e59] text-surface border-[#115e59]' : 'bg-surface text-ink border-ink'"
-                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                          [class]="activeTab() === 'wishlist' ? 'bg-[#1d1d1f] text-white border-[#1d1d1f]' : 'bg-white text-[#1d1d1f] border-[#e0e0e0]'"
+                          class="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-colors active-press">
                      Wishlist
                   </button>
                   <button (click)="activeTab.set('settings')"
-                          [class]="activeTab() === 'settings' ? 'bg-[#115e59] text-surface border-[#115e59]' : 'bg-surface text-ink border-ink'"
-                          class="px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors">
+                          [class]="activeTab() === 'settings' ? 'bg-[#1d1d1f] text-white border-[#1d1d1f]' : 'bg-white text-[#1d1d1f] border-[#e0e0e0]'"
+                          class="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-colors active-press">
                      Settings
                   </button>
                   <button (click)="logout()"
-                          class="px-4 py-2 rounded-full border border-red-200 bg-red-50 text-red-600 text-sm font-semibold whitespace-nowrap">
+                          class="px-4 py-2 rounded-full border border-red-200 bg-red-50 text-red-600 text-sm font-medium whitespace-nowrap active-press">
                      Logout
                   </button>
                </div>
@@ -109,165 +108,165 @@ import { COUNTRIES } from '../core/countries';
           <!-- Main Content -->
           <div class="md:col-span-3">
             <!-- Profile Tab -->
-            <div *ngIf="activeTab() === 'profile'" class="card p-8 animate-slideUp">
+            <div *ngIf="activeTab() === 'profile'" class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 animate-fadeIn">
 
               <!-- Loyalty Points Summary -->
-              <div class="bg-gradient-to-r from-surface to-surface text-surface rounded-xl p-6 mb-8 flex justify-between items-center shadow-lg">
+              <div class="bg-[#1c1c1e] text-white rounded-[18px] p-6 mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                  <p class="text-ink text-sm font-semibold uppercase tracking-wider mb-1">Caratloop Loyalty Points</p>
-                  <h3 class="text-3xl font-bold font-display flex items-center gap-2">
+                  <p class="text-[#a1a1a6] text-xs font-semibold uppercase tracking-[0.15em] mb-1">Caratloop Loyalty Points</p>
+                  <h3 class="font-display font-semibold text-3xl text-white flex items-center gap-2">
                     <span class="text-4xl">💎</span> {{ loyalty().points | number }}
                   </h3>
-                  <p class="text-ink text-xs mt-2">Current Tier: {{ loyalty().tier }}</p>
+                  <p class="text-[#a1a1a6] text-xs mt-2">Current Tier: {{ loyalty().tier }}</p>
                 </div>
-                <div class="text-right">
-                  <button (click)="redeemPoints()" class="bg-gold-500 hover:bg-gold-600 text-surface px-4 py-2 rounded-lg font-semibold text-sm transition-colors mb-2">
+                <div class="sm:text-right">
+                  <button (click)="redeemPoints()" class="btn-apple-pill text-xs !py-2 !px-4 mb-2">
                     Redeem Points
                   </button>
-                  <p class="text-xs text-ink">Expires: Dec 31, 2025</p>
+                  <p class="text-xs text-[#a1a1a6]">Expires: Dec 31, 2025</p>
                 </div>
               </div>
 
-              <h2 class="text-3xl font-bold text-diamond-900 mb-8">Profile Information</h2>
+              <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f] mb-8">Profile Information</h2>
 
               <form (ngSubmit)="updateProfile()" #profileForm="ngForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-semibold text-ink mb-2">First Name</label>
-                    <input type="text" [(ngModel)]="user()!.firstName" name="firstName" required 
+                    <label class="block text-sm font-medium text-[#1d1d1f] mb-2">First Name</label>
+                    <input type="text" [(ngModel)]="user()!.firstName" name="firstName" required
                            class="input-field" placeholder="John">
                   </div>
                   <div>
-                    <label class="block text-sm font-semibold text-ink mb-2">Last Name</label>
-                    <input type="text" [(ngModel)]="user()!.lastName" name="lastName" required 
+                    <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Last Name</label>
+                    <input type="text" [(ngModel)]="user()!.lastName" name="lastName" required
                            class="input-field" placeholder="Doe">
                   </div>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2">Email Address</label>
-                  <input type="email" [(ngModel)]="user()!.email" name="email" disabled 
-                         class="input-field bg-diamond-50 cursor-not-allowed" placeholder="john@example.com">
-                  <p class="text-xs text-ink mt-1">Email cannot be changed</p>
+                  <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Email Address</label>
+                  <input type="email" [(ngModel)]="user()!.email" name="email" disabled
+                         class="input-field cursor-not-allowed" placeholder="john@example.com">
+                  <p class="text-xs text-[#6e6e73] mt-1">Email cannot be changed</p>
                 </div>
 
                 <div>
-                  <label class="block text-sm font-semibold text-ink mb-2">Phone Number</label>
-                  <input type="tel" [(ngModel)]="user()!.phone" name="phone" required 
+                  <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Phone Number</label>
+                  <input type="tel" [(ngModel)]="user()!.phone" name="phone" required
                          class="input-field" placeholder="+1 (555) 000-0000">
                 </div>
 
-                <button type="submit" class="btn-primary">
+                <button type="submit" class="btn-apple-pill">
                   Save Changes
                 </button>
               </form>
             </div>
 
             <!-- Orders Tab -->
-            <div *ngIf="activeTab() === 'orders'" class="space-y-6 animate-slideUp">
-              <div class="card p-8">
-                <h2 class="text-3xl font-bold text-diamond-900 mb-8">My Orders</h2>
+            <div *ngIf="activeTab() === 'orders'" class="space-y-6 animate-fadeIn">
+              <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8">
+                <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f] mb-8">My Orders</h2>
 
                 <div class="space-y-8">
-                  <div *ngFor="let order of orders().content" class="border border-diamond-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+                  <div *ngFor="let order of orders().content" class="border border-[#e0e0e0] rounded-[18px] p-6 hover:border-[#D4AF37]/40 transition-colors duration-300">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                       <div>
-                        <p class="text-sm text-gold-600 font-semibold mb-1">Order #{{ order.orderNumber }}</p>
-                        <p class="text-ink text-sm">Placed on {{ order.createdAt | date }}</p>
+                        <p class="text-sm text-[#D4AF37] font-semibold mb-1">Order #{{ order.orderNumber }}</p>
+                        <p class="text-[#6e6e73] text-sm">Placed on {{ order.createdAt | date }}</p>
                       </div>
-                      <div class="text-right">
-                        <p class="text-2xl font-bold text-diamond-900">{{ order.total | currencyConvert }}</p>
-                        <!-- <span class="inline-block mt-2 badge badge-emerald">{{ order.status }}</span> -->
+                      <div class="md:text-right">
+                        <p class="font-sans font-semibold text-2xl text-[#1d1d1f]">{{ order.total | currencyConvert }}</p>
+                        <span class="badge mt-2" [ngClass]="getStatusBadgeClass(order.status)">{{ order.status }}</span>
                       </div>
                     </div>
 
                     <!-- Tracking Timeline -->
                     <div class="relative flex items-center justify-between mb-6">
                       <!-- Progress Bar Background -->
-                      <div class="absolute top-4 left-8 right-8 h-1 bg-surface -translate-y-1/2 z-0"></div>
+                      <div class="absolute top-4 left-8 right-8 h-1 bg-[#e0e0e0] -translate-y-1/2 z-0"></div>
                       <!-- Progress Bar Active -->
-                      <div class="absolute top-4 left-8 h-1 bg-gold-500 -translate-y-1/2 z-0 transition-all duration-1000"
+                      <div class="absolute top-4 left-8 h-1 bg-[#D4AF37] -translate-y-1/2 z-0 transition-all duration-1000"
                            [style.width]="order.status === 'DELIVERED' ? 'calc(100% - 4rem)' : (order.status === 'SHIPPED' ? 'calc(66.6% - 2.6rem)' : (order.status === 'PROCESSING' ? 'calc(33.3% - 1.3rem)' : '0%'))">
                       </div>
 
                       <!-- Step 1: Confirmed -->
                       <div class="flex flex-col items-center gap-2 z-10 w-16">
-                        <div class="w-8 h-8 rounded-full bg-gold-500 text-surface flex items-center justify-center text-xs font-bold ring-4 ring-white">✓</div>
-                        <span class="text-xs font-semibold text-ink text-center">Confirmed</span>
+                        <div class="w-8 h-8 rounded-full bg-[#D4AF37] text-black flex items-center justify-center text-xs font-semibold ring-4 ring-white">✓</div>
+                        <span class="text-xs font-medium text-[#1d1d1f] text-center">Confirmed</span>
                       </div>
                       <!-- Step 2: Processing -->
                       <div class="flex flex-col items-center gap-2 z-10 w-16">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-white"
-                             [ngClass]="['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-gold-500 text-surface' : 'bg-surface text-ink'">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ring-4 ring-white"
+                             [ngClass]="['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-[#D4AF37] text-black' : 'bg-[#f5f5f7] border border-[#e0e0e0] text-[#6e6e73]'">
                              {{ ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) ? '✓' : '2' }}
                         </div>
-                        <span class="text-xs font-semibold text-ink text-center">Processing</span>
+                        <span class="text-xs font-medium text-[#1d1d1f] text-center">Processing</span>
                       </div>
                       <!-- Step 3: Shipped -->
                       <div class="flex flex-col items-center gap-2 z-10 w-16">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-white"
-                             [ngClass]="['SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-gold-500 text-surface' : 'bg-surface text-ink'">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ring-4 ring-white"
+                             [ngClass]="['SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-[#D4AF37] text-black' : 'bg-[#f5f5f7] border border-[#e0e0e0] text-[#6e6e73]'">
                              {{ ['SHIPPED', 'DELIVERED'].includes(order.status) ? '✓' : '3' }}
                         </div>
-                        <span class="text-xs font-semibold text-ink text-center">Shipped</span>
+                        <span class="text-xs font-medium text-[#1d1d1f] text-center">Shipped</span>
                       </div>
                       <!-- Step 4: Delivered -->
                       <div class="flex flex-col items-center gap-2 z-10 w-16">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-4 ring-white"
-                             [ngClass]="order.status === 'DELIVERED' ? 'bg-gold-500 text-surface' : 'bg-surface text-ink'">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ring-4 ring-white"
+                             [ngClass]="order.status === 'DELIVERED' ? 'bg-[#D4AF37] text-black' : 'bg-[#f5f5f7] border border-[#e0e0e0] text-[#6e6e73]'">
                              {{ order.status === 'DELIVERED' ? '✓' : '4' }}
                         </div>
-                        <span class="text-xs font-semibold text-ink text-center">Delivered</span>
+                        <span class="text-xs font-medium text-[#1d1d1f] text-center">Delivered</span>
                       </div>
                     </div>
 
-                    <div class="border-t border-diamond-200 pt-4 flex justify-between items-center">
-                      <p class="text-ink text-sm" *ngIf="order.items && order.items.length > 0">{{ getItemName(order.items[0]) }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
-                      <p class="text-ink text-sm" *ngIf="!order.items || order.items.length === 0">No items</p>
-                      <a [routerLink]="['/track-order']" [queryParams]="{id: order.orderNumber}" class="text-gold-600 hover:text-gold-700 text-sm font-semibold">Track Detail →</a>
+                    <div class="border-t border-[#f0f0f0] pt-4 flex justify-between items-center">
+                      <p class="text-[#6e6e73] text-sm" *ngIf="order.items && order.items.length > 0">{{ getItemName(order.items[0]) }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
+                      <p class="text-[#6e6e73] text-sm" *ngIf="!order.items || order.items.length === 0">No items</p>
+                      <a [routerLink]="['/track-order']" [queryParams]="{id: order.orderNumber}" class="text-[#D4AF37] hover:underline text-sm font-medium">Track Detail →</a>
                     </div>
                   </div>
 
-                  <div *ngIf="orders().content?.length === 0" class="text-center py-8 text-ink flex flex-col items-center">
+                  <div *ngIf="orders().content?.length === 0" class="text-center py-8 text-[#6e6e73] flex flex-col items-center">
                       <p class="mb-4">No orders found.</p>
-                      <a routerLink="/products" class="btn-primary inline-block">Back to Shopping</a>
+                      <a routerLink="/products" class="btn-apple-pill">Back to Shopping</a>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Addresses Tab -->
-            <div *ngIf="activeTab() === 'addresses'" class="space-y-6 animate-slideUp">
-              <div class="card p-8">
-                <div class="flex justify-between items-center mb-8">
-                  <h2 class="text-3xl font-bold text-diamond-900">Saved Addresses</h2>
-                  <button (click)="openAddressModal()" class="btn-outline">
+            <div *ngIf="activeTab() === 'addresses'" class="space-y-6 animate-fadeIn">
+              <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+                  <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f]">Saved Addresses</h2>
+                  <button (click)="openAddressModal()" class="btn-outline text-sm !py-2.5 !px-5">
                     + Add New Address
                   </button>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div *ngFor="let address of user()?.addresses" class="border-2 rounded-lg p-6 relative group"
-                       [ngClass]="address.isDefault ? 'border-gold-500 bg-gold-50' : 'border-diamond-200 bg-surface'">
+                  <div *ngFor="let address of user()?.addresses" class="border rounded-[18px] p-6 relative group transition-colors"
+                       [ngClass]="address.isDefault ? 'border-[#D4AF37] bg-[#fbf8ef]' : 'border-[#e0e0e0] bg-white hover:border-[#D4AF37]/40'">
                     <div class="flex justify-between items-start mb-4">
                       <div>
-                        <h3 class="font-bold text-ink">{{ address.firstName }} {{ address.lastName }}</h3>
-                        <p *ngIf="address.isDefault" class="text-xs text-gold-600 font-semibold mt-1">DEFAULT ADDRESS</p>
+                        <h3 class="font-sans font-semibold text-base text-[#1d1d1f]">{{ address.firstName }} {{ address.lastName }}</h3>
+                        <p *ngIf="address.isDefault" class="text-[11px] tracking-wide text-[#D4AF37] font-semibold mt-1">DEFAULT ADDRESS</p>
                       </div>
                     </div>
-                    <p class="text-ink text-sm mb-3">
+                    <p class="text-[#6e6e73] text-sm mb-3">
                       {{ address.street }}<br>
                       {{ address.city }}, {{ address.state }} {{ address.zipCode }}<br>
                       {{ address.country }}<br>
                       {{ address.phone }}
                     </p>
-                    <div class="flex gap-2">
-                      <button (click)="openAddressModal(address)" class="text-sm text-gold-600 hover:text-gold-700 font-semibold">Edit</button>
-                      <button (click)="deleteAddress(address.id)" class="text-sm text-red-600 hover:text-red-700 font-semibold">Delete</button>
+                    <div class="flex gap-4">
+                      <button (click)="openAddressModal(address)" class="text-sm text-[#D4AF37] hover:underline font-medium">Edit</button>
+                      <button (click)="deleteAddress(address.id)" class="text-sm text-red-600 hover:underline font-medium">Delete</button>
                     </div>
                   </div>
 
-                  <div *ngIf="!user()?.addresses || user()!.addresses!.length === 0" class="col-span-full text-center py-8 text-ink">
+                  <div *ngIf="!user()?.addresses || user()!.addresses!.length === 0" class="col-span-full text-center py-8 text-[#6e6e73]">
                     No addresses saved yet.
                   </div>
                 </div>
@@ -275,88 +274,88 @@ import { COUNTRIES } from '../core/countries';
             </div>
 
             <!-- Wishlist Tab -->
-            <div *ngIf="activeTab() === 'wishlist'" class="space-y-6 animate-slideUp">
-              <div class="card p-8">
-                <div class="flex justify-between items-center mb-8">
-                  <h2 class="text-3xl font-bold text-diamond-900">My Wishlists</h2>
-                  <button (click)="createBoard()" class="btn-outline flex items-center gap-2">
+            <div *ngIf="activeTab() === 'wishlist'" class="space-y-6 animate-fadeIn">
+              <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+                  <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f]">My Wishlists</h2>
+                  <button (click)="createBoard()" class="btn-outline text-sm !py-2.5 !px-5 flex items-center gap-2">
                     <span>+</span> Create Board
                   </button>
                 </div>
 
                 <!-- Boards Tabs (Mock) -->
-                <div class="flex gap-4 mb-6 border-b border-ink pb-2">
-                  <button class="text-gold-600 border-b-2 border-gold-600 font-semibold px-2 pb-2">All Items</button>
-                  <button class="text-ink hover:text-ink px-2 pb-2">Wedding Ideas</button>
-                  <button class="text-ink hover:text-ink px-2 pb-2">Gifts for Mom</button>
+                <div class="flex gap-6 mb-6 border-b border-[#e0e0e0] text-sm">
+                  <button class="text-[#1d1d1f] border-b-2 border-[#D4AF37] font-medium px-1 pb-3 -mb-px">All Items</button>
+                  <button class="text-[#6e6e73] hover:text-[#1d1d1f] px-1 pb-3 -mb-px transition-colors">Wedding Ideas</button>
+                  <button class="text-[#6e6e73] hover:text-[#1d1d1f] px-1 pb-3 -mb-px transition-colors">Gifts for Mom</button>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div *ngFor="let item of wishlistService.items()" class="card card-hover group overflow-hidden">
-                    <div class="relative overflow-hidden aspect-square bg-diamond-100 flex items-center justify-center">
-                      <img *ngIf="item.imageUrl || item.images?.[0]" [ngSrc]="item.imageUrl || item.images?.[0] || ''" fill class="w-full h-full object-cover">
+                  <div *ngFor="let item of wishlistService.items()" class="store-utility-card group">
+                    <div class="relative overflow-hidden aspect-square bg-[#f5f5f7] rounded-[12px] mb-6 flex items-center justify-center">
+                      <img *ngIf="item.imageUrl || item.images?.[0]" [ngSrc]="item.imageUrl || item.images?.[0] || ''" fill class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" [alt]="item.name">
                       <span *ngIf="!item.imageUrl && !item.images?.[0]" class="text-3xl">💎</span>
-                      <button (click)="wishlistService.removeFromWishlist(item.id)" class="absolute top-4 left-4 w-10 h-10 bg-rose-500 text-surface rounded-lg flex items-center justify-center transition-all duration-300 z-10">
+                      <button (click)="wishlistService.removeFromWishlist(item.id)" aria-label="Remove from wishlist" class="absolute top-4 left-4 w-10 h-10 bg-white/90 backdrop-blur-md border border-[#e0e0e0] text-red-600 hover:border-red-200 rounded-full flex items-center justify-center active-press z-10">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
                       </button>
                     </div>
-                    <div class="p-6">
-                      <p class="text-xs text-gold-600 font-semibold uppercase mb-1">{{ item.category }}</p>
-                      <h3 class="font-semibold text-ink mb-3">{{ item.name }}</h3>
+                    <div>
+                      <p class="text-xs text-[#D4AF37] font-semibold uppercase tracking-wider mb-1">{{ item.category }}</p>
+                      <h3 class="font-sans font-medium text-base text-[#1d1d1f] mb-3">{{ item.name }}</h3>
                       <div class="flex justify-between items-center">
-                        <span class="text-2xl font-bold text-diamond-900">{{ item.price | currencyConvert }}</span>
+                        <span class="font-sans font-semibold text-xl text-[#1d1d1f]">{{ item.price | currencyConvert }}</span>
                       </div>
                       <!-- Add to Cart Logic would go here, maybe inject CartService too or just link to product -->
-                      <a [routerLink]="['/products', item.id]" class="block w-full btn-primary mt-4 text-center">View Details</a>
+                      <a [routerLink]="['/products', item.id]" class="btn-apple-pill w-full mt-4 text-sm !py-2.5">View Details</a>
                     </div>
                   </div>
-                  <div *ngIf="wishlistService.items().length === 0" class="col-span-full text-center py-12 text-ink flex flex-col items-center">
+                  <div *ngIf="wishlistService.items().length === 0" class="col-span-full text-center py-12 text-[#6e6e73] flex flex-col items-center">
                     <p class="mb-4">Your wishlist is empty.</p>
-                    <a routerLink="/products" class="btn-primary inline-block">Back to Shopping</a>
+                    <a routerLink="/products" class="btn-apple-pill">Back to Shopping</a>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Settings Tab -->
-            <div *ngIf="activeTab() === 'settings'" class="card p-8 animate-slideUp">
-              <h2 class="text-3xl font-bold text-diamond-900 mb-8">Settings</h2>
+            <div *ngIf="activeTab() === 'settings'" class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 animate-fadeIn">
+              <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f] mb-8">Settings</h2>
 
               <div class="space-y-8">
                 <div>
-                  <h3 class="text-lg font-bold text-ink mb-4">Email Notifications</h3>
+                  <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-4">Email Notifications</h3>
                   <div class="space-y-3">
                     <label class="flex items-center gap-3">
-                      <input type="checkbox" checked class="w-4 h-4">
-                      <span class="text-ink">Order updates and shipping notifications</span>
+                      <input type="checkbox" checked class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
+                      <span class="text-[#1d1d1f]">Order updates and shipping notifications</span>
                     </label>
                     <label class="flex items-center gap-3">
-                      <input type="checkbox" checked class="w-4 h-4">
-                      <span class="text-ink">New collection and product launches</span>
+                      <input type="checkbox" checked class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
+                      <span class="text-[#1d1d1f]">New collection and product launches</span>
                     </label>
                     <label class="flex items-center gap-3">
-                      <input type="checkbox" checked class="w-4 h-4">
-                      <span class="text-ink">Exclusive offers and promotions</span>
+                      <input type="checkbox" checked class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
+                      <span class="text-[#1d1d1f]">Exclusive offers and promotions</span>
                     </label>
                     <label class="flex items-center gap-3">
-                      <input type="checkbox" class="w-4 h-4">
-                      <span class="text-ink">Monthly newsletter</span>
+                      <input type="checkbox" class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
+                      <span class="text-[#1d1d1f]">Monthly newsletter</span>
                     </label>
                   </div>
                 </div>
 
-                <div class="border-t border-diamond-200 pt-8">
-                  <h3 class="text-lg font-bold text-ink mb-4">Privacy & Security</h3>
+                <div class="border-t border-[#f0f0f0] pt-8">
+                  <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-4">Privacy & Security</h3>
                   <div class="space-y-3">
-                    <a href="#" class="block text-gold-600 hover:text-gold-700 font-semibold">Change Password</a>
-                    <a href="#" class="block text-gold-600 hover:text-gold-700 font-semibold">Two-Factor Authentication</a>
-                    <a href="#" class="block text-gold-600 hover:text-gold-700 font-semibold">Manage Login Sessions</a>
+                    <a href="#" class="block text-[#D4AF37] hover:underline font-medium">Change Password</a>
+                    <a href="#" class="block text-[#D4AF37] hover:underline font-medium">Two-Factor Authentication</a>
+                    <a href="#" class="block text-[#D4AF37] hover:underline font-medium">Manage Login Sessions</a>
                   </div>
                 </div>
 
-                <button class="btn-primary">
+                <button class="btn-apple-pill">
                   Save Preferences
                 </button>
               </div>
@@ -366,35 +365,35 @@ import { COUNTRIES } from '../core/countries';
       </div>
 
       <!-- Address Modal -->
-      <div *ngIf="isAddressModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div class="bg-surface rounded-lg p-8 max-w-md w-full animate-scaleUp">
-          <h3 class="text-2xl font-bold text-diamond-900 mb-6">{{ currentAddress().id ? 'Edit' : 'Add New' }} Address</h3>
+      <div *ngIf="isAddressModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white border border-[#e0e0e0] rounded-[18px] shadow-2xl p-8 max-w-md w-full animate-scaleUp">
+          <h3 class="font-display font-semibold text-2xl tracking-tight text-[#1d1d1f] mb-6">{{ currentAddress().id ? 'Edit' : 'Add New' }} Address</h3>
           <form (ngSubmit)="saveAddress()" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
-              <input [(ngModel)]="currentAddress().firstName" name="firstName" placeholder="First Name" class="input-field" required>
-              <input [(ngModel)]="currentAddress().lastName" name="lastName" placeholder="Last Name" class="input-field" required>
+              <input [(ngModel)]="currentAddress().firstName" name="firstName" placeholder="First Name" aria-label="First name" class="input-field" required>
+              <input [(ngModel)]="currentAddress().lastName" name="lastName" placeholder="Last Name" aria-label="Last name" class="input-field" required>
             </div>
-            <input [(ngModel)]="currentAddress().street" name="street" placeholder="Street Address" class="input-field" required>
+            <input [(ngModel)]="currentAddress().street" name="street" placeholder="Street Address" aria-label="Street address" class="input-field" required>
             <div class="grid grid-cols-2 gap-4">
-              <input [(ngModel)]="currentAddress().city" name="city" placeholder="City" class="input-field" required>
-              <input [(ngModel)]="currentAddress().state" name="state" placeholder="State" class="input-field" required>
+              <input [(ngModel)]="currentAddress().city" name="city" placeholder="City" aria-label="City" class="input-field" required>
+              <input [(ngModel)]="currentAddress().state" name="state" placeholder="State" aria-label="State" class="input-field" required>
             </div>
             <div class="grid grid-cols-2 gap-4">
-              <input [(ngModel)]="currentAddress().zipCode" name="zipCode" placeholder="ZIP Code" class="input-field" required>
-              <select [(ngModel)]="currentAddress().country" name="country" class="input-field" required>
+              <input [(ngModel)]="currentAddress().zipCode" name="zipCode" placeholder="ZIP Code" aria-label="ZIP code" class="input-field" required>
+              <select [(ngModel)]="currentAddress().country" name="country" aria-label="Country" class="input-field" required>
                 <option *ngFor="let country of countriesList" [value]="country">{{ country }}</option>
               </select>
             </div>
-            <input [(ngModel)]="currentAddress().phone" name="phone" placeholder="Phone" class="input-field" required>
+            <input [(ngModel)]="currentAddress().phone" name="phone" placeholder="Phone" aria-label="Phone" class="input-field" required>
 
             <label class="flex items-center gap-2">
-              <input type="checkbox" [(ngModel)]="currentAddress().isDefault" name="isDefault">
-              <span class="text-sm text-ink">Set as default address</span>
+              <input type="checkbox" [(ngModel)]="currentAddress().isDefault" name="isDefault" class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
+              <span class="text-sm text-[#1d1d1f]">Set as default address</span>
             </label>
 
             <div class="flex gap-2 pt-4">
               <button type="button" (click)="isAddressModalOpen.set(false)" class="btn-ghost flex-1">Cancel</button>
-              <button type="submit" class="btn-primary flex-1">Save</button>
+              <button type="submit" class="btn-apple-pill flex-1">Save</button>
             </div>
           </form>
         </div>
@@ -414,7 +413,6 @@ export class AccountComponent implements OnInit {
   countriesList = COUNTRIES;
 
   private authService = inject(AuthService);
-  private currencyService = inject(CurrencyService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
@@ -449,10 +447,10 @@ export class AccountComponent implements OnInit {
     this.orderService.getUserOrders().subscribe({
         next: (response) => {
             // Handle both paginated and direct array responses
-            const ordersData = Array.isArray(response) 
-              ? { content: response } 
+            const ordersData = Array.isArray(response)
+              ? { content: response }
               : (response.content ? response : { content: [response] });
-            
+
             // Add orderNumber if missing
             if (ordersData.content) {
               ordersData.content = ordersData.content.map((order: Order, index: number) => ({
@@ -460,10 +458,10 @@ export class AccountComponent implements OnInit {
                 orderNumber: order.orderNumber || `ORD-${order.id?.substring(0, 8) || index + 1}`
               }));
             }
-            
+
             this.orders.set(ordersData);
         },
-        error: (error) => {
+        error: () => {
           // Error loading orders
         }
     });
@@ -474,7 +472,7 @@ export class AccountComponent implements OnInit {
       next: (user) => {
         this.user.set(user);
       },
-      error: (error) => {
+      error: () => {
         // Error loading user profile
       },
     });
@@ -494,7 +492,7 @@ export class AccountComponent implements OnInit {
             next: () => {
                 this.toastService.show('Profile updated successfully', 'success');
             },
-            error: (err) => {
+            error: () => {
                 this.toastService.show('Failed to update profile', 'error');
             }
         });
@@ -510,7 +508,7 @@ export class AccountComponent implements OnInit {
       next: () => {
         this.router.navigate(['/']);
       },
-      error: (error) => {
+      error: () => {
         // Error logging out
       },
     });
@@ -521,6 +519,17 @@ export class AccountComponent implements OnInit {
       return item.product.name;
     }
     return 'Unknown Item';
+  }
+
+  // Semantic tint layered over the neutral `badge` pill.
+  getStatusBadgeClass(status: string): string {
+    switch (status) {
+      case 'DELIVERED': return '!bg-green-50 !border-green-200 !text-green-600';
+      case 'SHIPPED': return '!bg-blue-50 !border-blue-200 !text-blue-600';
+      case 'PROCESSING': return '!bg-amber-50 !border-amber-200 !text-amber-600';
+      case 'CANCELLED': return '!bg-red-50 !border-red-200 !text-red-600';
+      default: return '';
+    }
   }
 
   // Address Methods
@@ -537,7 +546,7 @@ export class AccountComponent implements OnInit {
             this.toastService.show('Address updated successfully', 'success');
             this.isAddressModalOpen.set(false);
         },
-        error: (err) => {
+        error: () => {
             this.toastService.show('Failed to update address', 'error');
         }
       });
@@ -547,7 +556,7 @@ export class AccountComponent implements OnInit {
             this.toastService.show('Address added successfully', 'success');
             this.isAddressModalOpen.set(false);
         },
-        error: (err) => {
+        error: () => {
             this.toastService.show('Failed to add address', 'error');
         }
       });
@@ -560,7 +569,7 @@ export class AccountComponent implements OnInit {
         next: () => {
             this.toastService.show('Address deleted successfully', 'success');
         },
-        error: (err) => {
+        error: () => {
             this.toastService.show('Failed to delete address', 'error');
         }
       });

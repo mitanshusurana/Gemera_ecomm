@@ -11,7 +11,7 @@ import { environment } from '../../environments/environment';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <!-- APPLE DESIGN SYSTEM: CONTACT CONCIERGE (DESIGN.md) -->
-    <div *ngIf="settings" class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+    <div *ngIf="settings" class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
       
       <!-- Top Parchment Header -->
       <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-16 px-6 text-center">
@@ -26,30 +26,30 @@ import { environment } from '../../environments/environment';
         </div>
       </section>
 
-      <main class="max-w-[1200px] mx-auto px-6 py-12">
+      <div class="max-w-[1200px] mx-auto px-6 py-12">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           <!-- Contact Form Card -->
-          <div class="lg:col-span-7 store-utility-card p-8 md:p-12 shadow-sm">
+          <div class="lg:col-span-7 store-utility-card p-8 md:p-12">
             <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">Send an Inquiry</h2>
             <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
               <div>
                 <label for="contact-name" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Full Name</label>
-                <input id="contact-name" formControlName="name" type="text" autocomplete="name" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="Enter your name">
+                <input id="contact-name" formControlName="name" type="text" autocomplete="name" class="input-field" placeholder="Enter your name">
                 <p *ngIf="invalid('name')" class="text-xs text-red-600 mt-1">Please tell us your name.</p>
               </div>
               <div>
                 <label for="contact-email" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Email Address</label>
-                <input id="contact-email" formControlName="email" type="email" autocomplete="email" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="your@email.com">
+                <input id="contact-email" formControlName="email" type="email" autocomplete="email" class="input-field" placeholder="your@email.com">
                 <p *ngIf="invalid('email')" class="text-xs text-red-600 mt-1">Please enter an email address we can reply to.</p>
               </div>
               <div>
                 <label for="contact-subject" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Subject</label>
-                <input id="contact-subject" formControlName="subject" type="text" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="e.g. Solitaire Appointment or Custom Design">
+                <input id="contact-subject" formControlName="subject" type="text" class="input-field" placeholder="e.g. Solitaire Appointment or Custom Design">
               </div>
               <div>
                 <label for="contact-message" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Message</label>
-                <textarea id="contact-message" formControlName="message" rows="4" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="How may we assist you?"></textarea>
+                <textarea id="contact-message" formControlName="message" rows="4" class="input-field" placeholder="How may we assist you?"></textarea>
                 <p *ngIf="invalid('message')" class="text-xs text-red-600 mt-1">Please tell us how we can help.</p>
               </div>
               <button type="submit" [disabled]="sending()" class="btn-apple-pill w-full !py-3.5 text-sm disabled:opacity-60">
@@ -66,7 +66,7 @@ import { environment } from '../../environments/environment';
           </div>
 
           <!-- Information Sidebar Card -->
-          <div class="lg:col-span-5 bg-[#fafafc] border border-[#e0e0e0] rounded-[24px] p-8 md:p-10 space-y-8">
+          <div class="lg:col-span-5 bg-[#fafafc] border border-[#e0e0e0] rounded-[18px] p-8 md:p-10 space-y-8">
             <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] border-b border-[#e0e0e0] pb-4">Atelier Contact</h2>
             
             <div class="space-y-6 text-xs text-[#7a7a7a]">
@@ -110,7 +110,7 @@ import { environment } from '../../environments/environment';
           </div>
 
         </div>
-      </main>
+      </div>
 
     </div>
   `,

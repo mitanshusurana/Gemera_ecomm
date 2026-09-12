@@ -26,10 +26,6 @@ export class AppointmentService {
     return this.http.post<Appointment>(this.apiUrl, appointment);
   }
 
-  getAllAppointments(): Observable<Appointment[]> {
-    return this.http.get<Appointment[]>(this.apiUrl);
-  }
-
   updateStatus(id: string, status: string): Observable<Appointment> {
     return this.http.patch<Appointment>(`${this.apiUrl}/${id}/status`, { status });
   }

@@ -1,33 +1,34 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap");
-
 @import "tailwindcss";
 @config "../tailwind.config.js";
 @source "./app";
 @plugin "@tailwindcss/typography";
 
-/* Root Variables */
-:root {
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/*
+ * Storefront design system (see DESIGN.md).
+ * Photography-first, one action colour (champagne gold), ink text on white and
+ * parchment canvases, hairline borders, pill buttons, no decorative shadows.
+ * Fonts are loaded once from index.html.
+ */
 
-/* Base Styles */
-* {
-  @apply transition-colors duration-300;
-}
-
+/* ---------- Base ---------- */
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  @apply bg-surface text-ink font-sans;
+  @apply bg-white text-ink font-sans antialiased;
   overflow-x: hidden;
-  position: relative;
   width: 100%;
 }
 
+a,
+button {
+  @apply transition-colors duration-200;
+}
+
 h1, h2, h3, h4, h5, h6 {
-  @apply font-display font-normal text-ink;
+  @apply font-display font-semibold text-ink;
   letter-spacing: -0.02em;
 }
 
@@ -39,129 +40,77 @@ h5 { @apply text-lg md:text-xl; }
 h6 { @apply text-base md:text-lg; }
 
 p {
-  @apply leading-relaxed text-ink font-light;
+  @apply leading-relaxed;
 }
 
-/* Typography Classes */
+/* Keyboard focus ring: the single focus signal in the system */
+:focus-visible {
+  outline: 2px solid #D4AF37;
+  outline-offset: 2px;
+}
+
+/* ---------- Typography helpers ---------- */
 .label-caps {
-  @apply font-sans text-xs font-medium uppercase tracking-[0.15em] text-ink;
+  @apply font-sans text-xs font-medium uppercase tracking-[0.15em] text-ink-muted-48;
 }
 
-/* Button Styles - Minimalist / High-Contrast Editorial */
-.btn-primary {
-  @apply inline-flex items-center justify-center px-8 py-4 bg-accent text-white hover:bg-[#b5952f] font-sans font-medium uppercase tracking-widest text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-none;
-}
-
-.btn-secondary {
-  @apply inline-flex items-center justify-center px-8 py-4 bg-transparent border border-ink text-ink hover:bg-soft-ivory font-sans font-medium uppercase tracking-widest text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-none;
-}
-
-.btn-outline {
-  @apply inline-flex items-center justify-center px-8 py-4 border border-stroke-delicate text-ink hover:border-ink font-sans font-medium uppercase tracking-widest text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-none;
-}
-
-.btn-ghost {
-  @apply inline-flex items-center justify-center px-6 py-3 text-ink hover:text-accent font-sans font-medium uppercase tracking-widest text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-none;
-}
-
-/* Input Styles - Minimalist Underline */
-.input-field {
-  @apply w-full px-0 py-3 border-b border-stroke-delicate bg-transparent text-ink focus:outline-none focus:border-accent transition-all duration-300 rounded-none;
-}
-
-.input-field::placeholder {
-  @apply text-muted-charcoal opacity-60 font-light;
-}
-
-/* Card Styles - Soft Shadows, No Borders */
-.card {
-  @apply bg-soft-ivory transition-all duration-500 rounded-none border-none;
-}
-
-.card-hover {
-  @apply cursor-pointer hover:shadow-luxury-glow hover:-translate-y-1 transition-all duration-500;
-}
-
-/* Utility Classes */
-.container-luxury {
-  @apply w-full max-w-7xl mx-auto px-5 sm:px-10 lg:px-16 overflow-x-hidden;
-}
-
-.section-padding {
-  @apply py-16 sm:py-24 lg:py-32;
-}
-
-/* Badge Styles */
-.badge {
-  @apply inline-flex items-center px-3 py-1 font-sans text-[10px] uppercase tracking-widest font-medium border border-ink rounded-none;
-}
-
-/* Loading & Animation */
-.skeleton {
-  @apply bg-gradient-to-r from-soft-ivory via-surface-dim to-soft-ivory bg-[length:1000px_100%];
-  background-size: 1000px 100%;
-  animation: loading 2s infinite;
-}
-
-@keyframes loading {
-  0% { background-position: 1000px 0; }
-  100% { background-position: -1000px 0; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-.animate-float { animation: float 3s ease-in-out infinite; }
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-500 { animation-delay: 500ms; }
-
-/* Scrollbar */
-::-webkit-scrollbar { @apply w-1.5 h-1.5; }
-::-webkit-scrollbar-track { @apply bg-surface; }
-::-webkit-scrollbar-thumb { @apply bg-stroke-delicate hover:bg-muted-charcoal transition-colors; }
-
-/* Hide Scrollbar Utility */
-.hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
-
-/* APPLE DESIGN SYSTEM UTILITIES & COMPONENTS (DESIGN.md) */
-
-/* Active Press Micro-interaction (scale 0.95 on click) */
-.active-press {
-  @apply transition-transform duration-150 active:scale-[0.95];
-}
-
-/* Action Gold Pill Button (Apple button-primary grammar) */
+/* ---------- Buttons ---------- */
+/* Primary action: gold pill (Apple button-primary grammar) */
+.btn-primary,
 .btn-apple-pill {
-  @apply inline-flex items-center justify-center px-6 py-3 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-sans font-medium text-[15px] rounded-full transition-all duration-200 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#D4AF37] hover:bg-[#B5952F] text-black font-sans font-medium text-[15px] rounded-full transition-all duration-200 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
 }
 
-/* Secondary Gold Ghost Pill */
+/* Secondary action: gold ghost pill */
+.btn-secondary,
 .btn-apple-pill-secondary {
-  @apply inline-flex items-center justify-center px-6 py-3 bg-transparent border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 font-sans font-medium text-[15px] rounded-full transition-all duration-200 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10 font-sans font-medium text-[15px] rounded-full transition-all duration-200 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
 }
 
-/* Dark Utility Rect Button (Apple button-dark-utility grammar) */
+/* Quiet action: hairline pill */
+.btn-outline {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-hairline text-ink hover:border-ink font-sans font-medium text-[15px] rounded-full transition-all duration-200 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+}
+
+/* Text action */
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-[#D4AF37] hover:text-[#B5952F] font-sans font-medium text-[15px] rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Dark utility rect (Apple button-dark-utility grammar) */
 .btn-apple-dark {
   @apply inline-flex items-center justify-center px-4 py-2 bg-[#1d1d1f] hover:bg-[#333336] text-white font-sans text-xs font-medium rounded-lg transition-all duration-200 active:scale-[0.95];
 }
 
-/* Edge-to-Edge Canvas Tiles */
+/* Press micro-interaction for icon buttons and chips */
+.active-press {
+  @apply transition-transform duration-150 active:scale-[0.95];
+}
+
+/* ---------- Inputs ---------- */
+.input-field {
+  @apply w-full px-4 py-3 bg-white border border-hairline rounded-[12px] text-ink text-[15px] focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all duration-200 disabled:bg-[#f5f5f7] disabled:text-ink-muted-48;
+}
+
+.input-field::placeholder {
+  @apply text-ink-muted-48;
+}
+
+/* ---------- Cards & surfaces ---------- */
+.card,
+.store-utility-card {
+  @apply bg-white border border-hairline rounded-[18px] p-6 transition-colors duration-300 relative;
+}
+
+.store-utility-card {
+  @apply flex flex-col justify-between hover:border-[#D4AF37]/40;
+}
+
+.card-hover {
+  @apply cursor-pointer hover:border-[#D4AF37]/40 transition-colors duration-300;
+}
+
+/* Edge-to-edge canvas tiles */
 .product-tile-light {
   @apply w-full bg-white text-[#1d1d1f] py-20 px-6 md:px-12 flex flex-col items-center text-center relative overflow-hidden;
 }
@@ -174,18 +123,74 @@ p {
   @apply w-full bg-[#1c1c1e] text-white py-20 px-6 md:px-12 flex flex-col items-center text-center relative overflow-hidden;
 }
 
-/* Apple Store Utility Card (18px radius) */
-.store-utility-card {
-  @apply bg-white border border-[#e0e0e0] rounded-[18px] p-6 transition-all duration-300 hover:border-[#D4AF37]/40 hover:shadow-lg flex flex-col justify-between relative;
-}
-
-/* Frosted Sub-Nav Strip */
+/* Frosted sub-nav strip */
 .sub-nav-frosted {
-  @apply sticky top-0 z-40 bg-[#f5f5f7]/85 backdrop-blur-xl border-b border-[#e0e0e0]/60 transition-all duration-300;
+  @apply bg-[#f5f5f7]/85 backdrop-blur-xl border-b border-[#e0e0e0]/60;
 }
 
-/* Product-Only Surface Elevation Shadow */
+/* The one drop shadow in the system: product imagery resting on a surface */
 .product-surface-shadow {
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.22), 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
+/* ---------- Badges ---------- */
+.badge {
+  @apply inline-flex items-center px-3 py-1 font-sans text-[11px] font-medium tracking-wide rounded-full bg-[#f5f5f7] border border-hairline text-ink-muted-80;
+}
+
+/* ---------- Layout ---------- */
+.container-luxury {
+  @apply w-full max-w-7xl mx-auto px-5 sm:px-10 lg:px-16;
+}
+
+.section-padding {
+  @apply py-16 sm:py-24 lg:py-32;
+}
+
+/* ---------- Loading ---------- */
+.skeleton {
+  @apply bg-[#f5f5f7] rounded-[12px];
+  background-image: linear-gradient(90deg, #f5f5f7 0%, #ffffff 50%, #f5f5f7 100%);
+  background-size: 1000px 100%;
+  animation: loading 2s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 1000px 0; }
+  100% { background-position: -1000px 0; }
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* ---------- Scrollbars ---------- */
+::-webkit-scrollbar { @apply w-1.5 h-1.5; }
+::-webkit-scrollbar-track { @apply bg-transparent; }
+::-webkit-scrollbar-thumb { @apply bg-hairline rounded-full hover:bg-ink-muted-48; }
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.hide-scrollbar,
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- Motion preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}

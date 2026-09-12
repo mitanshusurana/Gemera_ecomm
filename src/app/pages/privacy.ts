@@ -23,18 +23,19 @@ import { SeoService } from '../services/seo.service';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="min-h-screen bg-surface">
-      <div class="container-luxury section-padding max-w-3xl">
-        <h1 class="text-4xl font-display font-bold text-diamond-900 mb-2">
+    <!-- APPLE DESIGN SYSTEM: LEGAL READING PAGE (DESIGN.md) -->
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
+      <div class="max-w-3xl mx-auto px-6 py-16">
+        <h1 class="font-display font-semibold text-4xl md:text-5xl text-[#1d1d1f] tracking-tight mb-2">
           Privacy Notice
         </h1>
-        <p class="text-sm text-ink/70 mb-10">
+        <p class="text-sm text-[#6e6e73] mb-10">
           Issued under the Digital Personal Data Protection Act, 2023.
           <span *ngIf="lastUpdated()"> Last updated: {{ lastUpdated() }}.</span>
         </p>
 
-        <div class="prose max-w-none text-ink">
-          <h3>1. Who processes your data</h3>
+        <div class="prose prose-neutral max-w-none text-[#1d1d1f] prose-p:text-[#1d1d1f] prose-li:text-[#1d1d1f] prose-strong:text-[#1d1d1f] prose-code:text-[#1d1d1f] prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-[#1d1d1f] prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-3 prose-h3:text-xl prose-a:text-[#D4AF37] prose-a:no-underline hover:prose-a:underline">
+          <h2>1. Who processes your data</h2>
           <p>
             <ng-container *ngIf="fiduciary(); else noFiduciary">
               <strong>{{ fiduciary() }}</strong> is the Data Fiduciary for the
@@ -49,7 +50,7 @@ import { SeoService } from '../services/seo.service';
             <span *ngIf="address()"><br />{{ address() }}</span>
           </p>
 
-          <h3>2. What we collect, and why</h3>
+          <h2>2. What we collect, and why</h2>
           <p>We collect only what a purchase or enquiry requires:</p>
           <ul>
             <li>
@@ -76,7 +77,7 @@ import { SeoService } from '../services/seo.service';
             decision-making or profiling.
           </p>
 
-          <h3>3. On what basis</h3>
+          <h2>3. On what basis</h2>
           <p>
             For an order, processing is necessary to perform the contract you
             have entered into. For marketing email and for region detection, the
@@ -85,14 +86,14 @@ import { SeoService } from '../services/seo.service';
             already done lawfully.
           </p>
 
-          <h3>4. How long we keep it</h3>
+          <h2>4. How long we keep it</h2>
           <p>
             Order and invoice records are retained for eight years, as required
             by tax and companies legislation. Enquiries and marketing consents
             are kept until you ask us to erase them or withdraw consent.
           </p>
 
-          <h3>5. Your rights</h3>
+          <h2>5. Your rights</h2>
           <p>As a Data Principal you may:</p>
           <ul>
             <li>ask what personal data we hold about you and how it is used;</li>
@@ -109,10 +110,10 @@ import { SeoService } from '../services/seo.service';
           </ul>
           <p>
             To exercise any of these, contact the Grievance Officer below or
-            use our <a routerLink="/contact">contact page</a>.
+            use our <a routerLink="/contact" class="text-[#D4AF37] hover:underline">contact page</a>.
           </p>
 
-          <h3>6. Sharing</h3>
+          <h2>6. Sharing</h2>
           <p>
             We share data only with the providers needed to deliver your order
             &mdash; the payment gateway, the courier, and our email provider
@@ -122,14 +123,14 @@ import { SeoService } from '../services/seo.service';
             the Central Government.
           </p>
 
-          <h3>7. Security</h3>
+          <h2>7. Security</h2>
           <p>
             Access to customer data is restricted to staff who need it, and
             changes to records are logged. If a breach occurs we will notify the
             Data Protection Board and affected individuals as the Act requires.
           </p>
 
-          <h3>8. Grievance Officer</h3>
+          <h2>8. Grievance Officer</h2>
           <p *ngIf="officerName(); else noOfficer">
             {{ officerName() }}<br />
             <span *ngIf="officerEmail()">{{ officerEmail() }}<br /></span>

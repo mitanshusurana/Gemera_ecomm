@@ -1,6 +1,6 @@
-import { Component, OnInit, computed, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef } from '@angular/core';
+import { Component, OnInit, signal, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { RouterLink, Router, NavigationEnd, RouterLinkActive } from '@angular/router';
+import { RouterLink, Router, NavigationEnd } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
@@ -9,8 +9,6 @@ import { CartService } from '../services/cart.service';
 import { ProductService } from '../services/product.service';
 import { Product, User } from '../core/models';
 import { FormsModule } from '@angular/forms';
-import { WishlistService } from '../services/wishlist.service';
-import { CurrencyService } from '../services/currency.service';
 import { GoldRateTickerComponent } from './gold-rate-ticker';
 
 @Component({
@@ -62,7 +60,7 @@ import { GoldRateTickerComponent } from './gold-rate-ticker';
             <!-- Cart Icon with Badge -->
             <a routerLink="/cart" aria-label="Cart" class="relative hover:text-white transition-colors active-press flex items-center">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-              <span *ngIf="cartCount() > 0" class="ml-1 bg-[#D4AF37] text-black text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              <span *ngIf="cartCount() > 0" class="ml-1 bg-[#D4AF37] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                 {{ cartCount() }}
               </span>
             </a>
@@ -148,21 +146,16 @@ import { GoldRateTickerComponent } from './gold-rate-ticker';
   `
 })
 export class HeaderComponent implements OnInit {
-  activeMobileCategory: string | null = null;
   isMobileMenuOpen = false;
-  isCurrencyDropdownOpen = false;
   searchQuery = '';
   searchResults: Product[] = [];
   isSearchFocused = false;
-  categories: any[] = [];
   private searchSubject = new Subject<string>();
 
   private authService = inject(AuthService);
   private cartService = inject(CartService);
   private productService = inject(ProductService);
   private router = inject(Router);
-  private wishlistService = inject(WishlistService);
-  private currencyService = inject(CurrencyService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
 
@@ -170,19 +163,8 @@ export class HeaderComponent implements OnInit {
   user = this.userSignal;
 
   cartCount = signal(0);
-  wishlistCount = this.wishlistService.count;
-
-  availableCurrencies = this.currencyService.availableCurrencies;
-  currentCurrency = this.currencyService.currentCurrency;
 
   ngOnInit() {
-    this.productService.getCategories().subscribe({
-      next: (res: any) => {
-        this.categories = res.categories;
-        this.cdr.markForCheck();
-      }
-    });
-
     this.searchSubject.pipe(
       takeUntilDestroyed(this.destroyRef),
       debounceTime(300),
@@ -223,12 +205,6 @@ export class HeaderComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  logout() {
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/']);
-    });
-  }
-
   onSearchInput() {
     if (this.searchQuery.length > 2) {
       this.searchSubject.next(this.searchQuery);
@@ -237,23 +213,4 @@ export class HeaderComponent implements OnInit {
     }
   }
 
-  onSearchBlur() {
-    // Delay hiding so click on result works
-    setTimeout(() => {
-      this.isSearchFocused = false;
-      this.cdr.markForCheck();
-    }, 200);
-  }
-
-  closeCurrencyDropdownWithDelay() {
-    setTimeout(() => {
-      this.isCurrencyDropdownOpen = false;
-      this.cdr.markForCheck();
-    }, 200);
-  }
-
-  setCurrency(code: any) {
-    this.currencyService.setCurrency(code);
-    this.isCurrencyDropdownOpen = false;
-  }
 }

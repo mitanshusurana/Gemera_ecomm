@@ -1,11 +1,10 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService, CART_PRICING } from '../services/cart.service';
 import { ToastService } from '../services/toast.service';
 import { Cart, CartItem } from '../core/models';
-import { CurrencyService } from '../services/currency.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
 @Component({
@@ -15,7 +14,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- APPLE DESIGN SYSTEM: SHOPPING BAG (DESIGN.md) -->
-    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
       
       <!-- Top Parchment Header -->
       <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-10 px-6 text-center">
@@ -28,7 +27,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
         </div>
       </section>
 
-      <main class="max-w-[1440px] mx-auto px-4 md:px-12 py-12">
+      <div class="max-w-[1440px] mx-auto px-4 md:px-12 py-12">
         
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
@@ -131,7 +130,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
           <!-- Right Column: Order Summary Card -->
           <div class="lg:col-span-4">
-            <div class="store-utility-card p-8 sticky top-[120px] shadow-sm">
+            <div class="store-utility-card p-8 sticky top-[120px]">
               <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6 pb-4 border-b border-[#e0e0e0]">Summary</h3>
 
               <div class="space-y-3.5 mb-6 text-xs text-[#7a7a7a]">
@@ -174,15 +173,13 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
         </div>
 
-      </main>
+      </div>
     </div>
   `
 })
 export class CartComponent implements OnInit {
   cartService = inject(CartService);
-  private currencyService = inject(CurrencyService);
   private toastService = inject(ToastService);
-  private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
 
   cart = signal<Cart | null>(null);

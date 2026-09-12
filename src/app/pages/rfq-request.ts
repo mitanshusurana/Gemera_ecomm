@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from "@angular/core";
+import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
@@ -11,52 +11,55 @@ import { environment } from "../../environments/environment";
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="min-h-screen bg-surface">
-      <!-- Breadcrumb -->
-      <div class="bg-diamond-50 border-b border-diamond-200">
-        <div class="container-luxury py-4">
-          <div class="flex items-center gap-2 text-sm">
-            <a routerLink="/" class="text-gold-600 hover:text-gold-700">Home</a>
-            <span class="text-ink">/</span>
-            <span class="text-ink">Request for Quote</span>
-          </div>
+    <!-- APPLE DESIGN SYSTEM: REQUEST FOR QUOTE (DESIGN.md) -->
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
+      <!-- Parchment Header -->
+      <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-16 px-6">
+        <div class="max-w-[1080px] mx-auto">
+          <!-- Breadcrumb -->
+          <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-[#6e6e73] mb-6">
+            <a routerLink="/" class="text-[#D4AF37] hover:underline">Home</a>
+            <span>/</span>
+            <span class="text-[#1d1d1f]">Request for Quote</span>
+          </nav>
+
+          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-3 block">Trade &amp; Bulk Orders</span>
+          <h1 class="font-display font-semibold text-4xl md:text-5xl text-[#1d1d1f] tracking-tight">
+            Request for Quote
+          </h1>
+          <p class="text-base text-[#7a7a7a] mt-4 max-w-xl">
+            For bulk orders and B2B inquiries, get personalized quotes from our
+            team
+          </p>
         </div>
-      </div>
+      </section>
 
-      <div class="container-luxury section-padding">
-        <h1
-          class="text-5xl md:text-6xl font-display font-bold text-diamond-900 mb-4"
-        >
-          Request for Quote
-        </h1>
-        <p class="text-xl text-ink mb-12">
-          For bulk orders and B2B inquiries, get personalized quotes from our
-          team
-        </p>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="max-w-[1080px] mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <!-- Form -->
           <div class="lg:col-span-2">
-            <div class="card p-8" *ngIf="!submissionSuccess()">
+            <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 md:p-10" *ngIf="!submissionSuccess()">
               <form
                 (ngSubmit)="submitRequest()"
                 #rfqForm="ngForm"
-                class="space-y-6"
+                class="space-y-8"
               >
                 <!-- Contact Information -->
-                <div class="border-b border-diamond-200 pb-6">
-                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                <div class="border-b border-[#e0e0e0] pb-8">
+                  <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">
                     Contact Information
                   </h2>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label
-                        class="block text-sm font-semibold text-ink mb-2"
+                        for="rfq-firstName"
+                        class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                       >
                         First Name
                       </label>
                       <input
+                        id="rfq-firstName"
                         type="text"
                         [(ngModel)]="rfqData.firstName"
                         name="firstName"
@@ -67,11 +70,13 @@ import { environment } from "../../environments/environment";
                     </div>
                     <div>
                       <label
-                        class="block text-sm font-semibold text-ink mb-2"
+                        for="rfq-lastName"
+                        class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                       >
                         Last Name
                       </label>
                       <input
+                        id="rfq-lastName"
                         type="text"
                         [(ngModel)]="rfqData.lastName"
                         name="lastName"
@@ -84,11 +89,13 @@ import { environment } from "../../environments/environment";
 
                   <div class="mt-6">
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="rfq-email"
+                      class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                     >
                       Email Address
                     </label>
                     <input
+                      id="rfq-email"
                       type="email"
                       [(ngModel)]="rfqData.email"
                       name="email"
@@ -100,11 +107,13 @@ import { environment } from "../../environments/environment";
 
                   <div class="mt-6">
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="rfq-companyName"
+                      class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                     >
                       Company Name
                     </label>
                     <input
+                      id="rfq-companyName"
                       type="text"
                       [(ngModel)]="rfqData.companyName"
                       name="companyName"
@@ -116,11 +125,13 @@ import { environment } from "../../environments/environment";
 
                   <div class="mt-6">
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="rfq-phone"
+                      class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                     >
                       Phone Number
                     </label>
                     <input
+                      id="rfq-phone"
                       type="tel"
                       [(ngModel)]="rfqData.phone"
                       name="phone"
@@ -132,8 +143,8 @@ import { environment } from "../../environments/environment";
                 </div>
 
                 <!-- Product Information -->
-                <div class="border-b border-diamond-200 pb-6">
-                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                <div class="border-b border-[#e0e0e0] pb-8">
+                  <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">
                     Product Information
                   </h2>
 
@@ -142,10 +153,10 @@ import { environment } from "../../environments/environment";
                       *ngFor="let item of rfqItems(); let i = index"
                     >
                       <div
-                        class="border border-diamond-200 rounded-lg p-4 space-y-4"
+                        class="bg-[#fafafc] border border-[#e0e0e0] rounded-[12px] p-5 space-y-4"
                       >
                         <div class="flex justify-between items-center">
-                          <span class="font-semibold text-ink"
+                          <span class="text-sm font-semibold text-[#1d1d1f]"
                             >Item {{ i + 1 }}</span
                           >
                           <button
@@ -160,11 +171,13 @@ import { environment } from "../../environments/environment";
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label
-                              class="block text-sm font-semibold text-ink mb-2"
+                              [attr.for]="'rfq-productId-' + i"
+                              class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                             >
                               Product Category
                             </label>
                             <select
+                              [id]="'rfq-productId-' + i"
                               [(ngModel)]="item.productId"
                               [name]="'productId_' + i"
                               required
@@ -193,11 +206,13 @@ import { environment } from "../../environments/environment";
                           </div>
                           <div>
                             <label
-                              class="block text-sm font-semibold text-ink mb-2"
+                              [attr.for]="'rfq-quantity-' + i"
+                              class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                             >
                               Quantity
                             </label>
                             <input
+                              [id]="'rfq-quantity-' + i"
                               type="number"
                               [(ngModel)]="item.quantity"
                               [name]="'quantity_' + i"
@@ -211,11 +226,13 @@ import { environment } from "../../environments/environment";
 
                         <div>
                           <label
-                            class="block text-sm font-semibold text-ink mb-2"
+                            [attr.for]="'rfq-specs-' + i"
+                            class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                           >
                             Specifications (Optional)
                           </label>
                           <textarea
+                            [id]="'rfq-specs-' + i"
                             [(ngModel)]="item.customization"
                             [name]="'specs_' + i"
                             class="input-field"
@@ -230,27 +247,29 @@ import { environment } from "../../environments/environment";
                   <button
                     type="button"
                     (click)="addItem()"
-                    class="btn-ghost border border-diamond-300"
+                    class="btn-outline text-sm !py-2.5 !px-5"
                   >
                     + Add Another Item
                   </button>
                 </div>
 
                 <!-- Additional Information -->
-                <div class="border-b border-diamond-200 pb-6">
-                  <h2 class="text-2xl font-bold text-diamond-900 mb-6">
+                <div class="border-b border-[#e0e0e0] pb-8">
+                  <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-6">
                     Additional Information
                   </h2>
 
                   <div class="mb-6">
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="rfq-budget"
+                      class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                     >
                       Estimated Budget (Optional)
                     </label>
-                    <div class="flex gap-2">
-                      <span class="text-ink font-semibold">$</span>
+                    <div class="flex items-center gap-3">
+                      <span class="text-[#6e6e73] font-semibold">$</span>
                       <input
+                        id="rfq-budget"
                         type="number"
                         [(ngModel)]="rfqData.estimatedBudget"
                         name="budget"
@@ -262,11 +281,13 @@ import { environment } from "../../environments/environment";
 
                   <div class="mb-6">
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="rfq-timeline"
+                      class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                     >
                       Delivery Timeline
                     </label>
                     <select
+                      id="rfq-timeline"
                       [(ngModel)]="rfqData.deliveryTimeline"
                       name="timeline"
                       class="input-field"
@@ -283,11 +304,13 @@ import { environment } from "../../environments/environment";
 
                   <div>
                     <label
-                      class="block text-sm font-semibold text-ink mb-2"
+                      for="rfq-notes"
+                      class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2"
                     >
                       Additional Notes
                     </label>
                     <textarea
+                      id="rfq-notes"
                       [(ngModel)]="rfqData.notes"
                       name="notes"
                       class="input-field"
@@ -297,17 +320,17 @@ import { environment } from "../../environments/environment";
                   </div>
                 </div>
 
-                <div class="flex gap-4">
+                <div class="flex flex-col sm:flex-row gap-4">
                   <a
                     routerLink="/"
-                    class="flex-1 btn-ghost border border-diamond-300"
+                    class="flex-1 btn-outline"
                   >
                     Cancel
                   </a>
                   <button
                     type="submit"
                     [disabled]="!rfqForm.valid"
-                    class="flex-1 btn-primary"
+                    class="flex-1 btn-apple-pill"
                   >
                     Submit RFQ
                   </button>
@@ -316,68 +339,68 @@ import { environment } from "../../environments/environment";
             </div>
 
             <!-- Success Message -->
-            <div *ngIf="submissionSuccess()" class="card p-12 text-center">
+            <div *ngIf="submissionSuccess()" class="bg-white border border-[#e0e0e0] rounded-[18px] p-12 text-center">
               <div class="mb-6 inline-block">
                 <div
-                  class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center animate-scaleIn"
+                  class="w-24 h-24 rounded-full bg-green-50 text-green-600 flex items-center justify-center animate-scaleUp"
                 >
                   <span class="text-5xl">✓</span>
                 </div>
               </div>
 
-              <h2 class="text-3xl font-display font-bold text-diamond-900 mb-4">
+              <h2 class="font-display font-semibold text-3xl text-[#1d1d1f] tracking-tight mb-4">
                 RFQ Submitted Successfully
               </h2>
-              <p class="text-ink mb-4">
+              <p class="text-[#6e6e73] mb-4">
                 Thank you for your request. Our sales team will review your
                 requirements and send you a personalized quote within 24
                 business hours.
               </p>
-              <p class="text-sm text-ink mb-8">
+              <p class="text-sm text-[#6e6e73] mb-8">
                 RFQ Number:
-                <span class="font-bold text-gold-600">{{ rfqNumber() }}</span>
+                <span class="font-semibold text-[#D4AF37]">{{ rfqNumber() }}</span>
               </p>
 
-              <p class="text-ink mb-8">
+              <p class="text-[#6e6e73] mb-8">
                 A confirmation email has been sent to
-                <span class="font-semibold">{{ rfqData.email }}</span>
+                <span class="font-semibold text-[#1d1d1f]">{{ rfqData.email }}</span>
               </p>
 
-              <button (click)="reset()" routerLink="/" class="btn-primary">
+              <button (click)="reset()" routerLink="/" class="btn-apple-pill">
                 Return to Home
               </button>
             </div>
           </div>
 
           <!-- Sidebar -->
-          <div class="lg:col-span-1">
+          <div class="lg:col-span-1 space-y-6">
             <!-- Benefits -->
-            <div class="card p-8 mb-8">
-              <h3 class="text-xl font-bold text-diamond-900 mb-6">
+            <div class="bg-[#fafafc] border border-[#e0e0e0] rounded-[18px] p-8">
+              <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-6">
                 Why Choose RFQ?
               </h3>
               <div class="space-y-4">
                 <div class="flex gap-3">
-                  <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-ink">
+                  <span class="text-[#D4AF37] font-semibold">✓</span>
+                  <p class="text-sm text-[#6e6e73]">
                     Personalized quotes for bulk orders
                   </p>
                 </div>
                 <div class="flex gap-3">
-                  <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-ink">Best price negotiation</p>
+                  <span class="text-[#D4AF37] font-semibold">✓</span>
+                  <p class="text-sm text-[#6e6e73]">Best price negotiation</p>
                 </div>
                 <div class="flex gap-3">
-                  <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-ink">Flexible payment terms</p>
+                  <span class="text-[#D4AF37] font-semibold">✓</span>
+                  <p class="text-sm text-[#6e6e73]">Flexible payment terms</p>
                 </div>
                 <div class="flex gap-3">
-                  <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-ink">Priority customer support</p>
+                  <span class="text-[#D4AF37] font-semibold">✓</span>
+                  <p class="text-sm text-[#6e6e73]">Priority customer support</p>
                 </div>
                 <div class="flex gap-3">
-                  <span class="text-gold-600 font-bold">✓</span>
-                  <p class="text-sm text-ink">
+                  <span class="text-[#D4AF37] font-semibold">✓</span>
+                  <p class="text-sm text-[#6e6e73]">
                     Custom specifications available
                   </p>
                 </div>
@@ -385,36 +408,36 @@ import { environment } from "../../environments/environment";
             </div>
 
             <!-- Contact Info -->
-            <div class="card p-8">
-              <h3 class="text-xl font-bold text-diamond-900 mb-6">
+            <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8">
+              <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-6">
                 Need Help?
               </h3>
               <div class="space-y-4">
                 <div>
-                  <p class="text-sm text-ink mb-2">Phone</p>
+                  <p class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">Phone</p>
                   <a
                     [href]="'tel:+' + env.whatsappNumber"
-                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                    class="text-[#D4AF37] hover:underline font-semibold"
                   >
                     +{{env.whatsappNumber}}
                   </a>
                 </div>
                 <div>
-                  <p class="text-sm text-ink mb-2">Email</p>
+                  <p class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">Email</p>
                   <a
                     href="mailto:sales@gemsandjewelry.com"
-                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                    class="text-[#D4AF37] hover:underline font-semibold"
                   >
                     sales@gemsandjewelry.com
                   </a>
                 </div>
                 <div>
-                  <p class="text-sm text-ink mb-2">WhatsApp</p>
+                  <p class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">WhatsApp</p>
                   <a
                     [href]="'https://wa.me/' + env.whatsappNumber"
                     target="_blank"
                     rel="noopener"
-                    class="text-gold-600 hover:text-gold-700 font-semibold"
+                    class="text-[#D4AF37] hover:underline font-semibold"
                   >
                     Chat with us
                   </a>
@@ -426,24 +449,6 @@ import { environment } from "../../environments/environment";
       </div>
     </div>
   `,
-  styles: [
-    `
-      @keyframes scaleIn {
-        from {
-          transform: scale(0);
-          opacity: 0;
-        }
-        to {
-          transform: scale(1);
-          opacity: 1;
-        }
-      }
-
-      .animate-scaleIn {
-        animation: scaleIn 0.5s ease-out;
-      }
-    `,
-  ],
 })
 export class RFQRequestComponent {
   env = environment;
@@ -495,7 +500,7 @@ export class RFQRequestComponent {
         this.submissionSuccess.set(true);
         this.toastService.show('RFQ submitted successfully', 'success');
       },
-      error: (error) => {
+      error: () => {
         this.toastService.show("Error submitting RFQ. Please try again.", 'error');
       },
     });

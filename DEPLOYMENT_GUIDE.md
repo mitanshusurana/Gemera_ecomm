@@ -16,8 +16,8 @@ This guide details the final architecture topology and the exact workflow for ru
 - **Purpose:** Securely handle business logic and store data.
 
 ### Local Machine: Admin Operations
-- **Runs:** Angular Admin App & Python 3D Generation Service.
-- **Purpose:** Securely manage the store and perform heavy compute tasks (3D conversion) for free locally.
+- **Runs:** Angular Admin App (and optionally a local backend + database for testing).
+- **Purpose:** Manage the catalogue, orders and settings without exposing the admin UI publicly.
 
 ---
 
@@ -46,12 +46,12 @@ Your local computer will think the database is running locally, but the traffic 
 
 ## 3. Daily Workflow
 
-When you sit down to add products and generate 3D models, here is your flow:
+When you sit down to manage the store, here is your flow:
 
 1. **Start the SSH Tunnel** (if you need direct DB access for tools).
-2. **Start the Local Services (Admin + 3D Generation):**
+2. **Start the Local Services (Admin):**
    Open a terminal in your project directory and run:
    ```bash
    docker-compose -f docker-compose.local.yml up -d
    ```
-3. **Operate:** Use your local Admin UI (at `http://localhost:4300`). When you upload a video, it will use your local CPU to generate the `.glb` file via the local 3D service container, and then push that `.glb` to the remote backend!
+3. **Operate:** Use your local Admin UI (at `http://localhost:4300`). Product images are uploaded straight to the R2 bucket configured on the backend.

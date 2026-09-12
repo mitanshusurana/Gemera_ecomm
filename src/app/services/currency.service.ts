@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SettingService } from './setting.service';
 import { hasConsent } from '../components/cookie-consent';
@@ -20,13 +20,6 @@ export class CurrencyService {
     'USD': 0.012,
     'EUR': 0.011,
     'GBP': 0.009
-  };
-
-  private symbols: Record<CurrencyCode, string> = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'INR': '₹'
   };
 
   readonly availableCurrencies: CurrencyCode[] = ['USD', 'EUR', 'GBP', 'INR'];

@@ -10,7 +10,7 @@ import { ToastService } from '../services/toast.service';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <!-- APPLE DESIGN SYSTEM: BESPOKE DESIGN SERVICE (DESIGN.md) -->
-    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pt-[96px] pb-24">
+    <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
       
       <!-- Parchment Hero Header -->
       <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-16 px-6 text-center">
@@ -26,36 +26,36 @@ import { ToastService } from '../services/toast.service';
       </section>
 
       <!-- Main Form Section -->
-      <main class="max-w-[800px] mx-auto px-6 py-12">
-        <div class="bg-white border border-[#e0e0e0] p-8 md:p-12 rounded-[24px] shadow-sm">
+      <div class="max-w-[800px] mx-auto px-6 py-12">
+        <div class="bg-white border border-[#e0e0e0] p-8 md:p-12 rounded-[18px]">
           <h2 class="font-display font-semibold text-2xl text-[#1d1d1f] mb-2">Bespoke Inquiry</h2>
           <p class="text-xs text-[#7a7a7a] mb-8">Fill in your preferences below. Our concierge will contact you within 24 hours.</p>
 
           <form [formGroup]="inquiryForm" (ngSubmit)="submitInquiry()" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Full Name *</label>
-                <input type="text" formControlName="name" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" required />
+                <label for="cd-name" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Full Name *</label>
+                <input id="cd-name" type="text" formControlName="name" class="input-field" required />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Email Address *</label>
-                <input type="email" formControlName="email" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" required />
+                <label for="cd-email" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Email Address *</label>
+                <input id="cd-email" type="email" formControlName="email" class="input-field" required />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Phone Number *</label>
-              <input type="tel" formControlName="phone" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" required />
+              <label for="cd-phone" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Phone Number *</label>
+              <input id="cd-phone" type="tel" formControlName="phone" class="input-field" required />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Design Concept & Specifications *</label>
-              <textarea formControlName="concept" rows="4" class="w-full bg-[#f5f5f7] border border-[#e0e0e0] p-3.5 rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]" placeholder="Describe your preferred metal (18K Gold, Platinum), gemstone shape, ring size, or occasion." required></textarea>
+              <label for="cd-concept" class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Design Concept & Specifications *</label>
+              <textarea id="cd-concept" formControlName="concept" rows="4" class="input-field" placeholder="Describe your preferred metal (18K Gold, Platinum), gemstone shape, ring size, or occasion." required></textarea>
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-2">Inspiration Sketch or Reference</label>
-              <div class="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-[#e0e0e0] border-dashed rounded-xl bg-[#fafafc]">
+              <div class="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-[#e0e0e0] border-dashed rounded-[12px] bg-[#fafafc]">
                 <div class="space-y-2 text-center">
                   <span class="text-4xl block">🖼️</span>
                   <div class="flex text-xs text-[#1d1d1f] justify-center">
@@ -80,7 +80,7 @@ import { ToastService } from '../services/toast.service';
             </button>
           </form>
         </div>
-      </main>
+      </div>
 
     </div>
   `,

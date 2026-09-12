@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, shareReplay, of } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 import { Product, ProductDetail, Category, PaginatedResponse, DeliveryAvailability } from '../core/models';
 import { ApiConfigService } from './api-config.service';
 
