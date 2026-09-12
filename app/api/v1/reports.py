@@ -682,11 +682,11 @@ async def get_outstanding_aging(
         SELECT
             p.id AS party_id, p.name AS party_name, p.trade_name, p.gstin,
             p.phone, p.credit_limit, p.credit_days,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date <= 30           THEN si.grand_total ELSE 0 END), 0) AS bucket_0_30,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 31 AND 60 THEN si.grand_total ELSE 0 END), 0) AS bucket_31_60,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 61 AND 90 THEN si.grand_total ELSE 0 END), 0) AS bucket_61_90,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date > 90            THEN si.grand_total ELSE 0 END), 0) AS bucket_over_90,
-            COALESCE(SUM(si.grand_total), 0) AS total_outstanding
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date <= 30           THEN si.grand_total - si.amount_paid ELSE 0 END), 0) AS bucket_0_30,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 31 AND 60 THEN si.grand_total - si.amount_paid ELSE 0 END), 0) AS bucket_31_60,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date BETWEEN 61 AND 90 THEN si.grand_total - si.amount_paid ELSE 0 END), 0) AS bucket_61_90,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - si.invoice_date > 90            THEN si.grand_total - si.amount_paid ELSE 0 END), 0) AS bucket_over_90,
+            COALESCE(SUM(si.grand_total - si.amount_paid), 0) AS total_outstanding
         FROM caratloop.parties p
         JOIN caratloop.sales_invoices si
           ON si.customer_id = p.id AND si.company_id = p.company_id
@@ -702,11 +702,11 @@ async def get_outstanding_aging(
         SELECT
             p.id AS party_id, p.name AS party_name, p.trade_name, p.gstin,
             p.phone, p.credit_limit, p.credit_days,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date <= 30            THEN pi.grand_total ELSE 0 END), 0) AS bucket_0_30,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date BETWEEN 31 AND 60 THEN pi.grand_total ELSE 0 END), 0) AS bucket_31_60,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date BETWEEN 61 AND 90 THEN pi.grand_total ELSE 0 END), 0) AS bucket_61_90,
-            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date > 90             THEN pi.grand_total ELSE 0 END), 0) AS bucket_over_90,
-            COALESCE(SUM(pi.grand_total), 0) AS total_outstanding
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date <= 30            THEN pi.grand_total - pi.amount_paid ELSE 0 END), 0) AS bucket_0_30,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date BETWEEN 31 AND 60 THEN pi.grand_total - pi.amount_paid ELSE 0 END), 0) AS bucket_31_60,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date BETWEEN 61 AND 90 THEN pi.grand_total - pi.amount_paid ELSE 0 END), 0) AS bucket_61_90,
+            COALESCE(SUM(CASE WHEN CAST(:as_of_date AS DATE) - pi.bill_date > 90             THEN pi.grand_total - pi.amount_paid ELSE 0 END), 0) AS bucket_over_90,
+            COALESCE(SUM(pi.grand_total - pi.amount_paid), 0) AS total_outstanding
         FROM caratloop.parties p
         JOIN caratloop.purchase_invoices pi
           ON pi.vendor_id = p.id AND pi.company_id = p.company_id

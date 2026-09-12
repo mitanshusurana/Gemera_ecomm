@@ -10,31 +10,11 @@ import os
 
 from app.core.database import get_db, set_audit_context
 from app.core.security import get_current_user
+from app.tax.gstin import STATE_NAMES, checksum_ok as gstin_checksum_ok, decode as decode_gstin, is_gstin_shaped
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Party Master"])
-
-class CreatePartyRequest(BaseModel):
-    party_type: str
-    party_code: str
-    name: str
-    trade_name: Optional[str] = None
-    gstin: Optional[str] = None
-    pan: Optional[str] = None
-    gst_reg_type: str = "Unregistered"
-    address_line1: Optional[str] = None
-    address_line2: Optional[str] = None
-    city: Optional[str] = None
-    state_code: Optional[str] = None
-    state_name: Optional[str] = None
-    pincode: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    is_old_gold_supplier: bool = False
-    credit_limit: Optional[float] = None
-    credit_days: int = 30
-    reason: str = "Party creation"
 
 class UpdatePartyRequest(BaseModel):
     name: Optional[str] = None
@@ -57,41 +37,6 @@ class UpdatePartyRequest(BaseModel):
     credit_days: Optional[int] = None
     reason: str = "Party update"
 
-STATE_NAMES = {
-    "01": "Jammu & Kashmir", "02": "Himachal Pradesh", "03": "Punjab", "04": "Chandigarh",
-    "05": "Uttarakhand", "06": "Haryana", "07": "Delhi", "08": "Rajasthan", "09": "Uttar Pradesh",
-    "10": "Bihar", "11": "Sikkim", "12": "Arunachal Pradesh", "13": "Nagaland", "14": "Manipur",
-    "15": "Mizoram", "16": "Tripura", "17": "Meghalaya", "18": "Assam", "19": "West Bengal",
-    "20": "Jharkhand", "21": "Odisha", "22": "Chhattisgarh", "23": "Madhya Pradesh", "24": "Gujarat",
-    "27": "Maharashtra", "29": "Karnataka", "30": "Goa", "32": "Kerala", "33": "Tamil Nadu", "36": "Telangana", "37": "Andhra Pradesh"
-}
-
-# A GSTIN is 2 state digits + 10-character PAN + entity code + 'Z' + a check
-# digit over the first 14 characters (base-36, alternating weights 1 and 2).
-#
-# Validating it costs nothing and needs no provider, which matters because the
-# lookup is the slow, billable, sometimes-unavailable part: a mistyped number
-# can be caught before anyone waits on the network.
-#
-# ADVISORY ONLY. It is reported to the caller, never used to reject input. The
-# algorithm matches the published examples it was checked against, but it has
-# not been run over a body of real supplier GSTINs -- do not turn it into a
-# hard validation until it has been.
-_GSTIN_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-
-def gstin_checksum_ok(gstin: str) -> bool | None:
-    """True/False if the check digit can be evaluated, None if it cannot."""
-    g = (gstin or "").strip().upper()
-    if len(g) != 15 or any(c not in _GSTIN_ALPHABET for c in g):
-        return None
-    total = 0
-    for i, ch in enumerate(g[:14]):
-        product = _GSTIN_ALPHABET.index(ch) * (2 if i % 2 else 1)
-        total += product // 36 + product % 36
-    return _GSTIN_ALPHABET[(36 - total % 36) % 36] == g[14]
-
-
 async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
     gstin = gstin.strip().upper()
     if len(gstin) != 15:
@@ -99,7 +44,8 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
         
     state_code = gstin[:2]
     pan = gstin[2:12]
-    state_name = STATE_NAMES.get(state_code, "Rajasthan")
+    # An unrecognised state code is unrecognised, not Rajasthan.
+    state_name = STATE_NAMES.get(state_code)
 
     # 1. Primary Official GSTIN API (www.gstinapi.in)
     # No default: a hardcoded key here was billable, shared and public.
@@ -134,7 +80,7 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
                             'building_no': addr_str,
                             'street': '',
                             'location': d.get('city', ''),
-                            'city': d.get('city', 'Jaipur' if state_code == '08' else ''),
+                            'city': d.get('city', ''),
                             'pincode': d.get('pincode', '')
                         },
                         'einvoice_eligible': True
@@ -174,7 +120,7 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
                                 'building_no': addr.get('bno', addr.get('flno', '')),
                                 'street': addr.get('st', addr.get('street', '')),
                                 'location': addr.get('loc', ''),
-                                'city': addr.get('dst', addr.get('city', 'Jaipur' if state_code == '08' else '')),
+                                'city': addr.get('dst', addr.get('city', '')),
                                 'pincode': addr.get('pncd', '')
                             },
                             'einvoice_eligible': data.get('einvoice_status', 'No') == 'Yes'
@@ -278,12 +224,18 @@ class CreatePartyRequest(BaseModel):
     pan: Optional[str] = None
     aadhaar_no: Optional[str] = None
     kyc_documents: Optional[dict] = None
-    gst_reg_type: str = "Regular"
+    # None, then derived: a party with a GSTIN-shaped number is 'Regular'
+    # unless told otherwise, one without is 'Unregistered'. The old default of
+    # 'Regular' recorded every walk-in gold seller as a registered taxpayer.
+    gst_reg_type: Optional[str] = None
     address_line1: Optional[str] = None
     address_line2: Optional[str] = None
-    city: Optional[str] = "Jaipur"
-    state_code: Optional[str] = "08"
-    state_name: Optional[str] = "Rajasthan"
+    # No default city or state. "Jaipur, Rajasthan" was written onto every
+    # party whose address was left blank, and from there onto the
+    # place-of-supply line of their invoices.
+    city: Optional[str] = None
+    state_code: Optional[str] = None
+    state_name: Optional[str] = None
     pincode: Optional[str] = None
     mobile: Optional[str] = None
     phone: Optional[str] = None
@@ -311,6 +263,16 @@ async def create_party(
 
     try:
         party_type = normalise_party_type(payload.party_type)
+
+        # Registration type and state, when not given, are read from the GSTIN
+        # -- the one thing a GSTIN reliably encodes without a lookup.
+        gst_reg_type = payload.gst_reg_type
+        state_code, state_name = payload.state_code, payload.state_name
+        decoded = decode_gstin(payload.gstin) if is_gstin_shaped(payload.gstin) else None
+        if not gst_reg_type:
+            gst_reg_type = "Regular" if decoded else "Unregistered"
+        if decoded and not state_code:
+            state_code, state_name = decoded.state_code, decoded.state_name
 
         # Auto-generate party_code if omitted
         if not payload.party_code:
@@ -404,9 +366,9 @@ async def create_party(
                 "pcode": party_code, "name": payload.name, "tname": payload.trade_name,
                 "gstin": payload.gstin, "pan": payload.pan or (payload.gstin[2:12] if payload.gstin and len(payload.gstin)>=12 else None),
                 "aadhaar": payload.aadhaar_no, "kyc_docs": kyc_json,
-                "gst_reg": payload.gst_reg_type,
+                "gst_reg": gst_reg_type,
                 "addr1": payload.address_line1, "addr2": payload.address_line2, "city": payload.city,
-                "state_c": payload.state_code, "state_n": payload.state_name, "pin": payload.pincode,
+                "state_c": state_code, "state_n": state_name, "pin": payload.pincode,
                 "phone": payload.mobile or payload.phone, "email": payload.email, "old_gold": payload.is_old_gold_supplier,
                 "limit": payload.credit_limit or 0, "days": payload.credit_days or 30, "created_by": user_id
             }
@@ -445,9 +407,19 @@ async def list_parties(
                 FROM caratloop.journal_entry_lines 
                 WHERE account_id = p.account_id
             ), 0) as outstanding,
-            CASE 
-                WHEN p.gstin IS NOT NULL AND LENGTH(p.gstin) >= 15 THEN 'Complete'
-                WHEN p.pan IS NOT NULL OR p.aadhaar_no IS NOT NULL THEN 'Partial'
+            -- 'Complete' used to mean LENGTH(gstin) >= 15: any fifteen characters
+            -- typed into the box earned a green "KYC Verified" badge with no
+            -- document on file. Complete now means a GSTIN-shaped number AND at
+            -- least one KYC document actually uploaded; an identifier alone is
+            -- Partial.
+            CASE
+                WHEN p.gstin ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'
+                 AND EXISTS (
+                     SELECT 1 FROM jsonb_each_text(COALESCE(p.kyc_documents, '{}'::jsonb)) d
+                     WHERE d.value IS NOT NULL AND d.value <> ''
+                 ) THEN 'Complete'
+                WHEN p.gstin IS NOT NULL AND p.gstin <> ''
+                  OR p.pan IS NOT NULL OR p.aadhaar_no IS NOT NULL THEN 'Partial'
                 ELSE 'Unregistered'
             END as kyc
         FROM caratloop.parties p

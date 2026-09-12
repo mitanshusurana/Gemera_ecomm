@@ -30,7 +30,11 @@ class CreateItemRequest(BaseModel):
     hsn_code: str = "71131910"
     gst_tax_rate: float = 3.00
     making_gst_rate: float = 5.00
-    purity_standard: Optional[str] = "916 BIS"
+    # No default. "916 BIS" asserted a BIS hallmark at 22-karat fineness on
+    # every item nobody had said anything about, and it was written to the
+    # materials master and read back by the CGST Rule 56(2) stock register.
+    # A hallmark is a fact about a specific piece, stated by whoever assayed it.
+    purity_standard: Optional[str] = None
     opening_qty: float = 0.0
     reason: str = "Stock item creation"
 

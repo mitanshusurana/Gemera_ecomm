@@ -178,6 +178,48 @@ async def get_rcm_register(
     }
 
 
+
+async def _hsn_summary_rows(db, period: str, company_id) -> list[dict]:
+    """GSTR-1 Table 12: taxable value and tax by HSN/SAC for the period.
+
+    One query for the staging screen and the export, so they cannot disagree.
+    Grouped by the HSN recorded on each invoice, with making charges (SAC
+    998892) as their own row; credit notes are excluded here because Table 12
+    reports outward supplies and the notes go in Table 9B.
+    """
+    res = await db.execute(
+        text("""
+            SELECT
+                COALESCE(NULLIF(hsn_material, ''), 'UNSPECIFIED') AS hsn_code,
+                'Goods - material' AS description,
+                'GMS' AS uqc,
+                SUM(taxable_material_value) AS taxable_value,
+                SUM(CASE WHEN is_inter_state THEN igst_amount ELSE 0 END) AS igst,
+                SUM(CASE WHEN is_inter_state THEN 0 ELSE cgst_amount END) AS cgst,
+                SUM(CASE WHEN is_inter_state THEN 0 ELSE sgst_amount END) AS sgst
+            FROM caratloop.gst_output_tax_register
+            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
+              AND taxable_material_value > 0
+            GROUP BY COALESCE(NULLIF(hsn_material, ''), 'UNSPECIFIED')
+
+            UNION ALL
+
+            SELECT
+                COALESCE(NULLIF(hsn_making, ''), '998892') AS hsn_code,
+                'Services - making charges' AS description,
+                'OTH' AS uqc,
+                SUM(taxable_making_value) AS taxable_value,
+                0 AS igst, 0 AS cgst, 0 AS sgst
+            FROM caratloop.gst_output_tax_register
+            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
+              AND taxable_making_value > 0
+            GROUP BY COALESCE(NULLIF(hsn_making, ''), '998892')
+            ORDER BY 1
+        """),
+        {"period": period, "cid": str(company_id)},
+    )
+    return [dict(r) for r in res.mappings().all()]
+
 @router.get("/gstr1-data")
 async def get_gstr1_data(
     period: str,
@@ -203,40 +245,7 @@ async def get_gstr1_data(
         {"period": period, "cid": current_user["company_id"]},
     )
 
-    # HSN Summary
-    hsn_summary = await db.execute(
-        text("""
-            -- Group by the HSN actually recorded on each invoice instead of
-            -- declaring everything as 71131910, and include making charges
-            -- (SAC 9988) as their own row. Previously the summary reported a
-            -- single hardcoded HSN and omitted making charges entirely, which
-            -- understated declared turnover.
-            SELECT
-                COALESCE(NULLIF(hsn_material, ''), 'UNSPECIFIED') AS hsn_code,
-                'Goods - material' AS description,
-                'GMS' AS uqc, 'NOS' AS uqc2,
-                SUM(taxable_material_value) AS taxable_value,
-                SUM(igst_amount) AS igst, SUM(cgst_amount) AS cgst, SUM(sgst_amount) AS sgst
-            FROM caratloop.gst_output_tax_register
-            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
-              AND taxable_material_value > 0
-            GROUP BY COALESCE(NULLIF(hsn_material, ''), 'UNSPECIFIED')
-
-            UNION ALL
-
-            SELECT
-                COALESCE(NULLIF(hsn_making, ''), '998892') AS hsn_code,
-                'Services - making charges' AS description,
-                'NOS' AS uqc, 'NOS' AS uqc2,
-                SUM(taxable_making_value) AS taxable_value,
-                0 AS igst, 0 AS cgst, 0 AS sgst
-            FROM caratloop.gst_output_tax_register
-            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
-              AND taxable_making_value > 0
-            GROUP BY COALESCE(NULLIF(hsn_making, ''), '998892')
-        """),
-        {"period": period, "cid": current_user["company_id"]},
-    )
+    hsn_rows = await _hsn_summary_rows(db, period, current_user["company_id"])
 
     # Credit and debit notes to registered persons -- GSTR-1 Table 9B.
     #
@@ -275,7 +284,7 @@ async def get_gstr1_data(
         "return_type": "GSTR-1",
         "b2b": [dict(r) for r in b2b.mappings().all()],
         "cdnr": [dict(r) for r in cdnr.mappings().all()],
-        "hsn_summary": [dict(r) for r in hsn_summary.mappings().all()],
+        "hsn_summary": hsn_rows,
     }
 
 
@@ -312,12 +321,24 @@ async def get_gstr3b_summary(
         {"period": period, "cid": current_user["company_id"]},
     )
 
-    # ITC
+    # ITC, Table 4.
+    #
+    # s.16(2)(aa) makes appearance in GSTR-2B a condition of the claim, and the
+    # register has a gstr2b_matched column for exactly that -- which nothing in
+    # this codebase ever sets, because there is no GSTR-2B import. The summary
+    # used to read is_eligible alone and present the whole figure as
+    # claimable. It still reports the eligible total, because that is what the
+    # accountant reconciles against 2B by hand, but it now says how much of it
+    # is matched (today: none) so the unmatched exposure is visible on the
+    # face of the return rather than discovered in a notice.
     itc = await db.execute(
         text("""
             SELECT
                 SUM(igst_credit) AS igst_itc, SUM(cgst_credit) AS cgst_itc,
-                SUM(sgst_credit) AS sgst_itc, SUM(total_itc) AS total_itc
+                SUM(sgst_credit) AS sgst_itc, SUM(total_itc) AS total_itc,
+                SUM(CASE WHEN gstr2b_matched THEN total_itc ELSE 0 END) AS itc_matched_2b,
+                SUM(CASE WHEN gstr2b_matched THEN 0 ELSE total_itc END) AS itc_unmatched_2b,
+                COUNT(*) FILTER (WHERE NOT gstr2b_matched) AS unmatched_invoices
             FROM caratloop.itc_register
             WHERE return_period = :period AND company_id = :cid AND is_eligible = TRUE
         """),
@@ -342,7 +363,16 @@ async def get_gstr3b_summary(
 
     net_tax = (out.get("total_output_tax") or 0) + (rcm_data.get("total_rcm") or 0) - (itc_data.get("total_itc") or 0)
 
+    caveats = []
+    if (itc_data.get("itc_unmatched_2b") or 0) > 0:
+        caveats.append(
+            f"{itc_data.get('unmatched_invoices') or 0} supplier invoice(s) carrying ITC of "
+            f"{itc_data.get('itc_unmatched_2b')} are not matched to GSTR-2B. Under s.16(2)(aa) "
+            "that credit is not available until the supplier has filed. Reconcile before claiming."
+        )
+
     return {
+        "caveats": caveats,
         "period": period,
         "return_type": "GSTR-3B",
         "table_3_1_outward_supplies": out,
@@ -521,15 +551,20 @@ async def export_gstr1_json(period: str, db: AsyncSession = Depends(get_db), cur
 @router.get("/export/gstr3b-json")
 async def export_gstr3b_json(period: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     company_id = current_user["company_id"]
-    # Output tax
+    # Output tax, net of credit notes -- the same correction the on-screen
+    # summary received. Filtering credit notes OUT declared the cancelled sale
+    # at full value; they have to be subtracted.
     output = await db.execute(
         text("""
             SELECT
-                SUM(taxable_material_value + taxable_making_value) AS taxable_value,
-                SUM(igst_amount) AS igst, SUM(cgst_amount) AS cgst, SUM(sgst_amount) AS sgst,
-                SUM(total_tax) AS total_output_tax
+                SUM(CASE WHEN is_credit_note THEN -1 ELSE 1 END
+                    * (taxable_material_value + taxable_making_value)) AS taxable_value,
+                SUM(CASE WHEN is_credit_note THEN -igst_amount ELSE igst_amount END) AS igst,
+                SUM(CASE WHEN is_credit_note THEN -cgst_amount ELSE cgst_amount END) AS cgst,
+                SUM(CASE WHEN is_credit_note THEN -sgst_amount ELSE sgst_amount END) AS sgst,
+                SUM(CASE WHEN is_credit_note THEN -total_tax ELSE total_tax END) AS total_output_tax
             FROM caratloop.gst_output_tax_register
-            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
+            WHERE return_period = :period AND company_id = :cid
         """),
         {"period": period, "cid": company_id}
     )
@@ -572,12 +607,109 @@ async def export_gstr3b_json(period: str, db: AsyncSession = Depends(get_db), cu
 
 @router.get("/export/gstr1-excel")
 async def export_gstr1_excel(period: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    # Mock stream response
-    return StreamingResponse(iter([b""]), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    """GSTR-1 working papers as a workbook: B2B, B2C, CDNR and HSN sheets.
+
+    This streamed zero bytes with a spreadsheet content type -- a download
+    that opened as a corrupt file and looked like an export bug rather than
+    what it was, an endpoint that had never been written. The data was in the
+    register the whole time.
+    """
+    from io import BytesIO
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    cid = current_user["company_id"]
+
+    b2b = await db.execute(text("""
+        SELECT r.invoice_no, r.invoice_date, r.party_gstin, p.name AS party_name,
+               r.place_of_supply, r.is_inter_state,
+               r.taxable_material_value, r.material_gst_rate,
+               r.taxable_making_value, r.making_gst_rate,
+               r.igst_amount, r.cgst_amount, r.sgst_amount, r.total_tax
+        FROM caratloop.gst_output_tax_register r
+        LEFT JOIN caratloop.parties p ON p.id = r.party_id
+        WHERE r.return_period = :period AND r.company_id = :cid
+          AND r.supply_type = 'B2B' AND NOT r.is_credit_note
+        ORDER BY r.invoice_date, r.invoice_no
+    """), {"period": period, "cid": cid})
+    b2c = await db.execute(text("""
+        SELECT r.invoice_no, r.invoice_date, r.place_of_supply, r.is_inter_state,
+               r.taxable_material_value + r.taxable_making_value AS taxable_value,
+               r.igst_amount, r.cgst_amount, r.sgst_amount, r.total_tax
+        FROM caratloop.gst_output_tax_register r
+        WHERE r.return_period = :period AND r.company_id = :cid
+          AND r.supply_type <> 'B2B' AND NOT r.is_credit_note
+        ORDER BY r.invoice_date, r.invoice_no
+    """), {"period": period, "cid": cid})
+    cdnr = await db.execute(text("""
+        SELECT r.invoice_no AS note_no, r.invoice_date AS note_date, r.party_gstin,
+               orig.invoice_no AS original_invoice_no, orig.invoice_date AS original_invoice_date,
+               r.place_of_supply,
+               r.taxable_material_value + r.taxable_making_value AS taxable_value,
+               r.igst_amount, r.cgst_amount, r.sgst_amount, r.total_tax
+        FROM caratloop.gst_output_tax_register r
+        LEFT JOIN caratloop.gst_output_tax_register orig
+               ON orig.invoice_id = r.invoice_id AND orig.company_id = r.company_id
+              AND NOT orig.is_credit_note
+        WHERE r.return_period = :period AND r.company_id = :cid AND r.is_credit_note
+        ORDER BY r.invoice_date, r.invoice_no
+    """), {"period": period, "cid": cid})
+    hsn = await _hsn_summary_rows(db, period, cid)
+
+    wb = Workbook()
+    bold = Font(bold=True)
+
+    def sheet(title, headers, rows):
+        ws = wb.create_sheet(title)
+        ws.append(headers)
+        for c in ws[1]:
+            c.font = bold
+        for row in rows:
+            ws.append([("" if v is None else (str(v) if hasattr(v, "isoformat") else (float(v) if isinstance(v, Decimal) else v))) for v in row])
+        for col in ws.columns:
+            width = max(len(str(c.value)) if c.value is not None else 0 for c in col)
+            ws.column_dimensions[col[0].column_letter].width = min(max(10, width + 2), 40)
+        return ws
+
+    wb.remove(wb.active)
+    sheet("B2B (Table 4)",
+          ["Invoice No", "Date", "Recipient GSTIN", "Recipient", "Place of Supply", "Inter-state",
+           "Taxable Material", "Material Rate %", "Taxable Making", "Making Rate %",
+           "IGST", "CGST", "SGST", "Total Tax"],
+          [tuple(r) for r in b2b.mappings().all()])
+    sheet("B2C (Tables 5 & 7)",
+          ["Invoice No", "Date", "Place of Supply", "Inter-state", "Taxable Value",
+           "IGST", "CGST", "SGST", "Total Tax"],
+          [tuple(r) for r in b2c.mappings().all()])
+    sheet("CDNR (Table 9B)",
+          ["Note No", "Note Date", "Recipient GSTIN", "Original Invoice", "Original Date",
+           "Place of Supply", "Taxable Value", "IGST", "CGST", "SGST", "Total Tax"],
+          [tuple(r) for r in cdnr.mappings().all()])
+    sheet("HSN (Table 12)",
+          ["HSN/SAC", "Description", "UQC", "Taxable Value", "IGST", "CGST", "SGST"],
+          [(r["hsn_code"], r["description"], r["uqc"], r["taxable_value"], r["igst"], r["cgst"], r["sgst"]) for r in hsn])
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    filename = f"GSTR1_{period}.xlsx"
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
 
 @router.get("/export/hsn-summary")
 async def export_hsn_summary(period: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    return {"hsn": []}
+    """GSTR-1 Table 12. Returned an empty list regardless of the period.
+
+    An empty list is indistinguishable from "no HSN lines this month", and the
+    HSN summary is mandatory, so the stub read as a clean month. Same query as
+    the staging screen.
+    """
+    rows = await _hsn_summary_rows(db, period, current_user["company_id"])
+    return {"period": period, "table": "12", "hsn": rows}
 
 @router.post("/eway-bill")
 async def eway_bill():

@@ -31,6 +31,7 @@ from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.tax.job_work import JOB_WORK_SAC
 from app.core.config import settings
 from app.core.tenancy import resolve_fiscal_year, resolve_stock_location
+from app.tax.gstin import is_gstin_shaped
 
 logger = logging.getLogger(__name__)
 
@@ -375,7 +376,10 @@ async def create_sales_invoice(
 
         # ─── Post to GST Output Tax Register [CGST-R56-4] ────────────────────
         return_period = get_return_period(payload.invoice_date)
-        supply_type = "B2B" if customer.get("gstin") else "B2C_Large"
+        # B2B declares the buyer holds a GST registration and routes the
+        # invoice into GSTR-1 Table 4 against their GSTIN. Any non-empty
+        # string used to qualify, "Unregistered" included.
+        supply_type = "B2B" if is_gstin_shaped(customer.get("gstin")) else "B2C_Large"
         await db.execute(
             text("""
                 INSERT INTO caratloop.gst_output_tax_register (

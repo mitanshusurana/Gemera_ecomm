@@ -20,6 +20,7 @@ from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 from app.core.tenancy import resolve_default_uom, resolve_fiscal_year, resolve_stock_location
+from app.tax.gstin import is_gstin_shaped
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,11 @@ async def create_purchase_invoice(
             raise HTTPException(status_code=400, detail="Supplier not found in master records.")
 
         supp_gstin = (supplier.get("gstin") or "").strip().upper()
-        is_unregistered = not supp_gstin or supp_gstin in ["UNREGISTERED", "N/A", "NONE", ""]
+        # GSTIN-shaped, not merely non-empty. The sentinel list let "NA",
+        # "-", "Not registered" and any fifteen random characters count as a
+        # registered supplier, and from that boolean flowed an ITC register
+        # row, forward-charge GST and a GSTR-1 B2B line.
+        is_unregistered = not is_gstin_shaped(supp_gstin)
 
         pos = payload.place_of_supply or supplier.get("state_code") or "08"
         is_inter_state = pos.strip().zfill(2) != settings.COMPANY_STATE_CODE.strip().zfill(2)
@@ -503,7 +508,11 @@ async def update_purchase_invoice(
             raise HTTPException(status_code=404, detail="Supplier not found")
 
         supp_gstin = (supplier.get("gstin") or "").strip().upper() if supplier else ""
-        is_unregistered = not supp_gstin or supp_gstin in ["UNREGISTERED", "N/A", "NONE", ""]
+        # GSTIN-shaped, not merely non-empty. The sentinel list let "NA",
+        # "-", "Not registered" and any fifteen random characters count as a
+        # registered supplier, and from that boolean flowed an ITC register
+        # row, forward-charge GST and a GSTR-1 B2B line.
+        is_unregistered = not is_gstin_shaped(supp_gstin)
 
         bill_res = await db.execute(
             text("SELECT bill_no FROM caratloop.purchase_invoices WHERE id = :id AND company_id = :cid LIMIT 1"),

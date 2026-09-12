@@ -123,3 +123,56 @@ async def logout(
 
     logger.info("User %s logged out (session %s)", current_user["email"], session_id)
     return {"status": "success", "message": "Signed out"}
+
+
+@router.get("/me")
+async def me(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """The signed-in user and the company whose books they are in.
+
+    The printed documents had nowhere to get the seller from. The tax invoice
+    component read invoice.company, which nothing ever populated, so every
+    invoice went out headed "COMPANY NOT CONFIGURED"; the purchase voucher used
+    a build-time environment variable that the container never received, so it
+    fell back to a literal -- "CARATLOOP MANUFACTURING LLP", an entity that is
+    not this company. Both are the legal person claiming or charging the tax
+    on the document. They come from the company master, here, once per session.
+
+    The bank block is included only when the company has filled it in; the
+    invoice omits it otherwise rather than printing somebody's example digits.
+    """
+    res = await db.execute(
+        text(
+            "SELECT id, name, legal_name, trade_name, gstin, pan, cin, "
+            "       address_line1, address_line2, city, state_code, state_name, "
+            "       pincode, phone, email, website, logo_url, "
+            "       bank_name, bank_branch, bank_account_no, bank_ifsc "
+            "FROM caratloop.companies WHERE id = :cid"
+        ),
+        {"cid": str(current_user["company_id"])},
+    )
+    company = res.mappings().first()
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found for this user")
+
+    c = dict(company)
+    c["id"] = str(c["id"])
+    bank = {
+        "bank_name": c.pop("bank_name"),
+        "bank_branch": c.pop("bank_branch"),
+        "account_no": c.pop("bank_account_no"),
+        "ifsc": c.pop("bank_ifsc"),
+    }
+    c["bank"] = bank if bank["account_no"] and bank["ifsc"] else None
+
+    return {
+        "user": {
+            "id": str(current_user["id"]),
+            "name": current_user.get("full_name") or current_user.get("name"),
+            "email": current_user.get("email"),
+            "role": current_user.get("role"),
+        },
+        "company": c,
+    }
