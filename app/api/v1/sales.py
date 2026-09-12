@@ -30,12 +30,21 @@ from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.tax.job_work import JOB_WORK_SAC
 from app.core.config import settings
-from app.core.tenancy import resolve_fiscal_year, resolve_stock_location
+from app.core.tenancy import resolve_default_uom, resolve_fiscal_year, resolve_stock_location
 from app.tax.gstin import is_gstin_shaped
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Sales"])
+
+
+def _as_uuid(value) -> str | None:
+    """The value if it is a UUID, else None -- so a material CODE can be
+    compared against the code column without first failing the uuid cast."""
+    try:
+        return str(UUID(str(value)))
+    except (ValueError, AttributeError, TypeError):
+        return None
 
 
 class InvoiceLineRequest(BaseModel):
@@ -165,22 +174,37 @@ async def create_sales_invoice(
     for line in payload.lines:
         mat_gst_rate = Decimal("3.0")
         mat_hsn = line.hsn_sac_code or ""
+        mat_row_id = None
+        mat_uom_id = None
         if line.material_id:
             m_res = await db.execute(
                 text(
-                    "SELECT gst_tax_rate, hsn_code FROM caratloop.materials "
-                    "WHERE company_id = :cid AND (id = :mid OR code = :mcode) LIMIT 1"
+                    "SELECT id, uom_id, gst_tax_rate, hsn_code FROM caratloop.materials "
+                    "WHERE company_id = :cid AND (id = CAST(:mid AS UUID) OR code = :mcode) LIMIT 1"
                 ),
-                {"cid": company_id, "mid": str(line.material_id), "mcode": str(line.material_id)}
+                {"cid": company_id, "mid": _as_uuid(line.material_id), "mcode": str(line.material_id)}
             )
             m_row = m_res.mappings().first()
             if m_row:
+                mat_row_id = m_row["id"]
+                mat_uom_id = m_row["uom_id"]
                 # Keep as Decimal: the engine accepts it natively now.
                 mat_gst_rate = (
                     m_row["gst_tax_rate"] if m_row["gst_tax_rate"] is not None
                     else Decimal("3.0")
                 )
                 mat_hsn = m_row["hsn_code"] or mat_hsn
+
+        # Rule 46(g): every line on a tax invoice carries its HSN. Refuse now
+        # rather than write a line the document cannot lawfully print.
+        if not str(mat_hsn).strip():
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Line {len(computed_lines) + 1} has no HSN/SAC code and the item master "
+                    "does not supply one. Set hsn_code on the material or pass hsn_sac_code on the line."
+                ),
+            )
 
         taxable_mat = line.material_value * (1 - line.discount_pct / 100)
         taxable_mak = line.making_charges * (1 - line.discount_pct / 100)
@@ -214,6 +238,8 @@ async def create_sales_invoice(
             "gst": gst,
             "mat_gst_rate": mat_gst_rate,
             "mat_hsn": mat_hsn,
+            "mat_id": mat_row_id,
+            "uom_id": mat_uom_id,
             "taxable_mat": taxable_mat,
             "taxable_mak": taxable_mak,
             "line_total": line_total,
@@ -291,6 +317,77 @@ async def create_sales_invoice(
             },
         )
         invoice_id = inv_result.scalar()
+
+        # ─── Invoice lines ────────────────────────────────────────────────────
+        # Nothing wrote these. The header, the stock ledger, the GST register
+        # and the journal were all posted per line, and the lines themselves
+        # were then discarded -- so no invoice could be printed with what it
+        # actually sold, and the print component invented a single line from
+        # the totals. Rule 46(g)-(h) require the HSN and description of each
+        # item; the line record is the invoice.
+        default_uom = None
+        for seq, cl in enumerate(computed_lines, 1):
+            line = cl["line"]
+            uom_id = cl["uom_id"]
+            if uom_id is None:
+                if default_uom is None:
+                    default_uom = await resolve_default_uom(db)
+                uom_id = default_uom
+            g = cl["gst"]
+            disc_amt = (line.material_value + line.making_charges) * (line.discount_pct / 100)
+            await db.execute(
+                text("""
+                    INSERT INTO caratloop.sales_invoice_lines (
+                        invoice_id, sequence_no, product_id, material_id,
+                        hsn_sac_code, description, quantity, uom_id,
+                        gross_weight, net_weight, stone_weight, gold_weight, purity,
+                        material_value, making_charges, other_charges,
+                        discount_pct, discount_amount,
+                        taxable_material, taxable_making,
+                        material_gst_rate, making_gst_rate,
+                        igst_material, igst_making, cgst_material, sgst_material,
+                        cgst_making, sgst_making, line_total
+                    ) VALUES (
+                        :inv_id, :seq, :product_id, :material_id,
+                        :hsn, :descr, :qty, :uom_id,
+                        :gw, :nw, :sw, :gldw, :purity,
+                        :mat_val, :mak_chg, :oth_chg,
+                        :disc_pct, :disc_amt,
+                        :tax_mat, :tax_mak,
+                        :mat_rate, :mak_rate,
+                        :igst_m, :igst_k, :cgst_m, :sgst_m,
+                        :cgst_k, :sgst_k, :line_total
+                    )
+                """),
+                {
+                    "inv_id": invoice_id,
+                    "seq": seq,
+                    "product_id": str(line.product_id) if line.product_id else None,
+                    "material_id": str(cl["mat_id"]) if cl["mat_id"] else None,
+                    "hsn": cl["mat_hsn"],
+                    "descr": line.description,
+                    "qty": line.quantity,
+                    "uom_id": str(uom_id),
+                    "gw": line.gross_weight,
+                    "nw": line.net_weight,
+                    "sw": line.stone_weight,
+                    "gldw": line.gold_weight,
+                    "purity": line.purity,
+                    "mat_val": line.material_value,
+                    "mak_chg": line.making_charges,
+                    "oth_chg": line.other_charges,
+                    "disc_pct": line.discount_pct,
+                    "disc_amt": disc_amt,
+                    "tax_mat": cl["taxable_mat"],
+                    "tax_mak": cl["taxable_mak"],
+                    "mat_rate": cl["mat_gst_rate"],
+                    "mak_rate": Decimal("5.00"),
+                    "igst_m": g.igst_material, "igst_k": g.igst_making,
+                    "cgst_m": g.cgst_material, "sgst_m": g.sgst_material,
+                    "cgst_k": g.cgst_making, "sgst_k": g.sgst_making,
+                    "line_total": cl["line_total"],
+                },
+            )
 
         # ─── Post Stock Ledger Entries Outward [CGST-R56-2] ──────────────────────
         # LIMIT 1 with no ORDER BY returned whatever the heap gave, so the
@@ -692,6 +789,107 @@ async def list_sales_invoices(
     return {"invoices": [dict(r) for r in result.mappings().all()]}
 
 
+@router.get("/invoices/{invoice_id}")
+async def get_sales_invoice(
+    invoice_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """One invoice with its lines, its buyer and its seller.
+
+    There was no detail endpoint. The register listed invoices without their
+    lines, the print component received a register row, and -- finding no
+    lines -- it synthesised ONE from the header totals: description "22K Gold
+    Jewelry / Material", HSN blank, rates 3% and 5%. Every printed tax invoice
+    therefore showed a single invented line. CGST Rule 46(g) requires the HSN
+    and (h) the description of each item supplied; a two-line invoice printed
+    as one made-up line is not the invoice that was issued.
+
+    The seller block is included so the print does not depend on a second
+    request, and so a PDF rendered server-side later has the same shape.
+    """
+    cid = str(current_user["company_id"])
+
+    head = await db.execute(
+        text("""
+            SELECT
+                si.id, si.invoice_no, si.invoice_date, si.invoice_type, si.status,
+                si.payment_status, si.amount_paid, si.due_date, si.payment_terms,
+                si.narration, si.is_inter_state, si.place_of_supply,
+                si.subtotal_material_value, si.subtotal_making_charges,
+                si.subtotal_other_charges, si.discount_amount,
+                si.taxable_material_value, si.taxable_making_value,
+                si.igst_material, si.igst_making, si.cgst_material, si.sgst_material,
+                si.cgst_making, si.sgst_making, si.total_gst, si.round_off,
+                si.grand_total, si.amount_in_words,
+                si.e_invoice_irn, si.e_invoice_ack_no, si.e_invoice_ack_date,
+                si.e_invoice_status, si.eway_bill_no, si.eway_bill_date,
+                p.id AS customer_id, p.name AS customer_name, p.trade_name AS customer_trade_name,
+                p.gstin AS customer_gstin, p.pan AS customer_pan,
+                p.address_line1 AS customer_address1, p.address_line2 AS customer_address2,
+                p.city AS customer_city, p.state_name AS customer_state_name,
+                p.state_code AS customer_state_code, p.pincode AS customer_pincode,
+                p.phone AS customer_phone, p.email AS customer_email
+            FROM caratloop.sales_invoices si
+            JOIN caratloop.parties p ON p.id = si.customer_id
+            WHERE si.id = :id AND si.company_id = :cid
+        """),
+        {"id": str(invoice_id), "cid": cid},
+    )
+    inv = head.mappings().first()
+    if inv is None:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    lines = await db.execute(
+        text("""
+            SELECT
+                l.id, l.sequence_no, l.description, l.hsn_sac_code,
+                l.quantity, u.code AS uom, l.gross_weight, l.net_weight,
+                l.stone_weight, l.gold_weight, l.purity, l.rate,
+                l.material_value, l.making_charges, l.other_charges,
+                l.discount_pct, l.discount_amount,
+                l.taxable_material, l.taxable_making,
+                l.material_gst_rate, l.making_gst_rate,
+                l.igst_material, l.igst_making, l.cgst_material, l.sgst_material,
+                l.cgst_making, l.sgst_making, l.line_total,
+                m.code AS material_code, m.name AS material_name
+            FROM caratloop.sales_invoice_lines l
+            LEFT JOIN caratloop.materials m ON m.id = l.material_id
+            LEFT JOIN caratloop.units_of_measure u ON u.id = l.uom_id
+            WHERE l.invoice_id = :id
+            ORDER BY l.sequence_no
+        """),
+        {"id": str(invoice_id)},
+    )
+
+    company = await db.execute(
+        text("""
+            SELECT id, name, legal_name, trade_name, gstin, pan,
+                   address_line1, address_line2, city, state_code, state_name, pincode,
+                   phone, email, bank_name, bank_branch, bank_account_no, bank_ifsc
+            FROM caratloop.companies WHERE id = :cid
+        """),
+        {"cid": cid},
+    )
+    c = dict(company.mappings().first() or {})
+    if c:
+        c["id"] = str(c["id"])
+        bank = {
+            "bank_name": c.pop("bank_name", None),
+            "bank_branch": c.pop("bank_branch", None),
+            "account_no": c.pop("bank_account_no", None),
+            "ifsc": c.pop("bank_ifsc", None),
+        }
+        c["bank"] = bank if bank["account_no"] and bank["ifsc"] else None
+
+    out = dict(inv)
+    out["id"] = str(out["id"])
+    out["customer_id"] = str(out["customer_id"])
+    out["lines"] = [dict(r) for r in lines.mappings().all()]
+    out["company"] = c or None
+    return out
+
+
 # {invoice_no:path}, not {invoice_no}. Invoice numbers are formatted
 # "CL/2026-27/00001", so the plain converter stopped at the first slash and the
 # route never matched: the UI's own call, DELETE /sales/invoices/by-no/CL/...,
@@ -792,7 +990,8 @@ async def delete_sales_invoice(
                         -- Opening / Closing / Depreciation / RCM_Payment /
                         -- ITC_Utilization / Stock_Adjustment / Reversal /
                         -- Bank_Reconciliation, and nothing else.
-                        :cid, orig.fiscal_year_id, :vno, CURRENT_DATE, 'Reversal',
+                        :cid, COALESCE((SELECT fy.id FROM caratloop.fiscal_years fy WHERE fy.company_id = orig.company_id AND CURRENT_DATE BETWEEN fy.start_date AND fy.end_date ORDER BY fy.is_active DESC LIMIT 1), orig.fiscal_year_id),
+                        :vno, CURRENT_DATE, 'Reversal',
                         :ref_no, 'SalesInvoice', :inv_id, :narr,
                         orig.total_credit, orig.total_debit,
                         NEXTVAL('caratloop.journal_entry_seq'), CAST(:created_by AS UUID)
@@ -871,7 +1070,12 @@ async def delete_sales_invoice(
                     is_credit_note, credit_note_id, remarks, created_by
                 )
                 SELECT
-                    r.company_id, r.fiscal_year_id, r.return_period,
+                    -- The note is dated today, so it belongs to today's return
+                    -- period and fiscal year. Copying the invoice's would alter
+                    -- a month that may already have been filed.
+                    r.company_id,
+                    COALESCE((SELECT fy.id FROM caratloop.fiscal_years fy WHERE fy.company_id = r.company_id AND CURRENT_DATE BETWEEN fy.start_date AND fy.end_date ORDER BY fy.is_active DESC LIMIT 1), r.fiscal_year_id),
+                    to_char(CURRENT_DATE, 'YYYY-MM'),
                     r.invoice_id, :cn_no, CURRENT_DATE,
                     r.party_id, r.party_gstin, r.place_of_supply, r.is_inter_state,
                     r.supply_type, r.hsn_material, r.hsn_making,
