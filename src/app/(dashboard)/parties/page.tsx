@@ -15,6 +15,9 @@ export default function PartiesPage() {
   const [fetchingGstin, setFetchingGstin] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // What the GSTIN lookup actually managed to do, so a lookup that could not
+  // run says so instead of leaving the form blank and silent.
+  const [gstinNotice, setGstinNotice] = useState<{ tone: 'ok' | 'warn'; text: string } | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -70,21 +73,50 @@ export default function PartiesPage() {
     }
     setFetchingGstin(true);
     setError('');
+    setGstinNotice(null);
     try {
       const res = await partiesApi.fetchByGstin(formData.gstin);
-      if (res.data) {
+      const d = res.data;
+      if (d) {
+        // state_code, state_name and pan are decoded from the GSTIN itself and
+        // are true whether or not a provider answered. Everything else -- the
+        // legal name, the address, whether the registration is live -- only
+        // exists if one did.
         setFormData(prev => ({
           ...prev,
-          name: res.data.legal_name || prev.name,
-          trade_name: res.data.trade_name || prev.trade_name,
-          pan: res.data.pan || prev.pan,
-          state_code: res.data.state_code || prev.state_code,
-          state_name: res.data.state_name || prev.state_name,
-          gst_reg_type: res.data.registration_type || prev.gst_reg_type,
-          address_line1: res.data.address?.building_no ? `${res.data.address.building_no} ${res.data.address.street || ''}` : prev.address_line1,
-          city: res.data.address?.city || prev.city,
-          pincode: res.data.address?.pincode || prev.pincode,
+          name: d.legal_name || prev.name,
+          trade_name: d.trade_name || prev.trade_name,
+          pan: d.pan || prev.pan,
+          state_code: d.state_code || prev.state_code,
+          state_name: d.state_name || prev.state_name,
+          // Only from a verified lookup: the API used to return 'Regular'
+          // unconditionally, so an unchecked GSTIN silently set the party's
+          // registration type as though it had been confirmed.
+          gst_reg_type: d.verified && d.registration_type ? d.registration_type : prev.gst_reg_type,
+          address_line1: d.address?.building_no ? `${d.address.building_no} ${d.address.street || ''}` : prev.address_line1,
+          city: d.address?.city || prev.city,
+          pincode: d.address?.pincode || prev.pincode,
         }));
+
+        // The failure that prompted this: the endpoint answers 200 with blank
+        // fields when no provider is configured, so nothing populated, nothing
+        // errored, and the button just stopped spinning. Say what happened.
+        if (d.verified) {
+          setGstinNotice({
+            tone: 'ok',
+            text: `Verified via ${d.source}${d.status ? ` — registration ${d.status}` : ''}.`,
+          });
+        } else if (d.checksum_valid === false) {
+          setGstinNotice({
+            tone: 'warn',
+            text: 'That GSTIN fails its own check digit — it is very likely mistyped. State and PAN below are read from the number as entered.',
+          });
+        } else {
+          setGstinNotice({
+            tone: 'warn',
+            text: `${d.reason || 'Lookup unavailable.'} State and PAN were filled from the number itself; enter the name and address manually.`,
+          });
+        }
       }
     } catch (err: any) {
       console.error('GSTIN Fetch Error:', err);
@@ -545,6 +577,15 @@ export default function PartiesPage() {
                       Verify GSTIN
                     </button>
                   </div>
+                  {gstinNotice && (
+                    <p
+                      className={`mt-2 text-xs ${
+                        gstinNotice.tone === 'ok' ? 'text-success' : 'text-warning'
+                      }`}
+                    >
+                      {gstinNotice.text}
+                    </p>
+                  )}
                 </div>
               )}
 
