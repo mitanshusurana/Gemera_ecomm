@@ -52,6 +52,19 @@ export default function SalesPage() {
     fetchSalesData();
   }, [fromDate, toDate, selectedCustomerId, searchQuery]);
 
+  // The register row has no lines. Fetch the invoice proper before printing;
+  // if that fails, print the row and let the component say the lines are
+  // missing rather than invent one.
+  const openPrint = async (item: any) => {
+    try {
+      const res = await apiClient.get(`/sales/invoices/${item.id}`);
+      setSelectedPrintInvoice(res.data);
+    } catch (err) {
+      console.error('Invoice detail fetch failed; printing register row without lines', err);
+      setSelectedPrintInvoice({ ...item, lines: null, lines_unavailable: true });
+    }
+  };
+
   const handleDeleteInvoice = async (invoiceNo: string) => {
     if (!confirm(`Are you sure you want to cancel and reverse invoice ${invoiceNo}? This will post a reversal journal entry.`)) {
       return;
@@ -83,14 +96,14 @@ export default function SalesPage() {
     { header: 'Actions', accessorKey: 'actions', cell: (item: any) => (
       <div className="flex gap-2 items-center">
         <button 
-          onClick={(e) => { e.stopPropagation(); setSelectedPrintInvoice(item); }}
+          onClick={(e) => { e.stopPropagation(); openPrint(item); }}
           className="p-1 text-textSecondary hover:text-white transition-colors" 
           title="Print Statutory Tax Invoice"
         >
           <Printer className="w-4 h-4" />
         </button>
         <button 
-          onClick={(e) => { e.stopPropagation(); setSelectedPrintInvoice(item); }}
+          onClick={(e) => { e.stopPropagation(); openPrint(item); }}
           className="p-1 text-textSecondary hover:text-white transition-colors" 
           title="Download Invoice"
         >
@@ -190,7 +203,7 @@ export default function SalesPage() {
             <p className="text-xs text-textSecondary">Try adjusting the date filters or click "New Invoice" to record a sale.</p>
           </div>
         ) : (
-          <DataTable columns={columns} data={salesData} onRowClick={(item) => setSelectedPrintInvoice(item)} />
+          <DataTable columns={columns} data={salesData} onRowClick={(item) => openPrint(item)} />
         )}
       </div>
 

@@ -33,17 +33,13 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
   };
   const sellerConfigured = Boolean(company.gstin && (company.legal_name || company.trade_name));
 
-  const lines = invoice.lines || [
-    {
-      description: invoice.description || '22K Gold Jewelry / Material',
-      hsn_sac_code: invoice.hsn_code || '',
-      quantity: 1,
-      material_value: invoice.subtotal_material_value || invoice.material_value || 0,
-      making_charges: invoice.subtotal_making_charges || invoice.making_charges || 0,
-      material_gst_rate: 3.0,
-      making_gst_rate: 5.0
-    }
-  ];
+  // The lines are the invoice. When the component was handed a register row
+  // with none, it synthesised one from the header totals -- "22K Gold Jewelry
+  // / Material", no HSN, 3% and 5% -- so every printed invoice showed a single
+  // invented line whatever had actually been sold. Rule 46 wants the HSN and
+  // description of each item. No lines means the print must say so.
+  const lines: any[] = Array.isArray(invoice.lines) ? invoice.lines : [];
+  const linesUnavailable = lines.length === 0;
 
   const subtotalMaterial = Number(invoice.subtotal_material_value || 0);
   const subtotalMaking = Number(invoice.subtotal_making_charges || 0);
@@ -161,6 +157,13 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
               </tr>
             </thead>
             <tbody>
+              {linesUnavailable && (
+                <tr>
+                  <td colSpan={8} className="border border-black p-3 text-center text-xs italic text-gray-600">
+                    Line items could not be loaded for this invoice. Do not issue this print; reopen the invoice and try again.
+                  </td>
+                </tr>
+              )}
               {lines.map((line: any, idx: number) => {
                 const matVal = Number(line.material_value || 0);
                 const makVal = Number(line.making_charges || 0);
