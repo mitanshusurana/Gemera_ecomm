@@ -33,7 +33,33 @@ export class DashboardComponent implements OnInit {
     return this.lowStock ? this.lowStock.length : null;
   }
 
+  /**
+   * FINISH-CONTRACT §1: products failing their item-type rules, from
+   * GET /admin/inventory/incomplete. `null` until loaded; the card is hidden
+   * entirely when the endpoint is unavailable (e.g. backend not yet deployed).
+   */
+  incompleteCount: number | null = null;
+  incompleteFailed = false;
+
   ngOnInit() {
+    this.productService.getIncomplete(0, 1).subscribe({
+      next: (data: any) => {
+        const total = typeof data?.totalElements === 'number' ? data.totalElements
+          : Array.isArray(data) ? data.length
+          : Array.isArray(data?.content) ? data.content.length
+          : null;
+        if (total === null) {
+          this.incompleteFailed = true;
+        } else {
+          this.incompleteCount = total;
+        }
+      },
+      error: (err) => {
+        console.warn('Incomplete-products count unavailable', err?.status);
+        this.incompleteFailed = true;
+      }
+    });
+
     this.productService.getLowStock().subscribe({
       next: (data: any) => {
         const rows = Array.isArray(data) ? data : (data?.content ?? data?.items ?? []);

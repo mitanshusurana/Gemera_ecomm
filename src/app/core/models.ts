@@ -309,6 +309,39 @@ export interface TreasureChestAccount {
   status: 'ACTIVE' | 'MATURED' | 'CLOSED';
   startDate: string;
   nextDueDate: string;
+  /** Bonus months x installment (finish contract, section 2). Optional until the backend ships it. */
+  bonusAmount?: number;
+  /** installment x totalInstallments + bonusAmount. */
+  maturityAmount?: number;
+}
+
+/** One monthly payment towards a Treasure Plan (finish contract, section 2). Amounts are whole INR. */
+export interface TreasureInstallment {
+  id: string;
+  installmentNumber: number;
+  amount: number;
+  method: 'RAZORPAY' | 'CASH' | 'ADMIN';
+  status: 'PENDING' | 'PAID' | 'FAILED';
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  paidAt?: string;
+  note?: string;
+  createdAt?: string;
+}
+
+/** POST treasure/account/installments/order. `amount` is paise, for Razorpay. */
+export interface TreasureInstallmentOrderResponse {
+  installmentId: string;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+}
+
+/** POST treasure/account/installments/{id}/confirm body. */
+export interface TreasureInstallmentConfirmRequest {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
 }
 
 export interface User {

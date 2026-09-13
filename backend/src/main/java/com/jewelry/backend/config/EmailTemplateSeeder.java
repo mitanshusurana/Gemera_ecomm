@@ -27,6 +27,8 @@ public class EmailTemplateSeeder {
     public static final String ORDER_REFUNDED = "order-refunded";
     public static final String LOW_STOCK_ALERT = "low-stock-alert";
     public static final String BACK_IN_STOCK = "back-in-stock";
+    public static final String TREASURE_INSTALLMENT = "treasure-installment";
+    public static final String TREASURE_MATURED = "treasure-matured";
 
     private static final String GOLD = "#c9a44c";
     private static final String DARK_GOLD = "#8a6d1f";
@@ -153,7 +155,37 @@ public class EmailTemplateSeeder {
                     </p>
                     <p style="margin:0;font-size:13px;color:#666;">Pieces are often one of a kind, so it may not stay in stock for long. Browse more at <a href="{{storefrontUrl}}/products" style="color:#8a6d1f;">caratloop</a>.</p>
                     """,
-                    List.of("customerName", "storefrontUrl", "productName", "productUrl", "price")));
+                    List.of("customerName", "storefrontUrl", "productName", "productUrl", "price")),
+
+            new Seed(TREASURE_INSTALLMENT,
+                    "Installment {{installmentNumber}} of {{totalInstallments}} received",
+                    "Treasure Chest plan",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Thank you. We have received installment <strong>{{installmentNumber}} of {{totalInstallments}}</strong> towards your Treasure Chest plan.</p>
+                    <table style="border-collapse:collapse;margin:0 0 16px;font-size:14px;">
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Amount received</td><td style="padding:6px 0;"><strong>{{amount}}</strong></td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Plan balance</td><td style="padding:6px 0;"><strong>{{balance}}</strong></td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Next installment due</td><td style="padding:6px 0;">{{nextDueDate}}</td></tr>
+                    </table>
+                    <p style="margin:0;">See your plan and payment history any time on <a href="{{storefrontUrl}}/treasure" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "installmentNumber", "totalInstallments", "amount", "balance", "nextDueDate")),
+
+            new Seed(TREASURE_MATURED,
+                    "Your Treasure Plan has matured",
+                    "Plan matured",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Congratulations: every installment of your Treasure Chest plan has been paid, and we have added your bonus of <strong>{{bonus}}</strong>.</p>
+                    <div style="margin:20px 0;padding:20px;border:1px solid #e3d7b8;border-radius:8px;background:linear-gradient(135deg,#fffdf7,#f6efe0);text-align:center;">
+                      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a6d1f;">Balance available</div>
+                      <div style="font-size:26px;letter-spacing:1px;font-weight:bold;margin:8px 0;color:#1c1c1c;">{{balance}}</div>
+                    </div>
+                    <p style="margin:0 0 16px;">Redeem it against any piece in our collection: visit a store or reply to this email and our team will help you choose.</p>
+                    <p style="margin:0;">Browse the collection at <a href="{{storefrontUrl}}/products" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "balance", "bonus")));
 
     /** Create-if-missing by name; existing rows (possibly admin-edited) are left untouched. */
     public void seed() {

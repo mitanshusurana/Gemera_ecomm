@@ -657,6 +657,8 @@ public class EntityMapper {
         dto.setStatus(account.getStatus());
         dto.setStartDate(account.getStartDate());
         dto.setNextDueDate(account.getNextDueDate());
+        dto.setBonusAmount(com.jewelry.backend.service.TreasurePlanService.bonusAmount(account));
+        dto.setMaturityAmount(com.jewelry.backend.service.TreasurePlanService.maturityAmount(account));
         return dto;
     }
 

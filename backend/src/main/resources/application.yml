@@ -94,8 +94,8 @@ spring:
       on-profile: "prod"
   jpa:
     hibernate:
-      # No migration tool (Flyway/Liquibase) exists in this project, so `validate`
-      # never creates or alters tables. A first deployment, or any release that
-      # adds columns (e.g. products.featured), must start once WITHOUT the prod
-      # profile so the default `update` applies the schema, then switch back.
-      ddl-auto: validate
+      # No migration tool (Flyway/Liquibase) exists in this project, so the schema is
+      # managed by Hibernate in production as well. `validate` would refuse to start
+      # on a fresh VM or after any release that adds a column; keep `update` until a
+      # migration tool is introduced. Override with SPRING_JPA_HIBERNATE_DDL_AUTO.
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}

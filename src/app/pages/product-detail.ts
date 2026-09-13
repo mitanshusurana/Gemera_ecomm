@@ -58,6 +58,57 @@ const ROUGH_KEYS = ['roughMaterial', 'roughWeight', 'pieceCount', 'lotTotalCarat
   'mineOrigin', 'matrixParentRock', 'crystalMorphology', 'manufacturingStage'];
 const IDOL_KEYS = ['gemstoneMaterial', 'subjectDeityName', 'heightInches', 'carvingStyle', 'carvingTechnique',
   'asana', 'mudra', 'ayudha', 'vahana', 'artistName'];
+
+/** Schema.org `material`: the metal when the piece has one, else the gemstone material. */
+function productMaterial(p: Product): string {
+  return (
+    p.metalDetails?.metalType ||
+    p.metal ||
+    p.specifications?.metalDetails?.[0]?.type ||
+    p.gemstoneMaterial ||
+    p.material ||
+    p.roughMaterial ||
+    ''
+  ).toString().trim();
+}
+
+/** PropertyValue entries for the attributes Google Shopping reads; only fields the product actually has. */
+function productProperties(p: Product): { '@type': 'PropertyValue'; name: string; value: string }[] {
+  const out: { '@type': 'PropertyValue'; name: string; value: string }[] = [];
+  const add = (name: string, value: unknown, unit = '') => {
+    if (value === undefined || value === null || value === '') return;
+    if (typeof value === 'number' && !Number.isFinite(value)) return;
+    out.push({ '@type': 'PropertyValue', name, value: `${value}${unit}` });
+  };
+  const caratWeight =
+    p.caratWeight ??
+    p.lotTotalCaratWeight ??
+    p.stoneDetails?.find((s) => s.totalCaratWeight)?.totalCaratWeight ??
+    p.specifications?.carat ??
+    p.specifications?.diamondDetails?.[0]?.carat;
+  add('Carat weight', caratWeight, ' ct');
+  add('Metal purity', p.metalDetails?.metalPurity || p.purity || p.specifications?.metalDetails?.[0]?.purity);
+  add('Gross weight', p.grossWeight ?? p.specifications?.productDetails?.grossWeight, ' g');
+  add(
+    'Stone type',
+    p.stoneDetails?.find((s) => s.stoneType)?.stoneType ||
+      p.variety ||
+      p.species ||
+      p.gemstones?.[0] ||
+      p.specifications?.diamondDetails?.[0]?.type,
+  );
+  if (p.certificateLab || p.labReportNumber) {
+    add('Certificate', [p.certificateLab, p.labReportNumber].filter(Boolean).join(' '));
+  }
+  return out;
+}
+
+/** `YYYY-MM-DD` for today plus `days` (schema.org priceValidUntil). */
+function isoDateDaysFromNow(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 const STRAND_KEYS = ['material', 'beadStyle', 'beadSizeMm', 'sizeRange', 'strandLengthInches', 'strandCount',
   'pieceCount', 'layoutPattern'];
 const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'quantityPcs', 'weightPerPiece',
@@ -1670,12 +1721,15 @@ export class ProductDetailComponent
         this.loading.set(false);
 
         // Update SEO Tags
+        const productUrl = this.seoService.absoluteUrl(`/products/${data.id}`);
         this.seoService.updateTags({
           title: `${data.name} | Caratloop`,
           description: data.description || `Buy ${data.name} online at Caratloop.`,
           image: data.imageUrl || (data.images && data.images.length > 0 ? data.images[0] : ''),
-          url: `https://www.caratloop.com/products/${data.id}`
+          url: productUrl,
+          type: 'product',
         });
+        this.seoService.setProductMeta(data.price, 'INR');
 
         if (data.customizationOptions) {
           this.selectedMetal.set(
@@ -1689,23 +1743,36 @@ export class ProductDetailComponent
             ) || null,
           );
         }
-        const schema = {
+        const sku = data.sku || data.specifications?.productDetails?.sku;
+        const categoryLabel = this.categoryLabels.label(data.category);
+        const images = (data.images?.length ? data.images : [data.imageUrl])
+          .map((img) => this.seoService.absoluteUrl(img))
+          .filter((img) => !!img);
+        const material = productMaterial(data);
+        const schema: { offers: Record<string, unknown>; [key: string]: unknown } = {
           '@context': 'https://schema.org/',
           '@type': 'Product',
           name: data.name,
-          image: data.images?.length ? data.images : [data.imageUrl],
+          image: images,
           description: data.description || data.name,
-          sku: data.sku || data.specifications?.productDetails?.sku,
+          sku,
+          mpn: sku,
+          brand: { '@type': 'Brand', name: 'Caratloop' },
+          category: categoryLabel || undefined,
+          material: material || undefined,
+          additionalProperty: productProperties(data),
           offers: {
             '@type': 'Offer',
-            url: 'https://www.caratloop.com/products/' + data.id,
+            url: productUrl,
             priceCurrency: 'INR',
             price: data.price,
+            priceValidUntil: isoDateDaysFromNow(30),
             availability:
               data.stock > 0
                 ? 'https://schema.org/InStock'
                 : 'https://schema.org/OutOfStock',
             itemCondition: 'https://schema.org/NewCondition',
+            seller: { '@type': 'Organization', name: 'Caratloop' },
           },
         };
 
@@ -1735,6 +1802,32 @@ export class ProductDetailComponent
           };
         }
         this.seoService.setJsonLd(schema);
+
+        // Home > category > product. The category crumb links to the listing
+        // filtered the same way the header does (?category=<slug>).
+        const crumbs: { name: string; url: string }[] = [
+          { name: 'Home', url: this.seoService.absoluteUrl('/') },
+        ];
+        if (data.category) {
+          crumbs.push({
+            name: categoryLabel || data.category,
+            url: this.seoService.absoluteUrl('/products?category=' + encodeURIComponent(data.category)),
+          });
+        }
+        crumbs.push({ name: data.name, url: productUrl });
+        this.seoService.setJsonLd(
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: crumbs.map((crumb, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: crumb.name,
+              item: crumb.url,
+            })),
+          },
+          'breadcrumb',
+        );
       },
       error: () => {
         this.loading.set(false);

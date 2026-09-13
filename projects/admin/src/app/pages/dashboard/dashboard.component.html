@@ -29,6 +29,19 @@
           {{ lowStockFailed ? 'Unavailable' : (lowStockCount === 0 ? 'All stocked' : 'View products →') }}
         </p>
       </a>
+      <a *ngIf="!incompleteFailed" routerLink="/products" [queryParams]="{ incomplete: 'true' }"
+         class="flex min-w-[160px] flex-1 flex-col gap-1 rounded-xl p-5 bg-surface dark:bg-surface border shadow-sm hover:shadow-md transition-shadow"
+         [ngClass]="(incompleteCount ?? 0) > 0 ? 'border-amber-400' : 'border-ink dark:border-ink'"
+         title="Products missing details required by their item type">
+        <p class="text-ink dark:text-ink text-sm font-medium">Needs attention</p>
+        <p class="text-2xl font-bold leading-tight" [ngClass]="(incompleteCount ?? 0) > 0 ? 'text-amber-600' : 'text-ink dark:text-ink'">
+          {{ incompleteCount !== null ? incompleteCount : '...' }}
+        </p>
+        <p class="text-xs font-bold mt-1 flex items-center" [ngClass]="(incompleteCount ?? 0) > 0 ? 'text-amber-600' : 'text-ink/60'">
+          <span class="material-symbols-outlined text-xs mr-1">rule</span>
+          {{ incompleteCount === 0 ? 'All products complete' : 'Missing required details →' }}
+        </p>
+      </a>
       <div class="flex min-w-[160px] flex-1 flex-col gap-1 rounded-xl p-5 bg-surface dark:bg-surface border border-ink dark:border-ink shadow-sm">
         <p class="text-ink dark:text-ink text-sm font-medium">Total Customers</p>
         <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">{{ stats ? stats.totalCustomers : '...' }}</p>

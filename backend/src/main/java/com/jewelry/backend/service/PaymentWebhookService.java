@@ -3,6 +3,7 @@ package com.jewelry.backend.service;
 import com.jewelry.backend.dto.TransactionFailureRequest;
 import com.jewelry.backend.entity.GiftCard;
 import com.jewelry.backend.entity.Order;
+import com.jewelry.backend.entity.TreasureInstallment;
 import com.jewelry.backend.repository.GiftCardRepository;
 import com.razorpay.Utils;
 import org.json.JSONObject;
@@ -20,8 +21,9 @@ import java.util.logging.Logger;
  * The controller verifies first ({@link #verify}) and answers 401 when the
  * secret is unset or the signature is wrong; once verified it always answers
  * 200 so Razorpay does not retry a message we have already seen. Processing
- * is idempotent: an order that is already PAID and a gift card that is
- * already ACTIVE are left alone.
+ * is idempotent: an order that is already PAID, a gift card that is
+ * already ACTIVE and a treasure installment that is already PAID are left
+ * alone.
  */
 @Service
 public class PaymentWebhookService {
@@ -42,6 +44,9 @@ public class PaymentWebhookService {
 
     @Autowired
     PaymentService paymentService;
+
+    @Autowired
+    TreasurePlanService treasurePlanService;
 
     /** True only when a secret is configured and the HMAC in the header matches the raw body. */
     public boolean verify(String body, String signature) {
@@ -112,9 +117,16 @@ public class PaymentWebhookService {
             return;
         }
 
+        Optional<TreasureInstallment> installment = treasurePlanService.confirmPaidByRazorpayOrder(razorpayOrderId, razorpayPaymentId);
+        if (installment.isPresent()) {
+            LOGGER.info("Razorpay " + eventName + ": treasure installment " + installment.get().getId()
+                    + " is " + installment.get().getStatus());
+            return;
+        }
+
         // The checkout may not have created the order yet; createOrder will
         // verify the signature itself and mark the order PAID when it runs.
-        LOGGER.info("Razorpay " + eventName + " for " + razorpayOrderId + " matched no order or gift card yet");
+        LOGGER.info("Razorpay " + eventName + " for " + razorpayOrderId + " matched no order, gift card or treasure installment yet");
     }
 
     private void handleFailed(JSONObject payment, String razorpayOrderId, String razorpayPaymentId) {

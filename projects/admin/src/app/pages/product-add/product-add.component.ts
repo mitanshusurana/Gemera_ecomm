@@ -134,6 +134,14 @@ export class ProductAddComponent implements OnInit {
   // valueChanges handlers do not treat the load as a user edit.
   isPatchingForm = false;
 
+  /**
+   * FINISH-CONTRACT §1: set once an existing product has been patched in, so
+   * `syncItemType` can snapshot the rules it fails as loaded (before any edit).
+   */
+  private productLoaded = false;
+  /** Labels the loaded product was missing for its item type; empty for new or complete products. */
+  loadedMissingFields: string[] = [];
+
   // --- Item-type driven state ---
   itemType: ItemType | null = null;
   visibleSections: ReadonlySet<FormSection> = new Set();
@@ -201,6 +209,10 @@ export class ProductAddComponent implements OnInit {
 
   get showStoneTable(): boolean {
     return this.itemType === 'SET' || (this.itemType === 'JEWELLERY' && this.productForm.get('plainOrStudded')?.value === 'STUDDED');
+  }
+
+  scrollToRequiredSummary() {
+    document.getElementById('required-summary')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   /** Labels of required fields that are still empty; drives the summary above Save. */
@@ -519,6 +531,16 @@ export class ProductAddComponent implements OnInit {
     this.applyDynamicValidators();
     this.recomputeDerived();
     if (opts.userInitiated) this.generateNameAndDescription();
+
+    // Legacy products may fail rules added after they were saved. Snapshot the
+    // list as loaded (whichever of product / categories arrived last) so the
+    // form flags it immediately rather than waiting for a keystroke.
+    if (!opts.userInitiated && this.productLoaded) {
+      this.loadedMissingFields = this.missingFields;
+      if (this.loadedMissingFields.length) {
+        this.productForm.markAllAsTouched();
+      }
+    }
   }
 
   /** Defaults derived from the category branch, only filled when empty. */
@@ -655,6 +677,7 @@ export class ProductAddComponent implements OnInit {
     // A stored name/description is the owner's choice; never regenerate over it.
     this.isNameManuallyEdited = !!product.name;
     this.isDescriptionManuallyEdited = !!product.description;
+    this.productLoaded = true;
     this.syncItemType({ userInitiated: false });
   }
 

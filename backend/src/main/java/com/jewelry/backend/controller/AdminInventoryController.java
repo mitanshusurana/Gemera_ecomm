@@ -1,16 +1,19 @@
 package com.jewelry.backend.controller;
 
+import com.jewelry.backend.dto.IncompleteProductDTO;
 import com.jewelry.backend.dto.ProductDTO;
 import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.service.InventoryAlertService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -36,5 +39,13 @@ public class AdminInventoryController {
                 .map(entityMapper::toProductDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(items);
+    }
+
+    @GetMapping("/incomplete")
+    @Operation(summary = "Products that fail their item-type rules, with the missing fields as labels (ordered by name, max 2000)")
+    public ResponseEntity<Page<IncompleteProductDTO>> incomplete(
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size) {
+        return ResponseEntity.ok(inventoryAlertService.findIncomplete(page, size));
     }
 }

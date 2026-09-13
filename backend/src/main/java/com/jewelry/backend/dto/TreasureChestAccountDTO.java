@@ -15,5 +15,7 @@ public class TreasureChestAccountDTO {
     private BigDecimal balance;
     private String status;
     private LocalDate startDate;
-    private LocalDate nextDueDate;
+    private LocalDate nextDueDate; // null once the plan has MATURED
+    private BigDecimal bonusAmount; // installmentAmount x bonus months, added on maturity
+    private BigDecimal maturityAmount; // installmentAmount x totalInstallments + bonusAmount
 }

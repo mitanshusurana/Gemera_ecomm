@@ -51,6 +51,21 @@
     <button (click)="clearLowStockFilter()" class="font-medium underline hover:no-underline">Show all</button>
   </div>
 
+  <!-- Incomplete-products banner (FINISH-CONTRACT §1) -->
+  <div *ngIf="incompleteOnly" class="mt-4 flex items-center justify-between rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+    <span>
+      <span class="font-semibold">Products missing required details:</span>
+      <ng-container *ngIf="!incompleteError && !loading">
+        {{ incompleteTotalElements }} product{{ incompleteTotalElements === 1 ? '' : 's' }} fail{{ incompleteTotalElements === 1 ? 's' : '' }} the checks for their item type.
+      </ng-container>
+      <ng-container *ngIf="loading">checking the catalogue…</ng-container>
+    </span>
+    <button (click)="clearIncompleteFilter()" class="font-medium underline hover:no-underline">Show all</button>
+  </div>
+  <div *ngIf="incompleteOnly && incompleteError" class="mt-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+    {{ incompleteError }}
+  </div>
+
   <!-- Scanner Modal/Area -->
   <div *ngIf="isScannerOpen" class="mt-4 p-4 border-2 border-dashed border-ink rounded-lg bg-surface flex flex-col items-center">
     <div class="flex justify-between w-full mb-2">
@@ -110,6 +125,11 @@
                         <span *ngIf="product.featured" class="px-1.5 py-0.5 rounded text-[9px] bg-amber-100 text-amber-800 font-semibold">★ Featured</span>
                         <span *ngIf="product.bisHallmark" class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-100 text-emerald-800 font-semibold">BIS</span>
                       </div>
+                      <!-- Missing required fields for this item type (incomplete view only) -->
+                      <div *ngIf="incompleteOnly && missingFieldsOf(product).length > 0" class="flex flex-wrap items-center gap-1 mt-1.5" [attr.aria-label]="'Missing: ' + missingFieldsOf(product).join(', ')">
+                        <span *ngFor="let field of missingFieldsOf(product)"
+                              class="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-300">{{ field }}</span>
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -129,10 +149,14 @@
                     </div>
                   </div>
                 </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ product.category }}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink font-medium">{{ product.price | currency:'INR':'symbol' }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">
-                  <div class="flex items-center gap-2">
+                  {{ product.category }}
+                  <span *ngIf="incompleteOnly && product.itemType" class="ml-1 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700">{{ product.itemType }}</span>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink font-medium">{{ product.price != null ? (product.price | currency:'INR':'symbol') : '—' }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">
+                  <span *ngIf="product.stock == null" class="text-ink/50">—</span>
+                  <div *ngIf="product.stock != null" class="flex items-center gap-2">
                     <span [class.text-red-600]="product.stock <= 0" [class.text-amber-600]="product.stock > 0 && product.stock < 5" [class.text-emerald-600]="product.stock >= 5" class="font-semibold">
                       {{ product.stock }} in stock
                     </span>
@@ -152,11 +176,30 @@
               </tr>
               <tr *ngIf="visibleProducts.length === 0 && !loading">
                 <td colspan="7" class="px-6 py-4 text-center text-sm text-ink">
-                  {{ lowStockOnly ? 'No products are at or below their reorder point.' : 'No products found.' }}
+                  <ng-container *ngIf="incompleteOnly && !incompleteError">
+                    <span class="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                      <span class="material-symbols-outlined text-base">check_circle</span>
+                      Every product passes its item-type checks
+                    </span>
+                  </ng-container>
+                  <ng-container *ngIf="incompleteOnly && incompleteError">Nothing to show.</ng-container>
+                  <ng-container *ngIf="!incompleteOnly">
+                    {{ lowStockOnly ? 'No products are at or below their reorder point.' : 'No products found.' }}
+                  </ng-container>
                 </td>
               </tr>
             </tbody>
           </table>
+          <!-- Server pager for the incomplete view -->
+          <div *ngIf="incompleteOnly && incompleteTotalPages > 1" class="flex items-center justify-between border-t border-gray-200 bg-surface px-4 py-3 text-sm text-ink">
+            <span>Page {{ incompletePage + 1 }} of {{ incompleteTotalPages }} · {{ incompleteTotalElements }} total</span>
+            <div class="flex gap-2">
+              <button type="button" (click)="goToIncompletePage(incompletePage - 1)" [disabled]="incompletePage === 0 || loading"
+                      class="rounded-md border border-ink px-3 py-1 font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50">Previous</button>
+              <button type="button" (click)="goToIncompletePage(incompletePage + 1)" [disabled]="incompletePage + 1 >= incompleteTotalPages || loading"
+                      class="rounded-md border border-ink px-3 py-1 font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50">Next</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

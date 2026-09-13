@@ -1,6 +1,7 @@
 package com.jewelry.backend.service;
 
 import com.jewelry.backend.config.EmailTemplateSeeder;
+import com.jewelry.backend.dto.IncompleteProductDTO;
 import com.jewelry.backend.entity.GlobalSetting;
 import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.entity.StockNotification;
@@ -10,14 +11,19 @@ import com.jewelry.backend.repository.StockNotificationRepository;
 import com.jewelry.backend.util.EmailText;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -38,8 +44,14 @@ public class InventoryAlertService {
     public static final String THRESHOLD_SETTING = "inventory.lowStockThreshold";
     public static final int DEFAULT_THRESHOLD = 1;
 
+    /** Upper bound on the incomplete-products list (FINISH-CONTRACT.md section 1). */
+    public static final int INCOMPLETE_CAP = 2000;
+
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    ProductRulesService productRulesService;
 
     @Autowired
     StockNotificationRepository stockNotificationRepository;
@@ -75,6 +87,61 @@ public class InventoryAlertService {
     @Transactional(readOnly = true)
     public List<Product> findLowStock() {
         return productRepository.findLowStock(lowStockThreshold());
+    }
+
+    /**
+     * Catalogue health (FINISH-CONTRACT.md section 1): every product that
+     * fails at least one of its item-type rules, ordered by name, capped at
+     * {@link #INCOMPLETE_CAP} rows and paged in memory. The catalogue is
+     * small, so the whole table is scanned; item types are resolved once per
+     * distinct category name rather than once per product.
+     */
+    @Transactional(readOnly = true)
+    public Page<IncompleteProductDTO> findIncomplete(int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 200);
+
+        Map<String, String> itemTypeByCategory = new HashMap<>();
+        List<IncompleteProductDTO> incomplete = new ArrayList<>();
+        for (Product product : productRepository.findAll()) {
+            String itemType = resolveItemTypeCached(product, itemTypeByCategory);
+            List<String> missing = productRulesService.missingFields(product, itemType);
+            if (missing.isEmpty()) {
+                continue;
+            }
+            incomplete.add(new IncompleteProductDTO(
+                    product.getId(),
+                    product.getSku(),
+                    product.getName(),
+                    product.getCategory(),
+                    itemType,
+                    missing));
+        }
+
+        incomplete.sort(Comparator.comparing(
+                (IncompleteProductDTO dto) -> dto.getName() == null ? "" : dto.getName().toLowerCase(Locale.ROOT))
+                .thenComparing(dto -> dto.getSku() == null ? "" : dto.getSku()));
+        if (incomplete.size() > INCOMPLETE_CAP) {
+            incomplete = new ArrayList<>(incomplete.subList(0, INCOMPLETE_CAP));
+        }
+
+        int from = Math.min(safePage * safeSize, incomplete.size());
+        int to = Math.min(from + safeSize, incomplete.size());
+        return new PageImpl<>(new ArrayList<>(incomplete.subList(from, to)),
+                PageRequest.of(safePage, safeSize), incomplete.size());
+    }
+
+    /** Item type per (category, subCategory) pair, memoised across the scan; a null result is cached too. */
+    private String resolveItemTypeCached(Product product, Map<String, String> cache) {
+        String category = product.getCategory() == null ? "" : product.getCategory().trim().toLowerCase(Locale.ROOT);
+        String subCategory = product.getSubCategory() == null ? "" : product.getSubCategory().trim().toLowerCase(Locale.ROOT);
+        String key = category + "|" + subCategory;
+        if (cache.containsKey(key)) {
+            return cache.get(key);
+        }
+        String itemType = productRulesService.resolveItemType(product);
+        cache.put(key, itemType);
+        return itemType;
     }
 
     /** Daily 09:00 digest. */

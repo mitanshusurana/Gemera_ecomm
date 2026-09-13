@@ -36,6 +36,19 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
   /** §5: `?lowStock=true` filters client-side to stock <= (reorderPointAlert ?? 1). */
   lowStockOnly = false;
 
+  /**
+   * FINISH-CONTRACT §1: `?incomplete=true` loads GET /admin/inventory/incomplete
+   * (server-paged) instead of the catalogue. Rows are IncompleteProductDTOs:
+   * { id, sku, name, category, itemType, missingFields } and carry no price or stock.
+   */
+  incompleteOnly = false;
+  incompletePage = 0;
+  readonly incompletePageSize = 50;
+  incompleteTotalPages = 0;
+  incompleteTotalElements = 0;
+  /** Set when the incomplete endpoint is unavailable, so the page explains rather than showing an empty table. */
+  incompleteError: string | null = null;
+
   get printQueueCount() {
     return this.productService.getPrintQueue().length;
   }
@@ -48,6 +61,8 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     this.route.queryParamMap.subscribe(params => {
       this.lowStockOnly = params.get('lowStock') === 'true';
+      this.incompleteOnly = params.get('incomplete') === 'true';
+      this.incompletePage = 0;
       this.loadProducts(this.searchQuery);
     });
   }
@@ -67,11 +82,18 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** What the table shows: the API rows, narrowed to low-stock ones when asked. */
   get visibleProducts(): any[] {
-    return this.lowStockOnly ? this.products.filter(isLowStock) : this.products;
+    return this.lowStockOnly && !this.incompleteOnly ? this.products.filter(isLowStock) : this.products;
   }
 
+  /** Incomplete rows carry no stock, so the low-stock highlight only applies to catalogue rows. */
   isLowStock(product: any): boolean {
-    return isLowStock(product);
+    return !this.incompleteOnly && isLowStock(product);
+  }
+
+  /** The `missingFields` labels of an incomplete row, tolerant of a missing or malformed array. */
+  missingFieldsOf(product: any): string[] {
+    const fields = product?.missingFields;
+    return Array.isArray(fields) ? fields.filter((f: unknown) => typeof f === 'string' && f.trim() !== '') : [];
   }
 
   qrUrl(sku: string): string {
@@ -80,6 +102,16 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   clearLowStockFilter() {
     this.router.navigate(['/products'], { queryParams: {} });
+  }
+
+  clearIncompleteFilter() {
+    this.router.navigate(['/products'], { queryParams: {} });
+  }
+
+  goToIncompletePage(page: number) {
+    if (page < 0 || (this.incompleteTotalPages > 0 && page >= this.incompleteTotalPages)) return;
+    this.incompletePage = page;
+    this.loadIncomplete();
   }
 
   // ---------------------------------------------------------------------
@@ -203,6 +235,10 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadProducts(search?: string) {
+    if (this.incompleteOnly) {
+      this.loadIncomplete();
+      return;
+    }
     this.loading = true;
     // The low-stock filter is applied client-side, so pull a large page for it.
     const opts = this.lowStockOnly ? { page: 0, size: 500 } : {};
@@ -213,6 +249,31 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to load products', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  /** FINISH-CONTRACT §1: one server page of products failing their item-type rules. */
+  private loadIncomplete() {
+    this.loading = true;
+    this.incompleteError = null;
+    this.productService.getIncomplete(this.incompletePage, this.incompletePageSize).subscribe({
+      next: (data: any) => {
+        const rows = Array.isArray(data) ? data : (data?.content ?? []);
+        this.products = Array.isArray(rows) ? rows : [];
+        this.incompleteTotalElements = typeof data?.totalElements === 'number' ? data.totalElements : this.products.length;
+        this.incompleteTotalPages = typeof data?.totalPages === 'number' ? data.totalPages : (this.products.length ? 1 : 0);
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load incomplete products', err);
+        this.products = [];
+        this.incompleteTotalElements = 0;
+        this.incompleteTotalPages = 0;
+        this.incompleteError = err?.status === 404
+          ? 'The catalogue-health check is not available on this server yet.'
+          : 'Could not load the catalogue-health check. Try again in a moment.';
         this.loading = false;
       }
     });

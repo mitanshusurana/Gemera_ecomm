@@ -71,6 +71,37 @@ public class ProductRulesService {
             COMPONENT, "CP",
             SET, "SE");
 
+    /**
+     * Human labels for the field keys used in the "missing" lists below; the
+     * save-path error message keeps the API field names, the dry run
+     * ({@link #missingFields}) shows these instead.
+     */
+    private static final Map<String, String> FIELD_LABELS = Map.ofEntries(
+            Map.entry("name", "Name"),
+            Map.entry("category", "Category"),
+            Map.entry("price", "Price"),
+            Map.entry("price (or unitPrice to derive it)", "Price (or unit price to derive it)"),
+            Map.entry("saleMode", "Sale mode"),
+            Map.entry("plainOrStudded", "Plain or studded"),
+            Map.entry("metalDetails.metalType", "Metal type"),
+            Map.entry("metalDetails.metalPurity", "Metal purity"),
+            Map.entry("grossWeight", "Gross weight (g)"),
+            Map.entry("stoneDetails (at least one stone for STUDDED)", "Stone details (at least one stone for a studded piece)"),
+            Map.entry("caratWeight", "Carat weight"),
+            Map.entry("species or variety", "Species or variety"),
+            Map.entry("shape", "Shape"),
+            Map.entry("pieceCount", "Piece count"),
+            Map.entry("lotTotalCaratWeight", "Lot total carat weight"),
+            Map.entry("roughWeight", "Rough weight"),
+            Map.entry("roughMaterial", "Rough material"),
+            Map.entry("gemstoneMaterial", "Gemstone material"),
+            Map.entry("heightInches or dimensions", "Height (in) or dimensions"),
+            Map.entry("material", "Material"),
+            Map.entry("beadSizeMm", "Bead size (mm)"),
+            Map.entry("strandLengthInches", "Strand length (in)"),
+            Map.entry("componentType", "Component type"),
+            Map.entry("pieceCount or quantityPcs", "Piece count or quantity (pcs)"));
+
     @Autowired
     CategoryRepository categoryRepository;
 
@@ -226,6 +257,85 @@ public class ProductRulesService {
         }
 
         return itemType;
+    }
+
+    /**
+     * Dry run of the checks in {@link #applyRules}: nothing is changed, nothing
+     * is thrown, and the result lists the rules the product fails as human
+     * labels ("Gross weight (g)", "Metal purity", ...). Empty when the product
+     * would save. Resolves the item type itself; use the two-argument overload
+     * when the caller already has it (bulk scans).
+     */
+    public List<String> missingFields(Product product) {
+        return missingFields(product, resolveItemType(product));
+    }
+
+    /**
+     * Same as {@link #missingFields(Product)} with the item type already
+     * resolved (null for an unknown category, which skips the per-type rules
+     * exactly as the save path does).
+     */
+    public List<String> missingFields(Product product, String itemType) {
+        List<String> keys = new ArrayList<>();
+        if (product == null) {
+            return keys;
+        }
+        boolean known = itemType != null;
+        String effectiveType = known ? itemType : JEWELLERY;
+
+        String saleMode = normalizeUpper(product.getSaleMode());
+        if (saleMode == null) {
+            saleMode = defaultSaleMode(effectiveType);
+        }
+        boolean saleModeValid = ALL_SALE_MODES.contains(saleMode)
+                && (!known || allowedSaleModes(itemType).contains(saleMode));
+        if (!saleModeValid) {
+            keys.add("saleMode");
+        }
+
+        String plainOrStudded = normalizeUpper(product.getPlainOrStudded());
+        if (plainOrStudded != null
+                && ((!PLAIN.equals(plainOrStudded) && !STUDDED.equals(plainOrStudded))
+                    || (known && !JEWELLERY.equals(itemType)))) {
+            keys.add("plainOrStudded");
+        }
+
+        if (isBlank(product.getName())) {
+            keys.add("name");
+        }
+        if (isBlank(product.getCategory())) {
+            keys.add("category");
+        }
+        if (product.getPrice() == null && !(saleModeValid && canDerivePrice(product, saleMode))) {
+            keys.add(PER_PIECE.equals(saleMode) ? "price" : "price (or unitPrice to derive it)");
+        }
+        if (known) {
+            keys.addAll(missingTypeFields(product, itemType, plainOrStudded));
+        }
+
+        List<String> labels = new ArrayList<>(keys.size());
+        for (String key : keys) {
+            labels.add(FIELD_LABELS.getOrDefault(key, key));
+        }
+        return labels;
+    }
+
+    /** True when {@link #derivePrice} would produce a price without throwing. */
+    private static boolean canDerivePrice(Product product, String saleMode) {
+        if (product.getUnitPrice() == null) {
+            return false;
+        }
+        switch (saleMode) {
+            case PER_CARAT:
+                return firstNonNull(product.getLotTotalCaratWeight(), product.getCaratWeight(), product.getRoughWeight()) != null;
+            case PER_GRAM: {
+                MetalDetail metal = product.getMetalDetails();
+                return firstNonNull(product.getTotalWeight(), product.getGrossWeight(),
+                        metal != null ? metal.getNetWeight() : null) != null;
+            }
+            default:
+                return true;
+        }
     }
 
     /**

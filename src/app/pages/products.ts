@@ -692,12 +692,32 @@ export class ProductsComponent implements OnInit {
                     totalPages: res.totalPages
                 }));
                 this.isLoading.set(false);
+                this.publishItemList(res.content);
             },
             error: (err) => {
                 console.error('Error loading products', err);
                 this.isLoading.set(false);
             }
         });
+  }
+
+  /** ItemList JSON-LD for the products on the current page (finish contract, section 3). */
+  private publishItemList(products: Product[]): void {
+    const offset = (this.pagination().currentPage - 1) * this.pagination().pageSize;
+    this.seoService.setJsonLd(
+      {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        numberOfItems: products.length,
+        itemListElement: products.map((product, index) => ({
+          '@type': 'ListItem',
+          position: offset + index + 1,
+          url: this.seoService.absoluteUrl('/products/' + product.id),
+          name: product.name,
+        })),
+      },
+      'itemlist',
+    );
   }
 
   /** Maps the UI state onto GET /products params (API contract, section 2). */

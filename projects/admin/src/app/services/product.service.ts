@@ -33,6 +33,15 @@ export class ProductService {
     return this.http.get(`${environment.apiUrl}/admin/inventory/low-stock`);
   }
 
+  /**
+   * FINISH-CONTRACT §1: products that no longer pass their item-type rules.
+   * Spring `Page<IncompleteProductDTO { id, sku, name, category, itemType, missingFields }>`.
+   */
+  getIncomplete(page = 0, size = 50): Observable<any> {
+    const params = new HttpParams().set('page', String(page)).set('size', String(size));
+    return this.http.get(`${environment.apiUrl}/admin/inventory/incomplete`, { params });
+  }
+
   createProduct(product: any): Observable<any> {
     return this.http.post(this.apiUrl, product);
   }

@@ -13,6 +13,22 @@
 
   <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="space-y-6 bg-surface shadow sm:rounded-lg p-6">
 
+    <!-- Loaded product fails its item-type rules (FINISH-CONTRACT §1): same list as the footer summary, shown up front. -->
+    <div *ngIf="isEditMode && loadedMissingFields.length > 0 && missingFields.length > 0" role="status"
+         class="rounded-md border border-amber-300 bg-amber-50 p-3">
+      <p class="text-sm font-medium text-amber-900">
+        This product is missing details required for its item type{{ itemType ? ' (' + itemTypeLabel[itemType] + ')' : '' }}. It cannot be saved until they are filled in:
+      </p>
+      <ul class="mt-1 flex flex-wrap gap-2">
+        <li *ngFor="let field of missingFields" class="rounded bg-white px-2 py-0.5 text-xs text-amber-900 ring-1 ring-inset ring-amber-300">{{ field }}</li>
+      </ul>
+      <button type="button" (click)="scrollToRequiredSummary()" class="mt-2 inline-block text-xs font-medium text-amber-800 underline hover:no-underline">Jump to the summary above Save</button>
+    </div>
+    <div *ngIf="isEditMode && loadedMissingFields.length > 0 && missingFields.length === 0" role="status"
+         class="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+      All required details for this item type are now filled in. Save to clear it from "Needs attention".
+    </div>
+
     <!-- Step 1: Basic Information -->
     <div class="border-b border-gray-200 pb-8 mb-8">
       <h3 class="text-lg font-bold leading-6 text-ink mb-4">1. Basic Information</h3>
@@ -1011,7 +1027,7 @@
         {{ errorMessage }}
       </div>
 
-      <div *ngIf="missingFields.length > 0" class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3">
+      <div *ngIf="missingFields.length > 0" id="required-summary" class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3">
         <p class="text-sm font-medium text-amber-900">Still required before saving{{ itemType ? ' (' + itemTypeLabel[itemType] + ')' : '' }}:</p>
         <ul class="mt-1 flex flex-wrap gap-2">
           <li *ngFor="let field of missingFields" class="rounded bg-white px-2 py-0.5 text-xs text-amber-900 ring-1 ring-inset ring-amber-300">{{ field }}</li>
