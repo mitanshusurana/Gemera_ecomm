@@ -75,7 +75,19 @@ export class AuthService {
     const token = this.getToken();
     const claims = token ? this.decodeToken(token) : null;
     const role = claims?.['role'] ?? claims?.['roles'] ?? null;
-    return typeof role === 'string' ? role : null;
+    if (typeof role === 'string' && role) return role;
+    // Tokens issued before the API added the role claim carry only the subject;
+    // fall back to the user blob stored at login.
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('admin_user');
+        const user = raw ? JSON.parse(raw) : null;
+        if (user && typeof user.role === 'string') return user.role;
+      } catch {
+        // Corrupt blob: treat as no role.
+      }
+    }
+    return null;
   }
 
   isAdmin(): boolean {

@@ -14,6 +14,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { unitLabel, unitRate, totalSuffix } from "../core/product-display";
 import { VirtualTryOnComponent } from "../components/virtual-try-on";
 import { EmailNotificationService } from "../services/email-notification.service";
+import { CategoryLabelService } from "../services/category-label.service";
 
 interface SimulatorMetal {
   id: string;
@@ -243,7 +244,7 @@ interface SimulatorShape {
                 </button>
               </div>
 
-              <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block mb-1">{{ item.category }}</span>
+              <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block mb-1">{{ categoryLabels.label(item.category) }}</span>
               <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2 line-clamp-1">{{ item.name }}</h3>
             </div>
 
@@ -360,7 +361,7 @@ interface SimulatorShape {
         [isOpen]="tryOnOpen()"
         [productImageUrl]="tryOnProduct()?.imageUrl || tryOnProduct()?.images?.[0]"
         [productName]="tryOnProduct()?.name || 'Solitaire Masterpiece'"
-        [productCategory]="tryOnProduct()?.category || 'Fine Jewelry'"
+        [productCategory]="categoryLabels.label(tryOnProduct()?.category) || 'Fine Jewelry'"
         (closeEvent)="tryOnOpen.set(false)">
       </app-virtual-try-on>
 
@@ -374,6 +375,7 @@ export class HomeComponent implements OnInit {
   private seoService = inject(SeoService);
   private toastService = inject(ToastService);
   private emailService = inject(EmailNotificationService);
+  categoryLabels = inject(CategoryLabelService);
 
   /** Hero, simulator and featured-section copy from the `home.*` settings, defaults applied. */
   home = this.settingService.homeContent;

@@ -12,6 +12,7 @@ import { Product, ProductDetail, ProductFacets } from "../core/models";
 import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
+import { CategoryLabelService } from '../services/category-label.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { unitLabel, unitRate, totalSuffix, secondaryLine, gemGradeLabel } from '../core/product-display';
 
@@ -90,7 +91,7 @@ const EMPTY_FACETS: ProductFacets = {
               [class.text-[#7a7a7a]]="!isCategorySelected(cat)"
               class="px-4 py-2 rounded-full border border-[#e0e0e0] whitespace-nowrap active-press transition-all hover:text-[#1d1d1f]"
             >
-              {{ cat }}
+              {{ categoryLabels.label(cat) }}
             </button>
           </div>
 
@@ -242,7 +243,7 @@ const EMPTY_FACETS: ProductFacets = {
               <!-- Meta & Name -->
               <div class="flex justify-between items-start mb-1">
                 <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block">
-                  {{ product.category }}
+                  {{ categoryLabels.label(product.category) }}
                 </span>
                 <span *ngIf="product.isBestSeller || (product.reviewCount && product.reviewCount > 50)" class="bg-[#D4AF37]/15 text-[#D4AF37] text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase">Best Seller</span>
               </div>
@@ -560,6 +561,7 @@ export class ProductsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
   wishlistService = inject(WishlistService);
+  categoryLabels = inject(CategoryLabelService);
 
   /** Filter values the catalogue actually contains; groups with no values are hidden. */
   facets = signal<ProductFacets>(EMPTY_FACETS);

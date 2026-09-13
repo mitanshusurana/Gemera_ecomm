@@ -35,18 +35,31 @@ public class JwtUtils {
 
     public String generateJwtToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-
-        return Jwts.builder()
-                .setSubject((userPrincipal.getUsername()))
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), SignatureAlgorithm.HS256)
-                .compact();
+        String role = userPrincipal.getAuthorities().stream()
+                .map(a -> a.getAuthority())
+                .filter(a -> a != null && !a.isBlank())
+                .findFirst()
+                .orElse("USER");
+        return generateTokenForUser(userPrincipal.getUsername(), role);
     }
 
     public String generateTokenFromEmail(String email) {
+        return generateTokenForUser(email, "USER");
+    }
+
+    /**
+     * Subject is the email; the "role" claim lets the admin SPA decide whether to
+     * render its shell without a round trip. Authorisation is still enforced
+     * server-side on every endpoint.
+     */
+    public String generateTokenForUser(String email, String role) {
+        String normalized = (role == null || role.isBlank()) ? "USER" : role;
+        if (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring(5);
+        }
         return Jwts.builder()
                 .setSubject(email)
+                .claim("role", normalized)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), SignatureAlgorithm.HS256)

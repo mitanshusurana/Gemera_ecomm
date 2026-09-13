@@ -46,6 +46,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { SeoService } from '../services/seo.service';
 import { VirtualTryOnComponent } from '../components/virtual-try-on';
 import { WishlistService } from '../services/wishlist.service';
+import { CategoryLabelService } from '../services/category-label.service';
 
 /**
  * Keys each item-type block of Master Specifications renders. They are hidden
@@ -1057,7 +1058,7 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
                 <div class="relative overflow-hidden aspect-square bg-[#f5f5f7] rounded-[12px] mb-4">
                   <img [ngSrc]="prod.images?.[0] || prod.imageUrl || ''" fill sizes="280px" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" [alt]="prod.name">
                 </div>
-                <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block mb-1">{{ prod.category }}</span>
+                <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block mb-1">{{ categoryLabels.label(prod.category) }}</span>
                 <h3 class="font-sans font-semibold text-base text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2 line-clamp-1">{{ prod.name }}</h3>
                 <span class="text-sm font-semibold text-[#1d1d1f]">{{ prod.price | currencyConvert }}</span>
               </div>
@@ -1164,7 +1165,7 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
         [isOpen]="tryOnOpen()"
         [productImageUrl]="product()?.imageUrl || product()?.images?.[0]"
         [productName]="product()?.name || ''"
-        [productCategory]="product()?.category || ''"
+        [productCategory]="categoryLabels.label(product()?.category)"
         (closeEvent)="tryOnOpen.set(false)"
       ></app-virtual-try-on>
 
@@ -1183,6 +1184,7 @@ export class ProductDetailComponent
   implements OnInit, OnDestroy, AfterViewInit
 {
   private productService = inject(ProductService);
+  categoryLabels = inject(CategoryLabelService);
   private cartService = inject(CartService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);

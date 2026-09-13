@@ -7,6 +7,7 @@ import { User, Order, Address, OrderItem } from '../core/models';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
 import { ToastService } from '../services/toast.service';
+import { CategoryLabelService } from '../services/category-label.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { COUNTRIES } from '../core/countries';
 
@@ -296,7 +297,7 @@ import { COUNTRIES } from '../core/countries';
                       </button>
                     </div>
                     <div>
-                      <p class="text-xs text-[#D4AF37] font-semibold uppercase tracking-wider mb-1">{{ item.category }}</p>
+                      <p class="text-xs text-[#D4AF37] font-semibold uppercase tracking-wider mb-1">{{ categoryLabels.label(item.category) }}</p>
                       <h3 class="font-sans font-medium text-base text-[#1d1d1f] mb-3">{{ item.name }}</h3>
                       <div class="flex justify-between items-center">
                         <span class="font-sans font-semibold text-xl text-[#1d1d1f]">{{ item.price | currencyConvert }}</span>
@@ -421,6 +422,7 @@ export class AccountComponent implements OnInit {
   private orderService = inject(OrderService);
   private toastService = inject(ToastService);
   wishlistService = inject(WishlistService);
+  categoryLabels = inject(CategoryLabelService);
 
   constructor() {
     effect(() => {

@@ -86,7 +86,7 @@ public class AuthService {
                 .map(refreshTokenService::verifyExpiration)
                 .map(com.jewelry.backend.entity.RefreshToken::getUser)
                 .map(user -> {
-                    String token = jwtUtils.generateTokenFromEmail(user.getEmail());
+                    String token = jwtUtils.generateTokenForUser(user.getEmail(), user.getRole());
                     return new AuthResponse(token, requestRefreshToken, entityMapper.toUserDTO(user));
                 })
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));

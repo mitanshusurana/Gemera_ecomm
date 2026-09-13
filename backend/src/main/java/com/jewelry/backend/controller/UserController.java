@@ -10,6 +10,7 @@ import com.jewelry.backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -87,18 +88,21 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
     }
 
+    @Transactional
     @GetMapping("/wishlist")
     @Operation(summary = "Get user wishlist")
     public ResponseEntity<com.jewelry.backend.dto.CartDTO> getWishlist(Principal principal) {
         return ResponseEntity.ok(entityMapper.toCartDTO(cartService.getCart(principal.getName())));
     }
 
+    @Transactional
     @PostMapping("/wishlist")
     @Operation(summary = "Add item to wishlist")
     public ResponseEntity<com.jewelry.backend.dto.CartDTO> addToWishlist(@RequestBody com.jewelry.backend.dto.WishlistRequest request, Principal principal) {
         return ResponseEntity.ok(entityMapper.toCartDTO(cartService.addToWishlist(principal.getName(), UUID.fromString(request.getProductId()))));
     }
 
+    @Transactional
     @DeleteMapping("/wishlist/{productId}")
     @Operation(summary = "Remove item from wishlist")
     public ResponseEntity<com.jewelry.backend.dto.CartDTO> removeFromWishlist(@PathVariable UUID productId, Principal principal) {

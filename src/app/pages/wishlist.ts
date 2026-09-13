@@ -7,6 +7,7 @@ import { CartService } from "../services/cart.service";
 import { ProductService } from "../services/product.service";
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
+import { CategoryLabelService } from '../services/category-label.service';
 import { ProductDetail } from "../core/models";
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
@@ -68,7 +69,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             <!-- Product Info -->
             <div>
               <p class="text-xs text-[#D4AF37] font-semibold uppercase tracking-wider mb-1">
-                {{ product.category }}
+                {{ categoryLabels.label(product.category) }}
               </p>
               <h3 class="font-sans font-medium text-base text-[#1d1d1f] mb-3 line-clamp-2 group-hover:text-[#D4AF37] transition-colors">
                 {{ product.name }}
@@ -106,6 +107,7 @@ export class WishlistComponent implements OnInit {
   private toastService = inject(ToastService);
   private titleService = inject(Title);
   private router = inject(Router);
+  categoryLabels = inject(CategoryLabelService);
 
   // Quick View State
   quickViewOpen = signal(false);

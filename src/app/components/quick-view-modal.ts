@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, HostListener, ViewChild, ElementRef } from "@angular/core";
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, HostListener, ViewChild, ElementRef, inject } from "@angular/core";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ProductDetail } from "../core/models";
+import { CategoryLabelService } from "../services/category-label.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { unitLabel, unitRate, totalSuffix, secondaryLine } from "../core/product-display";
 
@@ -81,7 +82,7 @@ import { unitLabel, unitRate, totalSuffix, secondaryLine } from "../core/product
                 <span
                   class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37]"
                 >
-                  {{ product?.category || "Product" }}
+                  {{ categoryLabels.label(product?.category) || "Product" }}
                 </span>
               </div>
 
@@ -210,6 +211,8 @@ export class QuickViewModalComponent {
     product: any;
   }>();
   @Output() viewDetails = new EventEmitter<string>();
+
+  categoryLabels = inject(CategoryLabelService);
 
   // Sale-mode display helpers (core/product-display) exposed to the template.
   readonly unitLabel = unitLabel;

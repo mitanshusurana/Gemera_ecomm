@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.UUID;
@@ -16,6 +17,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/cart")
 @Tag(name = "Cart", description = "Cart management APIs")
+// Mapping Cart -> CartDTO touches lazy collections; open-in-view is off, so keep the session open here.
+@Transactional
 public class CartController {
 
     @Autowired
