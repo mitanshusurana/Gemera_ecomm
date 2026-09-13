@@ -1,5 +1,6 @@
 package com.jewelry.backend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
@@ -24,7 +25,11 @@ public class Product extends BaseEntity {
     private Boolean isVerified; // Added for Admin Verification Step
     private Integer stock;
     private String videoUrl;
-    private String model3dUrl; // Added for 3D model path/URL
+
+    // Home-page "Curated Masterworks" flag. The column default lets
+    // ddl-auto=update back-fill existing rows without a migration tool.
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean featured;
 
     // SEO Metadata
     private String seoTitle;

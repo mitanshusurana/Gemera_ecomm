@@ -3,6 +3,7 @@ package com.jewelry.backend.controller;
 import com.jewelry.backend.dto.CategoryResponse;
 import com.jewelry.backend.dto.DeliveryAvailability;
 import com.jewelry.backend.dto.ProductDTO;
+import com.jewelry.backend.dto.ProductFacetsDTO;
 import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.service.ProductService;
@@ -52,14 +53,30 @@ public class ProductController {
     @Operation(summary = "Get paginated products")
     public ResponseEntity<Page<ProductDTO>> getAllProducts(
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> subCategory,
+            @RequestParam(required = false) List<String> metals,
+            @RequestParam(required = false) List<String> stones,
+            @RequestParam(required = false) List<String> designStyles,
+            @RequestParam(required = false) List<String> occasions,
+            @RequestParam(required = false) List<String> styles,
             @RequestParam(required = false) BigDecimal priceMin,
             @RequestParam(required = false) BigDecimal priceMax,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) List<String> occasions,
-            @RequestParam(required = false) List<String> styles,
+            @RequestParam(required = false) Boolean certified,
+            @RequestParam(required = false) Boolean featured,
             @Parameter(hidden = true) Pageable pageable) {
-        Page<Product> products = productService.getAllProducts(category, priceMin, priceMax, search, occasions, styles, pageable);
+        Page<Product> products = productService.getAllProducts(
+                category, subCategory, metals, stones, designStyles, occasions, styles,
+                priceMin, priceMax, search, certified, featured, pageable);
         return ResponseEntity.ok(products.map(entityMapper::toProductDTO));
+    }
+
+    // Declared before the "/{id}" mappings so "facets" is never parsed as a UUID.
+    @GetMapping("/facets")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Distinct filter values (categories, metals, stones, price range) across the catalogue")
+    public ResponseEntity<ProductFacetsDTO> getFacets() {
+        return ResponseEntity.ok(productService.getFacets());
     }
 
     @GetMapping("/delivery-availability")

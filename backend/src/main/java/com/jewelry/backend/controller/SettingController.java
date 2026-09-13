@@ -1,45 +1,61 @@
 package com.jewelry.backend.controller;
 
-import com.jewelry.backend.entity.Setting;
-import com.jewelry.backend.repository.SettingRepository;
+import com.jewelry.backend.entity.GlobalSetting;
+import com.jewelry.backend.repository.GlobalSettingRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+/**
+ * Public, read-only view of {@code global_settings}. Only the keys the
+ * storefront needs are exposed; everything else (tax rates, credentials,
+ * internal toggles) stays behind {@code /api/v1/admin/settings}.
+ */
 @RestController
 @RequestMapping("/api/v1/settings")
+@Tag(name = "Settings", description = "Public storefront settings")
 public class SettingController {
 
-    private final SettingRepository settingRepository;
+    private static final Set<String> PUBLIC_KEYS = Set.of(
+            "companyAddress",
+            "companyPhone",
+            "companyEmail",
+            "whatsappNumber",
+            "companyInstagram",
+            "companyFacebook",
+            "usdRate",
+            "eurRate",
+            "gbpRate");
 
-    public SettingController(SettingRepository settingRepository) {
-        this.settingRepository = settingRepository;
+    private static final String PUBLIC_PREFIX = "home.";
+
+    private final GlobalSettingRepository globalSettingRepository;
+
+    public SettingController(GlobalSettingRepository globalSettingRepository) {
+        this.globalSettingRepository = globalSettingRepository;
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, String>> getAllSettings() {
-        List<Setting> settings = settingRepository.findAll();
-        Map<String, String> settingsMap = settings.stream()
-            .filter(s -> s.getKeyName() != null)
-            .collect(Collectors.toMap(
-                Setting::getKeyName, 
-                s -> s.getValue() == null ? "" : s.getValue()
-            ));
-        return ResponseEntity.ok(settingsMap);
+    @Operation(summary = "Get public settings (contact details, currency rates, home.* content)")
+    public ResponseEntity<Map<String, String>> getPublicSettings() {
+        Map<String, String> result = new TreeMap<>();
+        for (GlobalSetting setting : globalSettingRepository.findAll()) {
+            String key = setting.getSettingKey();
+            if (key != null && isPublic(key)) {
+                result.put(key, setting.getSettingValue() == null ? "" : setting.getSettingValue());
+            }
+        }
+        return ResponseEntity.ok(result);
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> updateSettings(@RequestBody Map<String, String> updates) {
-        updates.forEach((key, value) -> {
-            Setting setting = settingRepository.findByKeyName(key).orElse(new Setting());
-            setting.setKeyName(key);
-            setting.setValue(value);
-            settingRepository.save(setting);
-        });
-        return ResponseEntity.ok().build();
+    static boolean isPublic(String key) {
+        return PUBLIC_KEYS.contains(key) || key.startsWith(PUBLIC_PREFIX);
     }
 }

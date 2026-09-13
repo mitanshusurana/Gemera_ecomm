@@ -30,9 +30,9 @@ import { SeoService } from '../services/seo.service';
         <section class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div>
             <span class="text-xs text-[#D4AF37] uppercase tracking-[0.15em] font-semibold block mb-2">Our Origins</span>
-            <h2 class="font-display font-semibold text-3xl md:text-4xl text-[#1d1d1f] mb-6">The House of Gemera</h2>
+            <h2 class="font-display font-semibold text-3xl md:text-4xl text-[#1d1d1f] mb-6">The House of Caratloop</h2>
             <p class="text-sm text-[#7a7a7a] leading-relaxed mb-4">
-              Founded in 1985, Gemera was established with a singular directive: to acquire the world's most exceptional conflict-free gemstones and transform them into heirloom solitaires.
+              Founded in 1985, Caratloop was established with a singular directive: to acquire the world's most exceptional conflict-free gemstones and transform them into heirloom solitaires.
             </p>
             <p class="text-sm text-[#7a7a7a] leading-relaxed">
               Every ring, pendant, and bracelet is crafted in solid 18K Gold or Platinum and accompanied by independent GIA laboratory certifications.

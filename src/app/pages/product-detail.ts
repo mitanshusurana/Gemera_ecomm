@@ -10,7 +10,7 @@ import {
   ViewEncapsulation,
   ViewChild,
   ElementRef,
-  CUSTOM_ELEMENTS_SCHEMA,
+  effect,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
@@ -36,6 +36,7 @@ import { AppointmentService } from '../services/appointment.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SeoService } from '../services/seo.service';
 import { VirtualTryOnComponent } from '../components/virtual-try-on';
+import { WishlistService } from '../services/wishlist.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -50,7 +51,6 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
     CurrencyConvertPipe,
     VirtualTryOnComponent
   ],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -270,19 +270,6 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                       </button>
 
                     </div>
-                  </div>
-
-                  <!-- 3D Model Item -->
-                  <div *ngIf="product()?.model3dUrl" class="w-full h-full shrink-0 snap-center relative flex items-center justify-center">
-                    <model-viewer
-                      [src]="product()?.model3dUrl"
-                      auto-rotate
-                      camera-controls
-                      ar
-                      shadow-intensity="1"
-                      class="w-full h-full"
-                      style="--poster-color: transparent;"
-                    ></model-viewer>
                   </div>
 
                   <!-- Image Items -->
@@ -513,9 +500,29 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                     <span>({{ product()?.reviewCount }} reviews)</span>
                   </div>
                 </div>
-                <h1 class="font-display font-semibold text-3xl text-[#1d1d1f] leading-tight">
-                  {{ product()?.name }}
-                </h1>
+                <div class="flex items-start justify-between gap-4">
+                  <h1 class="font-display font-semibold text-3xl text-[#1d1d1f] leading-tight">
+                    {{ product()?.name }}
+                  </h1>
+                  <button
+                    type="button"
+                    (click)="toggleWishlist()"
+                    [attr.aria-label]="isWishlisted() ? 'Remove from wishlist' : 'Save to wishlist'"
+                    [attr.aria-pressed]="isWishlisted()"
+                    [title]="isWishlisted() ? 'Remove from wishlist' : 'Save to wishlist'"
+                    class="shrink-0 w-10 h-10 rounded-full border flex items-center justify-center transition-colors active-press"
+                    [class.border-[#e0e0e0]]="!isWishlisted()"
+                    [class.text-[#1d1d1f]]="!isWishlisted()"
+                    [class.hover:border-[#D4AF37]]="!isWishlisted()"
+                    [class.border-red-200]="isWishlisted()"
+                    [class.bg-red-50]="isWishlisted()"
+                    [class.text-red-600]="isWishlisted()"
+                  >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" [attr.fill]="isWishlisted() ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <!-- Price Section -->
@@ -666,13 +673,37 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
                 >
                   Instant 1-Click Checkout
                 </button>
-                <button
+                <!-- Restock notification (out of stock only) -->
+                <form
                   *ngIf="product()?.stock === 0"
-                  (click)="notifyMe()"
-                  class="btn-apple-pill w-full !py-3 text-xs !bg-[#1c1c1e] !text-white"
+                  (ngSubmit)="notifyMe()"
+                  class="bg-[#f5f5f7] border border-[#e0e0e0] rounded-[18px] p-4 space-y-3"
                 >
-                  Notify Me When Restocked
-                </button>
+                  <span class="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider block">Notify Me When Restocked</span>
+                  <p *ngIf="notifySubscribed()" class="text-xs text-emerald-700 font-semibold">
+                    ✓ We will email {{ notifyEmail() }} when this piece is back in stock.
+                  </p>
+                  <div *ngIf="!notifySubscribed()" class="flex gap-2">
+                    <input
+                      type="email"
+                      name="notifyEmail"
+                      [ngModel]="notifyEmail()"
+                      (ngModelChange)="notifyEmail.set($event)"
+                      placeholder="you@example.com"
+                      aria-label="Email address for restock notification"
+                      autocomplete="email"
+                      required
+                      class="flex-1 min-w-0 bg-white border border-[#e0e0e0] rounded-full px-5 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37]"
+                    />
+                    <button
+                      type="submit"
+                      [disabled]="notifySubmitting()"
+                      class="btn-apple-pill text-xs !py-2 !px-4 !bg-[#1c1c1e] !text-white whitespace-nowrap"
+                    >
+                      {{ notifySubmitting() ? 'Saving…' : 'Notify me' }}
+                    </button>
+                  </div>
+                </form>
 
                 <!-- Concierge Appointment Strip -->
                 <div class="grid grid-cols-2 gap-2 pt-2">
@@ -777,9 +808,12 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
           <span class="text-xs font-semibold text-[#D4AF37]">{{ currentPriceBreakup()?.total || currentPrice() | currencyConvert }}</span>
         </div>
         <div class="flex items-center gap-3">
-          <button (click)="handleAddToCart()" class="btn-apple-pill text-xs !py-2 !px-5">
+          <button *ngIf="product()?.stock !== 0" (click)="handleAddToCart()" class="btn-apple-pill text-xs !py-2 !px-5">
             Add to Bag
           </button>
+          <span *ngIf="product()?.stock === 0" class="bg-red-100 text-red-800 text-[11px] font-semibold px-3 py-1 rounded-full border border-red-300">
+            Out of Stock
+          </span>
         </div>
       </div>
 
@@ -914,6 +948,25 @@ export class ProductDetailComponent
   // Reviews & Recommendations
   private authService = inject(AuthService);
   private reviewService = inject(ReviewService);
+  private wishlistService = inject(WishlistService);
+
+  isWishlisted = computed(() => {
+    const id = this.product()?.id;
+    return !!id && this.wishlistService.has(id);
+  });
+
+  // Restock notification form (shown only when out of stock)
+  notifyEmail = signal('');
+  notifySubmitting = signal(false);
+  notifySubscribed = signal(false);
+
+  /** Prefill the restock email from the signed-in user, without overwriting what they typed. */
+  private prefillNotifyEmail = effect(() => {
+    const email = this.authService.currentUser()?.email;
+    if (email && !this.notifyEmail()) {
+      this.notifyEmail.set(email);
+    }
+  });
   
   reviews = signal<Review[]>([]);
   similarProducts = signal<Product[]>([]);
@@ -1189,7 +1242,7 @@ export class ProductDetailComponent
         // Update SEO Tags
         this.seoService.updateTags({
           title: `${data.name} | Caratloop`,
-          description: data.description || `Buy ${data.name} online at Gemera.`,
+          description: data.description || `Buy ${data.name} online at Caratloop.`,
           image: data.imageUrl || (data.images && data.images.length > 0 ? data.images[0] : ''),
           url: `https://www.caratloop.com/products/${data.id}`
         });
@@ -1341,22 +1394,48 @@ export class ProductDetailComponent
   private http = inject(HttpClient);
 
   notifyMe(): void {
-    const email = prompt('Please enter your email to be notified when back in stock:');
-    if (email && email.includes('@')) {
-      this.http.post(`${environment.apiUrl}/notifications/stock`, {
-        email: email,
-        productId: this.product()?.id
-      }).subscribe({
-        next: () => {
-          this.toastService.show('We will notify you when this item is back in stock!', 'success');
-        },
-        error: () => {
-          this.toastService.show('Failed to subscribe. Please try again.', 'error');
-        }
-      });
-    } else if (email) {
+    const productId = this.product()?.id;
+    if (!productId || this.notifySubmitting()) return;
+
+    const email = this.notifyEmail().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       this.toastService.show('Please enter a valid email address.', 'error');
+      return;
     }
+
+    this.notifySubmitting.set(true);
+    this.http.post(`${environment.apiUrl}/notifications/stock`, { email, productId }).subscribe({
+      next: () => {
+        this.notifySubmitting.set(false);
+        this.notifySubscribed.set(true);
+        this.toastService.show('We will notify you when this item is back in stock!', 'success');
+      },
+      error: () => {
+        this.notifySubmitting.set(false);
+        this.toastService.show('Failed to subscribe. Please try again.', 'error');
+      }
+    });
+  }
+
+  toggleWishlist(): void {
+    const productId = this.product()?.id;
+    if (!productId) return;
+
+    if (!this.authService.isAuthenticated()) {
+      this.toastService.show('Sign in to save items', 'info');
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    const wasSaved = this.wishlistService.has(productId);
+    this.wishlistService.toggle(productId).subscribe({
+      next: () => {
+        this.toastService.show(wasSaved ? 'Removed from wishlist' : 'Saved to wishlist', 'success');
+      },
+      error: () => {
+        this.toastService.show('Could not update your wishlist', 'error');
+      }
+    });
   }
   openTryAtHome() {
     this.appointmentType.set('TRY_AT_HOME');

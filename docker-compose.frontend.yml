@@ -1,13 +1,10 @@
-version: '3.8'
-
-# FRONTEND VM DEPLOYMENT
-# Usage: docker compose -f docker-compose.frontend.yml up -d
-
+# STOREFRONT VM: Angular SSR server.
+# Usage: cp .env.frontend.example .env.frontend && edit && docker compose -f docker-compose.frontend.yml up -d
 services:
   frontend:
     image: ${FRONTEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-frontend:latest}
     container_name: jewelry-frontend
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env.frontend
     ports:

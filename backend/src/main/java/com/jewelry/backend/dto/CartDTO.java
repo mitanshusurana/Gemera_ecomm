@@ -15,6 +15,9 @@ public class CartDTO {
     private BigDecimal total;
     private BigDecimal discount;
     private String appliedCoupon;
+    private String appliedGiftCard;
+    private BigDecimal giftCardAmount;
+    private BigDecimal totalBeforeGiftCard;
     private boolean giftWrap;
     private List<ProductDTO> wishlist;
 }

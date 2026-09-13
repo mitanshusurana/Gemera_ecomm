@@ -185,14 +185,14 @@ import { ToastService } from "../services/toast.service";
                 <span class="text-sm text-[#1d1d1f]">
                   I agree to the
                   <a
-                    href="#"
+                    routerLink="/terms"
                     class="text-[#D4AF37] hover:underline font-medium"
                   >
                     Terms of Service
                   </a>
                   and
                   <a
-                    href="#"
+                    routerLink="/privacy"
                     class="text-[#D4AF37] hover:underline font-medium"
                   >
                     Privacy Policy

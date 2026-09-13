@@ -49,7 +49,7 @@ public class EntityMapper {
         product.setIsVerified(dto.getIsVerified());
         product.setStock(dto.getStock());
         product.setVideoUrl(dto.getVideoUrl());
-        product.setModel3dUrl(dto.getModel3dUrl());
+        product.setFeatured(dto.getFeatured());
 
         product.setSeoTitle(dto.getSeoTitle());
         product.setSeoDescription(dto.getSeoDescription());
@@ -242,7 +242,7 @@ public class EntityMapper {
         dto.setIsVerified(product.getIsVerified());
         dto.setStock(product.getStock());
         dto.setVideoUrl(product.getVideoUrl());
-        dto.setModel3dUrl(product.getModel3dUrl());
+        dto.setFeatured(Boolean.TRUE.equals(product.getFeatured()));
 
         dto.setSeoTitle(product.getSeoTitle());
         dto.setSeoDescription(product.getSeoDescription());
@@ -401,6 +401,12 @@ public class EntityMapper {
         dto.setTotal(cart.getTotal());
         dto.setDiscount(cart.getDiscount());
         dto.setAppliedCoupon(cart.getAppliedCoupon());
+        dto.setAppliedGiftCard(cart.getAppliedGiftCard());
+        java.math.BigDecimal giftCardAmount = cart.getGiftCardAmount() == null
+                ? java.math.BigDecimal.ZERO : cart.getGiftCardAmount();
+        dto.setGiftCardAmount(giftCardAmount);
+        dto.setTotalBeforeGiftCard(cart.getTotal() == null
+                ? giftCardAmount : cart.getTotal().add(giftCardAmount));
         dto.setGiftWrap(cart.isGiftWrap());
 
         if (cart.getItems() != null) {
@@ -475,6 +481,9 @@ public class EntityMapper {
         dto.setShipping(order.getShipping());
         dto.setDiscount(order.getDiscount());
         dto.setAppliedCoupon(order.getAppliedCoupon());
+        dto.setAppliedGiftCard(order.getAppliedGiftCard());
+        dto.setGiftCardAmount(order.getGiftCardAmount() == null
+                ? java.math.BigDecimal.ZERO : order.getGiftCardAmount());
         dto.setInternalNotes(order.getInternalNotes());
 
         return dto;

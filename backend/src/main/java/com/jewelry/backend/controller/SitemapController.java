@@ -29,7 +29,7 @@ public class SitemapController {
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
         // Base URL (In production, inject this from properties)
-        String baseUrl = "https://www.gemera.com";
+        String baseUrl = "https://www.caratloop.com";
 
         // Static routes
         String[] staticRoutes = {"", "/products", "/about", "/contact", "/login", "/register"};

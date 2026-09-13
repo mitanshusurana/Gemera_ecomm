@@ -5,8 +5,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-rfq-detail',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './rfq-detail.component.html',
-  styleUrl: './rfq-detail.component.css'
+  templateUrl: './rfq-detail.component.html'
 })
 export class RfqDetailComponent {
 }

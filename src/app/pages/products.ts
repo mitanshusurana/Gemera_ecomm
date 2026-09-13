@@ -1,17 +1,38 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef } from "@angular/core";
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, DestroyRef, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ActivatedRoute, RouterLink, Router } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { SeoService } from '../services/seo.service';
-import { ProductService } from "../services/product.service";
+import { ProductService, ProductFilters, ProductSort } from "../services/product.service";
 import { CartService } from "../services/cart.service";
-import { Product, ProductDetail } from "../core/models";
+import { WishlistService } from "../services/wishlist.service";
+import { AuthService } from "../services/auth.service";
+import { Product, ProductDetail, ProductFacets } from "../core/models";
 import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
-import { OCCASIONS_LIST } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
+
+type ListFilter = 'subCategory' | 'metal' | 'stone' | 'designStyle' | 'occasion' | 'style';
+
+interface PriceRange {
+  id: string;
+  min: number;
+  max: number | null;
+}
+
+const EMPTY_FACETS: ProductFacets = {
+  categories: [],
+  subCategories: [],
+  metals: [],
+  stones: [],
+  designStyles: [],
+  occasions: [],
+  styles: [],
+  priceMin: null,
+  priceMax: null,
+};
 
 @Component({
   selector: "app-products",
@@ -21,11 +42,11 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   template: `
     <!-- APPLE DESIGN SYSTEM: FINE JEWELRY ARCHIVES (100% SCREEN UTILIZATION) -->
     <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
-      
+
       <!-- Top Parchment Header -->
       <section class="bg-[#f5f5f7] border-b border-[#e0e0e0] py-12 px-6 text-center">
         <div class="max-w-[980px] mx-auto">
-          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2 block">Gemera Fine Jewelry</span>
+          <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2 block">Caratloop Fine Jewelry</span>
           <h1 class="font-display font-semibold text-3xl sm:text-4xl md:text-5xl text-[#1d1d1f] tracking-tight leading-tight mb-3">
             Fine Jewels & Gemstones.
           </h1>
@@ -38,7 +59,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
       <!-- Sticky Apple Option Chip Carousel Bar (Tier 2 Sub-Nav) -->
       <nav class="sub-nav-frosted sticky top-[96px] z-30 py-3.5 px-4 md:px-12 border-b border-[#e0e0e0]">
         <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
-          
+
           <!-- Category Option Chips (Horizontal Scrollable) -->
           <div class="flex items-center space-x-2 overflow-x-auto hide-scrollbar py-1 text-xs">
             <button
@@ -55,17 +76,17 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             </button>
 
             <button
-              *ngFor="let cat of categories"
-              (click)="toggleCategory(cat.name)"
-              [class.bg-white]="selectedCategories().includes(cat.name)"
-              [class.border-[#D4AF37]]="selectedCategories().includes(cat.name)"
-              [class.border-2]="selectedCategories().includes(cat.name)"
-              [class.text-[#1d1d1f]]="selectedCategories().includes(cat.name)"
-              [class.font-semibold]="selectedCategories().includes(cat.name)"
-              [class.text-[#7a7a7a]]="!selectedCategories().includes(cat.name)"
+              *ngFor="let cat of facets().categories"
+              (click)="toggleCategory(cat)"
+              [class.bg-white]="isCategorySelected(cat)"
+              [class.border-[#D4AF37]]="isCategorySelected(cat)"
+              [class.border-2]="isCategorySelected(cat)"
+              [class.text-[#1d1d1f]]="isCategorySelected(cat)"
+              [class.font-semibold]="isCategorySelected(cat)"
+              [class.text-[#7a7a7a]]="!isCategorySelected(cat)"
               class="px-4 py-2 rounded-full border border-[#e0e0e0] whitespace-nowrap active-press transition-all hover:text-[#1d1d1f]"
             >
-              {{ cat.displayName }}
+              {{ cat }}
             </button>
           </div>
 
@@ -80,16 +101,16 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
       <!-- Utility Filter Control Bar (100% Screen Width) -->
       <section class="bg-white border-b border-[#e0e0e0] py-4 px-4 md:px-12">
         <div class="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
-          
+
           <!-- Left Controls: Search Pill & Quick Metals -->
           <div class="flex flex-wrap items-center gap-3">
-            
+
             <!-- Pill Search Input -->
             <div class="relative w-48 sm:w-64">
               <input
                 type="text"
                 [(ngModel)]="searchQuery"
-                (keyup.enter)="loadProducts()"
+                (keyup.enter)="onSearch()"
                 placeholder="Search gems, rings..."
                 aria-label="Search products"
                 class="w-full bg-[#f5f5f7] border border-[#e0e0e0] rounded-full pl-9 pr-4 py-2 text-xs text-[#1d1d1f] focus:outline-none focus:border-[#D4AF37] transition-colors"
@@ -100,10 +121,11 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
             </div>
 
             <!-- Metal Quick Chips -->
-            <div class="hidden lg:flex items-center space-x-2">
+            <div *ngIf="facets().metals.length > 0" class="hidden lg:flex items-center space-x-2">
               <button
-                *ngFor="let metal of metalTypes"
+                *ngFor="let metal of facets().metals"
                 (click)="toggleFilter('metal', metal)"
+                [attr.aria-pressed]="selectedMetals().includes(metal)"
                 [class.bg-[#1d1d1f]]="selectedMetals().includes(metal)"
                 [class.text-white]="selectedMetals().includes(metal)"
                 [class.border-[#1d1d1f]]="selectedMetals().includes(metal)"
@@ -127,7 +149,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
           <!-- Right Controls: Refine Modal Trigger & Sort -->
           <div class="flex items-center space-x-3 ml-auto">
-            
+
             <!-- Refine Drawer Toggle Pill -->
             <button
               (click)="isFilterOpen.set(true)"
@@ -153,8 +175,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 <option value="newest">Sort: Newest</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="popular">Most Popular</option>
-                <option value="rated">Best Rated</option>
+                <option value="name">Name: A to Z</option>
               </select>
               <span class="absolute right-3 top-2.5 pointer-events-none text-[#7a7a7a]">▾</span>
             </div>
@@ -166,7 +187,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
       <!-- Main Content: Full Screen Width 4-Column Utility Grid (100% Screen Utilization) -->
       <div class="max-w-[1440px] mx-auto px-4 md:px-12 py-8">
-        
+
         <!-- Results Counter Bar -->
         <div class="flex justify-between items-center mb-6 text-xs text-[#7a7a7a]">
           <p>
@@ -197,8 +218,15 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 </div>
 
                 <!-- Circular Floating Translucent Actions -->
-                <button (click)="handleWishlist($event, product.id)" class="absolute top-3 left-3 w-8 h-8 bg-white/80 hover:bg-white text-[#1d1d1f] rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm" title="Wishlist" aria-label="Add to wishlist">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button
+                  (click)="handleWishlist($event, product.id)"
+                  [attr.aria-pressed]="wishlistService.has(product.id)"
+                  [attr.aria-label]="wishlistService.has(product.id) ? 'Remove from wishlist' : 'Add to wishlist'"
+                  [title]="wishlistService.has(product.id) ? 'Saved' : 'Wishlist'"
+                  [class.text-[#D4AF37]]="wishlistService.has(product.id)"
+                  [class.text-[#1d1d1f]]="!wishlistService.has(product.id)"
+                  class="absolute top-3 left-3 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center backdrop-blur-md transition-all active-press shadow-sm">
+                  <svg class="w-3.5 h-3.5" [attr.fill]="wishlistService.has(product.id) ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                   </svg>
                 </button>
@@ -266,8 +294,8 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
         <!-- Pagination Controls -->
         <div *ngIf="!isLoading() && products().length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-[#e0e0e0] pt-6">
           <div class="flex items-center gap-2 text-xs text-[#7a7a7a]">
-            <label>Items per page:</label>
-            <select [(ngModel)]="pagination().pageSize" (change)="onPageSizeChange()" aria-label="Items per page" class="bg-white border border-[#e0e0e0] rounded-full px-3 py-1 text-xs">
+            <label for="products-page-size">Items per page:</label>
+            <select id="products-page-size" [(ngModel)]="pagination().pageSize" (change)="onPageSizeChange()" aria-label="Items per page" class="bg-white border border-[#e0e0e0] rounded-full px-3 py-1 text-xs">
               <option value="12">12</option>
               <option value="24">24</option>
               <option value="48">48</option>
@@ -302,7 +330,7 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 
         <div class="absolute inset-y-0 right-0 max-w-full flex pl-10">
           <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between p-6 overflow-y-auto">
-            
+
             <!-- Drawer Header -->
             <div>
               <div class="flex items-center justify-between border-b border-[#e0e0e0] pb-4 mb-6">
@@ -326,18 +354,39 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                       (change)="togglePriceRange(range.id)"
                       class="rounded border-[#e0e0e0] text-[#D4AF37] focus:ring-[#D4AF37]"
                     />
-                    <span>{{ range.label }}</span>
+                    <span *ngIf="range.min === 0 && range.max !== null">Under {{ range.max | currencyConvert }}</span>
+                    <span *ngIf="range.min > 0 && range.max !== null">{{ range.min | currencyConvert }} – {{ range.max | currencyConvert }}</span>
+                    <span *ngIf="range.max === null">{{ range.min | currencyConvert }}+</span>
                   </label>
                 </div>
               </div>
 
+              <!-- Collection / Sub-category -->
+              <div class="mb-6" *ngIf="facets().subCategories.length > 0">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Collection</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let sub of facets().subCategories"
+                    (click)="toggleFilter('subCategory', sub)"
+                    [attr.aria-pressed]="selectedSubCategories().includes(sub)"
+                    [class.bg-[#D4AF37]]="selectedSubCategories().includes(sub)"
+                    [class.text-black]="selectedSubCategories().includes(sub)"
+                    [class.font-semibold]="selectedSubCategories().includes(sub)"
+                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
+                  >
+                    {{ sub }}
+                  </button>
+                </div>
+              </div>
+
               <!-- Metal Types -->
-              <div class="mb-6">
+              <div class="mb-6" *ngIf="facets().metals.length > 0">
                 <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Metal Type</h4>
                 <div class="flex flex-wrap gap-2">
                   <button
-                    *ngFor="let metal of metalTypes"
+                    *ngFor="let metal of facets().metals"
                     (click)="toggleFilter('metal', metal)"
+                    [attr.aria-pressed]="selectedMetals().includes(metal)"
                     [class.bg-[#D4AF37]]="selectedMetals().includes(metal)"
                     [class.text-black]="selectedMetals().includes(metal)"
                     [class.font-semibold]="selectedMetals().includes(metal)"
@@ -348,31 +397,29 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 </div>
               </div>
 
-              <!-- Certifications -->
+              <!-- Certification -->
               <div class="mb-6">
                 <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Gem Certificate</h4>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    *ngFor="let cert of certificationsList"
-                    (click)="toggleFilter('certification', cert)"
-                    [class.bg-[#1d1d1f]]="selectedCertifications().includes(cert)"
-                    [class.text-white]="selectedCertifications().includes(cert)"
-                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
-                  >
-                    {{ cert }}
-                  </button>
-                </div>
+                <label class="flex items-center gap-3 cursor-pointer text-xs text-[#333333] hover:text-[#1d1d1f]">
+                  <input
+                    type="checkbox"
+                    [checked]="certifiedOnly()"
+                    (change)="toggleCertified()"
+                    class="rounded border-[#e0e0e0] text-[#D4AF37] focus:ring-[#D4AF37]"
+                  />
+                  <span>Certified only (lab report or certificate on file)</span>
+                </label>
               </div>
 
               <!-- Gemstone Types -->
-              <div class="mb-6" *ngIf="gemstoneTypes.length > 0">
+              <div class="mb-6" *ngIf="facets().stones.length > 0">
                 <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Gemstone Spec</h4>
                 <div class="space-y-2 max-h-40 overflow-y-auto hide-scrollbar">
-                  <label *ngFor="let gemstone of gemstoneTypes" class="flex items-center gap-3 cursor-pointer text-xs text-[#333333]">
+                  <label *ngFor="let gemstone of facets().stones" class="flex items-center gap-3 cursor-pointer text-xs text-[#333333]">
                     <input
                       type="checkbox"
                       [checked]="selectedGemstones().includes(gemstone)"
-                      (change)="toggleFilter('gemstone', gemstone)"
+                      (change)="toggleFilter('stone', gemstone)"
                       class="rounded border-[#e0e0e0] text-[#D4AF37] focus:ring-[#D4AF37]"
                     />
                     <span>{{ gemstone }}</span>
@@ -380,11 +427,45 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 </div>
               </div>
 
+              <!-- Design Style -->
+              <div class="mb-6" *ngIf="facets().designStyles.length > 0">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Design Style</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let style of facets().designStyles"
+                    (click)="toggleFilter('designStyle', style)"
+                    [attr.aria-pressed]="selectedDesignStyles().includes(style)"
+                    [class.bg-[#1d1d1f]]="selectedDesignStyles().includes(style)"
+                    [class.text-white]="selectedDesignStyles().includes(style)"
+                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
+                  >
+                    {{ style }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Style -->
+              <div class="mb-6" *ngIf="facets().styles.length > 0">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Style</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let style of facets().styles"
+                    (click)="toggleFilter('style', style)"
+                    [attr.aria-pressed]="selectedStyles().includes(style)"
+                    [class.bg-[#1d1d1f]]="selectedStyles().includes(style)"
+                    [class.text-white]="selectedStyles().includes(style)"
+                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
+                  >
+                    {{ style }}
+                  </button>
+                </div>
+              </div>
+
               <!-- Occasion -->
-              <div class="mb-6">
+              <div class="mb-6" *ngIf="facets().occasions.length > 0">
                 <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Occasion</h4>
                 <div class="space-y-2">
-                  <label *ngFor="let occasion of occasionsList" class="flex items-center gap-3 cursor-pointer text-xs text-[#333333]">
+                  <label *ngFor="let occasion of facets().occasions" class="flex items-center gap-3 cursor-pointer text-xs text-[#333333]">
                     <input
                       type="checkbox"
                       [checked]="selectedOccasions().includes(occasion)"
@@ -423,47 +504,57 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
   `,
 })
 export class ProductsComponent implements OnInit {
-  categories: any[] = [];
-  occasionsList = OCCASIONS_LIST;
-  gemstoneTypes: any[] = [];
-  metalTypes = ['Gold', 'Platinum', 'Silver', 'White Gold'];
-  certificationsList = ['GIA', 'IGI', 'AGS', 'BIS'];
-
   private productService = inject(ProductService);
   private cartService = inject(CartService);
+  private authService = inject(AuthService);
   private activatedRoute = inject(ActivatedRoute);
   private compareService = inject(CompareService);
   private toastService = inject(ToastService);
   private seoService = inject(SeoService);
   private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
+  wishlistService = inject(WishlistService);
+
+  /** Filter values the catalogue actually contains; groups with no values are hidden. */
+  facets = signal<ProductFacets>(EMPTY_FACETS);
 
   // State management
   isFilterOpen = signal(false);
-  // categories = signal<Category[]>([]); // Removed in favor of constant
   selectedCategories = signal<string[]>([]);
+  selectedSubCategories = signal<string[]>([]);
   selectedOccasions = signal<string[]>([]);
   selectedStyles = signal<string[]>([]);
+  selectedDesignStyles = signal<string[]>([]);
   selectedGemstones = signal<string[]>([]);
   selectedPriceRanges = signal<string[]>([]);
   selectedMetals = signal<string[]>([]);
-  selectedCertifications = signal<string[]>([]);
+  certifiedOnly = signal(false);
   searchQuery = signal<string>('');
   products = signal<Product[]>([]);
-  sortBy = "newest";
+  sortBy: ProductSort = "newest";
   isLoading = signal(false);
+
+  private readonly listSignals: Record<ListFilter, WritableSignal<string[]>> = {
+    subCategory: this.selectedSubCategories,
+    metal: this.selectedMetals,
+    stone: this.selectedGemstones,
+    designStyle: this.selectedDesignStyles,
+    occasion: this.selectedOccasions,
+    style: this.selectedStyles,
+  };
 
   trackByProductId(_index: number, product: Product): any {
     return product.id;
   }
 
-  // Price Ranges
-  priceRanges = [
-    { label: 'Under $10,000', min: 0, max: 10000, id: '0-10000' },
-    { label: '$10,000 - $25,000', min: 10000, max: 25000, id: '10000-25000' },
-    { label: '$25,000 - $50,000', min: 25000, max: 50000, id: '25000-50000' },
-    { label: '$50,000+', min: 50000, max: null, id: '50000-plus' }
+  // Price Ranges (INR; labels are rendered through the currency pipe)
+  priceRanges: PriceRange[] = [
+    { min: 0, max: 10000, id: '0-10000' },
+    { min: 10000, max: 25000, id: '10000-25000' },
+    { min: 25000, max: 50000, id: '25000-50000' },
+    { min: 50000, max: null, id: '50000-plus' }
   ];
-  
+
   // Quick View State
   quickViewOpen = signal(false);
   quickViewProduct = signal<ProductDetail | null>(null);
@@ -481,14 +572,12 @@ export class ProductsComponent implements OnInit {
     const pageSize = parseInt(pag.pageSize.toString(), 10) || 12;
     const start = (pag.currentPage - 1) * pageSize + 1;
     const end = Math.min(pag.currentPage * pageSize, total);
-    
+
     return {
       start: total === 0 ? 0 : start,
       end: end,
     };
   });
-
-  private router = inject(Router);
 
   ngOnInit(): void {
     this.seoService.updateTags({
@@ -505,25 +594,23 @@ export class ProductsComponent implements OnInit {
 
     this.seoService.setJsonLd(schema);
 
-
-    this.productService.getCategories().subscribe((res: any) => {
-      this.categories = res.categories;
-
-      // Find category with showGemstoneFields = true and use its subcategories
-      const gemstoneCat = this.categories.find(c => c.showGemstoneFields);
-      if (gemstoneCat && gemstoneCat.subcategories) {
-          this.gemstoneTypes = gemstoneCat.subcategories.map((sc: any) => sc.displayName);
-      } else {
-          this.gemstoneTypes = [];
-      }
-    });
+    this.productService.getFacets()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (facets) => {
+          this.facets.set({ ...EMPTY_FACETS, ...facets });
+          // Header/footer links pass lowercase slugs (?category=rings); snap the
+          // selection to the catalogue's spelling so the chip highlights.
+          this.selectedCategories.update(list => list.map(c => this.canonicalCategory(c)));
+        },
+        error: (err) => console.error('Error loading product facets', err)
+      });
 
     this.activatedRoute.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
       if (params["category"]) {
-        const categoryId = params["category"];
-        this.selectedCategories.set([categoryId]);
+        this.selectedCategories.set([this.canonicalCategory(params["category"])]);
       }
       this.loadProducts();
     });
@@ -531,21 +618,7 @@ export class ProductsComponent implements OnInit {
 
   loadProducts(): void {
     this.isLoading.set(true);
-    const filters = {
-        category: this.selectedCategories().length > 0 ? this.selectedCategories()[0] : undefined,
-        sortBy: this.sortBy === "newest" ? "newest" : 
-                this.sortBy.startsWith("price") ? "price" : 
-                this.sortBy === "popular" ? "popular" :
-                this.sortBy === "rated" ? "rating" : "newest",
-        order: this.sortBy === "price-high" || this.sortBy === "popular" || this.sortBy === "rated" ? "desc" : "asc",
-        // Pass custom filters to API (mock service will likely ignore but good for structure)
-        occasions: this.selectedOccasions().join(','),
-        styles: this.selectedStyles().join(','),
-        subCategory: this.selectedGemstones().length > 0 ? this.selectedGemstones().join(',') : undefined,
-        metals: this.selectedMetals().join(','),
-        certifications: this.selectedCertifications().join(','),
-        search: this.searchQuery() || undefined
-    };
+    const filters = this.buildFilters();
 
     // API uses 0-indexed pages
     this.productService.getProducts(this.pagination().currentPage - 1, this.pagination().pageSize, filters)
@@ -560,64 +633,81 @@ export class ProductsComponent implements OnInit {
                 }));
                 this.isLoading.set(false);
             },
-            error: () => {
+            error: (err) => {
+                console.error('Error loading products', err);
                 this.isLoading.set(false);
             }
         });
   }
 
-  toggleCategory(categoryId: string): void {
-    if (categoryId === "all") {
+  /** Maps the UI state onto GET /products params (API contract, section 2). */
+  private buildFilters(): ProductFilters {
+    const price = this.selectedPriceBounds();
+    return {
+      category: this.selectedCategories()[0],
+      subCategory: this.selectedSubCategories(),
+      metals: this.selectedMetals(),
+      stones: this.selectedGemstones(),
+      designStyles: this.selectedDesignStyles(),
+      occasions: this.selectedOccasions(),
+      styles: this.selectedStyles(),
+      priceMin: price.min,
+      priceMax: price.max,
+      search: this.searchQuery().trim() || undefined,
+      certified: this.certifiedOnly() || undefined,
+      sort: this.sortBy,
+    };
+  }
+
+  /** Overall min/max across every selected tier; an open-ended tier drops the max. */
+  private selectedPriceBounds(): { min?: number; max?: number } {
+    const ranges = this.priceRanges.filter(r => this.selectedPriceRanges().includes(r.id));
+    if (ranges.length === 0) return {};
+    const min = Math.min(...ranges.map(r => r.min));
+    const openEnded = ranges.some(r => r.max === null);
+    const max = openEnded ? undefined : Math.max(...ranges.map(r => r.max as number));
+    return { min: min > 0 ? min : undefined, max };
+  }
+
+  private canonicalCategory(value: string): string {
+    const match = this.facets().categories.find(c => c.toLowerCase() === value.toLowerCase());
+    return match ?? value;
+  }
+
+  isCategorySelected(category: string): boolean {
+    return this.selectedCategories().some(c => c.toLowerCase() === category.toLowerCase());
+  }
+
+  onSearch(): void {
+    this.pagination.update(p => ({ ...p, currentPage: 1 }));
+    this.loadProducts();
+  }
+
+  toggleCategory(category: string): void {
+    if (category === "all") {
       this.selectedCategories.set([]);
     } else {
       const current = this.selectedCategories();
-      if (current.includes(categoryId)) {
-        this.selectedCategories.set(current.filter((id) => id !== categoryId));
+      if (this.isCategorySelected(category)) {
+        this.selectedCategories.set(current.filter((c) => c.toLowerCase() !== category.toLowerCase()));
       } else {
-        this.selectedCategories.set([...current, categoryId]);
+        this.selectedCategories.set([...current, category]);
       }
     }
     this.pagination.update(p => ({ ...p, currentPage: 1 }));
     this.loadProducts();
   }
 
-  toggleFilter(type: 'occasion' | 'style' | 'gemstone' | 'metal' | 'certification', value: string): void {
-      if (type === 'occasion') {
-          const current = this.selectedOccasions();
-          if (current.includes(value)) {
-              this.selectedOccasions.set(current.filter(v => v !== value));
-          } else {
-              this.selectedOccasions.set([...current, value]);
-          }
-      } else if (type === 'style') {
-          const current = this.selectedStyles();
-          if (current.includes(value)) {
-              this.selectedStyles.set(current.filter(v => v !== value));
-          } else {
-              this.selectedStyles.set([...current, value]);
-          }
-      } else if (type === 'gemstone') {
-          const current = this.selectedGemstones();
-          if (current.includes(value)) {
-              this.selectedGemstones.set(current.filter(v => v !== value));
-          } else {
-              this.selectedGemstones.set([...current, value]);
-          }
-      } else if (type === 'metal') {
-          const current = this.selectedMetals();
-          if (current.includes(value)) {
-              this.selectedMetals.set(current.filter(v => v !== value));
-          } else {
-              this.selectedMetals.set([...current, value]);
-          }
-      } else if (type === 'certification') {
-          const current = this.selectedCertifications();
-          if (current.includes(value)) {
-              this.selectedCertifications.set(current.filter(v => v !== value));
-          } else {
-              this.selectedCertifications.set([...current, value]);
-          }
-      }
+  toggleFilter(type: ListFilter, value: string): void {
+      const target = this.listSignals[type];
+      const current = target();
+      target.set(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
+      this.pagination.update(p => ({ ...p, currentPage: 1 }));
+      this.loadProducts();
+  }
+
+  toggleCertified(): void {
+      this.certifiedOnly.update(v => !v);
       this.pagination.update(p => ({ ...p, currentPage: 1 }));
       this.loadProducts();
   }
@@ -635,33 +725,50 @@ export class ProductsComponent implements OnInit {
 
   activeFilterCount = computed(() => {
     return this.selectedCategories().length +
+      this.selectedSubCategories().length +
       this.selectedOccasions().length +
       this.selectedStyles().length +
+      this.selectedDesignStyles().length +
       this.selectedGemstones().length +
       this.selectedPriceRanges().length +
       this.selectedMetals().length +
-      this.selectedCertifications().length +
+      (this.certifiedOnly() ? 1 : 0) +
       (this.searchQuery() ? 1 : 0);
   });
 
   clearFilters(): void {
     this.selectedCategories.set([]);
+    this.selectedSubCategories.set([]);
     this.selectedOccasions.set([]);
     this.selectedStyles.set([]);
+    this.selectedDesignStyles.set([]);
     this.selectedGemstones.set([]);
     this.selectedPriceRanges.set([]);
     this.selectedMetals.set([]);
-    this.selectedCertifications.set([]);
+    this.certifiedOnly.set(false);
     this.searchQuery.set('');
     this.sortBy = "newest";
     this.pagination.update(p => ({ ...p, currentPage: 1 }));
     this.loadProducts();
   }
 
-  handleWishlist(event: Event, _productId: string): void {
+  handleWishlist(event: Event, productId: string): void {
     event.preventDefault();
     event.stopPropagation();
-    this.toastService.show('Added to Wishlist', 'success');
+
+    if (!this.authService.isAuthenticated()) {
+      this.toastService.show('Sign in to save items', 'info');
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    const wasSaved = this.wishlistService.has(productId);
+    this.wishlistService.toggle(productId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.toastService.show(wasSaved ? 'Removed from wishlist' : 'Saved to your wishlist', 'success'),
+        error: () => this.toastService.show('Could not update your wishlist. Please try again.', 'error')
+      });
   }
 
   handleAddToCart(event: Event, product: Product): void {

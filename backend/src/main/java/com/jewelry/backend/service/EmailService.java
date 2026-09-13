@@ -54,8 +54,14 @@ public class EmailService {
 
             String htmlContent = "";
 
-            // If template name is provided, try to load and fill
-            if (notification.getTemplateName() != null) {
+            // Inline HTML built by the caller wins over a stored template.
+            if (notification.getHtmlContent() != null && !notification.getHtmlContent().isBlank()) {
+                htmlContent = notification.getHtmlContent();
+                if (notification.getData() != null) {
+                    htmlContent = replacePlaceholders(htmlContent, notification.getData());
+                }
+            } else if (notification.getTemplateName() != null) {
+                // If template name is provided, try to load and fill
                 EmailTemplate template = templateRepository.findByName(notification.getTemplateName())
                     .orElse(null);
 

@@ -1,10 +1,13 @@
 <div class="max-w-5xl mx-auto min-h-screen pb-20">
   <header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-ink dark:border-ink px-4 py-4 flex items-center justify-between">
     <div class="flex items-center gap-4">
-      <h1 class="text-xl font-bold tracking-tight">Global Settings</h1>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">Global Settings</h1>
+        <p *ngIf="adminEmail" class="text-xs text-ink/70">Signed in as <span class="font-medium text-primary">{{ adminEmail }}</span></p>
+      </div>
     </div>
     <div class="flex gap-3">
-      <button (click)="onSubmit()" [disabled]="saving" class="px-4 py-2 text-sm font-medium bg-primary text-surface rounded-lg hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
+      <button (click)="onSubmit()" [disabled]="saving || uploadingHero" class="px-4 py-2 text-sm font-medium bg-primary text-surface rounded-lg hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
         {{ saving ? 'Saving...' : 'Save Changes' }}
       </button>
     </div>
@@ -15,31 +18,9 @@
     <div *ngIf="successMessage" class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4">
       {{ successMessage }}
     </div>
-
-    <!-- Admin Profile Section -->
-    <section class="bg-surface dark:bg-surface rounded-xl shadow-sm border border-ink dark:border-ink overflow-hidden">
-      <div class="p-6">
-        <h2 class="text-lg font-bold mb-6">Admin Profile</h2>
-        <div class="flex flex-col sm:flex-row items-center gap-6">
-          <div class="relative">
-            <div class="size-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20">
-              <img alt="Admin Portrait" class="w-full h-full object-cover" src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"/>
-            </div>
-            <button class="absolute bottom-0 right-0 bg-primary text-surface p-1.5 rounded-full border-2 border-white dark:border-ink">
-              <span class="material-symbols-outlined text-sm">edit</span>
-            </button>
-          </div>
-          <div class="flex-1 text-center sm:text-left space-y-1">
-            <h3 class="text-xl font-bold text-ink dark:text-ink">Super Administrator</h3>
-            <p class="text-ink dark:text-ink">Head Administrator • Senior Role</p>
-            <p class="text-sm text-primary font-medium">admin@aurelia.jewelry</p>
-          </div>
-          <button class="px-6 py-2 bg-surface dark:bg-surface hover:bg-primary hover:text-surface rounded-lg font-bold text-sm transition-all text-ink dark:text-ink">
-            Edit Account
-          </button>
-        </div>
-      </div>
-    </section>
+    <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4">
+      {{ errorMessage }}
+    </div>
 
     <!-- Global Information Section -->
     <section class="space-y-4">
@@ -132,6 +113,153 @@
       </div>
     </section>
 
+    <!-- Home Page -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">home</span>
+        <h2 class="text-lg font-bold text-ink dark:text-ink">Home Page</h2>
+      </div>
+      <div class="bg-surface dark:bg-surface rounded-xl border border-ink dark:border-ink overflow-hidden shadow-sm">
+        <div class="p-6">
+          <p class="text-sm text-ink/70 mb-6">Leave any field empty to use the storefront's built-in default copy.</p>
+          <form [formGroup]="homeForm" class="space-y-8">
+
+            <!-- Hero copy -->
+            <div class="space-y-4">
+              <h3 class="text-md font-bold text-ink dark:text-ink">Hero</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Eyebrow label</label>
+                  <input formControlName="heroEyebrow" placeholder="Fine Jewelry &amp; Solitaire Atelier" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Headline</label>
+                  <input formControlName="heroTitle" placeholder="Jewels Forged for Eternity." class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-ink dark:text-ink">Tagline</label>
+                <textarea formControlName="heroSubtitle" rows="3" class="w-full px-4 py-2 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"></textarea>
+              </div>
+            </div>
+
+            <!-- Hero image -->
+            <div class="space-y-4 border-t border-ink dark:border-ink pt-6">
+              <h3 class="text-md font-bold text-ink dark:text-ink">Hero Image</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Upload photo</label>
+                  <input type="file" accept="image/*" (change)="onHeroFileChange($event)" [disabled]="uploadingHero"
+                         class="block w-full text-sm text-ink file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 disabled:opacity-50" />
+                  <p *ngIf="uploadingHero" class="text-xs text-blue-600">Uploading image...</p>
+                  <p *ngIf="heroUploadError" class="text-xs text-red-600">{{ heroUploadError }}</p>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Image URL</label>
+                    <input formControlName="heroImageUrl" placeholder="Set by upload, or paste a URL" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink text-xs font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Alt text</label>
+                    <input formControlName="heroImageAlt" placeholder="Caratloop fine jewelry" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Preview</label>
+                  <div class="relative rounded-lg border border-dashed border-ink/40 bg-background-light aspect-[4/3] flex items-center justify-center overflow-hidden">
+                    <img *ngIf="heroImageUrl" [src]="heroImageUrl" [alt]="homeForm.get('heroImageAlt')?.value || 'Hero preview'" class="w-full h-full object-cover" />
+                    <p *ngIf="!heroImageUrl" class="text-xs text-ink/60 px-4 text-center">No hero image. The storefront hides the image block when this is empty.</p>
+                    <button *ngIf="heroImageUrl" type="button" (click)="clearHeroImage()" class="absolute top-2 right-2 px-2 py-1 text-xs font-semibold bg-white/90 text-red-600 rounded border border-red-200 hover:bg-red-50">Clear</button>
+                  </div>
+                  <div class="grid grid-cols-1 gap-3">
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-ink dark:text-ink">Caption label</label>
+                      <input formControlName="heroCaptionLabel" placeholder="Featured Masterwork" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-ink dark:text-ink">Caption title</label>
+                      <input formControlName="heroCaptionTitle" placeholder="Hidden when empty" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CTAs -->
+            <div class="space-y-4 border-t border-ink dark:border-ink pt-6">
+              <h3 class="text-md font-bold text-ink dark:text-ink">Call-to-action Buttons</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Primary label</label>
+                  <input formControlName="heroPrimaryCtaLabel" placeholder="Explore Collections" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Primary link</label>
+                  <input formControlName="heroPrimaryCtaLink" placeholder="/products" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Secondary label</label>
+                  <input formControlName="heroSecondaryCtaLabel" placeholder="Custom Ring Studio" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Secondary link</label>
+                  <input formControlName="heroSecondaryCtaLink" placeholder="/builder" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Trust badges -->
+            <div class="space-y-4 border-t border-ink dark:border-ink pt-6">
+              <h3 class="text-md font-bold text-ink dark:text-ink">Trust Badges</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Badge 1</label>
+                  <input formControlName="trustBadge1" placeholder="100% BIS Hallmarked" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Badge 2</label>
+                  <input formControlName="trustBadge2" placeholder="GIA Certified Solitaires" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Badge 3</label>
+                  <input formControlName="trustBadge3" placeholder="Insured Delivery" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Solitaire configurator -->
+            <div class="space-y-4 border-t border-ink dark:border-ink pt-6">
+              <h3 class="text-md font-bold text-ink dark:text-ink">Solitaire Configurator</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <label class="flex items-center gap-3 h-11 cursor-pointer">
+                  <input formControlName="simulatorEnabled" type="checkbox" class="h-4 w-4 rounded border-ink text-primary focus:ring-primary" />
+                  <span class="text-sm font-medium text-ink dark:text-ink">Show the configurator section on the home page</span>
+                </label>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Base price for the estimate (INR)</label>
+                  <input formControlName="simulatorBasePrice" type="number" min="0" step="1" placeholder="145000" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                  <p *ngIf="homeForm.get('simulatorBasePrice')?.invalid" class="text-xs text-red-600">Enter a price of 0 or more.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Featured section heading -->
+            <div class="space-y-4 border-t border-ink dark:border-ink pt-6">
+              <h3 class="text-md font-bold text-ink dark:text-ink">Featured Products Section</h3>
+              <p class="text-xs text-ink/70">Products appear here when "Show on home page" is ticked on the product form.</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Eyebrow label</label>
+                  <input formControlName="featuredEyebrow" placeholder="Haute Joaillerie" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-ink dark:text-ink">Title</label>
+                  <input formControlName="featuredTitle" placeholder="Curated Masterworks." class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
 
     <!-- Categories & Taxonomy -->
     <section class="space-y-4">
@@ -148,67 +276,6 @@
           <span class="material-symbols-outlined text-[18px]">settings_applications</span>
           Configure Categories
         </a>
-      </div>
-    </section>
-
-    <!-- API Keys & Integrations -->
-    <section class="space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">api</span>
-        <h2 class="text-lg font-bold text-ink dark:text-ink">API Keys & Integrations</h2>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Metal Market API -->
-        <div class="bg-surface dark:bg-surface rounded-xl border border-ink dark:border-ink p-6 shadow-sm flex flex-col gap-4">
-          <div class="flex items-center gap-3">
-            <div class="size-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600">
-              <span class="material-symbols-outlined">database</span>
-            </div>
-            <h3 class="font-semibold text-base text-ink dark:text-ink">Metal Market API</h3>
-          </div>
-          <p class="text-sm text-ink">Real-time gold and silver pricing sync. <span class="text-amber-700">Configure the key in server environment; this field is display-only.</span></p>
-          <div class="relative">
-            <input class="w-full h-10 px-3 pr-10 text-xs rounded border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink" readonly type="password" value="" placeholder="Not configured"/>
-            <button class="absolute right-2 top-1/2 -translate-y-1/2 text-ink hover:text-primary transition-colors">
-              <span class="material-symbols-outlined text-lg">visibility</span>
-            </button>
-          </div>
-          <button class="w-full py-2 text-xs font-medium border border-ink dark:border-ink rounded hover:bg-surface dark:hover:bg-surface transition-colors text-ink dark:text-ink">Configure Endpoints</button>
-        </div>
-        <!-- WhatsApp Business -->
-        <div class="bg-surface dark:bg-surface rounded-xl border border-ink dark:border-ink p-6 shadow-sm flex flex-col gap-4">
-          <div class="flex items-center gap-3">
-            <div class="size-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600">
-              <span class="material-symbols-outlined">chat</span>
-            </div>
-            <h3 class="font-semibold text-base text-ink dark:text-ink">WhatsApp</h3>
-          </div>
-          <p class="text-sm text-ink">Automated order updates & support.</p>
-          <div class="relative">
-            <input class="w-full h-10 px-3 pr-10 text-xs rounded border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink" readonly type="password" value="" placeholder="Not configured"/>
-            <button class="absolute right-2 top-1/2 -translate-y-1/2 text-ink hover:text-primary transition-colors">
-              <span class="material-symbols-outlined text-lg">visibility</span>
-            </button>
-          </div>
-          <button class="w-full py-2 text-xs font-medium border border-ink dark:border-ink rounded hover:bg-surface dark:hover:bg-surface transition-colors text-ink dark:text-ink">Test Connection</button>
-        </div>
-        <!-- Razorpay -->
-        <div class="bg-surface dark:bg-surface rounded-xl border border-ink dark:border-ink p-6 shadow-sm flex flex-col gap-4">
-          <div class="flex items-center gap-3">
-            <div class="size-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-              <span class="material-symbols-outlined">payments</span>
-            </div>
-            <h3 class="font-semibold text-base text-ink dark:text-ink">Razorpay</h3>
-          </div>
-          <p class="text-sm text-ink">Secure checkout & instant refunds.</p>
-          <div class="relative">
-            <input class="w-full h-10 px-3 pr-10 text-xs rounded border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink" readonly type="password" value="" placeholder="Not configured"/>
-            <button class="absolute right-2 top-1/2 -translate-y-1/2 text-ink hover:text-primary transition-colors">
-              <span class="material-symbols-outlined text-lg">visibility</span>
-            </button>
-          </div>
-          <button class="w-full py-2 text-xs font-medium border border-ink dark:border-ink rounded hover:bg-surface dark:hover:bg-surface transition-colors text-ink dark:text-ink">Webhooks Settings</button>
-        </div>
       </div>
     </section>
 

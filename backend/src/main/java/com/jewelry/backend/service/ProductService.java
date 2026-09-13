@@ -4,11 +4,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.jewelry.backend.dto.CategoryResponse;
 import com.jewelry.backend.dto.DeliveryAvailability;
+import com.jewelry.backend.dto.ProductFacetsDTO;
 import com.jewelry.backend.entity.Category;
 import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.repository.CategoryRepository;
 import com.jewelry.backend.repository.ProductRepository;
+import com.jewelry.backend.specification.ProductSpecifications;
+import com.jewelry.backend.specification.ProductSpecifications.ProductFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,6 +59,10 @@ public class ProductService {
 
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
 
+    /**
+     * Legacy signature kept for callers that only know the original filters
+     * (SitemapController, product search). Delegates to the full filter set.
+     */
     @Transactional(readOnly = true)
     public Page<Product> getAllProducts(
             String category,
@@ -65,16 +72,70 @@ public class ProductService {
             List<String> occasions,
             List<String> styles,
             Pageable pageable) {
+        return getAllProducts(category, null, null, null, null, occasions, styles,
+                priceMin, priceMax, search, null, null, pageable);
+    }
 
-        Page<Product> products = productRepository.findWithFilters(category, priceMin, priceMax, search, occasions, styles, pageable);
-        // If it's a customer-facing request (no admin context here), filter unverified gemstones.
-        // For simplicity in this PR, we assume getAllProducts is mostly public unless accessed via admin endpoints.
-        // Ideally, we'd have a separate method for Admin vs Public or pass a boolean isAdmin flag.
-        // Since we are adding `isVerified`, let's just make sure we don't return unverified loose gemstones to public
-        // For now, doing it at the service level is acceptable, though doing it in the query would be better.
-        // As a quick fix, let's just return the repository results.
-        // Real-world: update `findWithFilters` in Repository to exclude `category = 'Loose Gemstones' AND isVerified = false` when not admin.
-        return products;
+    @Transactional(readOnly = true)
+    public Page<Product> getAllProducts(
+            String category,
+            List<String> subCategories,
+            List<String> metals,
+            List<String> stones,
+            List<String> designStyles,
+            List<String> occasions,
+            List<String> styles,
+            BigDecimal priceMin,
+            BigDecimal priceMax,
+            String search,
+            Boolean certified,
+            Boolean featured,
+            Pageable pageable) {
+
+        ProductFilter filter = new ProductFilter(
+                category, subCategories, metals, stones, designStyles, occasions, styles,
+                priceMin, priceMax, search, certified, featured);
+        return productRepository.findAll(ProductSpecifications.withFilter(filter), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public ProductFacetsDTO getFacets() {
+        ProductFacetsDTO facets = new ProductFacetsDTO();
+        facets.setCategories(distinctSorted(productRepository.findAllCategories()));
+        facets.setSubCategories(distinctSorted(productRepository.findDistinctSubCategories()));
+        facets.setMetals(distinctSorted(productRepository.findDistinctMetalTypes()));
+
+        List<String> stones = new java.util.ArrayList<>(productRepository.findDistinctStoneTypes());
+        stones.addAll(productRepository.findDistinctSpecies());
+        facets.setStones(distinctSorted(stones));
+
+        facets.setDesignStyles(distinctSorted(productRepository.findDistinctDesignStyles()));
+        facets.setOccasions(distinctSorted(productRepository.findDistinctOccasions()));
+        facets.setStyles(distinctSorted(productRepository.findDistinctStyles()));
+        facets.setPriceMin(productRepository.findMinPrice());
+        facets.setPriceMax(productRepository.findMaxPrice());
+        return facets;
+    }
+
+    /**
+     * Trims, drops blanks, de-duplicates case-insensitively (first spelling wins)
+     * and sorts case-insensitively.
+     */
+    private static List<String> distinctSorted(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        java.util.TreeSet<String> set = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (String value : values) {
+            if (value == null) {
+                continue;
+            }
+            String trimmed = value.trim();
+            if (!trimmed.isEmpty()) {
+                set.add(trimmed);
+            }
+        }
+        return new java.util.ArrayList<>(set);
     }
 
     public DeliveryAvailability checkDeliveryAvailability(String pincode) {
@@ -119,6 +180,9 @@ public class ProductService {
     public Product createProduct(Product product) {
         if (product.getSku() == null || product.getSku().trim().isEmpty()) {
             product.setSku(generateSku(product));
+        }
+        if (product.getFeatured() == null) {
+            product.setFeatured(Boolean.FALSE); // column is NOT NULL
         }
         return productRepository.save(product);
     }
@@ -201,6 +265,9 @@ public class ProductService {
             existing.setId(id);
             if (updatedProduct.getSku() != null && updatedProduct.getSku().trim().isEmpty()) {
                 existing.setSku(originalSku);
+            }
+            if (existing.getFeatured() == null) {
+                existing.setFeatured(Boolean.FALSE); // column is NOT NULL
             }
 
             return productRepository.save(existing);

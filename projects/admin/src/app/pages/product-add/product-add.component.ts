@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { Router, ActivatedRoute } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
-import { OCCASIONS_LIST, STYLES_LIST } from '../../core/constants';
+import { catchError, forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -17,7 +16,6 @@ import { environment } from '../../../environments/environment';
 export class ProductAddComponent implements OnInit {
   productId: string | null = null;
   isEditMode = false;
-  currentStep = 1;
 
   constructor(
     private fb: FormBuilder,
@@ -28,15 +26,13 @@ export class ProductAddComponent implements OnInit {
   ) {}
 
   categoriesList: any[] = [];
-  subCategoriesMap: any = {};
-  occasionsList = OCCASIONS_LIST;
-  stylesList = STYLES_LIST;
 
   // --- Predefined Dropdown Options for Better UX ---
-  metalTypes = ['Gold', 'Silver', 'Platinum', 'Palladium', 'Titanium'];
+  metalTypes = ['Gold', 'White Gold', 'Rose Gold', 'Platinum', 'Silver'];
+  stoneTypes = ['Diamond', 'Ruby', 'Emerald', 'Sapphire', 'Pearl', 'Other'];
+  designStyles = ['Modern', 'Classic', 'Vintage', 'Minimalist', 'Statement'];
   metalPurities = ['24K', '22K', '18K', '14K', '10K', '925 Sterling', '950 Platinum'];
   metalColors = ['Yellow', 'White', 'Rose', 'Two-Tone', 'PVD Plating', 'Black Antique'];
-  manufacturingTerms = ['Jadau', 'Kundan', 'Meenakari', 'Polki', 'Cast', 'Handmade'];
 
   species = ['Beryl', 'Corundum', 'Diamond', 'Tourmaline', 'Garnet', 'Spinel', 'Quartz', 'Topaz', 'Zircon', 'Chrysoberyl', 'Opal', 'Jadeite'];
   varieties = ['Emerald', 'Ruby', 'Sapphire', 'Aquamarine', 'Morganite', 'Padparadscha', 'Tsavorite', 'Demantoid', 'Paraiba Tourmaline', 'Rubellite', 'Amethyst', 'Citrine', 'Tanzanite', 'Alexandrite'];
@@ -48,7 +44,6 @@ export class ProductAddComponent implements OnInit {
   clarities = ['Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Eye Clean', 'Included', 'Opaque'];
   polishes = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
   symmetries = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
-  fluorescences = ['None', 'Faint', 'Medium', 'Strong', 'Very Strong'];
 
   treatmentStatuses = [
     'None (No Indications of Enhancement)',
@@ -65,18 +60,6 @@ export class ProductAddComponent implements OnInit {
     'Dyed',
     'Diffusion Treated'
   ];
-  polishOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'Abr (Abrasion)', 'Brn (Burn mark)'];
-  symmetryOptions = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor', 'T/oc (Table Off-Center)', 'OR (Out-of-Round)'];
-  girdles = ['Extremely Thin', 'Very Thin', 'Thin', 'Medium', 'Slightly Thick', 'Thick', 'Very Thick', 'Extremely Thick'];
-  culets = ['None', 'Very Small', 'Small', 'Medium', 'Slightly Large', 'Large', 'Very Large'];
-
-  carvingStyles = ['Intaglio', 'Cameo', 'Relief Carving', 'Hardstone Carving', 'Freeform'];
-  carvingTechniques = ['Diamond-tipped', 'Laser engraving', 'Hand carved', 'Ultrasonic drilling'];
-
-  manufacturingStages = ['Planning', 'Sawing', 'Bruting', 'Faceting', 'Polishing', 'Grading'];
-
-  componentTypes = ['Findings', 'Clasps', 'Hooks', 'Jump Rings', 'Bails', 'Posts', 'Beads', 'Silver Wire'];
-  beadStyles = ['Faceted', 'Round', 'Rondelle', 'Briolette', 'Tube', 'Chip'];
 
   productForm!: FormGroup;
 
@@ -143,13 +126,6 @@ export class ProductAddComponent implements OnInit {
     return category && category.subcategories ? category.subcategories : [];
   }
 
-  get availableChildCategories(): any[] {
-     const subCategoryName = this.productForm.get('subCategory')?.value;
-     if (!subCategoryName) return [];
-     const subCategory = this.availableSubCategories.find((c: any) => c.name === subCategoryName);
-     return subCategory && subCategory.subcategories ? subCategory.subcategories : [];
-  }
-
   ngOnInit() {
     this.http.get<{categories: any[]}>(environment.apiUrl + '/admin/categories').subscribe(res => {
       this.categoriesList = res.categories.map(c => ({
@@ -172,8 +148,8 @@ export class ProductAddComponent implements OnInit {
       subCategory: [''],
       sku: [''], // Auto-generated if empty
       isVerified: [false], // Admin verification step
+      featured: [false], // Shown in the storefront home page "featured" section
       videoUrl: [''],
-      model3dUrl: [''],
 
       // Global e-commerce / inventory ownership
       inventoryOwnership: ['Owned Stock'],
@@ -402,8 +378,8 @@ export class ProductAddComponent implements OnInit {
       subCategory: product.subCategory || '',
       sku: product.sku || '',
       isVerified: product.isVerified || false,
+      featured: product.featured === true,
       videoUrl: product.videoUrl || '',
-      model3dUrl: product.model3dUrl || '',
       inventoryOwnership: product.inventoryOwnership || 'Owned Stock',
       seoQualifiersStr: product.seoQualifiers ? product.seoQualifiers.join(', ') : '',
       occasionKeywordsStr: product.occasionKeywords ? product.occasionKeywords.join(', ') : '',
@@ -526,22 +502,6 @@ export class ProductAddComponent implements OnInit {
     }
   }
 
-  onCheckboxChange(e: any, formArrayName: string) {
-    const checkArray: FormArray = this.productForm.get(formArrayName) as FormArray;
-    if (e.target.checked) {
-      checkArray.push(this.fb.control(e.target.value));
-    } else {
-      let i: number = 0;
-      checkArray.controls.forEach((item: any) => {
-        if (item.value == e.target.value) {
-          checkArray.removeAt(i);
-          return;
-        }
-        i++;
-      });
-    }
-  }
-
   addCustomizationOption(opt?: any) {
     this.customizationOptions.push(this.fb.group({
       type: [opt?.type || '', Validators.required],
@@ -586,14 +546,6 @@ export class ProductAddComponent implements OnInit {
 
   removeStoneDetail(index: number) {
     this.stoneDetails.removeAt(index);
-  }
-
-  markNameAsEdited() {
-    this.isNameManuallyEdited = true;
-  }
-
-  markDescriptionAsEdited() {
-    this.isDescriptionManuallyEdited = true;
   }
 
   generateNameAndDescription() {
@@ -776,7 +728,6 @@ export class ProductAddComponent implements OnInit {
       stoneDetailIds,
       images: this.existingImages,
       videoUrl: formValue.videoUrl || this.existingVideoUrl,
-      model3dUrl: formValue.model3dUrl,
       specifications: null
     };
 

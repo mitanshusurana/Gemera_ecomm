@@ -78,6 +78,16 @@
           </div>
         </div>
 
+        <div class="sm:col-span-6 flex items-center">
+          <div class="flex items-center h-5">
+            <input id="featured" formControlName="featured" type="checkbox" class="focus:ring-emerald-500 h-4 w-4 text-emerald-500 border-gray-300 rounded">
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="featured" class="font-medium text-ink">Show on home page</label>
+            <p class="text-xs text-gray-500">Featured products appear in the storefront's "Curated Masterworks" section.</p>
+          </div>
+        </div>
+
         <div class="sm:col-span-6">
           <label class="block text-sm font-medium text-ink">SEO Qualifiers (Comma separated)</label>
           <input type="text" formControlName="seoQualifiersStr" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm" placeholder="e.g. Handmade, Ethically Sourced">
@@ -124,13 +134,6 @@
           <button *ngIf="existingVideoUrl" type="button" (click)="removeExistingVideo()" class="text-red-500 text-xs font-semibold hover:underline">Remove Uploaded Video</button>
         </div>
 
-        <!-- 3D Interactive Model URL -->
-        <div>
-          <label class="block text-sm font-medium text-ink">3D Interactive Model URL (.glb / .gltf / .usdz)</label>
-          <input type="text" formControlName="model3dUrl" placeholder="https://cdn.example.com/solitaire-ring.glb" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
-          <p class="text-xs text-gray-500 mt-1">Used for the 360° interactive 3D model viewer and AR Try-On on the storefront.</p>
-        </div>
-        
         <div *ngIf="uploadProgressMessage" class="mt-2 text-sm text-blue-600">
           {{ uploadProgressMessage }}
         </div>
@@ -189,7 +192,9 @@
           
           <div class="sm:col-span-2">
             <label class="block text-sm font-medium text-ink">Design Style</label>
-            <input type="text" formControlName="designStyle" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+            <input type="text" formControlName="designStyle" list="design-style-options" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+            <datalist id="stone-type-options"><option *ngFor="let s of stoneTypes" [value]="s"></option></datalist>
+            <datalist id="design-style-options"><option *ngFor="let d of designStyles" [value]="d"></option></datalist>
           </div>
 
           <div class="sm:col-span-2">
@@ -274,7 +279,7 @@
               -->
               <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-gray-500">Stone Type (Species/Variety)</label>
-                <input type="text" formControlName="stoneType" placeholder="e.g. Diamond, Ruby" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+                <input type="text" formControlName="stoneType" list="stone-type-options" placeholder="e.g. Diamond, Ruby" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
               </div>
               <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-gray-500">Shape</label>

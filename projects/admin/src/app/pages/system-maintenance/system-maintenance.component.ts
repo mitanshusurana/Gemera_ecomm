@@ -6,8 +6,7 @@ import { AdminMaintenanceService } from '../../services/admin-maintenance.servic
   selector: 'app-system-maintenance',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './system-maintenance.component.html',
-  styleUrl: './system-maintenance.component.css'
+  templateUrl: './system-maintenance.component.html'
 })
 export class SystemMaintenanceComponent implements OnInit {
   private maintenanceService = inject(AdminMaintenanceService);

@@ -33,6 +33,10 @@ public class Cart extends BaseEntity {
     private BigDecimal discount = BigDecimal.ZERO;
     private String appliedCoupon;
 
+    // Gift card redemption: the applied code and how much of the total it covers.
+    private String appliedGiftCard;
+    private BigDecimal giftCardAmount = BigDecimal.ZERO;
+
     private boolean giftWrap;
 
     @Column(columnDefinition = "boolean default false")

@@ -6,8 +6,7 @@ import { CustomerService } from '../../services/customer.service';
   selector: 'app-customer-list',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './customer-list.component.html',
-  styleUrl: './customer-list.component.css'
+  templateUrl: './customer-list.component.html'
 })
 export class CustomerListComponent implements OnInit {
   private customerService = inject(CustomerService);

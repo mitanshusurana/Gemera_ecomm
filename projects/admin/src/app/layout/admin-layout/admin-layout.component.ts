@@ -7,8 +7,7 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-admin-layout',
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
-  templateUrl: './admin-layout.component.html',
-  styleUrl: './admin-layout.component.css'
+  templateUrl: './admin-layout.component.html'
 })
 export class AdminLayoutComponent {
   private authService = inject(AuthService);

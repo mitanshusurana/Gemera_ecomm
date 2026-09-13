@@ -1,35 +1,40 @@
-version: '3.8'
-
-# BACKEND VM DEPLOYMENT (Backend + Admin + DB)
-# Usage: docker compose -f docker-compose.backend.yml up -d
-
+# CORE VM: PostgreSQL + Spring Boot API + admin SPA.
+# Usage: cp .env.backend.example .env.backend && edit && docker compose -f docker-compose.backend.yml up -d
 services:
   postgres:
     image: postgres:15-alpine
     container_name: jewelry-postgres
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env.backend
-    ports:
-      - "5432:5432"
+    # Only reachable from the other containers; use an SSH tunnel for tooling (see DEPLOYMENT_GUIDE.md).
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   backend:
     image: ${BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-backend:latest}
     container_name: jewelry-backend
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env.backend
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   admin:
     image: ${ADMIN_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-admin:latest}
     container_name: jewelry-admin
-    restart: always
+    restart: unless-stopped
+    # Reads API_URL and STOREFRONT_URL (public URLs) from the same env file.
     env_file:
       - .env.backend
     ports:

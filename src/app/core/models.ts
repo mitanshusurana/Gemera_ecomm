@@ -45,7 +45,7 @@ export interface Product {
   reviewCount?: number;
   imageUrl?: string;
   videoUrl?: string;
-  model3dUrl?: string;
+  featured?: boolean;
   isBestSeller?: boolean;
   category: string;
   subcategory?: string;
@@ -147,6 +147,9 @@ export interface Cart {
   discount?: number;
   giftWrap?: boolean;
   wishlist?: Product[];
+  appliedGiftCard?: string;
+  giftCardAmount?: number;
+  totalBeforeGiftCard?: number;
 }
 
 export interface Order {
@@ -163,6 +166,9 @@ export interface Order {
   tax?: number;
   shipping?: number;
   discount?: number;
+  appliedGiftCard?: string;
+  giftCardAmount?: number;
+  totalBeforeGiftCard?: number;
   trackingNumber?: string;
   estimatedDelivery?: string;
   createdAt: string;
@@ -195,6 +201,19 @@ export interface Category {
   displayName: string;
   image: string;
   subcategories?: Array<{ id: string; name: string; displayName: string }>;
+}
+
+/** Distinct filter values across all products, from GET /products/facets. */
+export interface ProductFacets {
+  categories: string[];
+  subCategories: string[];
+  metals: string[];
+  stones: string[];
+  designStyles: string[];
+  occasions: string[];
+  styles: string[];
+  priceMin: number | null;
+  priceMax: number | null;
 }
 
 export interface Address {

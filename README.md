@@ -1,4 +1,4 @@
-# Gemera / Caratloop e-commerce
+# Caratloop e-commerce
 
 Three deployables live in this repository:
 

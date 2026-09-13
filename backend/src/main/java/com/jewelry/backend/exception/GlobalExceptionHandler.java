@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.stream.Collectors;
 
 import org.springframework.security.access.AccessDeniedException;
+import jakarta.persistence.EntityNotFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -18,7 +19,47 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleAccessDeniedException(AccessDeniedException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access Denied");
         problemDetail.setTitle("Access Denied");
-        problemDetail.setType(URI.create("https://gemera.com/errors/access-denied"));
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/access-denied"));
+        return problemDetail;
+    }
+
+    /**
+     * Bad input. More specific than the RuntimeException handler below, so it
+     * wins for IllegalArgumentException. The body stays a ProblemDetail (the
+     * existing shape, with "detail") and additionally carries "message", which
+     * is what the storefront and admin read from error responses.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "Bad request";
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, message);
+        problemDetail.setTitle("Bad Request");
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/bad-request"));
+        problemDetail.setProperty("message", message);
+        return problemDetail;
+    }
+
+    /**
+     * A dependency we cannot reach right now (e.g. the payment gateway is not
+     * configured). 503 tells the client to retry later rather than fix input.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handleIllegalStateException(IllegalStateException ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "Service unavailable";
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, message);
+        problemDetail.setTitle("Service Unavailable");
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/service-unavailable"));
+        problemDetail.setProperty("message", message);
+        return problemDetail;
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ProblemDetail handleEntityNotFoundException(EntityNotFoundException ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "Not found";
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, message);
+        problemDetail.setTitle("Not Found");
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/not-found"));
+        problemDetail.setProperty("message", message);
         return problemDetail;
     }
 
@@ -32,7 +73,7 @@ public class GlobalExceptionHandler {
         
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problemDetail.setTitle("Runtime Exception");
-        problemDetail.setType(URI.create("https://gemera.com/errors/runtime-exception"));
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/runtime-exception"));
         return problemDetail;
     }
 
@@ -44,7 +85,7 @@ public class GlobalExceptionHandler {
                 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed: " + errors);
         problemDetail.setTitle("Validation Error");
-        problemDetail.setType(URI.create("https://gemera.com/errors/validation-error"));
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/validation-error"));
         return problemDetail;
     }
 
@@ -52,7 +93,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleException(Exception ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error");
         problemDetail.setTitle("Server Error");
-        problemDetail.setType(URI.create("https://gemera.com/errors/internal-server-error"));
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/internal-server-error"));
         return problemDetail;
     }
 }

@@ -30,7 +30,11 @@ public class Order extends BaseEntity {
     private BigDecimal shipping;
     private BigDecimal discount;
     private String appliedCoupon;
-    
+
+    // Gift card redeemed against this order (code) and the amount debited from it.
+    private String appliedGiftCard;
+    private BigDecimal giftCardAmount;
+
     private String status; // PENDING_PAYMENT, PAID, SHIPPED, etc.
     private LocalDate estimatedDelivery;
     private String trackingNumber;

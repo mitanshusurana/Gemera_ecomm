@@ -1,57 +1,83 @@
-# Gemera Deployment & Workflow Guide
+# Caratloop Deployment & Workflow Guide
 
-This guide details the final architecture topology and the exact workflow for running your operations securely and cost-effectively.
+Three images are built by `.github/workflows/docker-build-push.yml` on every push to `main` and pushed to GHCR:
+`gemera_ecomm-backend` (Spring Boot API), `gemera_ecomm-frontend` (Angular SSR storefront) and `gemera_ecomm-admin`
+(Angular admin behind nginx). The image names follow the GitHub repository name; override them with
+`BACKEND_IMAGE`, `FRONTEND_IMAGE`, `ADMIN_IMAGE` if the repository is renamed.
 
-## 1. Architecture Topology
+## 1. Topology
 
-### VM 1: The Storefront (Public)
-- **Runs:** Angular Frontend (SSR)
-- **Ports Exposed:** 80 (HTTP), 443 (HTTPS)
-- **Purpose:** Serve fast, SEO-optimized pages to the public.
+| Host | Compose file | Runs | Public ports |
+|---|---|---|---|
+| Core VM | `docker-compose.backend.yml` | PostgreSQL, API, admin SPA | 8080 (API), 81 (admin) |
+| Storefront VM | `docker-compose.frontend.yml` | SSR storefront | 80 |
+| Laptop | `docker-compose.local.yml` | everything from source | 5432 (localhost only), 8080, 4200, 4300 |
 
-### VM 2: The Core (Protected)
-- **Runs:** Spring Boot Backend & PostgreSQL Database
-- **Ports Exposed:** 80/443 (for the API). Port 5432 (DB) remains **closed** to the internet.
-- **Environment Variables Required:** You must provide `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RAZORPAY_KEY_ID`, and `RAZORPAY_KEY_SECRET` either in a `.env` file or directly to the Docker container. Hardcoded fallback values have been removed for security.
-- **Purpose:** Securely handle business logic and store data.
+PostgreSQL is not published on the Core VM; connect through an SSH tunnel:
 
-### Local Machine: Admin Operations
-- **Runs:** Angular Admin App (and optionally a local backend + database for testing).
-- **Purpose:** Manage the catalogue, orders and settings without exposing the admin UI publicly.
-
----
-
-## 2. Secure Local Database Access (SSH Tunneling)
-
-Since we are keeping port 5432 closed on VM 2 for security, you will use an SSH Tunnel to connect your local Admin App and database tools (like pgAdmin or DBeaver) to the remote database.
-
-### The Command
-Run this command in your local terminal whenever you need to connect to the database:
 ```bash
-# Replace 'user' and 'vm2-ip' with your actual VM 2 credentials
-ssh -N -L 5432:localhost:5432 user@vm2-ip
+ssh -N -L 5432:localhost:5432 user@core-vm
 ```
-- `-N`: Do not execute a remote command (just forward ports).
-- `-L 5432:localhost:5432`: Forward your local port 5432 to the VM's `localhost:5432`.
 
-### Connecting your Tools
-Once the tunnel is running, configure your Admin App environment variables or DB tools to connect to:
-- **Host:** `localhost`
-- **Port:** `5432`
-- **Username/Password:** (Your VM 2 PostgreSQL credentials)
+Put a TLS-terminating reverse proxy (nginx, Caddy or the cloud load balancer) in front of the API and the admin, and
+list the resulting HTTPS origins in `CORS_ALLOWED_ORIGINS`. With the `prod` Spring profile active, non-HTTPS origins are
+rejected.
 
-Your local computer will think the database is running locally, but the traffic is securely piped to the VM!
+## 2. Configuration
 
----
+Each compose file reads one env file next to it; copy the matching example and fill it in:
 
-## 3. Daily Workflow
+| Compose file | Env file | Example |
+|---|---|---|
+| `docker-compose.backend.yml` | `.env.backend` | `.env.backend.example` |
+| `docker-compose.frontend.yml` | `.env.frontend` | `.env.frontend.example` |
+| `docker-compose.local.yml` | `.env.local` | `.env.local.example` |
 
-When you sit down to manage the store, here is your flow:
+The examples document every variable. The API has no defaults for the database, `JWT_SECRET`, admin credentials, SMTP,
+`GOLDAPI_KEY` and the R2 bucket, and refuses to start if one is missing. `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` may be
+left empty: online card payment and gift-card purchase then answer 503 until keys are provided. The storefront's
+`RAZORPAY_KEY` must equal `RAZORPAY_KEY_ID`.
 
-1. **Start the SSH Tunnel** (if you need direct DB access for tools).
-2. **Start the Local Services (Admin):**
-   Open a terminal in your project directory and run:
-   ```bash
-   docker-compose -f docker-compose.local.yml up -d
-   ```
-3. **Operate:** Use your local Admin UI (at `http://localhost:4300`). Product images are uploaded straight to the R2 bucket configured on the backend.
+Frontend bundles are built once with placeholder tokens; `env-subst.sh` (storefront) and `admin-env-subst.sh` (admin)
+replace them from the environment when the container starts, so one image serves every environment. The admin container
+exits immediately if `API_URL` is missing.
+
+Schema management is Hibernate `ddl-auto=update` (there is no migration tool). Do not switch to the `prod` profile's
+`validate` mode on an empty database.
+
+## 3. First deployment
+
+Core VM:
+
+```bash
+cp .env.backend.example .env.backend   # edit
+docker compose -f docker-compose.backend.yml pull
+docker compose -f docker-compose.backend.yml up -d
+curl -fsS http://localhost:8080/actuator/health
+```
+
+Storefront VM:
+
+```bash
+cp .env.frontend.example .env.frontend   # edit
+docker compose -f docker-compose.frontend.yml pull
+docker compose -f docker-compose.frontend.yml up -d
+```
+
+Then sign in to the admin (port 81) with `ADMIN_EMAIL` / `ADMIN_PASSWORD` and fill in Settings: company contact details
+(shown in the storefront footer), tax rates, currency rates, and the Home page card (hero copy, hero image, trust badges,
+configurator base price). Add stores under Stores and mark products "Show on home page" to feature them.
+
+## 4. Updating
+
+```bash
+docker compose -f docker-compose.backend.yml pull && docker compose -f docker-compose.backend.yml up -d
+docker compose -f docker-compose.frontend.yml pull && docker compose -f docker-compose.frontend.yml up -d
+```
+
+## 5. Local development
+
+Without Docker: `npm start` (storefront on 4200), `npx ng serve admin` (admin), and the API from `backend/` with Gradle
+(`./gradlew bootRun`) pointing at a local PostgreSQL through the same environment variables.
+
+With Docker: `cp .env.local.example .env.local`, then `docker compose -f docker-compose.local.yml up --build`.

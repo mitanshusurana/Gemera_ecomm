@@ -1,8 +1,41 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, shareReplay } from 'rxjs';
-import { Product, ProductDetail, Category, PaginatedResponse, DeliveryAvailability } from '../core/models';
+import { Product, ProductDetail, ProductFacets, Category, PaginatedResponse, DeliveryAvailability } from '../core/models';
 import { ApiConfigService } from './api-config.service';
+
+/** UI sort options. Each maps to one Spring `sort=field,dir` value below. */
+export type ProductSort = 'newest' | 'price-low' | 'price-high' | 'name';
+
+const SORT_PARAM: Record<ProductSort, string> = {
+  'newest': 'createdAt,desc',
+  'price-low': 'price,asc',
+  'price-high': 'price,desc',
+  'name': 'name,asc',
+};
+
+/**
+ * Query parameters accepted by GET /products. List filters may be passed as an
+ * array or as an already comma-joined string; matching is case-insensitive
+ * server-side.
+ */
+export interface ProductFilters {
+  category?: string;
+  subCategory?: string | string[];
+  metals?: string | string[];
+  stones?: string | string[];
+  designStyles?: string | string[];
+  occasions?: string | string[];
+  styles?: string | string[];
+  priceMin?: number;
+  priceMax?: number;
+  search?: string;
+  certified?: boolean;
+  featured?: boolean;
+  sort?: ProductSort;
+}
+
+const LIST_PARAMS = ['subCategory', 'metals', 'stones', 'designStyles', 'occasions', 'styles'] as const;
 
 @Injectable({
   providedIn: 'root'
@@ -15,35 +48,37 @@ export class ProductService {
   getProducts(
     page: number = 0,
     size: number = 20,
-    filters?: {
-      sortBy?: string;
-      order?: string;
-      category?: string;
-      priceMin?: number;
-      priceMax?: number;
-      search?: string;
-      occasions?: string;
-      styles?: string;
-    }
+    filters?: ProductFilters
   ): Observable<PaginatedResponse<Product>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
 
     if (filters) {
-      if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
-      if (filters.order) params = params.set('order', filters.order);
       if (filters.category) params = params.set('category', filters.category);
-      if (filters.priceMin !== undefined)
+
+      for (const key of LIST_PARAMS) {
+        const raw = filters[key];
+        const joined = Array.isArray(raw) ? raw.filter(Boolean).join(',') : raw;
+        if (joined) params = params.set(key, joined);
+      }
+
+      if (filters.priceMin !== undefined && filters.priceMin !== null)
         params = params.set('priceMin', filters.priceMin.toString());
-      if (filters.priceMax !== undefined)
+      if (filters.priceMax !== undefined && filters.priceMax !== null)
         params = params.set('priceMax', filters.priceMax.toString());
       if (filters.search) params = params.set('search', filters.search);
-      if (filters.occasions) params = params.set('occasions', filters.occasions);
-      if (filters.styles) params = params.set('styles', filters.styles);
+      if (filters.certified) params = params.set('certified', 'true');
+      if (filters.featured) params = params.set('featured', 'true');
+      if (filters.sort) params = params.set('sort', SORT_PARAM[filters.sort]);
     }
 
     return this.http.get<PaginatedResponse<Product>>(this.baseUrl, { params });
+  }
+
+  /** Distinct filter values across the catalogue; drives the storefront filter lists. */
+  getFacets(): Observable<ProductFacets> {
+    return this.http.get<ProductFacets>(`${this.baseUrl}/facets`);
   }
 
   getProductById(productId: string): Observable<ProductDetail> {

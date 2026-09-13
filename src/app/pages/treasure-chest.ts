@@ -18,10 +18,10 @@ import { ToastService } from '../services/toast.service';
         <div class="max-w-[800px] mx-auto">
           <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-3 block">Jewelry Wealth Plan</span>
           <h1 class="font-display font-semibold text-4xl md:text-5xl text-[#1d1d1f] tracking-tight">
-            Gemera Treasure Vault.
+            Caratloop Treasure Vault.
           </h1>
           <p class="text-base text-[#7a7a7a] mt-4 max-w-xl mx-auto">
-            Pay for 9 months, and Gemera contributes the 10th month bonus for your bespoke luxury acquisition.
+            Pay for 9 months, and Caratloop contributes the 10th month bonus for your bespoke luxury acquisition.
           </p>
 
           <div class="flex justify-center items-center space-x-12 mt-10">
@@ -85,7 +85,7 @@ import { ToastService } from '../services/toast.service';
                     <span class="font-semibold text-[#1d1d1f]">{{ currencyService.format(summary().youPay) }}</span>
                   </div>
                   <div class="flex justify-between items-center pb-3 border-b border-[#e0e0e0] text-[#D4AF37]">
-                    <span class="font-semibold">Gemera Bonus (10th Month)</span>
+                    <span class="font-semibold">Caratloop Bonus (10th Month)</span>
                     <span class="font-semibold">+ {{ currencyService.format(summary().weAdd) }}</span>
                   </div>
                   <div class="flex justify-between items-center pt-3 text-base">

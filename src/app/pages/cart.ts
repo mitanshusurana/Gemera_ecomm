@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartService, CART_PRICING } from '../services/cart.service';
+import { maskGiftCardCode } from '../services/gift-card.service';
 import { ToastService } from '../services/toast.service';
 import { Cart, CartItem } from '../core/models';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
@@ -154,10 +155,14 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                   <span>Promotional Savings</span>
                   <span class="font-semibold">-{{ discount() | currencyConvert }}</span>
                 </div>
+                <div *ngIf="appliedGiftCard() && giftCardAmount() > 0" class="flex justify-between text-emerald-600">
+                  <span>Gift card ({{ maskedGiftCard() }})</span>
+                  <span class="font-semibold">-{{ giftCardAmount() | currencyConvert }}</span>
+                </div>
               </div>
 
               <div class="flex justify-between items-center py-4 border-t border-b border-[#e0e0e0] mb-6">
-                <span class="font-semibold text-base text-[#1d1d1f]">Total</span>
+                <span class="font-semibold text-base text-[#1d1d1f]">{{ appliedGiftCard() ? 'Amount due' : 'Total' }}</span>
                 <span class="font-semibold text-2xl text-[#1d1d1f]">{{ total() | currencyConvert }}</span>
               </div>
 
@@ -195,7 +200,9 @@ export class CartComponent implements OnInit {
     () => this.cart()?.appliedDiscount ?? this.cart()?.discount ?? 0,
   );
   total = computed(() => this.cart()?.total || 0);
-
+  appliedGiftCard = computed(() => this.cart()?.appliedGiftCard || null);
+  giftCardAmount = computed(() => this.cart()?.giftCardAmount || 0);
+  maskedGiftCard = computed(() => maskGiftCardCode(this.appliedGiftCard()));
 
 
   ngOnInit(): void {

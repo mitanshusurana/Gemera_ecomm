@@ -5,8 +5,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-treasure-plan-list',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './treasure-plan-list.component.html',
-  styleUrl: './treasure-plan-list.component.css'
+  templateUrl: './treasure-plan-list.component.html'
 })
 export class TreasurePlanListComponent {
   isModalOpen = false;

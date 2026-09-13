@@ -11,7 +11,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { CartService, CART_PRICING } from '../services/cart.service';
+import { CartService, CART_PRICING, GUEST_GIFT_CARD_MESSAGE } from '../services/cart.service';
+import { maskGiftCardCode } from '../services/gift-card.service';
 import { SettingService } from '../services/setting.service';
 import { OrderService } from '../services/order.service';
 import { PaymentService } from '../services/payment.service';
@@ -19,7 +20,8 @@ import { CurrencyService } from '../services/currency.service';
 import { EmailNotificationService } from '../services/email-notification.service';
 import { ToastService } from '../services/toast.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
-import { Address, CartItem } from '../core/models';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Address, Cart, CartItem } from '../core/models';
 import { environment } from '../../environments/environment';
 import { COUNTRIES } from '../core/countries';
 
@@ -448,7 +450,21 @@ import { COUNTRIES } from '../core/countries';
                     <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                       Payment Method
                     </h3>
-                    <div class="space-y-3">
+                    <div
+                      *ngIf="isFullyCoveredByGiftCard()"
+                      class="flex items-start gap-3 p-4 border border-[#D4AF37] rounded-[12px] bg-[#fbf8ef] mb-3"
+                      role="status"
+                    >
+                      <span class="text-lg" aria-hidden="true">🎁</span>
+                      <div>
+                        <p class="font-semibold text-[#1d1d1f]">No payment needed</p>
+                        <p class="text-sm text-[#6e6e73]">
+                          Your gift card covers this order in full. Place the order to redeem
+                          {{ cartGiftCardAmount() | currencyConvert }} from it.
+                        </p>
+                      </div>
+                    </div>
+                    <div class="space-y-3" *ngIf="!isFullyCoveredByGiftCard()">
                       <label
                         class="flex items-center gap-3 p-4 border rounded-[12px] cursor-pointer transition-colors"
                         [ngClass]="
@@ -509,6 +525,41 @@ import { COUNTRIES } from '../core/countries';
                       <button type="button" (click)="applyCoupon()" class="btn-outline text-sm !py-2.5 !px-5">Apply</button>
                     </div>
                   </div>
+
+                  <div class="border-t border-[#e0e0e0] pt-6">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
+                      Have a gift card?
+                    </h3>
+                    <div *ngIf="cartGiftCard(); else giftCardEntry" class="flex items-center justify-between gap-4 p-4 border border-[#D4AF37] rounded-[12px] bg-[#fbf8ef]">
+                      <div>
+                        <p class="font-mono text-sm tracking-[0.1em] text-[#1d1d1f]">{{ maskedGiftCard() }}</p>
+                        <p class="text-sm text-[#6e6e73] mt-0.5">
+                          {{ cartGiftCardAmount() | currencyConvert }} applied to this order
+                        </p>
+                      </div>
+                      <button type="button" (click)="removeGiftCard()" [disabled]="isProcessing()" class="btn-ghost text-sm">Remove</button>
+                    </div>
+                    <ng-template #giftCardEntry>
+                      <div class="flex gap-2">
+                        <input
+                          type="text"
+                          [(ngModel)]="giftCardCode"
+                          name="giftCardCode"
+                          placeholder="CL-XXXX-XXXX-XXXX"
+                          autocomplete="off"
+                          autocapitalize="characters"
+                          spellcheck="false"
+                          aria-label="Gift card code"
+                          class="input-field flex-1 font-mono uppercase tracking-[0.1em]"
+                        />
+                        <button type="button" (click)="applyGiftCard()" [disabled]="isProcessing()" class="btn-outline text-sm !py-2.5 !px-5">Apply</button>
+                      </div>
+                      <p class="text-xs text-[#6e6e73] mt-2">
+                        The balance is applied to the amount due; anything left stays on the card.
+                        <a routerLink="/gift-card" fragment="balance" class="text-[#D4AF37] hover:underline">Check a balance</a>
+                      </p>
+                    </ng-template>
+                  </div>
                 </div>
               </div>
 
@@ -529,7 +580,7 @@ import { COUNTRIES } from '../core/countries';
                   {{
                     isProcessing()
                       ? 'Processing...'
-                      : selectedPaymentMethod === 'COD'
+                      : isFullyCoveredByGiftCard() || selectedPaymentMethod === 'COD'
                         ? 'Place Order'
                         : 'Pay Now'
                   }}
@@ -600,10 +651,21 @@ import { COUNTRIES } from '../core/countries';
                     >-{{ cartDiscount() | currencyConvert }}</span
                   >
                 </div>
+                <div
+                  *ngIf="cartGiftCard() && cartGiftCardAmount() > 0"
+                  class="flex justify-between text-emerald-600"
+                >
+                  <span>Gift card ({{ maskedGiftCard() }})</span>
+                  <span class="font-semibold"
+                    >-{{ cartGiftCardAmount() | currencyConvert }}</span
+                  >
+                </div>
               </div>
 
               <div class="flex justify-between items-center mb-6">
-                <span class="font-semibold text-base text-[#1d1d1f]">Total</span>
+                <span class="font-semibold text-base text-[#1d1d1f]">{{
+                  cartGiftCard() ? 'Amount due' : 'Total'
+                }}</span>
                 <span class="font-semibold text-2xl text-[#1d1d1f]">{{
                   cartTotal() | currencyConvert
                 }}</span>
@@ -652,6 +714,15 @@ export class CheckoutComponent implements OnInit {
   cartDiscount = signal(0);
   cartShipping = signal(0);
   cartGiftWrap = signal(false);
+  /** Applied gift-card code (server returns it unmasked) and the amount it covers. */
+  cartGiftCard = signal<string | null>(null);
+  cartGiftCardAmount = signal(0);
+  maskedGiftCard = computed(() => maskGiftCardCode(this.cartGiftCard()));
+  /** Nothing left to pay: the backend records the order as PAID via GIFT_CARD. */
+  isFullyCoveredByGiftCard = computed(
+    () => !!this.cartGiftCard() && this.cartGiftCardAmount() > 0 && this.cartTotal() <= 0,
+  );
+  giftCardCode = '';
   readonly giftWrapFee = CART_PRICING.giftWrapFee;
   isProcessing = signal(false);
   isRecovering = signal(false);
@@ -788,21 +859,25 @@ export class CheckoutComponent implements OnInit {
 
   private loadCartData(): void {
     this.cartService.getCart().subscribe({
-      next: (cart) => {
-        this.cartItems.set(cart.items);
-        this.cartTotal.set(cart.total);
-        this.cartSubtotal.set(cart.subtotal || 0);
-        this.cartTax.set(cart.tax || 0);
-        this.cartShipping.set(cart.shipping || 0);
-        this.cartGiftWrap.set(!!cart.giftWrap);
-        // The totals engine writes appliedDiscount; reading only `discount`
-        // meant an applied coupon reduced the total with no line to show it.
-        this.cartDiscount.set(cart.appliedDiscount ?? cart.discount ?? 0);
-      },
+      next: (cart) => this.applyCartState(cart),
       error: () => {
         // Error loading cart
       },
     });
+  }
+
+  private applyCartState(cart: Cart): void {
+    this.cartItems.set(cart.items);
+    this.cartTotal.set(cart.total);
+    this.cartSubtotal.set(cart.subtotal || 0);
+    this.cartTax.set(cart.tax || 0);
+    this.cartShipping.set(cart.shipping || 0);
+    this.cartGiftWrap.set(!!cart.giftWrap);
+    // The totals engine writes appliedDiscount; reading only `discount`
+    // meant an applied coupon reduced the total with no line to show it.
+    this.cartDiscount.set(cart.appliedDiscount ?? cart.discount ?? 0);
+    this.cartGiftCard.set(cart.appliedGiftCard || null);
+    this.cartGiftCardAmount.set(cart.giftCardAmount || 0);
   }
 
   selectAddress(address: Address) {
@@ -1001,7 +1076,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   private processPaymentSelection() {
-    if (this.selectedPaymentMethod === 'COD') {
+    if (this.isFullyCoveredByGiftCard()) {
+      // Nothing to collect: no Razorpay order, no COD. The backend debits the
+      // card inside createOrder and marks the order PAID / GIFT_CARD.
+      this.placeUnpaidOrder('GIFT_CARD');
+    } else if (this.selectedPaymentMethod === 'COD') {
       this.handleCODPayment();
     } else {
       this.initiateRazorpay();
@@ -1009,6 +1088,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   private handleCODPayment() {
+    this.placeUnpaidOrder('COD');
+  }
+
+  /** Orders that do not go through the gateway: COD, or fully covered by a gift card. */
+  private placeUnpaidOrder(paymentMethod: 'COD' | 'GIFT_CARD') {
     // Sanitize address data to match Backend DTO (exclude email)
     const { email, ...shippingAddr } = this.shippingForm.value;
     const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
@@ -1022,14 +1106,14 @@ export class CheckoutComponent implements OnInit {
     const orderData: any = {
       shippingAddress: shippingAddr,
       billingAddress: billingAddr,
-      paymentMethod: 'COD',
+      paymentMethod,
       shippingMethod: 'EXPRESS',
       items: sanitizedItems,
       // `total` is deliberately not sent. OrderService prices the order from
       // the server-side cart (order.setTotal(cart.getTotal())) and never reads
       // a client-supplied total. Sending one implies it is authoritative and
       // invites someone to start trusting it.
-      paymentDetails: {}, // Empty for COD
+      paymentDetails: {}, // No gateway payment to reference
     };
 
     this.orderService.createOrder(orderData).subscribe({
@@ -1207,14 +1291,70 @@ export class CheckoutComponent implements OnInit {
     if (!this.couponCode) return;
     this.isProcessing.set(true);
     this.cartService.applyCoupon(this.couponCode).subscribe({
-      next: () => {
+      next: (cart) => {
         this.isProcessing.set(false);
+        this.applyCartState(cart);
         this.toastService.show('Coupon applied successfully', 'success');
       },
       error: () => {
         this.isProcessing.set(false);
         this.toastService.show('Invalid or expired coupon code.', 'error');
       }
+    });
+  }
+
+  applyGiftCard() {
+    const code = this.giftCardCode.trim();
+    if (!code) {
+      this.toastService.show('Enter your gift card code.', 'error');
+      return;
+    }
+    this.isProcessing.set(true);
+    this.cartService.applyGiftCard(code).subscribe({
+      next: (cart) => {
+        this.isProcessing.set(false);
+        this.giftCardCode = '';
+        this.applyCartState(cart);
+        const applied = cart.giftCardAmount || 0;
+        this.toastService.show(
+          this.isFullyCoveredByGiftCard()
+            ? 'Gift card applied. Your order is fully covered; no payment is needed.'
+            : `Gift card applied: ${this.currencyService.format(applied)} off the amount due.`,
+          'success',
+        );
+      },
+      error: (err: unknown) => {
+        this.isProcessing.set(false);
+        // HTTP failures (invalid, expired, depleted: 400 with the API's own
+        // message) are already toasted by the error interceptor. Only the
+        // client-side guest rejection needs surfacing here.
+        if (!(err instanceof HttpErrorResponse)) {
+          this.toastService.show(
+            err instanceof Error ? err.message : GUEST_GIFT_CARD_MESSAGE,
+            'error',
+          );
+        }
+      },
+    });
+  }
+
+  removeGiftCard() {
+    this.isProcessing.set(true);
+    this.cartService.removeGiftCard().subscribe({
+      next: (cart) => {
+        this.isProcessing.set(false);
+        this.applyCartState(cart);
+        this.toastService.show('Gift card removed.', 'info');
+      },
+      error: (err: unknown) => {
+        this.isProcessing.set(false);
+        if (!(err instanceof HttpErrorResponse)) {
+          this.toastService.show(
+            err instanceof Error ? err.message : GUEST_GIFT_CARD_MESSAGE,
+            'error',
+          );
+        }
+      },
     });
   }
 }

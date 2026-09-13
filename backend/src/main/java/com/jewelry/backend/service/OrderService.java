@@ -50,6 +50,9 @@ public class OrderService {
     @Autowired
     com.jewelry.backend.repository.CouponRepository couponRepository;
 
+    @Autowired
+    GiftCardService giftCardService;
+
     @Transactional(rollbackFor = Exception.class)
     public Order createOrder(String userEmail, CreateOrderRequest request) {
         if (request.getPaymentDetails() != null && request.getPaymentDetails().getRazorpay_order_id() != null) {
@@ -82,6 +85,15 @@ public class OrderService {
         order.setShipping(cart.getShipping());
         order.setDiscount(cart.getDiscount());
         order.setAppliedCoupon(cart.getAppliedCoupon());
+
+        java.math.BigDecimal giftCardAmount = cart.getGiftCardAmount() == null
+                ? java.math.BigDecimal.ZERO
+                : cart.getGiftCardAmount().setScale(2, java.math.RoundingMode.HALF_UP);
+        boolean giftCardApplied = cart.getAppliedGiftCard() != null
+                && !cart.getAppliedGiftCard().isBlank()
+                && giftCardAmount.compareTo(java.math.BigDecimal.ZERO) > 0;
+        order.setAppliedGiftCard(giftCardApplied ? cart.getAppliedGiftCard() : null);
+        order.setGiftCardAmount(giftCardApplied ? giftCardAmount : java.math.BigDecimal.ZERO);
 
         try {
             order.setShippingAddress(objectMapper.writeValueAsString(request.getShippingAddress()));
@@ -116,7 +128,14 @@ public class OrderService {
             // Cash on delivery is considered confirmed but not paid yet
             order.setStatus("CONFIRMED");
         }
-        
+
+        // A gift card that covers the whole total is the payment.
+        if (giftCardApplied && order.getTotal() != null
+                && order.getTotal().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            order.setPaymentMethod("GIFT_CARD");
+            order.setStatus("PAID");
+        }
+
         if (request.getIdempotencyKey() != null) {
             order.setIdempotencyKey(request.getIdempotencyKey());
         }
@@ -160,6 +179,13 @@ public class OrderService {
             });
         }
 
+        // Redeem the gift card in the same transaction: the row is locked,
+        // status and balance are re-checked, and the card becomes DEPLETED
+        // when its balance reaches zero. A failure here rolls the order back.
+        if (giftCardApplied) {
+            giftCardService.redeem(cart.getAppliedGiftCard(), giftCardAmount);
+        }
+
         // Clear cart
         cart.getItems().clear();
         cart.setSubtotal(java.math.BigDecimal.ZERO);
@@ -168,6 +194,8 @@ public class OrderService {
         cart.setTax(java.math.BigDecimal.ZERO);
         cart.setShipping(java.math.BigDecimal.ZERO);
         cart.setAppliedCoupon(null);
+        cart.setAppliedGiftCard(null);
+        cart.setGiftCardAmount(java.math.BigDecimal.ZERO);
         cartRepository.save(cart);
 
         return savedOrder;

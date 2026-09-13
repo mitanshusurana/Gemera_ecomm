@@ -9,8 +9,7 @@ import { environment } from '../../../environments/environment';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
   private orderService = inject(OrderService);

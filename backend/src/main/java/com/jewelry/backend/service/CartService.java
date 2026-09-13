@@ -8,6 +8,8 @@ import com.jewelry.backend.entity.User;
 import com.jewelry.backend.repository.*;
 import com.jewelry.backend.entity.Wishlist;
 import com.jewelry.backend.entity.Coupon;
+import com.jewelry.backend.entity.GiftCard;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +52,9 @@ public class CartService {
 
     @Autowired
     CouponRepository couponRepository;
+
+    @Autowired
+    GiftCardService giftCardService;
 
     @Transactional(rollbackFor = Exception.class)
     public Cart getCart(String userEmail) {
@@ -208,6 +213,28 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public Cart applyGiftCard(String userEmail, String code) {
+        Cart cart = getCart(userEmail);
+        // Throws IllegalArgumentException (400) with a customer-facing reason
+        // when the card is unknown, unpaid, disabled, depleted or expired.
+        GiftCard card = giftCardService.requireRedeemable(code);
+        cart.setAppliedGiftCard(card.getCode());
+        recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
+        return cartRepository.save(cart);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Cart removeGiftCard(String userEmail) {
+        Cart cart = getCart(userEmail);
+        cart.setAppliedGiftCard(null);
+        cart.setGiftCardAmount(BigDecimal.ZERO);
+        recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
+        return cartRepository.save(cart);
+    }
+
     private void recalculateCart(Cart cart) {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (CartItem item : cart.getItems()) {
@@ -279,6 +306,24 @@ public class CartService {
         if (cart.isGiftWrap()) {
             total = total.add(giftWrapFee);
         }
-        cart.setTotal(total);
+        // Money is 2 dp; tax multiplication above can produce more.
+        total = total.setScale(2, RoundingMode.HALF_UP);
+
+        // Gift card: cover as much of the total as the balance allows. The
+        // amount still to be paid is what remains. A card that has stopped
+        // being valid since it was applied is dropped silently.
+        BigDecimal totalBeforeGiftCard = total;
+        BigDecimal giftCardAmount = BigDecimal.ZERO;
+        if (cart.getAppliedGiftCard() != null && !cart.getAppliedGiftCard().isBlank()) {
+            GiftCard card = giftCardService.findRedeemable(cart.getAppliedGiftCard()).orElse(null);
+            if (card != null) {
+                BigDecimal balance = card.getBalance().setScale(2, RoundingMode.HALF_UP);
+                giftCardAmount = balance.min(totalBeforeGiftCard).max(BigDecimal.ZERO);
+            } else {
+                cart.setAppliedGiftCard(null);
+            }
+        }
+        cart.setGiftCardAmount(giftCardAmount);
+        cart.setTotal(totalBeforeGiftCard.subtract(giftCardAmount));
     }
 }

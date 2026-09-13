@@ -57,6 +57,18 @@ public class CartController {
         return ResponseEntity.ok(entityMapper.toCartDTO(cartService.applyCoupon(principal.getName(), request.getCode())));
     }
 
+    @PostMapping("/apply-gift-card")
+    @Operation(summary = "Apply a gift card to the cart")
+    public ResponseEntity<CartDTO> applyGiftCard(@Valid @RequestBody ApplyGiftCardRequest request, Principal principal) {
+        return ResponseEntity.ok(entityMapper.toCartDTO(cartService.applyGiftCard(principal.getName(), request.getCode())));
+    }
+
+    @DeleteMapping("/gift-card")
+    @Operation(summary = "Remove the applied gift card from the cart")
+    public ResponseEntity<CartDTO> removeGiftCard(Principal principal) {
+        return ResponseEntity.ok(entityMapper.toCartDTO(cartService.removeGiftCard(principal.getName())));
+    }
+
     @PostMapping("/options")
     @Operation(summary = "Update cart options (e.g. Gift Wrap)")
     public ResponseEntity<CartDTO> updateOptions(@RequestBody CartOptionsRequest request, Principal principal) {

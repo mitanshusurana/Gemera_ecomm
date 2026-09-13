@@ -42,7 +42,18 @@ import { FormsModule } from '@angular/forms';
 
           <!-- Mode 3: Model Silhouette Presets -->
           <div *ngIf="tryOnMode() === 'model'" class="w-full h-full relative flex items-center justify-center bg-gradient-to-b from-[#1c1c1e] to-[#121214]">
-            <img [src]="modelPresetUrl()" class="w-full h-full object-contain opacity-75" alt="Model Silhouette">
+            <!-- Neutral bust silhouette drawn inline: no third-party image host involved -->
+            <svg viewBox="0 0 400 520" class="h-[85%] w-auto opacity-80" role="img" aria-label="Model silhouette">
+              <defs>
+                <linearGradient id="tryon-skin" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#3a3a3c"/>
+                  <stop offset="1" stop-color="#2c2c2e"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="200" cy="120" rx="78" ry="98" fill="url(#tryon-skin)"/>
+              <path d="M160 205 h80 v50 c0 30 60 40 100 70 c30 22 40 60 40 195 H20 c0 -135 10 -173 40 -195 c40 -30 100 -40 100 -70 z" fill="url(#tryon-skin)"/>
+              <path d="M110 300 q90 60 180 0" fill="none" stroke="#D4AF37" stroke-opacity="0.35" stroke-width="2"/>
+            </svg>
           </div>
 
           <!-- Fallback: Webcam Perms / Idle State -->
@@ -200,7 +211,6 @@ export class VirtualTryOnComponent implements OnDestroy {
   private initialPosY = 0;
   private mediaStream: MediaStream | null = null;
 
-  modelPresetUrl = signal('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800');
 
   ngOnDestroy() {
     this.stopWebcam();

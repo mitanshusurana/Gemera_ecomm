@@ -64,3 +64,61 @@ export interface TransactionFailureRequest {
   razorpay_order_id?: string;
   razorpay_payment_id?: string;
 }
+
+// Gift-card DTOs (API contract, section 4). Amounts are whole INR except
+// GiftCardPurchaseResponse.amount, which is paise for Razorpay.
+export type GiftCardTheme = 'classic' | 'gold' | 'ruby';
+export type GiftCardStatus = 'PENDING_PAYMENT' | 'ACTIVE' | 'DEPLETED' | 'DISABLED';
+
+export const GIFT_CARD_AMOUNT = {
+  min: 500,
+  max: 100000,
+  presets: [500, 1000, 2500, 5000, 10000, 25000],
+} as const;
+
+export interface GiftCardPurchaseRequest {
+  amount: number;
+  purchaserEmail: string;
+  recipientName: string;
+  recipientEmail: string;
+  message?: string;
+  theme: GiftCardTheme;
+}
+
+export interface GiftCardPurchaseResponse {
+  giftCardId: string;
+  razorpayOrderId: string;
+  /** Paise. */
+  amount: number;
+  currency: string;
+}
+
+export interface GiftCardConfirmRequest {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
+
+export interface GiftCardDTO {
+  id: string;
+  code: string;
+  initialAmount: number;
+  balance: number;
+  currency: string;
+  recipientName: string;
+  recipientEmail: string;
+  message?: string;
+  theme: GiftCardTheme;
+  status: GiftCardStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface GiftCardBalanceResponse {
+  /** Masked by the server: "CL-****-****-1234". */
+  code: string;
+  balance: number;
+  currency: string;
+  status: GiftCardStatus;
+  expiresAt: string;
+}

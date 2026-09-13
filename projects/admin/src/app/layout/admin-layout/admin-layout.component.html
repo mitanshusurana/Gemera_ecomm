@@ -56,9 +56,29 @@
         <span class="material-symbols-outlined text-xl">draw</span>
         Inquiries
       </a>
+      <a routerLink="/customers" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-xl">group</span>
+        Customers
+      </a>
+      <a routerLink="/gift-cards" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-xl">card_giftcard</span>
+        Gift Cards
+      </a>
+      <a routerLink="/stores" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-xl">storefront</span>
+        Stores
+      </a>
+      <a routerLink="/treasure" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-xl">savings</span>
+        Treasure Plans
+      </a>
       <a routerLink="/settings" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
         <span class="material-symbols-outlined text-xl">settings</span>
         Settings
+      </a>
+      <a routerLink="/system-maintenance" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-xl">build</span>
+        System Maintenance
       </a>
     </nav>
 
@@ -109,15 +129,19 @@
         <p class="text-[10px] font-bold leading-none">Orders</p>
       </a>
 
-      <!-- Adding placeholder links for the other tabs -->
+      <!--
+        The mobile bar stays at six items; Appointments, Inquiries, Customers,
+        Stores, Treasure Plans and System Maintenance are reached from the
+        desktop sidebar or by URL.
+      -->
       <a routerLink="/appointments" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">event</span>
         <p class="text-[10px] font-bold leading-none">Appts</p>
       </a>
 
-      <a routerLink="/inquiries" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
-        <span class="material-symbols-outlined">draw</span>
-        <p class="text-[10px] font-bold leading-none">Inquiries</p>
+      <a routerLink="/gift-cards" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">card_giftcard</span>
+        <p class="text-[10px] font-bold leading-none">Gift Cards</p>
       </a>
 
       <a routerLink="/settings" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">

@@ -39,7 +39,7 @@ public class AuthService {
     @Autowired
     org.springframework.mail.javamail.JavaMailSender mailSender;
 
-    @org.springframework.beans.factory.annotation.Value("${frontend.url:http://localhost:4200}")
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:4200}")
     String frontendUrl;
 
     @org.springframework.transaction.annotation.Transactional

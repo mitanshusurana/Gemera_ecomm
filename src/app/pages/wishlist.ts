@@ -118,8 +118,10 @@ export class WishlistComponent implements OnInit {
   handleRemove(event: Event, productId: string): void {
     event.preventDefault();
     event.stopPropagation();
-    this.wishlistService.removeFromWishlist(productId);
-    this.toastService.show('Removed from wishlist', 'info');
+    this.wishlistService.remove(productId).subscribe({
+      next: () => this.toastService.show('Removed from wishlist', 'info'),
+      error: () => this.toastService.show('Could not update your wishlist. Please try again.', 'error')
+    });
   }
 
   handleAddToCart(event: Event, productId: string): void {

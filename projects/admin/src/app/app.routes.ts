@@ -1,45 +1,39 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './pages/login/login.component';
-import { AdminLayoutComponent } from './layout/admin-layout/admin-layout.component';
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { ProductListComponent } from './pages/product-list/product-list.component';
-import { ProductAddComponent } from './pages/product-add/product-add.component';
-import { OrderListComponent } from './pages/order-list/order-list.component';
-import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
-import { CustomerListComponent } from './pages/customers/customer-list.component';
-import { RfqDetailComponent } from './pages/rfq-detail/rfq-detail.component';
-import { TreasurePlanListComponent } from './pages/treasure-plans/treasure-plan-list.component';
-import { SettingsComponent } from './pages/settings/settings.component';
-import { AuditLogComponent } from './pages/audit-logs/audit-log.component';
-import { SystemMaintenanceComponent } from './pages/system-maintenance/system-maintenance.component';
-import { AppointmentListComponent } from './pages/appointments/appointment-list.component';
-import { InquiryListComponent } from './pages/inquiries/inquiry-list.component';
 import { authGuard } from './guards/auth.guard';
-import { CategoriesComponent } from './pages/categories/categories.component';
 
-
+/**
+ * Every page is lazy-loaded with `loadComponent` so that heavy, page-local
+ * dependencies (jspdf, @zxing/library and qrcode in the product list) are
+ * split into their own chunks instead of landing in the initial bundle. The
+ * shell (login + layout + guard) is all the initial download has to carry.
+ */
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent),
+  },
   {
     path: '',
-    component: AdminLayoutComponent,
+    loadComponent: () => import('./layout/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
     canActivate: [authGuard],
     children: [
-      { path: 'dashboard', component: DashboardComponent },
-      { path: 'appointments', component: AppointmentListComponent },
-      { path: 'inquiries', component: InquiryListComponent },
-      { path: 'customers', component: CustomerListComponent },
-      { path: 'categories', component: CategoriesComponent },
-      { path: 'products', component: ProductListComponent },
-      { path: 'products/new', component: ProductAddComponent },
-      { path: 'products/edit/:id', component: ProductAddComponent },
-      { path: 'orders', component: OrderListComponent },
-      { path: 'orders/:id', component: OrderDetailComponent },
-      { path: 'rfqs/:id', component: RfqDetailComponent },
-      { path: 'treasure', component: TreasurePlanListComponent },
-      { path: 'settings', component: SettingsComponent },
-      { path: 'logs', component: AuditLogComponent },
-      { path: 'system-maintenance', component: SystemMaintenanceComponent },
+      { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'appointments', loadComponent: () => import('./pages/appointments/appointment-list.component').then(m => m.AppointmentListComponent) },
+      { path: 'inquiries', loadComponent: () => import('./pages/inquiries/inquiry-list.component').then(m => m.InquiryListComponent) },
+      { path: 'customers', loadComponent: () => import('./pages/customers/customer-list.component').then(m => m.CustomerListComponent) },
+      { path: 'categories', loadComponent: () => import('./pages/categories/categories.component').then(m => m.CategoriesComponent) },
+      { path: 'products', loadComponent: () => import('./pages/product-list/product-list.component').then(m => m.ProductListComponent) },
+      { path: 'products/new', loadComponent: () => import('./pages/product-add/product-add.component').then(m => m.ProductAddComponent) },
+      { path: 'products/edit/:id', loadComponent: () => import('./pages/product-add/product-add.component').then(m => m.ProductAddComponent) },
+      { path: 'orders', loadComponent: () => import('./pages/order-list/order-list.component').then(m => m.OrderListComponent) },
+      { path: 'orders/:id', loadComponent: () => import('./pages/order-detail/order-detail.component').then(m => m.OrderDetailComponent) },
+      { path: 'rfqs/:id', loadComponent: () => import('./pages/rfq-detail/rfq-detail.component').then(m => m.RfqDetailComponent) },
+      { path: 'treasure', loadComponent: () => import('./pages/treasure-plans/treasure-plan-list.component').then(m => m.TreasurePlanListComponent) },
+      { path: 'stores', loadComponent: () => import('./pages/stores/store-list.component').then(m => m.StoreListComponent) },
+      { path: 'gift-cards', loadComponent: () => import('./pages/gift-cards/gift-card-list.component').then(m => m.GiftCardListComponent) },
+      { path: 'settings', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
+      { path: 'logs', loadComponent: () => import('./pages/audit-logs/audit-log.component').then(m => m.AuditLogComponent) },
+      { path: 'system-maintenance', loadComponent: () => import('./pages/system-maintenance/system-maintenance.component').then(m => m.SystemMaintenanceComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

@@ -128,6 +128,11 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/reset-password`, { token, newPassword });
   }
 
+  /** Signed-in user changes their own password: POST users/change-password. */
+  changePassword(oldPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.usersUrl}/change-password`, { oldPassword, newPassword });
+  }
+
   // Helper to fetch user if token exists but user is null (page reload)
   private refreshUser() {
     this.http.get<User>(`${this.usersUrl}/me`).subscribe({

@@ -7,8 +7,7 @@ import { OrderService } from '../../services/order.service';
   selector: 'app-order-list',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './order-list.component.html',
-  styleUrl: './order-list.component.css'
+  templateUrl: './order-list.component.html'
 })
 export class OrderListComponent implements OnInit {
   private orderService = inject(OrderService);

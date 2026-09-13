@@ -21,7 +21,7 @@ import { environment } from "../../environments/environment";
       <div class="bg-[#fafafc] border-b border-[#e0e0e0] py-10 px-6 md:px-12">
         <div class="max-w-[1440px] mx-auto flex flex-col lg:flex-row items-center justify-between gap-6">
           <div>
-            <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight">Join the Gemera Club</h3>
+            <h3 class="font-display font-semibold text-2xl text-[#1d1d1f] tracking-tight">Join the Caratloop Club</h3>
             <p class="text-sm text-[#7a7a7a] mt-1">Be first to receive new collection debuts and private gemstone allocations.</p>
           </div>
           <div class="flex flex-col sm:flex-row w-full lg:w-auto gap-3 max-w-md">
@@ -49,7 +49,7 @@ import { environment } from "../../environments/environment";
           
           <!-- Column 1: Brand -->
           <div class="col-span-2 md:col-span-4 lg:col-span-1">
-            <img ngSrc="/logo-with-name.png" alt="Gemera Fine Jewelry" class="h-8 w-auto object-contain mb-4" width="130" height="32" />
+            <img ngSrc="/logo-with-name.png" alt="Caratloop" class="h-8 w-auto object-contain mb-4" width="65" height="32" />
             <p class="text-xs text-[#7a7a7a] leading-relaxed max-w-xs">
               Reverent craftsmanship meets modern luxury. Certified ethical diamonds and 18K solid gold.
             </p>
@@ -91,7 +91,7 @@ import { environment } from "../../environments/environment";
 
           <!-- Column 5: Contact & Location -->
           <div>
-            <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">Gemera House</h4>
+            <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">Caratloop House</h4>
             <div class="text-xs text-[#7a7a7a] space-y-3">
               <p [innerHTML]="settings.address"></p>
               <p><a [href]="'tel:' + settings.phone" class="hover:text-[#1d1d1f]">{{ settings.phone }}</a></p>
@@ -103,7 +103,7 @@ import { environment } from "../../environments/environment";
 
         <!-- Apple Micro Fine Print & Copyright Row -->
         <div class="border-t border-[#e0e0e0] mt-12 pt-6 flex flex-col md:flex-row items-center justify-between text-xs text-[#7a7a7a] gap-4">
-          <div>Copyright &copy; 2026 Gemera Fine Jewels. All rights reserved.</div>
+          <div>Copyright &copy; 2026 Caratloop. All rights reserved.</div>
           <div class="flex space-x-6">
             <a routerLink="/privacy" class="hover:text-[#1d1d1f] transition-colors">Privacy Policy</a>
             <a routerLink="/terms" class="hover:text-[#1d1d1f] transition-colors">Terms of Use</a>

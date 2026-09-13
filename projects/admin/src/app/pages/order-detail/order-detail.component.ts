@@ -8,8 +8,7 @@ import { OrderService } from '../../services/order.service';
   selector: 'app-order-detail',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './order-detail.component.html',
-  styleUrl: './order-detail.component.css'
+  templateUrl: './order-detail.component.html'
 })
 export class OrderDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);

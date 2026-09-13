@@ -111,20 +111,12 @@ import { COUNTRIES } from '../core/countries';
             <div *ngIf="activeTab() === 'profile'" class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 animate-fadeIn">
 
               <!-- Loyalty Points Summary -->
-              <div class="bg-[#1c1c1e] text-white rounded-[18px] p-6 mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div>
-                  <p class="text-[#a1a1a6] text-xs font-semibold uppercase tracking-[0.15em] mb-1">Caratloop Loyalty Points</p>
-                  <h3 class="font-display font-semibold text-3xl text-white flex items-center gap-2">
-                    <span class="text-4xl">💎</span> {{ loyalty().points | number }}
-                  </h3>
-                  <p class="text-[#a1a1a6] text-xs mt-2">Current Tier: {{ loyalty().tier }}</p>
-                </div>
-                <div class="sm:text-right">
-                  <button (click)="redeemPoints()" class="btn-apple-pill text-xs !py-2 !px-4 mb-2">
-                    Redeem Points
-                  </button>
-                  <p class="text-xs text-[#a1a1a6]">Expires: Dec 31, 2025</p>
-                </div>
+              <div class="bg-[#1c1c1e] text-white rounded-[18px] p-6 mb-8">
+                <p class="text-[#a1a1a6] text-xs font-semibold uppercase tracking-[0.15em] mb-1">Caratloop Loyalty Points</p>
+                <h3 class="font-display font-semibold text-3xl text-white flex items-center gap-2">
+                  <span class="text-4xl">💎</span> {{ loyalty().points | number }}
+                </h3>
+                <p class="text-[#a1a1a6] text-xs mt-2">Current Tier: {{ loyalty().tier }}</p>
               </div>
 
               <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f] mb-8">Profile Information</h2>
@@ -260,9 +252,20 @@ import { COUNTRIES } from '../core/countries';
                       {{ address.country }}<br>
                       {{ address.phone }}
                     </p>
-                    <div class="flex gap-4">
+                    <div *ngIf="pendingDeleteId() !== address.id" class="flex gap-4">
                       <button (click)="openAddressModal(address)" class="text-sm text-[#D4AF37] hover:underline font-medium">Edit</button>
-                      <button (click)="deleteAddress(address.id)" class="text-sm text-red-600 hover:underline font-medium">Delete</button>
+                      <button (click)="pendingDeleteId.set(address.id)" class="text-sm text-red-600 hover:underline font-medium">Delete</button>
+                    </div>
+                    <div *ngIf="pendingDeleteId() === address.id" class="flex flex-wrap items-center gap-3 animate-fadeIn">
+                      <span class="text-sm text-[#1d1d1f]">Delete this address?</span>
+                      <button type="button" (click)="deleteAddress(address.id)" [disabled]="deletingAddress()"
+                              class="rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-4 py-1.5 transition-colors active-press disabled:opacity-60">
+                        {{ deletingAddress() ? 'Deleting…' : 'Delete' }}
+                      </button>
+                      <button type="button" (click)="pendingDeleteId.set(null)" [disabled]="deletingAddress()"
+                              class="rounded-full bg-[#1d1d1f] hover:bg-black text-white text-xs font-medium px-4 py-1.5 transition-colors active-press disabled:opacity-60">
+                        Cancel
+                      </button>
                     </div>
                   </div>
 
@@ -277,17 +280,8 @@ import { COUNTRIES } from '../core/countries';
             <div *ngIf="activeTab() === 'wishlist'" class="space-y-6 animate-fadeIn">
               <div class="bg-white border border-[#e0e0e0] rounded-[18px] p-8">
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
-                  <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f]">My Wishlists</h2>
-                  <button (click)="createBoard()" class="btn-outline text-sm !py-2.5 !px-5 flex items-center gap-2">
-                    <span>+</span> Create Board
-                  </button>
-                </div>
-
-                <!-- Boards Tabs (Mock) -->
-                <div class="flex gap-6 mb-6 border-b border-[#e0e0e0] text-sm">
-                  <button class="text-[#1d1d1f] border-b-2 border-[#D4AF37] font-medium px-1 pb-3 -mb-px">All Items</button>
-                  <button class="text-[#6e6e73] hover:text-[#1d1d1f] px-1 pb-3 -mb-px transition-colors">Wedding Ideas</button>
-                  <button class="text-[#6e6e73] hover:text-[#1d1d1f] px-1 pb-3 -mb-px transition-colors">Gifts for Mom</button>
+                  <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f]">My Wishlist</h2>
+                  <span *ngIf="wishlistService.count() > 0" class="text-sm text-[#6e6e73]">{{ wishlistService.count() }} saved {{ wishlistService.count() === 1 ? 'item' : 'items' }}</span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -295,7 +289,7 @@ import { COUNTRIES } from '../core/countries';
                     <div class="relative overflow-hidden aspect-square bg-[#f5f5f7] rounded-[12px] mb-6 flex items-center justify-center">
                       <img *ngIf="item.imageUrl || item.images?.[0]" [ngSrc]="item.imageUrl || item.images?.[0] || ''" fill class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" [alt]="item.name">
                       <span *ngIf="!item.imageUrl && !item.images?.[0]" class="text-3xl">💎</span>
-                      <button (click)="wishlistService.removeFromWishlist(item.id)" aria-label="Remove from wishlist" class="absolute top-4 left-4 w-10 h-10 bg-white/90 backdrop-blur-md border border-[#e0e0e0] text-red-600 hover:border-red-200 rounded-full flex items-center justify-center active-press z-10">
+                      <button (click)="removeFromWishlist(item.id)" aria-label="Remove from wishlist" class="absolute top-4 left-4 w-10 h-10 bg-white/90 backdrop-blur-md border border-[#e0e0e0] text-red-600 hover:border-red-200 rounded-full flex items-center justify-center active-press z-10">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
@@ -307,7 +301,6 @@ import { COUNTRIES } from '../core/countries';
                       <div class="flex justify-between items-center">
                         <span class="font-sans font-semibold text-xl text-[#1d1d1f]">{{ item.price | currencyConvert }}</span>
                       </div>
-                      <!-- Add to Cart Logic would go here, maybe inject CartService too or just link to product -->
                       <a [routerLink]="['/products', item.id]" class="btn-apple-pill w-full mt-4 text-sm !py-2.5">View Details</a>
                     </div>
                   </div>
@@ -325,39 +318,40 @@ import { COUNTRIES } from '../core/countries';
 
               <div class="space-y-8">
                 <div>
-                  <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-4">Email Notifications</h3>
-                  <div class="space-y-3">
-                    <label class="flex items-center gap-3">
-                      <input type="checkbox" checked class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
-                      <span class="text-[#1d1d1f]">Order updates and shipping notifications</span>
-                    </label>
-                    <label class="flex items-center gap-3">
-                      <input type="checkbox" checked class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
-                      <span class="text-[#1d1d1f]">New collection and product launches</span>
-                    </label>
-                    <label class="flex items-center gap-3">
-                      <input type="checkbox" checked class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
-                      <span class="text-[#1d1d1f]">Exclusive offers and promotions</span>
-                    </label>
-                    <label class="flex items-center gap-3">
-                      <input type="checkbox" class="w-4 h-4 rounded border-[#e0e0e0] accent-[#D4AF37]">
-                      <span class="text-[#1d1d1f]">Monthly newsletter</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="border-t border-[#f0f0f0] pt-8">
                   <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-4">Privacy & Security</h3>
-                  <div class="space-y-3">
-                    <a href="#" class="block text-[#D4AF37] hover:underline font-medium">Change Password</a>
-                    <a href="#" class="block text-[#D4AF37] hover:underline font-medium">Two-Factor Authentication</a>
-                    <a href="#" class="block text-[#D4AF37] hover:underline font-medium">Manage Login Sessions</a>
-                  </div>
-                </div>
+                  <button *ngIf="!showChangePassword()" type="button" (click)="openChangePassword()"
+                          class="text-[#D4AF37] hover:underline font-medium">
+                    Change Password
+                  </button>
 
-                <button class="btn-apple-pill">
-                  Save Preferences
-                </button>
+                  <form *ngIf="showChangePassword()" (ngSubmit)="submitChangePassword()"
+                        class="bg-[#f5f5f7] border border-[#e0e0e0] rounded-[18px] p-6 space-y-4 max-w-md animate-fadeIn">
+                    <h4 class="font-sans font-semibold text-base text-[#1d1d1f]">Change Password</h4>
+                    <div>
+                      <label for="oldPassword" class="block text-sm font-medium text-[#1d1d1f] mb-2">Current Password</label>
+                      <input id="oldPassword" type="password" [(ngModel)]="passwordChange.oldPassword" name="oldPassword"
+                             autocomplete="current-password" required class="input-field !bg-white">
+                    </div>
+                    <div>
+                      <label for="newPassword" class="block text-sm font-medium text-[#1d1d1f] mb-2">New Password</label>
+                      <input id="newPassword" type="password" [(ngModel)]="passwordChange.newPassword" name="newPassword"
+                             autocomplete="new-password" required minlength="8" class="input-field !bg-white">
+                      <p class="text-xs text-[#6e6e73] mt-1">At least 8 characters.</p>
+                    </div>
+                    <div>
+                      <label for="confirmPassword" class="block text-sm font-medium text-[#1d1d1f] mb-2">Confirm New Password</label>
+                      <input id="confirmPassword" type="password" [(ngModel)]="passwordChange.confirmPassword" name="confirmPassword"
+                             autocomplete="new-password" required class="input-field !bg-white">
+                    </div>
+                    <p *ngIf="passwordError()" class="text-sm text-red-600">{{ passwordError() }}</p>
+                    <div class="flex gap-2 pt-2">
+                      <button type="button" (click)="closeChangePassword()" class="btn-ghost flex-1" [disabled]="changingPassword()">Cancel</button>
+                      <button type="submit" class="btn-apple-pill flex-1" [disabled]="changingPassword()">
+                        {{ changingPassword() ? 'Updating…' : 'Update Password' }}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -411,6 +405,15 @@ export class AccountComponent implements OnInit {
   isAddressModalOpen = signal(false);
   currentAddress = signal<Partial<Address>>({});
   countriesList = COUNTRIES;
+  /** Address whose inline "Delete / Cancel" confirmation is showing. */
+  pendingDeleteId = signal<string | null>(null);
+  deletingAddress = signal(false);
+
+  // Change-password panel state
+  showChangePassword = signal(false);
+  changingPassword = signal(false);
+  passwordError = signal<string | null>(null);
+  passwordChange = { oldPassword: '', newPassword: '', confirmPassword: '' };
 
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -423,6 +426,8 @@ export class AccountComponent implements OnInit {
     effect(() => {
       if (this.activeTab() === 'orders') {
         this.loadOrders();
+      } else if (this.activeTab() === 'wishlist') {
+        this.wishlistService.load().subscribe({ error: () => { /* items() falls back to the cart snapshot */ } });
       }
     });
   }
@@ -478,11 +483,58 @@ export class AccountComponent implements OnInit {
     });
   }
 
-  createBoard(): void {
-    const name = prompt("Enter new board name (e.g., 'Dream Ring'):");
-    if (name) {
-      this.toastService.show(`Created new wishlist board: ${name}`, 'success');
+  removeFromWishlist(productId: string): void {
+    this.wishlistService.remove(productId).subscribe({
+      next: () => this.toastService.show('Removed from wishlist', 'success'),
+      error: () => this.toastService.show('Failed to remove from wishlist', 'error'),
+    });
+  }
+
+  openChangePassword(): void {
+    this.passwordChange = { oldPassword: '', newPassword: '', confirmPassword: '' };
+    this.passwordError.set(null);
+    this.showChangePassword.set(true);
+  }
+
+  closeChangePassword(): void {
+    this.showChangePassword.set(false);
+    this.passwordError.set(null);
+    this.passwordChange = { oldPassword: '', newPassword: '', confirmPassword: '' };
+  }
+
+  submitChangePassword(): void {
+    const { oldPassword, newPassword, confirmPassword } = this.passwordChange;
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      this.passwordError.set('Please fill in all three fields.');
+      return;
     }
+    if (newPassword.length < 8) {
+      this.passwordError.set('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      this.passwordError.set('New passwords do not match.');
+      return;
+    }
+    if (newPassword === oldPassword) {
+      this.passwordError.set('New password must differ from the current one.');
+      return;
+    }
+    this.passwordError.set(null);
+    this.changingPassword.set(true);
+    this.authService.changePassword(oldPassword, newPassword).subscribe({
+      next: (res) => {
+        this.changingPassword.set(false);
+        this.toastService.show(res?.message || 'Password updated', 'success');
+        this.closeChangePassword();
+      },
+      error: (err) => {
+        this.changingPassword.set(false);
+        const message = err?.error?.message || 'Failed to change password';
+        this.passwordError.set(message);
+        this.toastService.show(message, 'error');
+      },
+    });
   }
 
   updateProfile(): void {
@@ -497,10 +549,6 @@ export class AccountComponent implements OnInit {
             }
         });
     }
-  }
-
-  redeemPoints(): void {
-    this.toastService.show('Points redemption feature coming soon!', 'success');
   }
 
   logout(): void {
@@ -563,16 +611,20 @@ export class AccountComponent implements OnInit {
     }
   }
 
+  /** Called from the inline confirmation, after the user has clicked Delete a second time. */
   deleteAddress(id: string) {
-    if (confirm('Are you sure you want to delete this address?')) {
-      this.authService.deleteAddress(id).subscribe({
-        next: () => {
-            this.toastService.show('Address deleted successfully', 'success');
-        },
-        error: () => {
-            this.toastService.show('Failed to delete address', 'error');
-        }
-      });
-    }
+    this.deletingAddress.set(true);
+    this.authService.deleteAddress(id).subscribe({
+      next: () => {
+          this.deletingAddress.set(false);
+          this.pendingDeleteId.set(null);
+          this.toastService.show('Address deleted successfully', 'success');
+      },
+      error: () => {
+          this.deletingAddress.set(false);
+          this.pendingDeleteId.set(null);
+          this.toastService.show('Failed to delete address', 'error');
+      }
+    });
   }
 }

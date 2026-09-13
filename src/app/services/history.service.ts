@@ -6,7 +6,7 @@ import { Product } from '../core/models';
 })
 export class HistoryService {
   recentlyViewed = signal<Product[]>([]);
-  private readonly STORAGE_KEY = 'gemara_history';
+  private readonly STORAGE_KEY = 'caratloop_history';
 
   constructor() {
     this.loadHistory();

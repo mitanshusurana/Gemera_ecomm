@@ -63,3 +63,6 @@ test_login.js
 *.log
 backend/backend_server.log
 *.log
+
+# Local Claude Code session files
+.claude/

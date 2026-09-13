@@ -1,4 +1,4 @@
-
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
@@ -9,6 +9,6 @@
     "src/main.ts"
   ],
   "include": [
-    "src/**/*.ts"
+    "src/**/*.d.ts"
   ]
 }

@@ -125,6 +125,8 @@ public class SecurityConfig {
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/metal-prices").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/gift-cards/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/gift-cards/purchase").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/gift-cards/*/confirm").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/treasure/config").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/certificates/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/orders/track/**").permitAll()

@@ -1,0 +1,153 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <div class="sm:flex sm:items-center py-6">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Gift Cards</h1>
+      <p class="mt-2 text-sm text-ink/70">Cards bought on the storefront and cards issued here for offline sales or goodwill.</p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+      <button type="button" (click)="toggleIssue()"
+              class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-surface shadow-sm hover:bg-primary/90">
+        <span class="material-symbols-outlined text-[18px]">{{ issueOpen ? 'close' : 'card_giftcard' }}</span>
+        {{ issueOpen ? 'Close' : 'Issue gift card' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+
+  <!-- Confirmation of a just-issued card -->
+  <div *ngIf="issuedCard" class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <p class="text-sm font-semibold text-emerald-900">Gift card issued and emailed to {{ issuedCard.recipientEmail }}.</p>
+      <p class="text-xs text-emerald-800 mt-1">
+        Code <span class="font-mono font-bold">{{ issuedCard.code }}</span>
+        &middot; {{ issuedCard.initialAmount | currency:'INR':'symbol':'1.0-0' }}
+        <ng-container *ngIf="issuedCard.expiresAt">&middot; expires {{ issuedCard.expiresAt | date:'mediumDate' }}</ng-container>
+      </p>
+    </div>
+    <button type="button" (click)="issuedCard = null" class="text-xs font-medium text-emerald-900 underline self-start sm:self-auto">Dismiss</button>
+  </div>
+
+  <!-- Issue form -->
+  <form *ngIf="issueOpen" [formGroup]="issueForm" (ngSubmit)="submitIssue()"
+        class="mb-6 bg-surface rounded-xl border border-ink/20 shadow-sm p-6 space-y-4">
+    <h2 class="text-lg font-bold text-ink">Issue a gift card</h2>
+    <p class="text-sm text-ink/70">The card is activated immediately and the recipient receives the code by email. Use this for offline sales or goodwill credits.</p>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-ink">Amount (INR) *</label>
+        <input formControlName="amount" type="number" min="500" max="100000" step="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+        <p *ngIf="invalid('amount')" class="mt-1 text-xs text-red-600">Whole rupees between 500 and 1,00,000.</p>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-ink">Recipient name *</label>
+        <input formControlName="recipientName" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+        <p *ngIf="invalid('recipientName')" class="mt-1 text-xs text-red-600">Recipient name is required.</p>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-ink">Recipient email *</label>
+        <input formControlName="recipientEmail" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+        <p *ngIf="invalid('recipientEmail')" class="mt-1 text-xs text-red-600">Enter a valid email address.</p>
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-sm font-medium text-ink">Message to recipient</label>
+        <textarea formControlName="message" rows="3" maxlength="500" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"></textarea>
+        <p class="mt-1 text-xs text-gray-500">Included in the recipient's email. Max 500 characters.</p>
+      </div>
+      <div class="sm:col-span-3">
+        <label class="block text-sm font-medium text-ink">Internal note</label>
+        <textarea formControlName="note" rows="3" maxlength="500" placeholder="e.g. Cash sale at Bandra store, receipt #1234" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"></textarea>
+        <p class="mt-1 text-xs text-gray-500">Admin only; never shown to the customer.</p>
+      </div>
+    </div>
+
+    <p *ngIf="issueError" class="text-sm text-red-600">{{ issueError }}</p>
+
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="toggleIssue()" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Cancel</button>
+      <button type="submit" [disabled]="issuing" class="px-4 py-2 bg-primary text-surface rounded-md text-sm font-bold hover:bg-primary/90 disabled:opacity-50">
+        {{ issuing ? 'Issuing...' : 'Issue and email card' }}
+      </button>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+    <table class="min-w-full divide-y divide-gray-300">
+      <thead class="bg-surface">
+        <tr>
+          <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Code</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Recipient</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Purchaser</th>
+          <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Amount</th>
+          <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Balance</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Expires</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Created</th>
+          <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let card of cards">
+          <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-mono font-semibold text-ink sm:pl-6">{{ card.code || '—' }}</td>
+          <td class="px-3 py-4 text-sm text-ink">
+            <span class="block font-medium">{{ card.recipientName }}</span>
+            <span class="block text-xs text-ink/70">{{ card.recipientEmail }}</span>
+          </td>
+          <td class="px-3 py-4 text-sm text-ink">
+            <ng-container *ngIf="card.purchaserEmail; else issuedBy">{{ card.purchaserEmail }}</ng-container>
+            <ng-template #issuedBy>
+              <span *ngIf="card.issuedBy; else none" class="text-xs text-ink/70">Issued by {{ card.issuedBy }}</span>
+              <ng-template #none><span class="text-ink/50">—</span></ng-template>
+            </ng-template>
+          </td>
+          <td class="whitespace-nowrap px-3 py-4 text-sm text-ink text-right">{{ card.initialAmount | currency:'INR':'symbol':'1.0-0' }}</td>
+          <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-right"
+              [class.text-emerald-700]="card.balance > 0" [class.text-gray-400]="card.balance <= 0">
+            {{ card.balance | currency:'INR':'symbol':'1.0-0' }}
+          </td>
+          <td class="whitespace-nowrap px-3 py-4 text-sm">
+            <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="statusClass(card.status)">
+              {{ statusLabel(card.status) }}
+            </span>
+          </td>
+          <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ card.expiresAt ? (card.expiresAt | date:'mediumDate') : '—' }}</td>
+          <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ card.createdAt | date:'mediumDate' }}</td>
+          <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+            <ng-container *ngIf="canDisable(card)">
+              <ng-container *ngIf="confirmDisableId !== card.id; else confirmRow">
+                <button type="button" (click)="askDisable(card)" class="text-red-600 hover:text-red-900 text-xs font-medium">Disable</button>
+              </ng-container>
+              <ng-template #confirmRow>
+                <span class="text-xs text-ink mr-2">Disable this card?</span>
+                <button type="button" (click)="confirmDisable(card)" [disabled]="disabling" class="text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded px-2 py-1 mr-2 disabled:opacity-50">
+                  {{ disabling ? 'Disabling...' : 'Yes, disable' }}
+                </button>
+                <button type="button" (click)="cancelDisable()" [disabled]="disabling" class="text-xs font-medium text-gray-700 hover:text-gray-900">Cancel</button>
+              </ng-template>
+            </ng-container>
+          </td>
+        </tr>
+        <tr *ngIf="loading">
+          <td colspan="9" class="px-6 py-6 text-center text-sm text-ink">Loading gift cards...</td>
+        </tr>
+        <tr *ngIf="!loading && cards.length === 0">
+          <td colspan="9" class="px-6 py-6 text-center text-sm text-ink">No gift cards yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="mt-4 flex items-center justify-between">
+    <p class="text-sm text-ink">
+      Page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
+      (<span class="font-semibold">{{ totalElements }}</span> cards)
+    </p>
+    <div class="flex gap-2">
+      <button type="button" (click)="prevPage()" [disabled]="currentPage === 0 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Previous</button>
+      <button type="button" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Next</button>
+    </div>
+  </div>
+</div>

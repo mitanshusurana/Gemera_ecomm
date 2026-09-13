@@ -17,7 +17,9 @@ public class OrderDTO {
     private BigDecimal shipping;
     private BigDecimal discount;
     private String appliedCoupon;
-    
+    private String appliedGiftCard;
+    private BigDecimal giftCardAmount;
+
     private String status;
     private LocalDate estimatedDelivery;
     private String trackingNumber;

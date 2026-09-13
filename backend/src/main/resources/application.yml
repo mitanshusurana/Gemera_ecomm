@@ -1,16 +1,24 @@
 app:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4300,http://129.159.18.63,http://129.159.18.63:8080}
+    # Production origins come from the environment; the defaults are dev only.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4300}
   admin:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
   cart:
-    tax-rate: ${CART_TAX_RATE:0.10}
+    # Tax rates live in global_settings (taxRateJewelry, taxRateGemstones,
+    # taxRateDefault), read by CartService; there is no tax-rate property.
     shipping-threshold: ${CART_SHIPPING_THRESHOLD:1000}
     standard-shipping-fee: ${CART_STANDARD_SHIPPING_FEE:50}
     gift-wrap-fee: ${CART_GIFT_WRAP_FEE:5}
+  # Base URL of the storefront, used in password-reset emails (AuthService).
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
+# Injected by PaymentService as ${razorpay.key_id} / ${razorpay.key_secret}.
+# Both empty => payment endpoints fail closed with 503.
+razorpay:
+  key_id: ${RAZORPAY_KEY_ID:}
+  key_secret: ${RAZORPAY_KEY_SECRET:}
 
 spring:
   application:
@@ -83,4 +91,8 @@ spring:
       on-profile: "prod"
   jpa:
     hibernate:
+      # No migration tool (Flyway/Liquibase) exists in this project, so `validate`
+      # never creates or alters tables. A first deployment, or any release that
+      # adds columns (e.g. products.featured), must start once WITHOUT the prod
+      # profile so the default `update` applies the schema, then switch back.
       ddl-auto: validate

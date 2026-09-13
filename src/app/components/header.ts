@@ -27,7 +27,7 @@ import { GoldRateTickerComponent } from './gold-rate-ticker';
           <!-- Logo & Brand (Left) -->
           <div class="flex items-center space-x-6">
             <a routerLink="/" class="flex items-center hover:opacity-80 transition-opacity">
-              <img ngSrc="/logo-with-name.png" alt="Caratloop Gemera" class="h-6 w-auto brightness-200 invert" width="120" height="30" priority />
+              <img ngSrc="/logo-with-name.png" alt="Caratloop" class="h-6 w-auto brightness-200 invert" width="61" height="30" priority />
             </a>
             
             <!-- Quick Links Desktop -->
@@ -80,7 +80,7 @@ import { GoldRateTickerComponent } from './gold-rate-ticker';
           
           <!-- Category / Title -->
           <a routerLink="/products" class="font-display font-semibold text-lg tracking-tight hover:opacity-80 transition-opacity">
-            Gemera Fine Jewelry
+            Caratloop Fine Jewelry
           </a>
 
           <!-- Sub-Nav Links & Action Pill -->

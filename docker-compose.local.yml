@@ -1,9 +1,21 @@
-
-
-# LOCAL DEV — All services running locally
-# Usage: docker compose -f docker-compose.local.yml up --build
-
+# LOCAL: every service built from source, one command.
+# Usage: cp .env.local.example .env.local && edit && docker compose -f docker-compose.local.yml up --build
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jewelry-postgres-local
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   backend:
     build:
@@ -11,11 +23,16 @@ services:
       dockerfile: Dockerfile
     container_name: jewelry-backend-local
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     env_file:
       - .env.local
     ports:
       - "8080:8080"
-
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
@@ -43,5 +60,5 @@ services:
     depends_on:
       - backend
 
-
-
+volumes:
+  postgres_data_local:

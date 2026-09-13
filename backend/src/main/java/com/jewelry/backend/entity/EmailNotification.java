@@ -19,6 +19,14 @@ public class EmailNotification extends BaseEntity {
     @ElementCollection
     private Map<String, String> data;
 
+    /**
+     * Ready-made HTML body. When set, EmailService sends it as-is instead of
+     * rendering a stored template. Not persisted: the notification row keeps
+     * type/subject/data as the audit record.
+     */
+    @Transient
+    private String htmlContent;
+
     private LocalDateTime sentAt;
     private String status; // PENDING, SENT, FAILED
 }

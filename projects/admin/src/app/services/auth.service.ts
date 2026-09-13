@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 
@@ -9,8 +9,6 @@ import { Router } from '@angular/router';
 })
 export class AuthService {
   private apiUrl = environment.apiUrl + '/auth';
-  private currentUserSubject = new BehaviorSubject<any>(this.getUserFromStorage());
-  public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -23,7 +21,6 @@ export class AuthService {
         if (response.token) {
           localStorage.setItem('admin_token', response.token);
           localStorage.setItem('admin_user', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
         }
       })
     );
@@ -32,7 +29,6 @@ export class AuthService {
   logout() {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
-    this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
   }
 
@@ -86,6 +82,29 @@ export class AuthService {
     return (this.currentRole() || '').toUpperCase().includes('ADMIN');
   }
 
+  /**
+   * Email of the signed-in admin, for display only. Prefers the token's
+   * subject (the backend uses the email as the JWT subject) and falls back to
+   * the user blob stored at login.
+   */
+  currentUserEmail(): string | null {
+    const token = this.getToken();
+    const claims = token ? this.decodeToken(token) : null;
+    const sub = claims?.['sub'] ?? claims?.['email'];
+    if (typeof sub === 'string' && sub.includes('@')) return sub;
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('admin_user');
+        const user = raw ? JSON.parse(raw) : null;
+        if (user && typeof user.email === 'string') return user.email;
+      } catch {
+        // Corrupt blob: nothing useful to show.
+      }
+    }
+    return null;
+  }
+
   clearSession(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('admin_token');
@@ -107,13 +126,5 @@ export class AuthService {
     } catch {
       return null;
     }
-  }
-
-  private getUserFromStorage() {
-    if (typeof localStorage !== 'undefined') {
-        const user = localStorage.getItem('admin_user');
-        return user ? JSON.parse(user) : null;
-    }
-    return null;
   }
 }

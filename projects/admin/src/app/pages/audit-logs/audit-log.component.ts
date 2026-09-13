@@ -29,8 +29,7 @@ interface AuditLogEntry {
   selector: 'app-audit-log',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './audit-log.component.html',
-  styleUrl: './audit-log.component.css',
+  templateUrl: './audit-log.component.html'
 })
 export class AuditLogComponent implements OnInit {
   private http = inject(HttpClient);

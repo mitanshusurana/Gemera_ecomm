@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, forkJoin } from 'rxjs';
+import { BehaviorSubject, Observable, of, forkJoin, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Cart } from '../core/models';
 import { AuthService } from './auth.service';
@@ -31,6 +31,9 @@ export const CART_PRICING = {
   giftWrapFee: 5,               // app.cart.gift-wrap-fee
   gstRate: 0.03,                // 3% on jewellery (HSN 7113)
 } as const;
+
+/** Shown when a signed-out visitor tries to redeem a gift card. */
+export const GUEST_GIFT_CARD_MESSAGE = 'Sign in to redeem a gift card';
 
 @Injectable({
   providedIn: 'root',
@@ -209,6 +212,51 @@ export class CartService {
       // Mock coupon for guest
       return of(this.getGuestCart());
     }
+  }
+
+  /**
+   * Redeems a gift card against the server-side cart. Guests get an error
+   * rather than a mock: a gift card is money, and the guest cart is never
+   * charged as-is, so pretending it was applied would only mislead.
+   */
+  applyGiftCard(code: string, isRetry = false): Observable<Cart> {
+    if (!this.authService.isAuthenticated()) {
+      return throwError(() => new Error(GUEST_GIFT_CARD_MESSAGE));
+    }
+    return this.http
+      .post<Cart>(`${this.baseUrl}/apply-gift-card`, { code: code.trim().toUpperCase() })
+      .pipe(
+        tap((cart) => {
+          this.normalizeCart(cart);
+          this.cart$.next(cart);
+        }),
+        catchError((error) => {
+          if ((error.status === 401 || error.status === 403) && !isRetry) {
+            this.authService.clearSession();
+            return this.applyGiftCard(code, true); // Re-run, now rejected as guest
+          }
+          throw error;
+        }),
+      );
+  }
+
+  removeGiftCard(isRetry = false): Observable<Cart> {
+    if (!this.authService.isAuthenticated()) {
+      return throwError(() => new Error(GUEST_GIFT_CARD_MESSAGE));
+    }
+    return this.http.delete<Cart>(`${this.baseUrl}/gift-card`).pipe(
+      tap((cart) => {
+        this.normalizeCart(cart);
+        this.cart$.next(cart);
+      }),
+      catchError((error) => {
+        if ((error.status === 401 || error.status === 403) && !isRetry) {
+          this.authService.clearSession();
+          return this.removeGiftCard(true);
+        }
+        throw error;
+      }),
+    );
   }
 
   cart(): Observable<Cart | null> {
@@ -391,6 +439,11 @@ export class CartService {
       typeof cart.appliedDiscount === 'string'
         ? parseFloat(cart.appliedDiscount)
         : Number(cart.appliedDiscount) || 0;
+    cart.giftCardAmount = Number(cart.giftCardAmount) || 0;
+    cart.totalBeforeGiftCard =
+      cart.totalBeforeGiftCard === undefined || cart.totalBeforeGiftCard === null
+        ? cart.total + cart.giftCardAmount
+        : Number(cart.totalBeforeGiftCard) || 0;
   }
 
   private syncGuestCart(): Observable<any> {

@@ -2,6 +2,7 @@ import { Component, OnInit, signal, ChangeDetectionStrategy, PLATFORM_ID, inject
 import { CommonModule, NgOptimizedImage, isPlatformBrowser } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
+import { maskGiftCardCode } from "../services/gift-card.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { environment } from "../../environments/environment";
 
@@ -252,14 +253,31 @@ import { environment } from "../../environments/environment";
                     orderSummary().tax | currencyConvert
                   }}</span>
                 </div>
+                <div
+                  *ngIf="orderSummary().giftCardAmount > 0"
+                  class="flex justify-between text-emerald-600"
+                >
+                  <span>Gift card<ng-container *ngIf="orderSummary().appliedGiftCard"> ({{ orderSummary().appliedGiftCard }})</ng-container></span>
+                  <span class="font-semibold"
+                    >-{{ orderSummary().giftCardAmount | currencyConvert }}</span
+                  >
+                </div>
               </div>
 
               <div class="flex justify-between items-center mb-6">
-                <span class="font-semibold text-base text-[#1d1d1f]">Total</span>
+                <span class="font-semibold text-base text-[#1d1d1f]">{{
+                  orderSummary().giftCardAmount > 0 ? 'Amount paid' : 'Total'
+                }}</span>
                 <span class="font-semibold text-2xl text-[#1d1d1f]">{{
                   orderSummary().total | currencyConvert
                 }}</span>
               </div>
+              <p
+                *ngIf="orderSummary().giftCardAmount > 0 && orderSummary().total === 0"
+                class="text-sm text-[#6e6e73] -mt-4 mb-6"
+              >
+                Paid in full with your gift card. No further payment is due.
+              </p>
 
               <div class="space-y-3 mb-6">
                 <div class="flex items-start gap-3">
@@ -319,7 +337,15 @@ export class OrderConfirmationComponent implements OnInit {
     zipCode: "",
     country: "",
   });
-  orderSummary = signal({ subtotal: 0, tax: 0, shipping: 0, discount: 0, total: 0 });
+  orderSummary = signal({
+    subtotal: 0,
+    tax: 0,
+    shipping: 0,
+    discount: 0,
+    giftCardAmount: 0,
+    appliedGiftCard: "",
+    total: 0,
+  });
 
   constructor(
     private route: ActivatedRoute,
@@ -375,9 +401,19 @@ export class OrderConfirmationComponent implements OnInit {
         const tax = order.tax ?? 0;
         const shipping = order.shipping ?? 0;
         const discount = order.discount ?? 0;
-        const total = order.total ?? subtotal - discount + tax + shipping;
+        const giftCardAmount = Number(order.giftCardAmount) || 0;
+        const total =
+          order.total ?? subtotal - discount + tax + shipping - giftCardAmount;
 
-        this.orderSummary.set({ subtotal, tax, shipping, discount, total });
+        this.orderSummary.set({
+          subtotal,
+          tax,
+          shipping,
+          discount,
+          giftCardAmount,
+          appliedGiftCard: maskGiftCardCode(order.appliedGiftCard),
+          total,
+        });
 
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + 3);

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
+import { BrowserMultiFormatReader } from '@zxing/library';
 import jsPDF from 'jspdf';
 import * as QRCode from 'qrcode';
 import { QRCodeComponent } from 'angularx-qrcode';
@@ -16,7 +16,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css'
 })
-export class ProductListComponent implements OnInit, AfterViewInit {
+export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Storefront origin for the 'View Live' preview; was hardcoded to
    *  http://localhost:4200, which is broken for every deployed user. */
   readonly storefrontUrl = environment.storefrontUrl;

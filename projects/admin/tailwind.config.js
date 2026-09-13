@@ -1,17 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./projects/admin/src/**/*.{html,ts}", "./src/**/*.html", "./src/**/*.ts"],
+  content: ["./src/**/*.{html,ts}"],
   theme: {
-    colors: {
-      white: '#ffffff',
-      black: '#000000',
-      primary: '#0A1128',
-      accent: '#C0A062',
-      surface: '#FAFAFA',
-      ink: '#1C2331',
-      transparent: 'transparent',
-      current: 'currentColor',
-    },
+    // Custom scales used by the product UI (gold/platinum/diamond/...).
+    // Kept under a custom key and merged into the palette in extend.colors.
     productColors: {
       gold: {
         50: "#fffbf0",
@@ -88,9 +80,19 @@ module.exports = {
       },
     },
     extend: {
-      colors: { success: '#16a34a', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6', gray: { 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af', 500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827' }, red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d' }, green: { 50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac', 400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#145231' } },
-
+      // Brand colours live under `extend` so Tailwind's default palette
+      // (slate/gray/red/amber/blue/...) stays available to the templates.
       colors: ({ theme }) => ({
+        primary: '#115e59',
+        accent: '#C0A062',
+        surface: '#FAFAFA',
+        ink: '#1C2331',
+        'background-light': '#f6f6f8',
+        'background-dark': '#111121',
+        success: '#16a34a',
+        error: '#ef4444',
+        warning: '#f59e0b',
+        info: '#3b82f6',
         ...theme('productColors'),
       }),
       fontFamily: {

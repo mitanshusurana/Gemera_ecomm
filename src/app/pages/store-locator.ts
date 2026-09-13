@@ -1,4 +1,5 @@
-import { Component, signal, OnInit, inject } from '@angular/core';
+import { Component, signal, computed, OnInit, inject } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { StoreService, Store } from '../services/store.service';
 
@@ -47,22 +48,22 @@ import { StoreService, Store } from '../services/store.service';
                    <span>📞 {{ store.phone }}</span>
                 </div>
                 <div class="flex gap-2">
-                   <button class="flex-1 btn-apple-pill-secondary text-xs !py-2 !px-3">Call Store</button>
-                   <button class="flex-1 btn-apple-pill text-xs !py-2 !px-3">Get Directions</button>
+                   <a [href]="telLink(store)" class="flex-1 btn-apple-pill-secondary text-xs !py-2 !px-3" (click)="$event.stopPropagation()">Call Store</a>
+                   <a [href]="directionsLink(store)" target="_blank" rel="noopener" class="flex-1 btn-apple-pill text-xs !py-2 !px-3" (click)="$event.stopPropagation()">Get Directions</a>
                 </div>
              </div>
           </div>
 
           <!-- Map Placeholder -->
           <div class="lg:col-span-2 bg-[#f5f5f7] border border-[#e0e0e0] rounded-[18px] overflow-hidden relative h-[600px]">
-             <div class="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=20.5937,78.9629&zoom=5&size=800x600&sensor=false')] bg-cover bg-center opacity-50"></div>
-             <div class="absolute inset-0 flex items-center justify-center p-6">
-                <div *ngIf="selectedStore()" class="bg-white p-6 rounded-[18px] border border-[#e0e0e0] shadow-lg max-w-sm w-full animate-fade-in-up">
+             <iframe *ngIf="mapUrl()" [src]="mapUrl()" title="Map of the selected store" class="absolute inset-0 w-full h-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+             <div class="absolute inset-0 flex items-end justify-start p-6 pointer-events-none">
+                <div *ngIf="selectedStore()" class="bg-white p-6 rounded-[18px] border border-[#e0e0e0] shadow-lg max-w-sm w-full animate-fade-in-up pointer-events-auto">
                    <h3 class="font-display font-semibold text-xl text-[#1d1d1f] mb-2">{{ selectedStore()?.name }}</h3>
                    <p class="text-[#6e6e73] text-sm mb-4">{{ selectedStore()?.address }}</p>
-                   <button class="w-full btn-apple-pill">Navigate Now</button>
+                   <a [href]="directionsLink(selectedStore()!)" target="_blank" rel="noopener" class="w-full btn-apple-pill">Navigate Now</a>
                 </div>
-                <div *ngIf="!selectedStore() && !isLoading()" class="bg-white/80 backdrop-blur-md border border-[#e0e0e0] px-5 py-3 rounded-full">
+                <div *ngIf="!selectedStore() && !isLoading()" class="pointer-events-auto bg-white/80 backdrop-blur-md border border-[#e0e0e0] px-5 py-3 rounded-full">
                    <p class="text-sm font-semibold text-[#1d1d1f]">Select a store to view details</p>
                 </div>
              </div>
@@ -74,11 +75,34 @@ import { StoreService, Store } from '../services/store.service';
 })
 export class StoreLocatorComponent implements OnInit {
   private storeService = inject(StoreService);
+  private sanitizer = inject(DomSanitizer);
 
   stores = signal<Store[]>([]);
   selectedStore = signal<Store | null>(null);
   isLoading = signal(true);
   error = signal('');
+
+  /** OpenStreetMap embed centred on the selected store (no API key needed). */
+  mapUrl = computed<SafeResourceUrl | null>(() => {
+    const s = this.selectedStore();
+    if (!s || !s.lat || !s.lng) return null;
+    const d = 0.01;
+    const bbox = `${s.lng - d},${s.lat - d},${s.lng + d},${s.lat + d}`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(
+      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${s.lat},${s.lng}`
+    );
+  });
+
+  /** tel: link; strips spaces and punctuation so mobile dialers accept it. */
+  telLink(store: Store): string {
+    return "tel:" + (store.phone || "").replace(/[^0-9+]/g, "");
+  }
+
+  /** Google Maps directions to the store, by coordinates when we have them. */
+  directionsLink(store: Store): string {
+    const destination = store.lat && store.lng ? `${store.lat},${store.lng}` : encodeURIComponent(`${store.name}, ${store.address}`);
+    return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+  }
 
   ngOnInit() {
     this.storeService.getStores().subscribe({
