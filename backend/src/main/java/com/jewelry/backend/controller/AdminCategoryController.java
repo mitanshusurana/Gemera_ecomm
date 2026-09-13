@@ -45,6 +45,7 @@ public class AdminCategoryController {
     @Operation(summary = "Create a category")
     public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryDTO dto) {
         Category category = entityMapper.toCategoryEntity(dto);
+        category.setItemType(normalizeItemType(dto.getItemType())); // null = inherit from parent
         if (dto.getParentId() != null) {
             Category parent = categoryRepository.findById(dto.getParentId())
                     .orElseThrow(() -> new RuntimeException("Parent category not found"));
@@ -64,6 +65,7 @@ public class AdminCategoryController {
         existing.setDisplayName(dto.getDisplayName());
         existing.setImage(dto.getImage());
         existing.setActive(dto.isActive());
+        existing.setItemType(normalizeItemType(dto.getItemType())); // null = inherit from parent
         existing.setShowJewelryFields(dto.isShowJewelryFields());
         existing.setShowGemstoneFields(dto.isShowGemstoneFields());
         existing.setShowComponentFields(dto.isShowComponentFields());
@@ -86,6 +88,14 @@ public class AdminCategoryController {
 
         Category saved = categoryRepository.save(existing);
         return ResponseEntity.ok(entityMapper.toCategoryDTO(saved));
+    }
+
+    /** Trims and upper-cases; blank becomes null so the category inherits its parent's type. */
+    private static String normalizeItemType(String itemType) {
+        if (itemType == null || itemType.trim().isEmpty()) {
+            return null;
+        }
+        return itemType.trim().toUpperCase(java.util.Locale.ROOT);
     }
 
     @DeleteMapping("/{id}")

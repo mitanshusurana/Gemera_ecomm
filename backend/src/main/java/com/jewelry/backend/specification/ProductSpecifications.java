@@ -40,6 +40,9 @@ public final class ProductSpecifications {
             List<String> designStyles,
             List<String> occasions,
             List<String> styles,
+            List<String> gemGrades,
+            List<String> crafts,
+            List<String> saleModes,
             BigDecimal priceMin,
             BigDecimal priceMax,
             String search,
@@ -93,6 +96,21 @@ public final class ProductSpecifications {
                 Join<Product, String> style = root.join("styles", JoinType.LEFT);
                 joinedCollection = true;
                 predicates.add(cb.lower(style).in(styles));
+            }
+
+            List<String> gemGrades = normalize(f.gemGrades());
+            if (!gemGrades.isEmpty()) {
+                predicates.add(cb.lower(root.get("gemGrade")).in(gemGrades));
+            }
+
+            List<String> crafts = normalize(f.crafts());
+            if (!crafts.isEmpty()) {
+                predicates.add(cb.lower(root.get("craft")).in(crafts));
+            }
+
+            List<String> saleModes = normalize(f.saleModes());
+            if (!saleModes.isEmpty()) {
+                predicates.add(cb.lower(root.get("saleMode")).in(saleModes));
             }
 
             if (f.priceMin() != null) {

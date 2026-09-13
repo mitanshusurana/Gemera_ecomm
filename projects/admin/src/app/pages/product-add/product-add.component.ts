@@ -1,11 +1,40 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormArray, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import {
+  ALLOWED_SALE_MODES,
+  CRAFTS,
+  DYNAMIC_REQUIRED_PATHS,
+  FlatCategory,
+  FormSection,
+  GEM_GRADES,
+  ITEM_TYPE_LABEL,
+  ItemType,
+  QuantityField,
+  REQUIRED_RULES,
+  SALE_MODE_LABEL,
+  SaleMode,
+  UNIT_PRICE_SUFFIX,
+  ancestry,
+  averagePieceWeight,
+  buildAutoDescription,
+  buildAutoName,
+  defaultGemGrade,
+  defaultSaleMode,
+  derivePrice,
+  flattenCategoryTree,
+  indexById,
+  isIdolBranch,
+  missingRequired,
+  quantityFieldFor,
+  resolveItemType,
+  sectionsFor
+} from '../../core/item-types';
 
 @Component({
   selector: 'app-product-add',
@@ -25,7 +54,11 @@ export class ProductAddComponent implements OnInit {
     private http: HttpClient
   ) {}
 
+  /** Root categories as returned by the backend (kept for compatibility). */
   categoriesList: any[] = [];
+  /** Whole tree flattened depth-first, for the indented select and parent walking. */
+  flatCategories: FlatCategory[] = [];
+  private categoryById = new Map<string, FlatCategory>();
 
   // --- Predefined Dropdown Options for Better UX ---
   metalTypes = ['Gold', 'White Gold', 'Rose Gold', 'Platinum', 'Silver'];
@@ -33,6 +66,11 @@ export class ProductAddComponent implements OnInit {
   designStyles = ['Modern', 'Classic', 'Vintage', 'Minimalist', 'Statement'];
   metalPurities = ['24K', '22K', '18K', '14K', '10K', '925 Sterling', '950 Platinum'];
   metalColors = ['Yellow', 'White', 'Rose', 'Two-Tone', 'PVD Plating', 'Black Antique'];
+  crafts = CRAFTS;
+  gemGrades = GEM_GRADES;
+  saleModeLabel = SALE_MODE_LABEL;
+  unitPriceSuffix = UNIT_PRICE_SUFFIX;
+  itemTypeLabel = ITEM_TYPE_LABEL;
 
   species = ['Beryl', 'Corundum', 'Diamond', 'Tourmaline', 'Garnet', 'Spinel', 'Quartz', 'Topaz', 'Zircon', 'Chrysoberyl', 'Opal', 'Jadeite'];
   varieties = ['Emerald', 'Ruby', 'Sapphire', 'Aquamarine', 'Morganite', 'Padparadscha', 'Tsavorite', 'Demantoid', 'Paraiba Tourmaline', 'Rubellite', 'Amethyst', 'Citrine', 'Tanzanite', 'Alexandrite'];
@@ -44,6 +82,9 @@ export class ProductAddComponent implements OnInit {
   clarities = ['Flawless (FL)', 'Internally Flawless (IF)', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Eye Clean', 'Included', 'Opaque'];
   polishes = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
   symmetries = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  beadStyles = ['Round', 'Faceted', 'Tumble', 'Rondelle', 'Drop', 'Chips', 'Cylinder', 'Rudraksha', 'Baroque'];
+  manufacturingStages = ['Rough', 'Preform', 'Cut', 'Polished', 'Ready for Setting'];
+  componentTypes = ['Clasp', 'Lobster Clasp', 'Hook', 'Jump Ring', 'Wire', 'Loose Beads', 'Setting', 'Mounting', 'Chain by Length', 'Other'];
 
   treatmentStatuses = [
     'None (No Indications of Enhancement)',
@@ -82,9 +123,21 @@ export class ProductAddComponent implements OnInit {
   // Auto-generation flags
   isNameManuallyEdited = false;
   isDescriptionManuallyEdited = false;
+  // The last values this component wrote, so a value that differs from them
+  // is recognised as a manual edit even if the (input) handler has not fired.
+  private lastAutoName = '';
+  private lastAutoDescription = '';
   // True while an existing product is being loaded into the form, so that
   // valueChanges handlers do not treat the load as a user edit.
   isPatchingForm = false;
+
+  // --- Item-type driven state ---
+  itemType: ItemType | null = null;
+  visibleSections: ReadonlySet<FormSection> = new Set();
+  allowedSaleModes: ReadonlyArray<SaleMode> = ['PER_PIECE'];
+  quantityField: QuantityField | null = null;
+  /** Names the control blocking price derivation, if any. */
+  derivedPriceProblem: string | null = null;
 
   get occasions() {
     return this.productForm.get('occasions') as FormArray;
@@ -102,28 +155,64 @@ export class ProductAddComponent implements OnInit {
     return this.productForm.get('category')?.value;
   }
 
-  get selectedCategoryObject(): any {
+  /** Selected node from the flattened tree (any level). */
+  get selectedCategoryObject(): FlatCategory | null {
     const categoryName = this.selectedCategory;
     if (!categoryName) return null;
-    return this.categoriesList.find((c: any) => c.displayName === categoryName || c.value === categoryName);
+    return this.flatCategories.find(c => c.name === categoryName || c.displayName === categoryName) ?? null;
+  }
+
+  get selectedCategoryChain(): FlatCategory[] {
+    return ancestry(this.selectedCategoryObject, this.categoryById);
+  }
+
+  get isIdolsBranch(): boolean {
+    return isIdolBranch(this.selectedCategoryChain);
   }
 
   get showJewelryFields(): boolean {
-    return this.selectedCategoryObject?.showJewelryFields ?? false;
+    return this.visibleSections.has('JEWELLERY_DETAILS');
   }
 
   get showGemstoneFields(): boolean {
-    return this.selectedCategoryObject?.showGemstoneFields ?? false;
+    return this.visibleSections.has('LOOSE_GEMSTONE_DETAILS');
   }
 
+  has(section: FormSection): boolean {
+    return this.visibleSections.has(section);
+  }
+
+  get saleMode(): SaleMode {
+    return (this.productForm?.get('saleMode')?.value as SaleMode) || 'PER_PIECE';
+  }
+
+  get isPerPiece(): boolean {
+    return this.saleMode === 'PER_PIECE';
+  }
+
+  /** Loose beads are the one component whose size is a bead diameter. */
+  get isBeadComponent(): boolean {
+    const t = (this.productForm?.get('componentType')?.value ?? '') as string;
+    return /bead/i.test(t);
+  }
+
+  get showStoneTable(): boolean {
+    return this.itemType === 'SET' || (this.itemType === 'JEWELLERY' && this.productForm.get('plainOrStudded')?.value === 'STUDDED');
+  }
+
+  /** Labels of required fields that are still empty; drives the summary above Save. */
+  get missingFields(): string[] {
+    if (!this.productForm) return [];
+    return missingRequired(this.itemType, this.saleMode, this.productForm.getRawValue());
+  }
 
   get availableSubCategories(): any[] {
-    const categoryName = this.selectedCategory;
-    if (!categoryName) return [];
+    return this.selectedCategoryObject?.subcategories ?? [];
+  }
 
-    // selectedCategory was holding displayName earlier, let's just match value/displayName
-    const category = this.categoriesList.find((c: any) => c.displayName === categoryName || c.value === categoryName);
-    return category && category.subcategories ? category.subcategories : [];
+  /** Non-breaking indentation for <option> text, which cannot be padded with CSS. */
+  indent(level: number): string {
+    return '    '.repeat(level) + (level > 0 ? '↳ ' : '');
   }
 
   ngOnInit() {
@@ -132,6 +221,10 @@ export class ProductAddComponent implements OnInit {
         ...c,
         value: c.name // Map backend name to 'value' used by UI dropdowns
       }));
+      this.flatCategories = flattenCategoryTree(res.categories);
+      this.categoryById = indexById(this.flatCategories);
+      // The product may already be patched in; resolve its type now that the tree is known.
+      this.syncItemType({ userInitiated: false });
     });
 
     this.productId = this.route.snapshot.paramMap.get('id');
@@ -150,6 +243,22 @@ export class ProductAddComponent implements OnInit {
       isVerified: [false], // Admin verification step
       featured: [false], // Shown in the storefront home page "featured" section
       videoUrl: [''],
+
+      // Sale & pricing (contract §3)
+      saleMode: ['PER_PIECE'],
+      unitPrice: [null],
+      pieceCount: [null],
+      lotTotalCaratWeight: [null],
+      averagePieceWeight: [null], // derived, read-only
+      sizeRange: [''],
+      calibrated: [false],
+      beadSizeMm: [null],
+      strandLengthInches: [null],
+      strandCount: [null],
+      heightInches: [null],
+      craft: [''],
+      plainOrStudded: [''],
+      gemGrade: [''],
 
       // Global e-commerce / inventory ownership
       inventoryOwnership: ['Owned Stock'],
@@ -263,21 +372,31 @@ export class ProductAddComponent implements OnInit {
         discount: [null],
         grandTotal: [null]
       })
-    });
+    }, { validators: [this.requiredRulesValidator] });
 
-    // Reset subCategory when category changes
+    // Category drives item type, sections, validators and defaults.
     this.productForm.get('category')?.valueChanges.subscribe(() => {
-      this.productForm.get('subCategory')?.setValue('');
+      if (!this.isPatchingForm) {
+        this.productForm.get('subCategory')?.setValue('', { emitEvent: false });
+      }
+      this.syncItemType({ userInitiated: !this.isPatchingForm });
     });
 
-    // Auto-select variety based on subCategory for Loose Gemstones
+    // Auto-select variety based on subCategory for loose gemstones
     this.productForm.get('subCategory')?.valueChanges.subscribe((subCategoryVal) => {
-      if ((this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones') && subCategoryVal) {
-        if (this.varieties.includes(subCategoryVal)) {
-          this.productForm.get('variety')?.setValue(subCategoryVal);
+      if (this.isPatchingForm) return;
+      if (this.itemType === 'LOOSE_GEMSTONE' && subCategoryVal) {
+        const label = this.subCategoryLabel(subCategoryVal);
+        const match = this.varieties.find(v => v === subCategoryVal || v === label || (label && label.startsWith(v)));
+        if (match) {
+          this.productForm.get('variety')?.setValue(match, { emitEvent: false });
         }
       }
-      this.generateNameAndDescription();
+    });
+
+    this.productForm.get('saleMode')?.valueChanges.subscribe(() => {
+      if (this.isPatchingForm) return;
+      this.onSaleModeChanged();
     });
 
     // Auto-calculate Price Breakup Total.
@@ -305,16 +424,18 @@ export class ProductAddComponent implements OnInit {
         this.productForm.get('priceBreakup.total')?.setValue(total, { emitEvent: false });
       }
 
-      if (hasAnyComponent && total > 0) {
+      // The breakup only drives the price when it is typed directly (PER_PIECE).
+      if (hasAnyComponent && total > 0 && this.isPerPiece) {
         this.productForm.get('price')?.setValue(total, { emitEvent: false });
       }
     });
 
-    // Auto-generate triggers
-    ['category', 'subCategory', 'caratWeight', 'totalCaratWeight', 'cut', 'colorHue', 'colorTradeTerm', 'variety'].forEach(field => {
-      this.productForm.get(field)?.valueChanges.subscribe(() => {
-        this.generateNameAndDescription();
-      });
+    // Every edit re-derives price / average weight and refreshes the auto name.
+    // Derived values are written with emitEvent:false, so this does not loop.
+    this.productForm.valueChanges.subscribe(() => {
+      if (this.isPatchingForm) return;
+      this.recomputeDerived();
+      this.generateNameAndDescription();
     });
 
     if (this.isEditMode && this.productId) {
@@ -341,7 +462,7 @@ export class ProductAddComponent implements OnInit {
           this.productForm.patchValue({
              name: product.name ? product.name + ' (Copy)' : '',
              sku: '' // Clear SKU so a new one is generated
-          });
+          }, { emitEvent: false });
           this.loading = false;
         },
         error: (err) => {
@@ -353,6 +474,173 @@ export class ProductAddComponent implements OnInit {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Item type, sections, validators
+  // ---------------------------------------------------------------------------
+
+  /** Group-level validator: any §4 rule still unmet makes the whole form invalid. */
+  private requiredRulesValidator = (group: AbstractControl): ValidationErrors | null => {
+    const missing = missingRequired(this.itemType, this.saleModeOf(group), (group as FormGroup).getRawValue());
+    return missing.length ? { missingRequired: missing } : null;
+  };
+
+  private saleModeOf(group: AbstractControl): SaleMode {
+    return (group.get('saleMode')?.value as SaleMode) || 'PER_PIECE';
+  }
+
+  /**
+   * Resolve the item type from the selected category and bring sections,
+   * allowed sale modes, validators and defaults in line with it.
+   * `userInitiated` is false during patching and on the initial category load,
+   * when stored values must not be overwritten by defaults.
+   */
+  private syncItemType(opts: { userInitiated: boolean }) {
+    if (!this.productForm) return;
+    const node = this.selectedCategoryObject;
+    const previousType = this.itemType;
+    this.itemType = resolveItemType(node, this.categoryById);
+    this.visibleSections = sectionsFor(this.itemType);
+    this.allowedSaleModes = this.itemType ? ALLOWED_SALE_MODES[this.itemType] : ['PER_PIECE'];
+
+    const saleModeCtrl = this.productForm.get('saleMode');
+    const current = saleModeCtrl?.value as SaleMode;
+    if (!current || !this.allowedSaleModes.includes(current)) {
+      saleModeCtrl?.setValue(defaultSaleMode(this.itemType), { emitEvent: false });
+    }
+
+    if (opts.userInitiated || (this.itemType && this.itemType !== previousType && !this.isEditMode)) {
+      this.applyBranchDefaults();
+    }
+
+    this.applyDynamicValidators();
+    this.recomputeDerived();
+    if (opts.userInitiated) this.generateNameAndDescription();
+  }
+
+  /** Defaults derived from the category branch, only filled when empty. */
+  private applyBranchDefaults() {
+    const chain = this.selectedCategoryChain;
+    const gemGradeCtrl = this.productForm.get('gemGrade');
+    if (gemGradeCtrl && !gemGradeCtrl.value &&
+        (this.itemType === 'LOOSE_GEMSTONE' || this.itemType === 'GEMSTONE_LOT' || this.itemType === 'STRAND_BEADS')) {
+      const grade = defaultGemGrade(chain);
+      if (grade) gemGradeCtrl.setValue(grade, { emitEvent: false });
+    }
+
+    const plainCtrl = this.productForm.get('plainOrStudded');
+    if (plainCtrl && this.itemType === 'JEWELLERY' && !plainCtrl.value) {
+      const text = chain.map(c => `${c.displayName} ${c.name}`).join(' ').toLowerCase();
+      const studded = /studded|diamond|polki|kundan|jadau|cvd/.test(text) || this.stoneDetails.length > 0;
+      plainCtrl.setValue(studded ? 'STUDDED' : 'PLAIN', { emitEvent: false });
+    }
+  }
+
+  private onSaleModeChanged() {
+    if (this.isPerPiece) {
+      // A stale unit price would make the server overwrite the typed price.
+      this.productForm.get('unitPrice')?.setValue(null, { emitEvent: false });
+    }
+    this.applyDynamicValidators();
+    this.recomputeDerived();
+  }
+
+  /**
+   * Clear `required` on every dynamically-validated control, then re-apply it
+   * for the current item type and sale mode (§4). Multi-field "either/or"
+   * rules and the studded stone rule are enforced by requiredRulesValidator.
+   */
+  private applyDynamicValidators() {
+    const form = this.productForm;
+    const touched: AbstractControl[] = [];
+
+    for (const path of DYNAMIC_REQUIRED_PATHS) {
+      const ctrl = form.get(path);
+      if (!ctrl) continue;
+      ctrl.clearValidators();
+      touched.push(ctrl);
+    }
+
+    const setRequired = (path: string, extra: any[] = []) => {
+      const ctrl = form.get(path);
+      if (!ctrl) return;
+      ctrl.setValidators([Validators.required, ...extra]);
+      if (!touched.includes(ctrl)) touched.push(ctrl);
+    };
+
+    if (this.itemType) {
+      for (const rule of REQUIRED_RULES[this.itemType]) {
+        if (rule.fields.length === 1 && rule.fields[0] !== 'stoneDetails' && !rule.when) {
+          setRequired(rule.fields[0]);
+        }
+      }
+    }
+
+    const mode = this.saleMode;
+    this.quantityField = quantityFieldFor(this.itemType, mode);
+    if (mode !== 'PER_PIECE') {
+      setRequired('unitPrice', [Validators.min(0)]);
+      if (this.quantityField?.requiredForPrice) {
+        setRequired(this.quantityField.path, [Validators.min(0)]);
+      }
+    }
+
+    // Weight and count fields are never negative.
+    for (const path of ['grossWeight', 'caratWeight', 'lotTotalCaratWeight', 'roughWeight', 'totalWeight']) {
+      const ctrl = form.get(path);
+      if (ctrl && !ctrl.validator) {
+        ctrl.setValidators([Validators.min(0)]);
+      }
+    }
+
+    for (const ctrl of touched) ctrl.updateValueAndValidity({ emitEvent: false });
+    form.updateValueAndValidity({ emitEvent: false });
+  }
+
+  /** §4 derived price and average piece weight, written without emitting. */
+  private recomputeDerived() {
+    const form = this.productForm;
+    const values = form.getRawValue();
+
+    const avg = averagePieceWeight(values);
+    const avgCtrl = form.get('averagePieceWeight');
+    if (avgCtrl && avgCtrl.value !== avg) avgCtrl.setValue(avg, { emitEvent: false });
+
+    const mode = this.saleMode;
+    if (mode === 'PER_PIECE') {
+      this.derivedPriceProblem = null;
+    } else {
+      const derived = derivePrice(mode, values);
+      this.derivedPriceProblem = derived.missingField ?? null;
+      const priceCtrl = form.get('price');
+      if (priceCtrl && priceCtrl.value !== derived.price) {
+        priceCtrl.setValue(derived.price, { emitEvent: false });
+      }
+    }
+    form.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+  }
+
+  quantityUnitLabel(): string {
+    const unit = this.quantityField?.unit;
+    return unit === 'pieces' ? 'pcs' : (unit ?? '');
+  }
+
+  private subCategoryLabel(subCategoryName: string): string {
+    const sub = this.availableSubCategories.find((s: any) => s.name === subCategoryName);
+    return sub?.displayName ?? subCategoryName ?? '';
+  }
+
+  onNameInput() {
+    this.isNameManuallyEdited = true;
+  }
+
+  onDescriptionInput() {
+    this.isDescriptionManuallyEdited = true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Loading an existing product
+  // ---------------------------------------------------------------------------
+
   patchProductForm(product: any) {
     this.isPatchingForm = true;
     try {
@@ -360,6 +648,10 @@ export class ProductAddComponent implements OnInit {
     } finally {
       this.isPatchingForm = false;
     }
+    // A stored name/description is the owner's choice; never regenerate over it.
+    this.isNameManuallyEdited = !!product.name;
+    this.isDescriptionManuallyEdited = !!product.description;
+    this.syncItemType({ userInitiated: false });
   }
 
   private patchProductFormInner(product: any) {
@@ -383,6 +675,22 @@ export class ProductAddComponent implements OnInit {
       inventoryOwnership: product.inventoryOwnership || 'Owned Stock',
       seoQualifiersStr: product.seoQualifiers ? product.seoQualifiers.join(', ') : '',
       occasionKeywordsStr: product.occasionKeywords ? product.occasionKeywords.join(', ') : '',
+
+      // Sale & pricing (§3)
+      saleMode: product.saleMode || 'PER_PIECE',
+      unitPrice: product.unitPrice ?? null,
+      pieceCount: product.pieceCount ?? null,
+      lotTotalCaratWeight: product.lotTotalCaratWeight ?? null,
+      averagePieceWeight: product.averagePieceWeight ?? null,
+      sizeRange: product.sizeRange || '',
+      calibrated: product.calibrated === true,
+      beadSizeMm: product.beadSizeMm ?? null,
+      strandLengthInches: product.strandLengthInches ?? null,
+      strandCount: product.strandCount ?? null,
+      heightInches: product.heightInches ?? null,
+      craft: product.craft || '',
+      plainOrStudded: product.plainOrStudded || '',
+      gemGrade: product.gemGrade || '',
 
       // Category Specific (Will just patch everything, non-matching fields are ignored safely if not in UI or just kept in memory)
       grossWeight: product.grossWeight ?? null,
@@ -548,37 +856,48 @@ export class ProductAddComponent implements OnInit {
     this.stoneDetails.removeAt(index);
   }
 
+  /**
+   * §5 auto name and description for the resolved item type. Stops as soon as
+   * the user edits either field: the (input) handlers set the flags, and as a
+   * second line of defence a current value that differs from what this method
+   * last wrote is treated as a manual edit too.
+   */
   generateNameAndDescription() {
-    if (!this.selectedCategory) return;
+    if (this.isPatchingForm || !this.selectedCategory) return;
 
-    const v = this.productForm.value;
-    // Determine the relevant carat weight field based on category
-    const weightVal = (this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones') ? v.caratWeight : v.totalCaratWeight;
-    const carat = weightVal ? `${weightVal} ct` : '';
+    const nameCtrl = this.productForm.get('name');
+    const descCtrl = this.productForm.get('description');
+    if (!nameCtrl || !descCtrl) return;
 
-    const cut = v.cut || '';
-    const color = v.colorTradeTerm && v.colorTradeTerm !== 'None' ? v.colorTradeTerm : v.colorHue || '';
-    const variety = v.variety || v.subCategory || '';
+    const currentName = (nameCtrl.value ?? '') as string;
+    const currentDesc = (descCtrl.value ?? '') as string;
+    if (currentName && currentName !== this.lastAutoName) this.isNameManuallyEdited = true;
+    if (currentDesc && currentDesc !== this.lastAutoDescription) this.isDescriptionManuallyEdited = true;
+    if (this.isNameManuallyEdited && this.isDescriptionManuallyEdited) return;
 
-    let parts = [];
-    if ((this.selectedCategory === 'Gemstones' || this.selectedCategory === 'gemstones')) {
-      // E.g. "1.5 ct Brilliant Cut Royal Blue Sapphire"
-      parts = [carat, cut, color, variety].filter(p => p.trim() !== '');
-    } else {
-      // E.g. "1.5 ct Solitaire Ring"
-      const type = v.variety || v.subCategory || this.selectedCategory || '';
-      parts = [carat, type].filter(p => p.trim() !== '');
+    const node = this.selectedCategoryObject;
+    const subName = this.productForm.get('subCategory')?.value;
+    const ctx = {
+      ...this.productForm.getRawValue(),
+      categoryLabel: node?.displayName ?? node?.name ?? this.selectedCategory,
+      subCategoryLabel: subName ? this.subCategoryLabel(subName) : ''
+    };
+
+    const generatedName = buildAutoName(this.itemType, ctx);
+    const generatedDesc = buildAutoDescription(this.itemType, ctx, generatedName);
+
+    if (!this.isNameManuallyEdited && generatedName && generatedName !== currentName) {
+      nameCtrl.setValue(generatedName, { emitEvent: false });
+      this.lastAutoName = generatedName;
+    } else if (!this.isNameManuallyEdited && generatedName) {
+      this.lastAutoName = generatedName;
     }
-    const generatedName = parts.join(' ');
 
-    const generatedDesc = `This is a beautiful ${generatedName}. Perfect for custom jewelry designs or as an investment piece.`;
-
-    if (!this.isNameManuallyEdited && generatedName) {
-      this.productForm.get('name')?.setValue(generatedName, { emitEvent: false });
-    }
-
-    if (!this.isDescriptionManuallyEdited && generatedName) {
-      this.productForm.get('description')?.setValue(generatedDesc, { emitEvent: false });
+    if (!this.isDescriptionManuallyEdited && generatedDesc && generatedDesc !== currentDesc) {
+      descCtrl.setValue(generatedDesc, { emitEvent: false });
+      this.lastAutoDescription = generatedDesc;
+    } else if (!this.isDescriptionManuallyEdited && generatedDesc) {
+      this.lastAutoDescription = generatedDesc;
     }
   }
 
@@ -696,15 +1015,19 @@ export class ProductAddComponent implements OnInit {
       const total = metal + gemstone + making + tax;
       breakup.get('total')?.setValue(total, { emitEvent: false });
 
-      // Keep price in step only when the breakup actually carries a value.
-      if (total > 0) {
+      // Keep price in step only when the breakup actually carries a value and
+      // the price is typed directly rather than derived from a unit price.
+      if (total > 0 && this.isPerPiece) {
         this.productForm.get('price')?.setValue(total, { emitEvent: false });
       }
     }
   }
 
   onSubmit() {
-    if (this.productForm.invalid || this.uploadingMedia) return;
+    if (this.productForm.invalid || this.uploadingMedia) {
+      this.productForm.markAllAsTouched();
+      return;
+    }
 
     this.loading = true;
     this.errorMessage = '';
@@ -713,7 +1036,7 @@ export class ProductAddComponent implements OnInit {
   }
 
   private createProductRecord() {
-    const formValue = this.productForm.value;
+    const formValue = this.productForm.getRawValue();
 
     // Parse comma separated strings to arrays
     const seoQualifiers = formValue.seoQualifiersStr ? (formValue.seoQualifiersStr as string).split(',').map(s => s.trim()).filter(s => s) : [];
@@ -728,7 +1051,14 @@ export class ProductAddComponent implements OnInit {
       stoneDetailIds,
       images: this.existingImages,
       videoUrl: formValue.videoUrl || this.existingVideoUrl,
-      specifications: null
+      specifications: null,
+      // §3/§4: normalise the type-scoped fields the server validates.
+      saleMode: formValue.saleMode || 'PER_PIECE',
+      plainOrStudded: this.itemType === 'JEWELLERY' ? (formValue.plainOrStudded || null) : null,
+      craft: (this.itemType === 'JEWELLERY' || this.itemType === 'SET') ? (formValue.craft || null) : null,
+      gemGrade: formValue.gemGrade || null,
+      // The server recomputes these; sending our derivation keeps list views consistent meanwhile.
+      averagePieceWeight: formValue.averagePieceWeight ?? null
     };
 
     if (this.isEditMode && this.productId) {
@@ -738,7 +1068,7 @@ export class ProductAddComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to update product', err);
-          this.errorMessage = 'Failed to update product.';
+          this.errorMessage = err?.error?.message || 'Failed to update product.';
           this.loading = false;
         }
       });
@@ -749,7 +1079,7 @@ export class ProductAddComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to create product', err);
-          this.errorMessage = 'Failed to create product.';
+          this.errorMessage = err?.error?.message || 'Failed to create product.';
           this.loading = false;
         }
       });

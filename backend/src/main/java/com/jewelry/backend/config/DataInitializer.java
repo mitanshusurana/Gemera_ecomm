@@ -12,6 +12,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Configuration
 public class DataInitializer {
@@ -57,105 +62,174 @@ public class DataInitializer {
         }
     }
 
-    private void initCategories() {
-        if (categoryRepository.count() > 0 && categoryRepository.findAll().stream().anyMatch(c -> c.getName().equals("emerald"))) {
-            return; // Already initialized completely
-        }
+    // ------------------------------------------------------------------
+    // Category taxonomy (INVENTORY-CONTRACT.md section 2)
+    // ------------------------------------------------------------------
 
-        System.out.println("Initializing categories...");
-
-        // Root 1: Finished Jewelry
-        Category jewelryRoot = createCategory("Jewelry", null);
-
-        Category ourCollection = createCategory("Our Collection", jewelryRoot);
-        createCategory("Mens Collection", ourCollection);
-        createCategory("Womens Collection", ourCollection);
-        createCategory("Kids Collection", ourCollection);
-
-        Category allJewellery = createCategory("All Jewellery", jewelryRoot);
-        Category ring = createCategory("Ring", allJewellery);
-        Arrays.asList("Six Stone", "9 Stone/ Navaratna", "3 Stone", "Other", "Fancy", "Cocktail", "Bridal", "Heart", "Band", "Couple", "Engagement", "7 Stone", "Solitare", "Floral", "Medium", "4 Stone", "Close Setting Ring", "Eternity Ring", "1 Stone").forEach(c -> createCategory(c, ring));
-
-        Category bracelet = createCategory("Bracelet", allJewellery);
-        Arrays.asList("Kada", "Fancy", "Chain").forEach(c -> createCategory(c, bracelet));
-
-        Category bangle = createCategory("Bangle", allJewellery);
-        Arrays.asList("Big", "Small", "Fancy", "Floral", "One Line", "Close Setting Bangle").forEach(c -> createCategory(c, bangle));
-
-        Category nosepin = createCategory("Nosepin", allJewellery);
-        Arrays.asList("Nosepin", "Nath").forEach(c -> createCategory(c, nosepin));
-
-        Category pendant = createCategory("Pendant", allJewellery);
-        Arrays.asList("Floral", "Other", "Fancy", "Fashion", "Religious (God)", "Heart", "Medium", "Small", "Single Hook", "Tanmaniya (Mangalsutra)", "close setting pendent").forEach(c -> createCategory(c, pendant));
-
-        Category earring = createCategory("Earring", allJewellery);
-        Arrays.asList("Studs", "Casual", "Hanging", "Floral", "Medium", "Small", "Big", "Bali", "Tops", "Close Setting Earring").forEach(c -> createCategory(c, earring));
-
-        Category necklace = createCategory("Necklace", allJewellery);
-        Arrays.asList("Fancy", "Other", "Medium", "Chain", "Floral", "Necklace With Colorstone", "Bridal").forEach(c -> createCategory(c, necklace));
-
-        Category goldJewellery = createCategory("Gold Jewellery", jewelryRoot);
-        Arrays.asList("Ring", "Bracelet", "Bangle", "Nosepin", "Pendant", "Earring", "Necklace").forEach(c -> createCategory(c, goldJewellery));
-
-        Category silverJewellery = createCategory("Silver Jewellery", jewelryRoot);
-        Arrays.asList("Pendant", "Necklace").forEach(c -> createCategory(c, silverJewellery));
-
-        Category diamondJewellery = createCategory("Diamond Jewellery", jewelryRoot);
-        Arrays.asList("Ring", "Bracelet", "Bangle", "Nosepin", "Pendant", "Earring", "Necklace").forEach(c -> createCategory(c, diamondJewellery));
-
-        Category cvdJewellery = createCategory("CVD Jewellery", jewelryRoot);
-        Arrays.asList("Ring", "Bracelet", "Earring").forEach(c -> createCategory(c, cvdJewellery));
-
-
-        // Root 2: Loose Gemstones
-        Category gemstonesRoot = createCategory("Gemstones", null);
-        Arrays.asList("Diamond", "Emerald", "Ruby", "Blue Sapphire", "Yellow Sapphire", "Pearl", "Coral", "Cat's Eye", "Gomedak", "Other Colored Gemstones").forEach(c -> createCategory(c, gemstonesRoot));
-
-        Category exclusive = createCategory("Exclusive Gemstones", gemstonesRoot);
-        Arrays.asList("Emerald").forEach(c -> createCategory(c, exclusive));
-
-        Category special = createCategory("Special Collections", gemstonesRoot);
-        Arrays.asList("Blue Sapphire", "Moon Stone", "Sapphire").forEach(c -> createCategory(c, special));
-
-        createCategory("Loose Diamonds", gemstonesRoot);
-        createCategory("Lab Grown", gemstonesRoot);
-
-        // Root 3: Spiritual Idols
-        Category idolsRoot = createCategory("Spiritual Idols", null);
-        Arrays.asList("Ganesh", "Krishna", "Shiva", "Lakshmi").forEach(c -> createCategory(c, idolsRoot));
-
-        // Root 4: Materials & Roughs
-        Category roughsRoot = createCategory("Materials & Roughs", null);
-        Arrays.asList("Rough Parcels", "Single Rough Crystals").forEach(c -> createCategory(c, roughsRoot));
-
-        // Root 5: Components
-        Category componentsRoot = createCategory("Components", null);
-        Arrays.asList("Findings (Clasps, Hooks)", "Beads", "Silver Wire").forEach(c -> createCategory(c, componentsRoot));
-
-        // Root 6: Custom Made
-        createCategory("Custom Made", null);
-
-        // Root 7: Settings
-        createCategory("Settings", null);
-
-        System.out.println("Categories initialized.");
+    /** One node of the seed tree. itemType is null for nodes that inherit from their parent. */
+    private record Node(String name, String itemType, List<Node> children) {
     }
 
-    private Category createCategory(String name, Category parent) {
-        String cleanName = name.toLowerCase().replace(" ", "-").replace("/", "");
-        java.util.Optional<Category> existing = categoryRepository.findAll().stream().filter(c -> c.getName().equals(cleanName)).findFirst();
-        if (existing.isPresent()) {
-            Category cat = existing.get();
-            if (parent != null && cat.getParent() == null) {
-                cat.setParent(parent);
-                return categoryRepository.save(cat);
-            }
-            return cat;
+    private static Node node(String name, String itemType, Node... children) {
+        return new Node(name, itemType, Arrays.asList(children));
+    }
+
+    private static Node branch(String name, Node... children) {
+        return node(name, null, children);
+    }
+
+    private static Node leaf(String name) {
+        return new Node(name, null, List.of());
+    }
+
+    private static Node[] leaves(String... names) {
+        Node[] result = new Node[names.length];
+        for (int i = 0; i < names.length; i++) {
+            result[i] = leaf(names[i]);
         }
-        Category category = new Category();
-        category.setName(cleanName);
-        category.setDisplayName(name);
-        category.setParent(parent);
-        return categoryRepository.save(category);
+        return result;
+    }
+
+    private static final List<Node> TAXONOMY = List.of(
+            node("Gold Jewellery", "JEWELLERY",
+                    branch("Plain Gold", leaves("Ring", "Chain", "Bracelet", "Bangle", "Kada", "Earring", "Pendant", "Necklace", "Nosepin", "Mangalsutra")),
+                    branch("Studded Gold", leaves("Ring", "Bracelet", "Bangle", "Earring", "Pendant", "Necklace", "Nosepin")),
+                    branch("Diamond Jewellery", leaves("Ring", "Bracelet", "Bangle", "Earring", "Pendant", "Necklace", "Nosepin")),
+                    branch("Polki & Kundan", leaves("Necklace Set", "Earring", "Ring", "Bangle", "Maang Tikka", "Passa")),
+                    branch("Meenakari", leaves("Necklace", "Earring", "Pendant", "Bangle"))),
+            node("Silver Jewellery", "JEWELLERY",
+                    branch("Plain Silver", leaves("Ring", "Chain", "Bracelet", "Anklet (Payal)", "Earring", "Pendant", "Necklace", "Toe Ring")),
+                    branch("Studded Silver", leaves("Ring", "Bracelet", "Earring", "Pendant", "Necklace")),
+                    branch("Silver Articles", leaves("Utensils", "Coins", "Frames", "Puja Items"))),
+            node("Jewellery Sets", "SET",
+                    leaves("Bridal Set", "Necklace Set", "Pendant Set", "Bangle Set")),
+            node("Loose Gemstones", "LOOSE_GEMSTONE",
+                    branch("Precious", leaves("Emerald (Panna)", "Ruby (Manik)", "Blue Sapphire (Neelam)", "Yellow Sapphire (Pukhraj)", "Diamond", "Natural Pearl (Moti)")),
+                    branch("Semi-Precious", leaves("Red Coral (Moonga)", "Hessonite (Gomed)", "Cat's Eye (Lehsunia)", "Opal", "Tanzanite", "Tourmaline", "Aquamarine", "Amethyst",
+                            "Citrine", "Garnet", "Peridot", "Topaz", "Moonstone", "Turquoise (Firoza)", "Lapis Lazuli", "Onyx", "Agate", "Jade", "Kunzite",
+                            "Spinel", "Zircon", "Iolite", "Labradorite", "Rose Quartz", "Other Semi-Precious")),
+                    branch("Navaratna", leaves("Navaratna Set (9 stones)")),
+                    branch("Lab Grown", leaves("CVD Diamond", "Lab Emerald", "Lab Sapphire", "Lab Ruby"))),
+            node("Gemstone Lots", "GEMSTONE_LOT",
+                    leaves("Precious Lots", "Semi-Precious Lots", "Calibrated Lots", "Mixed Lots", "Melee Diamonds")),
+            node("Rough & Specimens", "ROUGH",
+                    leaves("Rough Parcels", "Single Rough Crystals", "Mineral Specimens", "Preforms")),
+            node("Idols & Carvings", "IDOL_CARVING",
+                    branch("Idols", leaves("Ganesh", "Krishna", "Shiva", "Lakshmi", "Buddha", "Hanuman", "Durga", "Other Deity")),
+                    branch("Carvings", leaves("Cameo", "Intaglio", "Bowl & Box", "Animal Carving", "Floral Carving", "Shivling", "Tortoise", "Pyramid", "Sphere"))),
+            node("Strands & Beads", "STRAND_BEADS",
+                    leaves("Bead Strands (Maniya)", "Mala (108 beads)", "Pearl Strings", "Tumble Strands", "Faceted Strands", "Rudraksha")),
+            node("Components", "COMPONENT",
+                    leaves("Findings (Clasps, Hooks)", "Loose Beads", "Silver Wire", "Gold Wire", "Settings & Mountings")),
+            node("Custom Made", "JEWELLERY"));
+
+    /**
+     * Item types for rows created by the previous seed (matched by system name).
+     * Children inherit through Category.getEffectiveItemType(), so only the
+     * roots and the old mid-level jewellery branches need a value.
+     */
+    private static final Map<String, String> LEGACY_ITEM_TYPES = new LinkedHashMap<>();
+
+    static {
+        LEGACY_ITEM_TYPES.put(slug("Jewelry"), "JEWELLERY");
+        LEGACY_ITEM_TYPES.put(slug("Gold Jewellery"), "JEWELLERY");
+        LEGACY_ITEM_TYPES.put(slug("Silver Jewellery"), "JEWELLERY");
+        LEGACY_ITEM_TYPES.put(slug("Diamond Jewellery"), "JEWELLERY");
+        LEGACY_ITEM_TYPES.put(slug("CVD Jewellery"), "JEWELLERY");
+        LEGACY_ITEM_TYPES.put(slug("Gemstones"), "LOOSE_GEMSTONE");
+        LEGACY_ITEM_TYPES.put(slug("Spiritual Idols"), "IDOL_CARVING");
+        LEGACY_ITEM_TYPES.put(slug("Materials & Roughs"), "ROUGH");
+        LEGACY_ITEM_TYPES.put(slug("Components"), "COMPONENT");
+        LEGACY_ITEM_TYPES.put(slug("Settings"), "COMPONENT");
+        LEGACY_ITEM_TYPES.put(slug("Custom Made"), "JEWELLERY");
+    }
+
+    /**
+     * Idempotent, create-if-missing seed. Loads every category once, walks the
+     * taxonomy creating rows whose system name is absent (existing rows keep
+     * their id and parent), sets itemType where the seed declares one and the
+     * row has none, then back-fills itemType on legacy rows. Nothing is deleted.
+     */
+    private void initCategories() {
+        Map<String, Category> bySlug = new HashMap<>();
+        for (Category category : categoryRepository.findAll()) {
+            if (category.getName() != null) {
+                bySlug.putIfAbsent(category.getName(), category);
+            }
+        }
+
+        int[] counters = new int[2]; // [created, updated]
+        for (Node root : TAXONOMY) {
+            seed(root, null, null, 0, bySlug, counters);
+        }
+
+        for (Map.Entry<String, String> entry : LEGACY_ITEM_TYPES.entrySet()) {
+            Category legacy = bySlug.get(entry.getKey());
+            if (legacy != null && isBlank(legacy.getItemType())) {
+                legacy.setItemType(entry.getValue());
+                bySlug.put(entry.getKey(), categoryRepository.save(legacy));
+                counters[1]++;
+            }
+        }
+
+        if (counters[0] > 0 || counters[1] > 0) {
+            System.out.println("Categories initialized: " + counters[0] + " created, " + counters[1] + " updated.");
+        }
+    }
+
+    /**
+     * Ensures one node exists and recurses into its children.
+     *
+     * System names: roots and their direct children use the slug of the display
+     * name (this is what the previous seed used, so legacy rows are re-used).
+     * Deeper nodes are prefixed with their parent's slug ("plain-gold-ring",
+     * "studded-gold-ring") because the same leaf name repeats under several
+     * branches and the tree would otherwise collapse.
+     */
+    private void seed(Node node, Category parent, String parentSlug, int depth, Map<String, Category> bySlug, int[] counters) {
+        // Depth comes from the seed tree, not from the stored parent chain, so the
+        // slug is the same whether a root was created fresh or matched a legacy
+        // row that already sits under another parent.
+        String slug = depth <= 1 ? slug(node.name()) : parentSlug + "-" + slug(node.name());
+
+        Category category = bySlug.get(slug);
+        boolean dirty = false;
+        if (category == null) {
+            category = new Category();
+            category.setName(slug);
+            category.setDisplayName(node.name());
+            category.setParent(parent);
+            category.setItemType(node.itemType());
+            category = categoryRepository.save(category);
+            bySlug.put(slug, category);
+            counters[0]++;
+        } else {
+            if (parent != null && category.getParent() == null) {
+                category.setParent(parent);
+                dirty = true;
+            }
+            if (node.itemType() != null && isBlank(category.getItemType())) {
+                category.setItemType(node.itemType());
+                dirty = true;
+            }
+            if (dirty) {
+                category = categoryRepository.save(category);
+                bySlug.put(slug, category);
+                counters[1]++;
+            }
+        }
+
+        for (Node child : node.children()) {
+            seed(child, category, slug, depth + 1, bySlug, counters);
+        }
+    }
+
+    /** Same slug rule as the previous seed so existing rows are matched. */
+    private static String slug(String name) {
+        return name.toLowerCase(Locale.ROOT).replace(" ", "-").replace("/", "");
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

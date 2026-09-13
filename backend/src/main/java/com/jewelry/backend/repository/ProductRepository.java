@@ -49,6 +49,15 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Query("SELECT DISTINCT s FROM Product p JOIN p.styles s WHERE s IS NOT NULL AND TRIM(s) <> ''")
     List<String> findDistinctStyles();
 
+    @Query("SELECT DISTINCT p.gemGrade FROM Product p WHERE p.gemGrade IS NOT NULL AND TRIM(p.gemGrade) <> ''")
+    List<String> findDistinctGemGrades();
+
+    @Query("SELECT DISTINCT p.craft FROM Product p WHERE p.craft IS NOT NULL AND TRIM(p.craft) <> ''")
+    List<String> findDistinctCrafts();
+
+    @Query("SELECT DISTINCT p.saleMode FROM Product p WHERE p.saleMode IS NOT NULL AND TRIM(p.saleMode) <> ''")
+    List<String> findDistinctSaleModes();
+
     @Query("SELECT MIN(p.price) FROM Product p")
     BigDecimal findMinPrice();
 

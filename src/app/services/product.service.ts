@@ -27,6 +27,10 @@ export interface ProductFilters {
   designStyles?: string | string[];
   occasions?: string | string[];
   styles?: string | string[];
+  /** Inventory-contract facets (§6): codes such as PRECIOUS / LAB_GROWN, craft names, PER_CARAT ... */
+  gemGrade?: string | string[];
+  craft?: string | string[];
+  saleMode?: string | string[];
   priceMin?: number;
   priceMax?: number;
   search?: string;
@@ -35,7 +39,7 @@ export interface ProductFilters {
   sort?: ProductSort;
 }
 
-const LIST_PARAMS = ['subCategory', 'metals', 'stones', 'designStyles', 'occasions', 'styles'] as const;
+const LIST_PARAMS = ['subCategory', 'metals', 'stones', 'designStyles', 'occasions', 'styles', 'gemGrade', 'craft', 'saleMode'] as const;
 
 @Injectable({
   providedIn: 'root'

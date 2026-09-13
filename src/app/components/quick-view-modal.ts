@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, HostLi
 import { CommonModule, NgOptimizedImage } from "@angular/common";
 import { ProductDetail } from "../core/models";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
+import { unitLabel, unitRate, totalSuffix, secondaryLine } from "../core/product-display";
 
 @Component({
   selector: "app-quick-view-modal",
@@ -107,6 +108,7 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                   <span class="text-3xl font-semibold text-[#1d1d1f]">
                     {{ (product?.price || 0) | currencyConvert }}
                   </span>
+                  <span *ngIf="totalSuffix(product)" class="text-sm text-[#6e6e73]">{{ totalSuffix(product) }}</span>
                   <span
                     *ngIf="product && product.originalPrice"
                     class="text-lg text-[#6e6e73] line-through"
@@ -114,6 +116,12 @@ import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
                     {{ product.originalPrice | currencyConvert }}
                   </span>
                 </div>
+                <p *ngIf="unitRate(product) as rate" class="text-sm text-[#6e6e73] mt-1">
+                  {{ rate | currencyConvert }} {{ unitLabel(product) }}
+                </p>
+                <p *ngIf="secondaryLine(product)" class="text-sm text-[#6e6e73] mt-1">
+                  {{ secondaryLine(product) }}
+                </p>
               </div>
 
               <!-- Description -->
@@ -202,6 +210,12 @@ export class QuickViewModalComponent {
     product: any;
   }>();
   @Output() viewDetails = new EventEmitter<string>();
+
+  // Sale-mode display helpers (core/product-display) exposed to the template.
+  readonly unitLabel = unitLabel;
+  readonly unitRate = unitRate;
+  readonly totalSuffix = totalSuffix;
+  readonly secondaryLine = secondaryLine;
 
   onBackdropClick(): void {
     this.close.emit();

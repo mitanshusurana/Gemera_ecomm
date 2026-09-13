@@ -169,6 +169,22 @@ public class EntityMapper {
         product.setVendorInformation(dto.getVendorInformation());
         product.setMinOrderQuantity(dto.getMinOrderQuantity());
 
+        // 6. Sale mode, lots, strands, carvings
+        product.setSaleMode(dto.getSaleMode());
+        product.setUnitPrice(dto.getUnitPrice());
+        product.setPieceCount(dto.getPieceCount());
+        product.setLotTotalCaratWeight(dto.getLotTotalCaratWeight());
+        product.setAveragePieceWeight(dto.getAveragePieceWeight());
+        product.setSizeRange(dto.getSizeRange());
+        product.setCalibrated(dto.getCalibrated());
+        product.setBeadSizeMm(dto.getBeadSizeMm());
+        product.setStrandLengthInches(dto.getStrandLengthInches());
+        product.setStrandCount(dto.getStrandCount());
+        product.setHeightInches(dto.getHeightInches());
+        product.setCraft(dto.getCraft());
+        product.setPlainOrStudded(dto.getPlainOrStudded());
+        product.setGemGrade(dto.getGemGrade());
+
         if (dto.getPriceBreakup() != null) {
             com.jewelry.backend.entity.Product.PriceBreakup pb = new com.jewelry.backend.entity.Product.PriceBreakup();
             pb.setMetal(dto.getPriceBreakup().getMetal());
@@ -361,6 +377,23 @@ public class EntityMapper {
         dto.setLayoutPattern(product.getLayoutPattern());
         dto.setVendorInformation(product.getVendorInformation());
         dto.setMinOrderQuantity(product.getMinOrderQuantity());
+
+        // 6. Sale mode, lots, strands, carvings. Rows created before the column
+        // existed have a null saleMode; the contract default is PER_PIECE.
+        dto.setSaleMode(product.getSaleMode() != null ? product.getSaleMode() : "PER_PIECE");
+        dto.setUnitPrice(product.getUnitPrice());
+        dto.setPieceCount(product.getPieceCount());
+        dto.setLotTotalCaratWeight(product.getLotTotalCaratWeight());
+        dto.setAveragePieceWeight(product.getAveragePieceWeight());
+        dto.setSizeRange(product.getSizeRange());
+        dto.setCalibrated(product.getCalibrated());
+        dto.setBeadSizeMm(product.getBeadSizeMm());
+        dto.setStrandLengthInches(product.getStrandLengthInches());
+        dto.setStrandCount(product.getStrandCount());
+        dto.setHeightInches(product.getHeightInches());
+        dto.setCraft(product.getCraft());
+        dto.setPlainOrStudded(product.getPlainOrStudded());
+        dto.setGemGrade(product.getGemGrade());
 
         if (product.getPriceBreakup() != null) {
             com.jewelry.backend.dto.ProductDTO.PriceBreakupDTO pb = new com.jewelry.backend.dto.ProductDTO.PriceBreakupDTO();
@@ -677,6 +710,7 @@ public class EntityMapper {
         category.setDisplayName(dto.getDisplayName());
         category.setImage(dto.getImage());
         category.setActive(dto.isActive());
+        category.setItemType(dto.getItemType());
         category.setShowJewelryFields(dto.isShowJewelryFields());
         category.setShowGemstoneFields(dto.isShowGemstoneFields());
         category.setShowComponentFields(dto.isShowComponentFields());
@@ -693,11 +727,24 @@ public class EntityMapper {
         dto.setDisplayName(category.getDisplayName());
         dto.setImage(category.getImage());
         dto.setActive(category.isActive());
-        dto.setShowJewelryFields(category.isShowJewelryFields());
-        dto.setShowGemstoneFields(category.isShowGemstoneFields());
-        dto.setShowComponentFields(category.isShowComponentFields());
-        dto.setShowIdolFields(category.isShowIdolFields());
-        dto.setShowRoughFields(category.isShowRoughFields());
+        // Expose the effective item type (own or inherited) and derive the legacy
+        // section flags from it; fall back to the stored flags when no ancestor
+        // declares a type.
+        String itemType = category.getEffectiveItemType();
+        dto.setItemType(itemType);
+        if (itemType != null) {
+            dto.setShowJewelryFields("JEWELLERY".equals(itemType) || "SET".equals(itemType));
+            dto.setShowGemstoneFields("LOOSE_GEMSTONE".equals(itemType) || "GEMSTONE_LOT".equals(itemType));
+            dto.setShowRoughFields("ROUGH".equals(itemType));
+            dto.setShowIdolFields("IDOL_CARVING".equals(itemType));
+            dto.setShowComponentFields("STRAND_BEADS".equals(itemType) || "COMPONENT".equals(itemType));
+        } else {
+            dto.setShowJewelryFields(category.isShowJewelryFields());
+            dto.setShowGemstoneFields(category.isShowGemstoneFields());
+            dto.setShowComponentFields(category.isShowComponentFields());
+            dto.setShowIdolFields(category.isShowIdolFields());
+            dto.setShowRoughFields(category.isShowRoughFields());
+        }
         if (category.getParent() != null) {
             dto.setParentId(category.getParent().getId());
         }

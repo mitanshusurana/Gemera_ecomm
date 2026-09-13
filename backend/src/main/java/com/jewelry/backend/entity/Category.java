@@ -23,6 +23,16 @@ public class Category extends BaseEntity {
     @Column(columnDefinition = "boolean default true")
     private boolean isActive = true;
 
+    /**
+     * Inventory item type driving admin form sections, validation and SKU prefix:
+     * JEWELLERY, LOOSE_GEMSTONE, GEMSTONE_LOT, ROUGH, IDOL_CARVING, STRAND_BEADS,
+     * COMPONENT or SET. Null means "inherit from the nearest ancestor"; use
+     * {@link #getEffectiveItemType()} to resolve it.
+     */
+    private String itemType;
+
+    // Legacy section flags. Kept for compatibility; the DTO derives them from
+    // the effective item type when one resolves.
     @Column(columnDefinition = "boolean default false")
     private boolean showJewelryFields;
 
@@ -49,4 +59,25 @@ public class Category extends BaseEntity {
     @JsonManagedReference
     @ToString.Exclude
     private List<Category> subcategories = new ArrayList<>();
+
+    /**
+     * The item type that applies to this category: its own when set, otherwise
+     * the nearest ancestor's. Null when no ancestor declares one. Bounded so a
+     * cyclic parent chain cannot loop forever.
+     */
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getEffectiveItemType() {
+        Category current = this;
+        int depth = 0;
+        while (current != null && depth < 32) {
+            String type = current.getItemType();
+            if (type != null && !type.trim().isEmpty()) {
+                return type.trim().toUpperCase(java.util.Locale.ROOT);
+            }
+            current = current.getParent();
+            depth++;
+        }
+        return null;
+    }
 }

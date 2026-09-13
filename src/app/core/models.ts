@@ -96,6 +96,62 @@ export interface Product {
   originProvenance?: string;
   labReportNumber?: string;
 
+  // Inventory contract §3: sale mode and per-item-type fields
+  /** PER_PIECE | PER_CARAT | PER_GRAM | PER_LOT | PER_STRAND (default PER_PIECE). */
+  saleMode?: string;
+  /** Price per ct / g / piece behind a derived `price`. */
+  unitPrice?: number;
+  /** Stones / beads / pieces in a lot, strand or component pack. */
+  pieceCount?: number;
+  lotTotalCaratWeight?: number;
+  /** ct, = lotTotalCaratWeight / pieceCount. */
+  averagePieceWeight?: number;
+  /** e.g. "3-4 mm", "6x4 mm". */
+  sizeRange?: string;
+  calibrated?: boolean;
+  beadSizeMm?: number;
+  strandLengthInches?: number;
+  /** Strands per item (multi-line necklaces). */
+  strandCount?: number;
+  heightInches?: number;
+  /** Polki, Kundan, Meenakari, Jadau, Filigree, Temple, Antique, Plain, Other. */
+  craft?: string;
+  /** PLAIN | STUDDED. */
+  plainOrStudded?: string;
+  /** PRECIOUS | SEMI_PRECIOUS | ORGANIC | LAB_GROWN. */
+  gemGrade?: string;
+
+  // Existing DTO fields for rough, idol/carving, strand and component items
+  roughMaterial?: string;
+  /** ct */
+  roughWeight?: number;
+  lotNumber?: string;
+  mineOrigin?: string;
+  matrixParentRock?: string;
+  crystalMorphology?: string;
+  manufacturingStage?: string;
+  gemstoneMaterial?: string;
+  subjectDeityName?: string;
+  carvingStyle?: string;
+  carvingTechnique?: string;
+  artistName?: string;
+  asana?: string;
+  mudra?: string;
+  ayudha?: string;
+  vahana?: string;
+  /** Bead or component material. */
+  material?: string;
+  purity?: string;
+  beadStyle?: string;
+  layoutPattern?: string;
+  componentType?: string;
+  /** Legacy component count (mirrors pieceCount). */
+  quantityPcs?: number;
+  /** g */
+  weightPerPiece?: number;
+  /** g */
+  totalWeight?: number;
+
   priceBreakup?: PriceBreakup;
 }
 
@@ -200,6 +256,11 @@ export interface Category {
   name: string;
   displayName: string;
   image: string;
+  /**
+   * Effective item type, resolved through parent categories by the API:
+   * JEWELLERY | LOOSE_GEMSTONE | GEMSTONE_LOT | ROUGH | IDOL_CARVING | STRAND_BEADS | COMPONENT | SET.
+   */
+  itemType?: string;
   subcategories?: Array<{ id: string; name: string; displayName: string }>;
 }
 
@@ -212,6 +273,11 @@ export interface ProductFacets {
   designStyles: string[];
   occasions: string[];
   styles: string[];
+  /** gemGrade codes (PRECIOUS, SEMI_PRECIOUS, ORGANIC, LAB_GROWN); optional until the API ships them. */
+  gemGrades?: string[];
+  crafts?: string[];
+  /** saleMode codes (PER_PIECE, PER_CARAT, ...). */
+  saleModes?: string[];
   priceMin: number | null;
   priceMax: number | null;
 }

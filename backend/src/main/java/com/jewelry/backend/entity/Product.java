@@ -168,6 +168,23 @@ public class Product extends BaseEntity {
     private String vendorInformation;
     private Integer minOrderQuantity;
 
+    // 6. Sale mode, lots, strands, carvings (INVENTORY-CONTRACT.md section 3).
+    // All nullable so ddl-auto=update can add the columns without a migration.
+    private String saleMode = "PER_PIECE"; // PER_PIECE, PER_CARAT, PER_GRAM, PER_LOT, PER_STRAND
+    private BigDecimal unitPrice; // price per ct / g / piece for derived pricing
+    private Integer pieceCount; // stones/beads/pieces in a lot, strand or pack
+    private BigDecimal lotTotalCaratWeight;
+    private BigDecimal averagePieceWeight; // ct, derived = lotTotalCaratWeight / pieceCount
+    private String sizeRange; // e.g. "3-4 mm", "6x4 mm"
+    private Boolean calibrated;
+    private BigDecimal beadSizeMm;
+    private BigDecimal strandLengthInches;
+    private Integer strandCount; // strands per item (multi-line necklaces)
+    private BigDecimal heightInches;
+    private String craft; // Polki, Kundan, Meenakari, Jadau, Filigree, Temple, Antique, Plain, Other
+    private String plainOrStudded; // PLAIN, STUDDED (JEWELLERY only)
+    private String gemGrade; // PRECIOUS, SEMI_PRECIOUS, ORGANIC, LAB_GROWN
+
     @Embeddable
     @Data
     public static class CustomizationOption {

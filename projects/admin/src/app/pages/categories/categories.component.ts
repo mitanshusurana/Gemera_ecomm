@@ -4,23 +4,33 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
+import {
+  CategoryNode,
+  FlatCategory,
+  ITEM_TYPES,
+  ITEM_TYPE_LABEL,
+  ItemType,
+  flattenCategoryTree,
+  indexById,
+  isInheritedItemType,
+  resolveItemType
+} from '../../core/item-types';
 
-interface Category {
-  id: string;
-  name: string;
-  displayName: string;
+interface Category extends CategoryNode {
   isActive: boolean;
   showJewelryFields: boolean;
   showGemstoneFields: boolean;
   showComponentFields: boolean;
   showIdolFields: boolean;
   showRoughFields: boolean;
-  parentId?: string | null;
   subcategories: Category[];
 }
 
-interface FlattenedCategory extends Category {
-  level: number;
+interface FlattenedCategory extends FlatCategory {
+  /** Effective type, resolved through parents. */
+  effectiveItemType: ItemType | null;
+  /** True when the effective type comes from an ancestor rather than this row. */
+  inherited: boolean;
 }
 
 @Component({
@@ -37,18 +47,20 @@ export class CategoriesComponent implements OnInit {
   currentParentId = signal<string | null>(null);
   editingId = signal<string | null>(null);
 
+  itemTypes = ITEM_TYPES;
+  itemTypeLabel = ITEM_TYPE_LABEL;
+
   categoryForm: FormGroup;
+
+  private byId = new Map<string, FlatCategory>();
 
   constructor(private fb: FormBuilder, private http: HttpClient, private toastr: ToastrService) {
     this.categoryForm = this.fb.group({
       name: ['', Validators.required],
       displayName: ['', Validators.required],
       isActive: [true],
-      showJewelryFields: [false],
-      showGemstoneFields: [false],
-      showComponentFields: [false],
-      showIdolFields: [false],
-      showRoughFields: [false]
+      // '' means "Inherit from parent" and is sent as null.
+      itemType: ['']
     });
   }
 
@@ -67,46 +79,45 @@ export class CategoriesComponent implements OnInit {
   }
 
   flattenCategories(categories: Category[]) {
-    const flattened: FlattenedCategory[] = [];
-    const traverse = (cats: Category[], level: number) => {
-      for (const cat of cats) {
-        flattened.push({ ...cat, level });
-        if (cat.subcategories && cat.subcategories.length > 0) {
-          traverse(cat.subcategories, level + 1);
-        }
-      }
-    };
-    traverse(categories, 0);
-    this.flattenedCategories.set(flattened);
+    const flat = flattenCategoryTree(categories);
+    this.byId = indexById(flat);
+    this.flattenedCategories.set(flat.map(c => ({
+      ...c,
+      effectiveItemType: resolveItemType(c, this.byId),
+      inherited: isInheritedItemType(c, this.byId)
+    })));
+  }
+
+  /** What the parent would pass down, shown next to the "Inherit" option. */
+  get parentEffectiveType(): ItemType | null {
+    const parentId = this.currentParentId();
+    if (!parentId) return null;
+    return resolveItemType(this.byId.get(parentId), this.byId);
   }
 
   openAddCategoryModal(parentId: string | null = null) {
     this.isEditing.set(false);
+    this.editingId.set(null);
     this.currentParentId.set(parentId);
     this.categoryForm.reset({
       isActive: true,
-      showJewelryFields: false,
-      showGemstoneFields: false,
-      showComponentFields: false,
-      showIdolFields: false,
-      showRoughFields: false
+      itemType: ''
     });
     this.showModal.set(true);
   }
 
-  openEditCategoryModal(category: Category) {
+  openEditCategoryModal(category: FlattenedCategory) {
     this.isEditing.set(true);
     this.editingId.set(category.id);
     this.currentParentId.set(category.parentId || null);
+    // The DTO carries the effective type. A value equal to the parent's is
+    // shown as "Inherit from parent"; saving it as null changes nothing.
+    const own = category.inherited ? '' : (category.effectiveItemType ?? '');
     this.categoryForm.patchValue({
       name: category.name,
       displayName: category.displayName,
       isActive: category.isActive,
-      showJewelryFields: category.showJewelryFields,
-      showGemstoneFields: category.showGemstoneFields,
-      showComponentFields: category.showComponentFields,
-      showIdolFields: category.showIdolFields,
-      showRoughFields: category.showRoughFields
+      itemType: own
     });
     this.showModal.set(true);
   }
@@ -118,8 +129,12 @@ export class CategoriesComponent implements OnInit {
   saveCategory() {
     if (this.categoryForm.invalid) return;
 
+    const value = this.categoryForm.value;
     const payload = {
-      ...this.categoryForm.value,
+      name: value.name,
+      displayName: value.displayName,
+      isActive: value.isActive,
+      itemType: value.itemType || null,
       parentId: this.currentParentId()
     };
 

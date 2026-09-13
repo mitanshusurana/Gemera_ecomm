@@ -11,6 +11,7 @@ import { Product } from "../core/models";
 import { SeoService } from "../services/seo.service";
 import { ToastService } from "../services/toast.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
+import { unitLabel, unitRate, totalSuffix } from "../core/product-display";
 import { VirtualTryOnComponent } from "../components/virtual-try-on";
 import { EmailNotificationService } from "../services/email-notification.service";
 
@@ -247,7 +248,10 @@ interface SimulatorShape {
             </div>
 
             <div class="flex justify-between items-center pt-4 border-t border-[#f0f0f0]">
-              <span class="font-sans font-semibold text-base text-[#1d1d1f]">{{ item.price | currencyConvert }}</span>
+              <div class="font-sans font-semibold text-base text-[#1d1d1f]">
+                {{ item.price | currencyConvert }}<span *ngIf="totalSuffix(item)" class="text-xs font-normal text-[#7a7a7a] ml-1">{{ totalSuffix(item) }}</span>
+                <span *ngIf="unitRate(item) as rate" class="block text-xs font-normal text-[#7a7a7a]">{{ rate | currencyConvert }} {{ unitLabel(item) }}</span>
+              </div>
               <button (click)="handleAddToCart($event, item)" class="btn-apple-pill text-xs !py-1.5 !px-4">
                 Add to Bag
               </button>
@@ -379,6 +383,11 @@ export class HomeComponent implements OnInit {
   tryOnProduct = signal<Product | null>(null);
 
   emailInput = '';
+
+  // Sale-mode display helpers (core/product-display) for the product card price line.
+  readonly unitLabel = unitLabel;
+  readonly unitRate = unitRate;
+  readonly totalSuffix = totalSuffix;
 
   // Solitaire Simulator State
   metals: SimulatorMetal[] = [

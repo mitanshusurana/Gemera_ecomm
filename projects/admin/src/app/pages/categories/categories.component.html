@@ -13,7 +13,7 @@
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type Flags</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Type</th>
           <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
         </tr>
       </thead>
@@ -34,13 +34,17 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <div class="flex space-x-1 flex-wrap">
-                <span *ngIf="cat.showJewelryFields" class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-xs">Jewelry</span>
-                <span *ngIf="cat.showGemstoneFields" class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 text-xs">Gemstone</span>
-                <span *ngIf="cat.showComponentFields" class="px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs">Components</span>
-                <span *ngIf="cat.showIdolFields" class="px-1.5 py-0.5 rounded bg-orange-100 text-orange-800 text-xs">Idols</span>
-                <span *ngIf="cat.showRoughFields" class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 text-xs">Roughs</span>
-              </div>
+              <ng-container *ngIf="cat.effectiveItemType as type; else noType">
+                <span class="px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full"
+                      [ngClass]="cat.inherited ? 'bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200' : 'bg-emerald-100 text-emerald-800'"
+                      [title]="cat.inherited ? 'Inherited from parent' : 'Set on this category'">
+                  {{ itemTypeLabel[type] }}
+                  <span *ngIf="cat.inherited" class="font-normal text-gray-400">· inherited</span>
+                </span>
+              </ng-container>
+              <ng-template #noType>
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800" title="Products in this category cannot be typed; set an item type here or on a parent.">Not set</span>
+              </ng-template>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <button (click)="openAddCategoryModal(cat.id)" class="text-indigo-600 hover:text-indigo-900 mr-3">Add Sub</button>
@@ -82,30 +86,17 @@
                   <input type="checkbox" formControlName="isActive" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                   <label class="ml-2 block text-sm text-gray-900">Active</label>
                 </div>
-                <div class="space-y-2 border-t pt-2">
-                  <span class="text-sm font-medium text-gray-700">UI Form Fields (Used in Admin & Frontend)</span>
-                  <div class="grid grid-cols-2 gap-2">
-                    <div class="flex items-center">
-                      <input type="checkbox" formControlName="showJewelryFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Jewelry Fields</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" formControlName="showGemstoneFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Gemstone Fields</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" formControlName="showComponentFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Component Fields</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" formControlName="showIdolFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Idol Fields</label>
-                    </div>
-                    <div class="flex items-center">
-                      <input type="checkbox" formControlName="showRoughFields" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                      <label class="ml-2 block text-sm text-gray-900">Rough Fields</label>
-                    </div>
-                  </div>
+                <div class="border-t pt-3">
+                  <label class="block text-sm font-medium text-gray-700">Item type</label>
+                  <select formControlName="itemType" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    <option value="">
+                      Inherit from parent{{ parentEffectiveType ? ' (' + itemTypeLabel[parentEffectiveType] + ')' : (currentParentId() ? '' : ' — none for a root category') }}
+                    </option>
+                    <option *ngFor="let t of itemTypes" [value]="t.value">{{ t.label }}</option>
+                  </select>
+                  <p class="mt-1 text-xs text-gray-500">
+                    Drives which sections, sale modes and required fields the product form shows. Sub-categories inherit it unless they set their own.
+                  </p>
                 </div>
               </div>
             </div>

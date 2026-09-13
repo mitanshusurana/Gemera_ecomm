@@ -59,6 +59,9 @@ public class ProductController {
             @RequestParam(required = false) List<String> designStyles,
             @RequestParam(required = false) List<String> occasions,
             @RequestParam(required = false) List<String> styles,
+            @RequestParam(required = false) List<String> gemGrade,
+            @RequestParam(required = false) List<String> craft,
+            @RequestParam(required = false) List<String> saleMode,
             @RequestParam(required = false) BigDecimal priceMin,
             @RequestParam(required = false) BigDecimal priceMax,
             @RequestParam(required = false) String search,
@@ -67,6 +70,7 @@ public class ProductController {
             @Parameter(hidden = true) Pageable pageable) {
         Page<Product> products = productService.getAllProducts(
                 category, subCategory, metals, stones, designStyles, occasions, styles,
+                gemGrade, craft, saleMode,
                 priceMin, priceMax, search, certified, featured, pageable);
         return ResponseEntity.ok(products.map(entityMapper::toProductDTO));
     }
@@ -74,7 +78,7 @@ public class ProductController {
     // Declared before the "/{id}" mappings so "facets" is never parsed as a UUID.
     @GetMapping("/facets")
     @Transactional(readOnly = true)
-    @Operation(summary = "Distinct filter values (categories, metals, stones, price range) across the catalogue")
+    @Operation(summary = "Distinct filter values (categories, metals, stones, gem grades, crafts, sale modes, price range) across the catalogue")
     public ResponseEntity<ProductFacetsDTO> getFacets() {
         return ResponseEntity.ok(productService.getFacets());
     }

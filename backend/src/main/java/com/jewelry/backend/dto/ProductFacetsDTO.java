@@ -20,6 +20,9 @@ public class ProductFacetsDTO {
     private List<String> designStyles = new ArrayList<>();
     private List<String> occasions = new ArrayList<>();
     private List<String> styles = new ArrayList<>();
+    private List<String> gemGrades = new ArrayList<>();
+    private List<String> crafts = new ArrayList<>();
+    private List<String> saleModes = new ArrayList<>();
     private BigDecimal priceMin;
     private BigDecimal priceMax;
 }

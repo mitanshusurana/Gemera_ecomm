@@ -13,8 +13,9 @@ import { CompareService } from '../services/compare.service';
 import { QuickViewModalComponent } from '../components/quick-view-modal';
 import { ToastService } from '../services/toast.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
+import { unitLabel, unitRate, totalSuffix, secondaryLine, gemGradeLabel } from '../core/product-display';
 
-type ListFilter = 'subCategory' | 'metal' | 'stone' | 'designStyle' | 'occasion' | 'style';
+type ListFilter = 'subCategory' | 'metal' | 'stone' | 'designStyle' | 'occasion' | 'style' | 'gemGrade' | 'craft';
 
 interface PriceRange {
   id: string;
@@ -30,6 +31,9 @@ const EMPTY_FACETS: ProductFacets = {
   designStyles: [],
   occasions: [],
   styles: [],
+  gemGrades: [],
+  crafts: [],
+  saleModes: [],
   priceMin: null,
   priceMax: null,
 };
@@ -250,7 +254,13 @@ const EMPTY_FACETS: ProductFacets = {
               <!-- Price -->
               <div class="mb-3">
                 <span class="text-lg font-semibold text-[#1d1d1f]">
-                  {{ product.price | currencyConvert }}
+                  {{ product.price | currencyConvert }}<span *ngIf="totalSuffix(product)" class="text-xs font-normal text-[#7a7a7a] ml-1">{{ totalSuffix(product) }}</span>
+                </span>
+                <span *ngIf="unitRate(product) as rate" class="block text-xs text-[#7a7a7a] mt-0.5">
+                  {{ rate | currencyConvert }} {{ unitLabel(product) }}
+                </span>
+                <span *ngIf="secondaryLine(product)" class="block text-xs text-[#7a7a7a] mt-0.5">
+                  {{ secondaryLine(product) }}
                 </span>
               </div>
 
@@ -427,6 +437,42 @@ const EMPTY_FACETS: ProductFacets = {
                 </div>
               </div>
 
+              <!-- Stone Grade -->
+              <div class="mb-6" *ngIf="facets().gemGrades?.length">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Stone Grade</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let grade of facets().gemGrades"
+                    (click)="toggleFilter('gemGrade', grade)"
+                    [attr.aria-pressed]="selectedGemGrades().includes(grade)"
+                    [class.bg-[#D4AF37]]="selectedGemGrades().includes(grade)"
+                    [class.text-black]="selectedGemGrades().includes(grade)"
+                    [class.font-semibold]="selectedGemGrades().includes(grade)"
+                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
+                  >
+                    {{ gemGradeLabel(grade) }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Craft -->
+              <div class="mb-6" *ngIf="facets().crafts?.length">
+                <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Craft</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    *ngFor="let craft of facets().crafts"
+                    (click)="toggleFilter('craft', craft)"
+                    [attr.aria-pressed]="selectedCrafts().includes(craft)"
+                    [class.bg-[#D4AF37]]="selectedCrafts().includes(craft)"
+                    [class.text-black]="selectedCrafts().includes(craft)"
+                    [class.font-semibold]="selectedCrafts().includes(craft)"
+                    class="px-3 py-1.5 rounded-full border border-[#e0e0e0] text-xs text-[#333333] transition-all"
+                  >
+                    {{ craft }}
+                  </button>
+                </div>
+              </div>
+
               <!-- Design Style -->
               <div class="mb-6" *ngIf="facets().designStyles.length > 0">
                 <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-3">Design Style</h4>
@@ -528,6 +574,8 @@ export class ProductsComponent implements OnInit {
   selectedGemstones = signal<string[]>([]);
   selectedPriceRanges = signal<string[]>([]);
   selectedMetals = signal<string[]>([]);
+  selectedGemGrades = signal<string[]>([]);
+  selectedCrafts = signal<string[]>([]);
   certifiedOnly = signal(false);
   searchQuery = signal<string>('');
   products = signal<Product[]>([]);
@@ -541,7 +589,16 @@ export class ProductsComponent implements OnInit {
     designStyle: this.selectedDesignStyles,
     occasion: this.selectedOccasions,
     style: this.selectedStyles,
+    gemGrade: this.selectedGemGrades,
+    craft: this.selectedCrafts,
   };
+
+  // Sale-mode / item-type display helpers (core/product-display) exposed to the template.
+  readonly unitLabel = unitLabel;
+  readonly unitRate = unitRate;
+  readonly totalSuffix = totalSuffix;
+  readonly secondaryLine = secondaryLine;
+  readonly gemGradeLabel = gemGradeLabel;
 
   trackByProductId(_index: number, product: Product): any {
     return product.id;
@@ -651,6 +708,8 @@ export class ProductsComponent implements OnInit {
       designStyles: this.selectedDesignStyles(),
       occasions: this.selectedOccasions(),
       styles: this.selectedStyles(),
+      gemGrade: this.selectedGemGrades(),
+      craft: this.selectedCrafts(),
       priceMin: price.min,
       priceMax: price.max,
       search: this.searchQuery().trim() || undefined,
@@ -732,6 +791,8 @@ export class ProductsComponent implements OnInit {
       this.selectedGemstones().length +
       this.selectedPriceRanges().length +
       this.selectedMetals().length +
+      this.selectedGemGrades().length +
+      this.selectedCrafts().length +
       (this.certifiedOnly() ? 1 : 0) +
       (this.searchQuery() ? 1 : 0);
   });
@@ -745,6 +806,8 @@ export class ProductsComponent implements OnInit {
     this.selectedGemstones.set([]);
     this.selectedPriceRanges.set([]);
     this.selectedMetals.set([]);
+    this.selectedGemGrades.set([]);
+    this.selectedCrafts.set([]);
     this.certifiedOnly.set(false);
     this.searchQuery.set('');
     this.sortBy = "newest";

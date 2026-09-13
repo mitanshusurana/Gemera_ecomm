@@ -128,6 +128,22 @@ public class ProductDTO {
     private String vendorInformation;
     private Integer minOrderQuantity;
 
+    // Sale mode, lots, strands, carvings (INVENTORY-CONTRACT.md section 3)
+    private String saleMode;
+    private BigDecimal unitPrice;
+    private Integer pieceCount;
+    private BigDecimal lotTotalCaratWeight;
+    private BigDecimal averagePieceWeight;
+    private String sizeRange;
+    private Boolean calibrated;
+    private BigDecimal beadSizeMm;
+    private BigDecimal strandLengthInches;
+    private Integer strandCount;
+    private BigDecimal heightInches;
+    private String craft;
+    private String plainOrStudded;
+    private String gemGrade;
+
     @Data
     public static class CustomizationOptionDTO {
         private String type;

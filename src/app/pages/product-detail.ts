@@ -31,12 +31,36 @@ import { HistoryService } from '../services/history.service';
 import { SettingService } from '../services/setting.service';
 import { RING_CATEGORIES } from '../core/constants';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
+import {
+  fmtQty,
+  unitLabel,
+  unitRate,
+  totalSuffix,
+  gemGradeLabel,
+  saleModeLabel,
+  plainOrStuddedLabel,
+} from '../core/product-display';
 import { environment } from '../../environments/environment';
 import { AppointmentService } from '../services/appointment.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SeoService } from '../services/seo.service';
 import { VirtualTryOnComponent } from '../components/virtual-try-on';
 import { WishlistService } from '../services/wishlist.service';
+
+/**
+ * Keys each item-type block of Master Specifications renders. They are hidden
+ * from the "Additional Specifications" catch-all only while that block shows,
+ * so nothing the API sends is ever silently dropped.
+ */
+const LOT_KEYS = ['pieceCount', 'lotTotalCaratWeight', 'averagePieceWeight', 'sizeRange', 'calibrated', 'lotNumber'];
+const ROUGH_KEYS = ['roughMaterial', 'roughWeight', 'pieceCount', 'lotTotalCaratWeight', 'sizeRange', 'lotNumber',
+  'mineOrigin', 'matrixParentRock', 'crystalMorphology', 'manufacturingStage'];
+const IDOL_KEYS = ['gemstoneMaterial', 'subjectDeityName', 'heightInches', 'carvingStyle', 'carvingTechnique',
+  'asana', 'mudra', 'ayudha', 'vahana', 'artistName'];
+const STRAND_KEYS = ['material', 'beadStyle', 'beadSizeMm', 'sizeRange', 'strandLengthInches', 'strandCount',
+  'pieceCount', 'layoutPattern'];
+const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'quantityPcs', 'weightPerPiece',
+  'totalWeight', 'sizeRange', 'beadSizeMm'];
 
 @Component({
   selector: 'app-product-detail',
@@ -322,6 +346,26 @@ import { WishlistService } from '../services/wishlist.service';
 
                 <!-- Precious Metal & Physical Specs -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.saleMode">
+                    <span class="text-[#7a7a7a]">Sold By</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ saleModeLabel(product()?.saleMode) }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.unitPrice && product()?.saleMode !== 'PER_PIECE'">
+                    <span class="text-[#7a7a7a]">Unit Price</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ (product()?.unitPrice || 0) | currencyConvert }} {{ unitLabel(product()) }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.plainOrStudded">
+                    <span class="text-[#7a7a7a]">Jewellery Type</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ plainOrStuddedLabel(product()?.plainOrStudded) }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.craft">
+                    <span class="text-[#7a7a7a]">Craft</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ product()?.craft }}</span>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.pieceCount && !hasLotBlock() && !hasRoughBlock() && !hasStrandBlock() && !hasComponentBlock()">
+                    <span class="text-[#7a7a7a]">Pieces</span>
+                    <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.pieceCount) }}</span>
+                  </div>
                   <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.grossWeight">
                     <span class="text-[#7a7a7a]">Gross Weight</span>
                     <span class="font-semibold text-[#1d1d1f]">{{ product()?.grossWeight }} g</span>
@@ -353,11 +397,15 @@ import { WishlistService } from '../services/wishlist.service';
                 </div>
 
                 <!-- Gemstone & Diamond 4Cs Specs -->
-                <div *ngIf="product()?.caratWeight || product()?.clarity || product()?.cut || product()?.species || product()?.originProvenance">
+                <div *ngIf="product()?.caratWeight || product()?.clarity || product()?.cut || product()?.species || product()?.originProvenance || product()?.gemGrade">
                   <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
                     Gemological Grading (4Cs & Provenance)
                   </h4>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.gemGrade">
+                      <span class="text-[#7a7a7a]">Stone Grade</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ gemGradeLabel(product()?.gemGrade) }}</span>
+                    </div>
                     <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.species">
                       <span class="text-[#7a7a7a]">Species</span>
                       <span class="font-semibold text-[#1d1d1f]">{{ product()?.species }}</span>
@@ -405,6 +453,220 @@ import { WishlistService } from '../services/wishlist.service';
                     <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.labReportNumber">
                       <span class="text-[#7a7a7a]">Lab Report Number</span>
                       <span class="font-semibold text-[#1d1d1f]">{{ product()?.labReportNumber }}</span>
+                    </div>
+                  </div>
+                </div>
+
+
+                <!-- Gemstone Lot (contract section 6) -->
+                <div *ngIf="hasLotBlock()">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Lot Details
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.pieceCount">
+                      <span class="text-[#7a7a7a]">Pieces</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.pieceCount) }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.lotTotalCaratWeight">
+                      <span class="text-[#7a7a7a]">Total Weight</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.lotTotalCaratWeight) }} ct</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.averagePieceWeight">
+                      <span class="text-[#7a7a7a]">Average per Piece</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.averagePieceWeight) }} ct</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.sizeRange">
+                      <span class="text-[#7a7a7a]">Size Range</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.sizeRange }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.calibrated != null">
+                      <span class="text-[#7a7a7a]">Calibrated</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.calibrated ? 'Yes' : 'No' }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.lotNumber">
+                      <span class="text-[#7a7a7a]">Lot Number</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.lotNumber }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Rough & Specimens -->
+                <div *ngIf="hasRoughBlock()">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Rough Details
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.roughMaterial">
+                      <span class="text-[#7a7a7a]">Material</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.roughMaterial }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.roughWeight">
+                      <span class="text-[#7a7a7a]">Rough Weight</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.roughWeight) }} ct</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.pieceCount">
+                      <span class="text-[#7a7a7a]">Pieces</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.pieceCount) }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.lotTotalCaratWeight">
+                      <span class="text-[#7a7a7a]">Total Weight</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.lotTotalCaratWeight) }} ct</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.sizeRange">
+                      <span class="text-[#7a7a7a]">Size Range</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.sizeRange }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.lotNumber">
+                      <span class="text-[#7a7a7a]">Lot Number</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.lotNumber }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.mineOrigin">
+                      <span class="text-[#7a7a7a]">Mine Origin</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.mineOrigin }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.matrixParentRock">
+                      <span class="text-[#7a7a7a]">Matrix / Parent Rock</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.matrixParentRock }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.crystalMorphology">
+                      <span class="text-[#7a7a7a]">Crystal Morphology</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.crystalMorphology }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.manufacturingStage">
+                      <span class="text-[#7a7a7a]">Manufacturing Stage</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.manufacturingStage }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Idols & Carvings -->
+                <div *ngIf="hasIdolBlock()">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Idol & Carving Details
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.gemstoneMaterial">
+                      <span class="text-[#7a7a7a]">Material</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.gemstoneMaterial }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.subjectDeityName">
+                      <span class="text-[#7a7a7a]">Deity</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.subjectDeityName }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.heightInches">
+                      <span class="text-[#7a7a7a]">Height</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.heightInches) }} in</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.carvingStyle">
+                      <span class="text-[#7a7a7a]">Carving Style</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.carvingStyle }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.carvingTechnique">
+                      <span class="text-[#7a7a7a]">Carving Technique</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.carvingTechnique }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.asana">
+                      <span class="text-[#7a7a7a]">Asana</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.asana }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.mudra">
+                      <span class="text-[#7a7a7a]">Mudra</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.mudra }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.ayudha">
+                      <span class="text-[#7a7a7a]">Ayudha</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.ayudha }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.vahana">
+                      <span class="text-[#7a7a7a]">Vahana</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.vahana }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.artistName">
+                      <span class="text-[#7a7a7a]">Artist</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.artistName }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Strands & Beads -->
+                <div *ngIf="hasStrandBlock()">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Strand Details
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.material">
+                      <span class="text-[#7a7a7a]">Bead Material</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.material }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.beadStyle">
+                      <span class="text-[#7a7a7a]">Bead Style</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.beadStyle }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.beadSizeMm">
+                      <span class="text-[#7a7a7a]">Bead Size</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.beadSizeMm) }} mm</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.sizeRange">
+                      <span class="text-[#7a7a7a]">Size Range</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.sizeRange }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.strandLengthInches">
+                      <span class="text-[#7a7a7a]">Strand Length</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.strandLengthInches) }} in</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.strandCount">
+                      <span class="text-[#7a7a7a]">Strands</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.strandCount) }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.pieceCount">
+                      <span class="text-[#7a7a7a]">Beads</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.pieceCount) }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.layoutPattern">
+                      <span class="text-[#7a7a7a]">Layout Pattern</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.layoutPattern }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Components -->
+                <div *ngIf="hasComponentBlock()">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Component Details
+                  </h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs mb-8">
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.componentType">
+                      <span class="text-[#7a7a7a]">Component Type</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.componentType }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.material">
+                      <span class="text-[#7a7a7a]">Material</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.material }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.purity">
+                      <span class="text-[#7a7a7a]">Purity</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.purity }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.pieceCount || product()?.quantityPcs">
+                      <span class="text-[#7a7a7a]">Pieces</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.pieceCount || product()?.quantityPcs) }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.weightPerPiece">
+                      <span class="text-[#7a7a7a]">Weight per Piece</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.weightPerPiece) }} g</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.totalWeight">
+                      <span class="text-[#7a7a7a]">Total Weight</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.totalWeight) }} g</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.sizeRange">
+                      <span class="text-[#7a7a7a]">Size Range</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ product()?.sizeRange }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.beadSizeMm">
+                      <span class="text-[#7a7a7a]">Bead Size</span>
+                      <span class="font-semibold text-[#1d1d1f]">{{ fmtQty(product()?.beadSizeMm) }} mm</span>
                     </div>
                   </div>
                 </div>
@@ -531,10 +793,14 @@ import { WishlistService } from '../services/wishlist.service';
                   <span class="font-sans font-semibold text-3xl text-[#1d1d1f]">
                     {{ currentPriceBreakup()?.total || currentPrice() | currencyConvert }}
                   </span>
+                  <span *ngIf="totalSuffix(product())" class="text-sm text-[#7a7a7a]">{{ totalSuffix(product()) }}</span>
                   <span *ngIf="product()?.originalPrice" class="text-base text-[#7a7a7a] line-through">
                     {{ product()?.originalPrice || 0 | currencyConvert }}
                   </span>
                 </div>
+                <p *ngIf="unitRate(product()) as rate" class="text-sm text-[#7a7a7a] mt-1">
+                  {{ rate | currencyConvert }} {{ unitLabel(product()) }}
+                </p>
                 <p class="text-xs text-[#7a7a7a] mt-1">Includes all applicable luxury duties, insured delivery & GIA report.</p>
 
                 <!-- Transparent Price Breakup Accordion -->
@@ -1038,6 +1304,43 @@ export class ProductDetailComponent
     return price;
   });
 
+  // Sale-mode / item-type display helpers (core/product-display) exposed to the template.
+  readonly fmtQty = fmtQty;
+  readonly unitLabel = unitLabel;
+  readonly unitRate = unitRate;
+  readonly totalSuffix = totalSuffix;
+  readonly gemGradeLabel = gemGradeLabel;
+  readonly saleModeLabel = saleModeLabel;
+  readonly plainOrStuddedLabel = plainOrStuddedLabel;
+
+  // Item-type spec blocks (INVENTORY-CONTRACT section 6). Each shows only when
+  // its own data exists; the lot block yields to the more specific ones because
+  // rough parcels and component packs share pieceCount / sizeRange with lots.
+  hasRoughBlock = computed(() => {
+    const p = this.product();
+    return !!(p?.roughMaterial || p?.roughWeight || p?.mineOrigin || p?.matrixParentRock ||
+      p?.crystalMorphology || p?.manufacturingStage);
+  });
+  hasIdolBlock = computed(() => {
+    const p = this.product();
+    return !!(p?.gemstoneMaterial || p?.subjectDeityName || p?.heightInches || p?.carvingStyle ||
+      p?.carvingTechnique || p?.artistName || p?.asana || p?.mudra || p?.ayudha || p?.vahana);
+  });
+  hasStrandBlock = computed(() => {
+    const p = this.product();
+    return !!(p?.strandLengthInches || p?.strandCount || p?.beadStyle || p?.layoutPattern ||
+      p?.saleMode === 'PER_STRAND');
+  });
+  hasComponentBlock = computed(() => {
+    const p = this.product();
+    return !!(p?.componentType || p?.quantityPcs || p?.weightPerPiece || p?.totalWeight);
+  });
+  hasLotBlock = computed(() => {
+    const p = this.product();
+    if (!p || this.hasRoughBlock() || this.hasComponentBlock() || this.hasStrandBlock()) return false;
+    return !!(p.lotTotalCaratWeight || p.averagePieceWeight || p.sizeRange || p.saleMode === 'PER_LOT');
+  });
+
   currentPriceBreakup = computed(() => {
     const base = this.product()?.priceBreakup;
     if (!base) return null;
@@ -1139,6 +1442,18 @@ export class ProductDetailComponent
       'huid',
       'rating',
       'certifications',
+      // Rendered as dedicated rows in Master Specifications
+      'saleMode',
+      'unitPrice',
+      'pieceCount',
+      'craft',
+      'plainOrStudded',
+      'gemGrade',
+      ...(this.hasLotBlock() ? LOT_KEYS : []),
+      ...(this.hasRoughBlock() ? ROUGH_KEYS : []),
+      ...(this.hasIdolBlock() ? IDOL_KEYS : []),
+      ...(this.hasStrandBlock() ? STRAND_KEYS : []),
+      ...(this.hasComponentBlock() ? COMPONENT_KEYS : []),
     ];
 
     const specs: { key: string; value: any }[] = [];

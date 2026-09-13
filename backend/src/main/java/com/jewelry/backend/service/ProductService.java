@@ -57,6 +57,9 @@ public class ProductService {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    ProductRulesService productRulesService;
+
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
 
     /**
@@ -73,7 +76,7 @@ public class ProductService {
             List<String> styles,
             Pageable pageable) {
         return getAllProducts(category, null, null, null, null, occasions, styles,
-                priceMin, priceMax, search, null, null, pageable);
+                null, null, null, priceMin, priceMax, search, null, null, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +88,9 @@ public class ProductService {
             List<String> designStyles,
             List<String> occasions,
             List<String> styles,
+            List<String> gemGrades,
+            List<String> crafts,
+            List<String> saleModes,
             BigDecimal priceMin,
             BigDecimal priceMax,
             String search,
@@ -94,6 +100,7 @@ public class ProductService {
 
         ProductFilter filter = new ProductFilter(
                 category, subCategories, metals, stones, designStyles, occasions, styles,
+                gemGrades, crafts, saleModes,
                 priceMin, priceMax, search, certified, featured);
         return productRepository.findAll(ProductSpecifications.withFilter(filter), pageable);
     }
@@ -112,6 +119,9 @@ public class ProductService {
         facets.setDesignStyles(distinctSorted(productRepository.findDistinctDesignStyles()));
         facets.setOccasions(distinctSorted(productRepository.findDistinctOccasions()));
         facets.setStyles(distinctSorted(productRepository.findDistinctStyles()));
+        facets.setGemGrades(distinctSorted(productRepository.findDistinctGemGrades()));
+        facets.setCrafts(distinctSorted(productRepository.findDistinctCrafts()));
+        facets.setSaleModes(distinctSorted(productRepository.findDistinctSaleModes()));
         facets.setPriceMin(productRepository.findMinPrice());
         facets.setPriceMax(productRepository.findMaxPrice());
         return facets;
@@ -178,8 +188,10 @@ public class ProductService {
     // Admin only - strictly for seeding/testing
     @Transactional(rollbackFor = Exception.class)
     public Product createProduct(Product product) {
+        // Item-type rules: sale mode, derived price, required fields (400 on violation)
+        String itemType = productRulesService.applyRules(product);
         if (product.getSku() == null || product.getSku().trim().isEmpty()) {
-            product.setSku(generateSku(product));
+            product.setSku(generateSku(product, itemType));
         }
         if (product.getFeatured() == null) {
             product.setFeatured(Boolean.FALSE); // column is NOT NULL
@@ -187,9 +199,14 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    private String generateSku(Product product) {
-        // Generate SKU based on formula: [Category]-[Material]-[Purity]-[UniqueID]
+    private String generateSku(Product product, String itemType) {
+        // Formula: [ItemType prefix]-[Category letters]-[Material][Purity]-[UniqueID]
+        // Prefixes (contract section 4): JW, ST, LT, RG, ID, SB, CP, SE; unknown -> JW.
+        String effectiveType = itemType != null ? itemType : ProductRulesService.JEWELLERY;
         StringBuilder skuBuilder = new StringBuilder();
+
+        // 0. Item type prefix
+        skuBuilder.append(ProductRulesService.skuPrefix(effectiveType)).append("-");
 
         // 1. Category Abbreviation
         String category = product.getCategory();
@@ -200,34 +217,37 @@ public class ProductService {
         }
         skuBuilder.append("-");
 
-        // 2. Material & 3. Purity
-        if ("Jewelry".equalsIgnoreCase(category) || "Settings".equalsIgnoreCase(category)) {
-            String material = "XX";
-            String purity = "00";
-            if (product.getMetalDetails() != null) {
-                if (product.getMetalDetails().getMetalType() != null) {
-                    material = product.getMetalDetails().getMetalType().substring(0, Math.min(product.getMetalDetails().getMetalType().length(), 2)).toUpperCase();
+        // 2. Material & 3. Purity, chosen by item type
+        switch (effectiveType) {
+            case ProductRulesService.JEWELLERY, ProductRulesService.SET -> {
+                String material = "XX";
+                String purity = "00";
+                if (product.getMetalDetails() != null) {
+                    if (product.getMetalDetails().getMetalType() != null) {
+                        material = abbreviate(product.getMetalDetails().getMetalType(), 2, "XX");
+                    }
+                    if (product.getMetalDetails().getMetalPurity() != null) {
+                        purity = NON_DIGIT_PATTERN.matcher(product.getMetalDetails().getMetalPurity()).replaceAll("");
+                    }
                 }
-                if (product.getMetalDetails().getMetalPurity() != null) {
-                    purity = NON_DIGIT_PATTERN.matcher(product.getMetalDetails().getMetalPurity()).replaceAll("");
-                }
+                skuBuilder.append(material).append(purity).append("-");
             }
-            skuBuilder.append(material).append(purity).append("-");
-        } else if ("Gemstones".equalsIgnoreCase(category)) {
-            String variety = product.getVariety() != null && !product.getVariety().isEmpty() ? product.getVariety().substring(0, Math.min(product.getVariety().length(), 3)).toUpperCase() : "XXX";
-            skuBuilder.append(variety).append("-");
-        } else if ("Spiritual Idols".equalsIgnoreCase(category)) {
-            String material = product.getGemstoneMaterial() != null && !product.getGemstoneMaterial().isEmpty() ? product.getGemstoneMaterial().substring(0, Math.min(product.getGemstoneMaterial().length(), 3)).toUpperCase() : "XXX";
-            skuBuilder.append(material).append("-");
-        } else if ("Materials & Roughs".equalsIgnoreCase(category)) {
-             String material = product.getRoughMaterial() != null && !product.getRoughMaterial().isEmpty() ? product.getRoughMaterial().substring(0, Math.min(product.getRoughMaterial().length(), 2)).toUpperCase() : "XX";
-             skuBuilder.append(material).append("-");
-        } else if ("Components".equalsIgnoreCase(category)) {
-             String material = product.getMaterial() != null && !product.getMaterial().isEmpty() ? product.getMaterial().substring(0, Math.min(product.getMaterial().length(), 2)).toUpperCase() : "XX";
-             String purity = product.getPurity() != null && !product.getPurity().isEmpty() ? NON_DIGIT_PATTERN.matcher(product.getPurity()).replaceAll("") : "00";
-             skuBuilder.append(material).append(purity).append("-");
-        } else {
-             skuBuilder.append("XX00-");
+            case ProductRulesService.LOOSE_GEMSTONE, ProductRulesService.GEMSTONE_LOT -> {
+                String stone = product.getVariety() != null && !product.getVariety().isEmpty() ? product.getVariety() : product.getSpecies();
+                skuBuilder.append(abbreviate(stone, 3, "XXX")).append("-");
+            }
+            case ProductRulesService.IDOL_CARVING -> {
+                skuBuilder.append(abbreviate(product.getGemstoneMaterial(), 3, "XXX")).append("-");
+            }
+            case ProductRulesService.ROUGH -> {
+                skuBuilder.append(abbreviate(product.getRoughMaterial(), 2, "XX")).append("-");
+            }
+            case ProductRulesService.COMPONENT, ProductRulesService.STRAND_BEADS -> {
+                String material = abbreviate(product.getMaterial(), 2, "XX");
+                String purity = product.getPurity() != null && !product.getPurity().isEmpty() ? NON_DIGIT_PATTERN.matcher(product.getPurity()).replaceAll("") : "00";
+                skuBuilder.append(material).append(purity).append("-");
+            }
+            default -> skuBuilder.append("XX00-");
         }
 
         // 4. Unique ID
@@ -236,6 +256,15 @@ public class ProductService {
         skuBuilder.append(uniqueId);
 
         return skuBuilder.toString();
+    }
+
+    /** First {@code length} characters upper-cased, or {@code fallback} when blank. */
+    private static String abbreviate(String value, int length, String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        String trimmed = value.trim();
+        return trimmed.substring(0, Math.min(trimmed.length(), length)).toUpperCase();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -269,6 +298,10 @@ public class ProductService {
             if (existing.getFeatured() == null) {
                 existing.setFeatured(Boolean.FALSE); // column is NOT NULL
             }
+
+            // Item-type rules run on the merged record so partial updates are
+            // validated against the full product, not just the fields sent.
+            productRulesService.applyRules(existing);
 
             return productRepository.save(existing);
         }).orElseThrow(() -> new RuntimeException("Product not found"));
