@@ -18,6 +18,9 @@ public interface GiftCardRepository extends JpaRepository<GiftCard, UUID> {
 
     boolean existsByCode(String code);
 
+    // Razorpay webhook: the gateway order id is the only key the event carries.
+    Optional<GiftCard> findByRazorpayOrderId(String razorpayOrderId);
+
     /**
      * Redemption path: lock the row so two concurrent checkouts cannot both
      * spend the same balance.

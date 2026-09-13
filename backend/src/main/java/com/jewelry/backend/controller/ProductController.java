@@ -67,12 +67,21 @@ public class ProductController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean certified,
             @RequestParam(required = false) Boolean featured,
+            @RequestParam(required = false) Boolean lowStock,
             @Parameter(hidden = true) Pageable pageable) {
         Page<Product> products = productService.getAllProducts(
                 category, subCategory, metals, stones, designStyles, occasions, styles,
                 gemGrade, craft, saleMode,
-                priceMin, priceMax, search, certified, featured, pageable);
+                priceMin, priceMax, search, certified, featured, lowStock, pageable);
         return ResponseEntity.ok(products.map(entityMapper::toProductDTO));
+    }
+
+    // Declared before the "/{id}" mappings so "sku" is never parsed as a UUID.
+    @GetMapping("/sku/{sku}")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Get product by SKU (label QR codes and the admin scanner); case-insensitive, 404 when unknown")
+    public ResponseEntity<ProductDTO> getProductBySku(@PathVariable String sku) {
+        return ResponseEntity.ok(entityMapper.toProductDTO(productService.getProductBySku(sku)));
     }
 
     // Declared before the "/{id}" mappings so "facets" is never parsed as a UUID.

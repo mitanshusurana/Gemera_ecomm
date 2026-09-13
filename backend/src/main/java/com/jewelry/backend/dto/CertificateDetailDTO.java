@@ -16,4 +16,8 @@ public class CertificateDetailDTO {
     private String cut;
     private String shape;
     private String imageUrl;
+
+    // Set when the certificate was resolved from a product's lab report
+    // number, so the verify page can link to the product.
+    private UUID productId;
 }

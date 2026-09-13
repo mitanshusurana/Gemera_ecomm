@@ -135,8 +135,27 @@ public class GiftCardService {
             throw new IllegalArgumentException("Payment verification failed.", e);
         }
 
-        // Idempotent: a second confirm for the same, already verified payment
-        // returns the card unchanged and sends no further email.
+        return activatePaid(card, request.getRazorpayPaymentId());
+    }
+
+    /**
+     * Webhook path (payment.captured / order.paid): the gateway has already
+     * confirmed the payment, so no client signature is checked. Locks the row
+     * and activates exactly as {@link #confirm} does; idempotent on retries.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public GiftCard confirmPaid(UUID giftCardId, String razorpayPaymentId) {
+        GiftCard card = giftCardRepository.findByIdForUpdate(giftCardId)
+                .orElseThrow(() -> new EntityNotFoundException("Gift card not found"));
+        return activatePaid(card, razorpayPaymentId);
+    }
+
+    /**
+     * Shared tail of the two confirmation paths. Idempotent: a card that is
+     * already ACTIVE is returned unchanged and sends no further email; any
+     * other non-pending status is a client error.
+     */
+    private GiftCard activatePaid(GiftCard card, String razorpayPaymentId) {
         if (GiftCard.STATUS_ACTIVE.equals(card.getStatus())) {
             return card;
         }
@@ -145,7 +164,9 @@ public class GiftCardService {
         }
 
         activate(card);
-        card.setRazorpayPaymentId(request.getRazorpayPaymentId());
+        if (razorpayPaymentId != null && !razorpayPaymentId.isBlank()) {
+            card.setRazorpayPaymentId(razorpayPaymentId);
+        }
         GiftCard saved = giftCardRepository.save(card);
 
         sendRecipientEmail(saved);
@@ -258,6 +279,29 @@ public class GiftCardService {
         card.setBalance(remaining);
         if (remaining.compareTo(BigDecimal.ZERO) == 0) {
             card.setStatus(GiftCard.STATUS_DEPLETED);
+        }
+        return giftCardRepository.save(card);
+    }
+
+    /**
+     * Reverse of {@link #redeem}: returns {@code amount} to the card when an
+     * order is cancelled. A DEPLETED card becomes ACTIVE again; a DISABLED
+     * card keeps its status but still receives the balance so nothing is
+     * lost. The row is locked like every other balance change.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public GiftCard recredit(String rawCode, BigDecimal amount) {
+        BigDecimal credit = money(amount);
+        if (credit.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Gift card re-credit amount must be positive.");
+        }
+
+        GiftCard card = giftCardRepository.findByCodeIgnoreCaseForUpdate(normalizeCode(rawCode))
+                .orElseThrow(() -> new IllegalArgumentException("The gift card to re-credit no longer exists."));
+
+        card.setBalance(money(card.getBalance()).add(credit).setScale(2, RoundingMode.HALF_UP));
+        if (GiftCard.STATUS_DEPLETED.equals(card.getStatus())) {
+            card.setStatus(GiftCard.STATUS_ACTIVE);
         }
         return giftCardRepository.save(card);
     }

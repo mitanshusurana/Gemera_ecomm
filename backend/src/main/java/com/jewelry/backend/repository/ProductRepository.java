@@ -23,6 +23,22 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     // Listing filters live in ProductSpecifications (Specification<Product>);
     // the old findWithFilters JPQL was removed with them.
 
+    // Label QR codes and the admin scanner resolve a product by SKU.
+    Optional<Product> findFirstBySkuIgnoreCase(String sku);
+
+    // Certificate verification falls back to the product's own lab report
+    // number when no Certificate row exists (OPERATIONS-CONTRACT.md section 2).
+    @Query("SELECT p FROM Product p WHERE p.labReportNumber IS NOT NULL AND UPPER(TRIM(p.labReportNumber)) = UPPER(:reportNumber)")
+    List<Product> findByLabReportNumberNormalized(@Param("reportNumber") String reportNumber);
+
+    // Low-stock digest and admin card: stock at or below the product's own
+    // reorder point, or below the global threshold when it has none.
+    @Query("SELECT p FROM Product p WHERE p.stock IS NOT NULL AND ("
+            + "(p.reorderPointAlert IS NOT NULL AND p.stock <= p.reorderPointAlert) OR "
+            + "(p.reorderPointAlert IS NULL AND p.stock <= :threshold)) "
+            + "ORDER BY p.stock ASC, p.name ASC")
+    List<Product> findLowStock(@Param("threshold") int threshold);
+
     @Query("SELECT DISTINCT p.category FROM Product p")
     List<String> findAllCategories();
 

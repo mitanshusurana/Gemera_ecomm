@@ -1,0 +1,55 @@
+<div class="labels-page px-4 sm:px-6 lg:px-8">
+  <div class="labels-toolbar sm:flex sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-xl font-semibold text-ink">Print labels</h1>
+      <p class="mt-1 text-sm text-ink/70">
+        {{ labels.length }} label{{ labels.length === 1 ? '' : 's' }} · {{ size }} mm · {{ perPage }} per A4 sheet.
+        Each QR opens the product on the storefront.
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-2">
+      <div class="inline-flex rounded-md border border-ink/30 overflow-hidden text-sm" role="group" aria-label="Label size">
+        <button type="button" (click)="setSize('50x30')"
+                [class.bg-emerald-600]="size === '50x30'" [class.text-white]="size === '50x30'"
+                class="px-3 py-2 font-medium hover:bg-emerald-50">50 × 30 mm</button>
+        <button type="button" (click)="setSize('38x25')"
+                [class.bg-emerald-600]="size === '38x25'" [class.text-white]="size === '38x25'"
+                class="px-3 py-2 font-medium border-l border-ink/30 hover:bg-emerald-50">38 × 25 mm</button>
+      </div>
+      <a routerLink="/products" class="inline-flex items-center rounded-md border border-ink/30 bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-gray-50">Back to products</a>
+      <button type="button" (click)="print()" [disabled]="loading || labels.length === 0"
+              class="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50">
+        <span class="material-symbols-outlined text-[18px] mr-1">print</span> Print
+      </button>
+    </div>
+  </div>
+
+  <p *ngIf="missing.length" class="labels-toolbar mb-4 rounded-md bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800">
+    {{ missing.length }} selected product{{ missing.length === 1 ? ' was' : 's were' }} not found and {{ missing.length === 1 ? 'is' : 'are' }} skipped.
+  </p>
+
+  <div *ngIf="loading" class="labels-toolbar text-center py-10 text-ink/70">
+    <span class="material-symbols-outlined animate-spin text-3xl">progress_activity</span>
+  </div>
+
+  <div *ngIf="!loading && labels.length === 0" class="labels-toolbar text-center py-10 text-ink/70">
+    No products selected. Tick products in the list and choose "Print labels".
+  </div>
+
+  <div *ngIf="!loading && labels.length > 0" class="label-sheet" [class.size-50x30]="size === '50x30'" [class.size-38x25]="size === '38x25'">
+    <div class="label-card" *ngFor="let l of labels">
+      <div class="label-qr">
+        <qrcode [qrdata]="l.qr" [width]="qrPx" [margin]="0" [errorCorrectionLevel]="'M'" elementType="img" [alt]="'QR for ' + l.sku"></qrcode>
+      </div>
+      <div class="label-text">
+        <div class="label-sku">{{ l.sku }}</div>
+        <div class="label-name">{{ l.name }}</div>
+        <div class="label-badge" *ngIf="l.badge">{{ l.badge }}</div>
+        <div class="label-foot">
+          <span class="label-price">{{ l.price }}</span>
+          <span class="label-weight" *ngIf="l.weight">{{ l.weight }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

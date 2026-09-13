@@ -30,6 +30,9 @@ public class DataInitializer {
     @Autowired
     PasswordEncoder passwordEncoder;
 
+    @Autowired
+    EmailTemplateSeeder emailTemplateSeeder;
+
     @Value("${app.admin.email}")
     private String adminEmail;
 
@@ -41,6 +44,7 @@ public class DataInitializer {
         return args -> {
             initAdmin();
             initCategories();
+            emailTemplateSeeder.seed();
         };
     }
 

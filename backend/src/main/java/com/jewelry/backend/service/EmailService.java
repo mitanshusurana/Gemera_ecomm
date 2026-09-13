@@ -101,6 +101,51 @@ public class EmailService {
         return notificationRepository.save(notification);
     }
 
+    /**
+     * Sends a stored template with its subject and body rendered from
+     * {@code data}. Unlike {@link #sendEmail}, the subject placeholders are
+     * resolved too, and the HTML is rendered here so the persisted
+     * {@code data} map can stay short: EmailNotification.data is an element
+     * collection with varchar(255) values, so long fragments such as
+     * {@code itemsHtml} are kept out of it and passed through
+     * {@code htmlContent} only. A missing template falls back to a plain
+     * subject and body so the caller still gets a SENT/FAILED record.
+     */
+    public EmailNotification sendTemplate(String type, String to, String templateName, Map<String, String> data) {
+        Map<String, String> safeData = data == null ? Map.of() : data;
+        EmailTemplate template = templateName == null
+                ? null
+                : templateRepository.findByName(templateName).orElse(null);
+
+        String subject;
+        String html;
+        if (template != null) {
+            subject = replacePlaceholders(template.getSubject(), safeData);
+            html = replacePlaceholders(template.getHtmlContent(), safeData);
+        } else {
+            LOGGER.warning("Email template '" + templateName + "' is missing; sending a plain fallback");
+            subject = "Caratloop: " + (templateName == null ? type : templateName.replace('-', ' '));
+            html = "<p>Notification: " + type + "</p>";
+        }
+
+        Map<String, String> persisted = new java.util.HashMap<>();
+        for (Map.Entry<String, String> entry : safeData.entrySet()) {
+            String value = entry.getValue();
+            if (entry.getKey() != null && value != null && value.length() <= 255) {
+                persisted.put(entry.getKey(), value);
+            }
+        }
+
+        EmailNotification notification = new EmailNotification();
+        notification.setType(type);
+        notification.setEmail(to);
+        notification.setSubject(subject);
+        notification.setTemplateName(templateName);
+        notification.setData(persisted);
+        notification.setHtmlContent(html);
+        return sendEmail(notification);
+    }
+
     private String replacePlaceholders(String template, Map<String, String> data) {
         if (template == null || template.isEmpty() || data == null || data.isEmpty()) {
             return template;

@@ -118,6 +118,7 @@ public class EntityMapper {
         product.setMeasurements(dto.getMeasurements());
         product.setTreatmentStatus(dto.getTreatmentStatus());
         product.setLabReportNumber(dto.getLabReportNumber());
+        product.setCertificateLab(dto.getCertificateLab());
         product.setCertificateImage(dto.getCertificateImage());
         product.setPolish(dto.getPolish());
         product.setSymmetry(dto.getSymmetry());
@@ -327,6 +328,7 @@ public class EntityMapper {
         dto.setMeasurements(product.getMeasurements());
         dto.setTreatmentStatus(product.getTreatmentStatus());
         dto.setLabReportNumber(product.getLabReportNumber());
+        dto.setCertificateLab(product.getCertificateLab());
         dto.setCertificateImage(product.getCertificateImage());
         dto.setPolish(product.getPolish());
         dto.setSymmetry(product.getSymmetry());
@@ -518,6 +520,19 @@ public class EntityMapper {
         dto.setGiftCardAmount(order.getGiftCardAmount() == null
                 ? java.math.BigDecimal.ZERO : order.getGiftCardAmount());
         dto.setInternalNotes(order.getInternalNotes());
+
+        // Admin order flow: who to contact, what the admin may do next, and
+        // timestamps for the status timeline.
+        if (order.getUser() != null) {
+            dto.setCustomerEmail(order.getUser().getEmail());
+            String first = order.getUser().getFirstName() == null ? "" : order.getUser().getFirstName().trim();
+            String last = order.getUser().getLastName() == null ? "" : order.getUser().getLastName().trim();
+            String name = (first + " " + last).trim();
+            dto.setCustomerName(name.isEmpty() ? null : name);
+        }
+        dto.setNextStatuses(com.jewelry.backend.service.OrderService.nextStatuses(order.getStatus()));
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setUpdatedAt(order.getUpdatedAt());
 
         return dto;
     }

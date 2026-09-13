@@ -944,6 +944,14 @@
       <div class="p-4 border border-gray-200 rounded-md bg-gray-50">
         <div class="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-6">
           <div class="sm:col-span-2">
+            <label for="certificateLab" class="block text-sm font-medium text-ink">Certifying Lab</label>
+            <!-- Select with free text: a datalist offers the known labs and still accepts any name. -->
+            <input type="text" id="certificateLab" formControlName="certificateLab" list="certificateLabOptions" placeholder="GIA, IGI, GRS…" autocomplete="off" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+            <datalist id="certificateLabOptions">
+              <option *ngFor="let lab of certificateLabs" [value]="lab"></option>
+            </datalist>
+          </div>
+          <div class="sm:col-span-2">
             <label class="block text-sm font-medium text-ink">Lab Report Number</label>
             <input type="text" formControlName="labReportNumber" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
           </div>

@@ -26,6 +26,10 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.status IN :statuses")
     BigDecimal sumTotalByStatusIn(@Param("statuses") List<String> statuses);
 
+    // Admin order list: one count per status for the filter chips.
+    @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
+    List<Object[]> countGroupedByStatus();
+
     @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.user = :user AND o.status IN :statuses")
     BigDecimal sumTotalByUserAndStatusIn(@Param("user") User user, @Param("statuses") List<String> statuses);
 

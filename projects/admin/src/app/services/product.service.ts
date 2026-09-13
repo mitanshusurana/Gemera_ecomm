@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -11,16 +11,26 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  getProducts(search?: string): Observable<any> {
-    let url = this.apiUrl;
-    if (search) {
-      url += `?search=${encodeURIComponent(search)}`;
-    }
-    return this.http.get(url);
+  getProducts(search?: string, opts: { page?: number; size?: number } = {}): Observable<any> {
+    let params = new HttpParams();
+    if (search) params = params.set('search', search);
+    if (opts.page !== undefined) params = params.set('page', String(opts.page));
+    if (opts.size !== undefined) params = params.set('size', String(opts.size));
+    return this.http.get(this.apiUrl, { params });
   }
 
   getProduct(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/${id}`);
+  }
+
+  /** OPERATIONS-CONTRACT §1: case-insensitive SKU lookup, 404 when unknown. */
+  getProductBySku(sku: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/sku/${encodeURIComponent(sku.trim())}`);
+  }
+
+  /** OPERATIONS-CONTRACT §5: products at or below their reorder point. */
+  getLowStock(): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/admin/inventory/low-stock`);
   }
 
   createProduct(product: any): Observable<any> {
@@ -47,10 +57,10 @@ export class ProductService {
     return this.http.post(`${this.apiUrl}/upload-video`, formData);
   }
 
-
-
-  // --- Bulk Print Queue ---
-  // Store the full product object to preserve sku, name, and price even if navigated away
+  // --- Label print queue ---
+  // The full product object is kept so the /products/labels view can render
+  // without refetching; it falls back to GET /products/{id} for ids it does
+  // not have (e.g. a bookmarked labels URL).
   private printQueue = new Map<string, any>();
 
   getPrintQueue(): any[] {
@@ -67,6 +77,10 @@ export class ProductService {
 
   isInPrintQueue(id: string): boolean {
     return this.printQueue.has(id);
+  }
+
+  getQueuedProduct(id: string): any | undefined {
+    return this.printQueue.get(id);
   }
 
   clearPrintQueue() {

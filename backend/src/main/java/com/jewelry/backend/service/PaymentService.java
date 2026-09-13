@@ -27,6 +27,9 @@ public class PaymentService {
 
     private RazorpayClient razorpayClient;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    OrderCompletionService orderCompletionService;
+
     @PostConstruct
     public void init() {
         try {
@@ -99,11 +102,22 @@ public class PaymentService {
             if (!status) {
                 throw new RuntimeException("Invalid Razorpay signature");
             }
-            return true;
         } catch (Exception e) {
              LOGGER.severe("Payment verification failed: " + e.getMessage());
              throw new RuntimeException("Payment verification failed", e);
         }
+
+        // The signature is good: if the order for this gateway order id is
+        // still waiting for payment, complete it here so the checkout page and
+        // the webhook are interchangeable. A completion problem is logged, not
+        // reported as a verification failure -- the payment itself is valid.
+        try {
+            orderCompletionService.markPaidIfPending(request.getOrderId(), request.getPaymentId());
+        } catch (Exception e) {
+            LOGGER.severe("Payment verified but order completion failed for "
+                    + request.getOrderId() + ": " + e.getMessage());
+        }
+        return true;
     }
 
     public void logFailure(TransactionFailureRequest request) {

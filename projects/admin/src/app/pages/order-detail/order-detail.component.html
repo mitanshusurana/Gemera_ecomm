@@ -1,95 +1,227 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-semibold text-ink" *ngIf="order">Order {{ order.orderNumber ? '#' + order.orderNumber : '' }} ({{ order.id }})</h1>
+    <h1 class="text-2xl font-semibold text-ink" *ngIf="order">Order {{ order.orderNumber ? '#' + order.orderNumber : '' }} <span class="text-sm font-normal text-ink/60">({{ order.id }})</span></h1>
     <a routerLink="/orders" class="text-emerald-600 hover:text-emerald-900">Back to Orders</a>
   </div>
 
-  <div *ngIf="order" class="bg-surface shadow overflow-hidden sm:rounded-lg mt-6">
-    <div class="px-4 py-5 sm:px-6">
-      <h3 class="text-lg leading-6 font-medium text-ink">Order Information</h3>
-      <p class="mt-1 max-w-2xl text-sm text-ink">Details regarding the order.</p>
+  <div *ngIf="loading && !order" class="text-center py-10 text-ink/70">
+    <span class="material-symbols-outlined animate-spin text-3xl">progress_activity</span>
+  </div>
+
+  <div *ngIf="order" class="mt-6 space-y-6">
+
+    <!-- Status, timeline and actions -->
+    <div class="bg-surface shadow sm:rounded-lg">
+      <div class="px-4 py-5 sm:px-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h3 class="text-lg leading-6 font-medium text-ink">Status</h3>
+          <div class="mt-2 flex items-center gap-2">
+            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  [ngClass]="{
+                    'bg-yellow-100 text-yellow-800': order.status === 'PENDING_PAYMENT',
+                    'bg-sky-100 text-sky-800': order.status === 'PAID',
+                    'bg-purple-100 text-purple-800': order.status === 'PROCESSING',
+                    'bg-blue-100 text-blue-800': order.status === 'SHIPPED',
+                    'bg-emerald-100 text-emerald-800': order.status === 'DELIVERED' || order.status === 'COMPLETED',
+                    'bg-red-100 text-red-800': order.status === 'CANCELLED' || order.status === 'REFUNDED' || order.status === 'RETURNED'
+                  }">{{ order.status }}</span>
+            <span class="text-xs text-ink/60" *ngIf="order.updatedAt">Updated {{ order.updatedAt | date:'medium' }}</span>
+            <span class="text-xs text-ink/60" *ngIf="!order.updatedAt && order.createdAt">Placed {{ order.createdAt | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <!-- Action buttons derived from nextStatuses -->
+        <div class="flex flex-wrap gap-2" *ngIf="!isTerminal(); else terminalNote">
+          <button *ngFor="let a of actions()" type="button" (click)="run(a)" [disabled]="busy"
+                  [class]="buttonClass(a.tone)"
+                  [class.ring-2]="(a.flow === 'ship' && panel === 'ship') || (a.flow === 'cancel' && panel === 'cancel')">
+            {{ a.label }}
+          </button>
+        </div>
+        <ng-template #terminalNote>
+          <p class="text-xs text-ink/70 self-center">{{ order.status }} is a final state; it cannot be changed here.</p>
+        </ng-template>
+      </div>
+
+      <!-- Timeline -->
+      <div class="px-4 pb-5 sm:px-6">
+        <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          <li *ngFor="let step of timeline(); let last = last" class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1"
+                  [ngClass]="{
+                    'text-emerald-700 font-semibold': step.state === 'done',
+                    'text-ink font-bold': step.state === 'current',
+                    'text-ink/40': step.state === 'upcoming'
+                  }">
+              <span class="material-symbols-outlined text-[16px]">
+                {{ step.state === 'done' ? 'check_circle' : step.state === 'current' ? 'radio_button_checked' : 'radio_button_unchecked' }}
+              </span>
+              {{ step.status }}
+            </span>
+            <span *ngIf="!last" class="text-ink/30">›</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Mark shipped: tracking + method + ETA -> PUT /ship -->
+      <div *ngIf="panel === 'ship'" class="border-t border-ink/10 px-4 py-5 sm:px-6 bg-emerald-50/40">
+        <h4 class="text-sm font-semibold text-ink mb-3">Mark shipped</h4>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <label class="block text-sm">
+            <span class="font-medium text-ink">Tracking number <span class="text-red-600">*</span></span>
+            <input type="text" [(ngModel)]="ship.trackingNumber" name="trackingNumber" required
+                   class="mt-1 block w-full py-2 px-3 border border-ink/30 bg-white rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="e.g. BD1234567890IN">
+          </label>
+          <label class="block text-sm">
+            <span class="font-medium text-ink">Shipping method</span>
+            <input type="text" [(ngModel)]="ship.shippingMethod" name="shippingMethod" list="shippingMethods"
+                   class="mt-1 block w-full py-2 px-3 border border-ink/30 bg-white rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="Courier / service">
+            <datalist id="shippingMethods">
+              <option value="Blue Dart"></option>
+              <option value="Delhivery"></option>
+              <option value="DTDC"></option>
+              <option value="India Post Speed Post"></option>
+              <option value="Sequel Logistics (insured)"></option>
+              <option value="Hand delivery"></option>
+            </datalist>
+          </label>
+          <label class="block text-sm">
+            <span class="font-medium text-ink">Estimated delivery</span>
+            <input type="date" [(ngModel)]="ship.estimatedDelivery" name="estimatedDelivery"
+                   class="mt-1 block w-full py-2 px-3 border border-ink/30 bg-white rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm">
+          </label>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button type="button" (click)="submitShip()" [disabled]="busy || !ship.trackingNumber.trim()" [class]="buttonClass('primary')">Confirm shipped</button>
+          <button type="button" (click)="panel = null" [class]="buttonClass('neutral')">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Cancel order: inline reason confirm -> PUT /status { CANCELLED, reason } -->
+      <div *ngIf="panel === 'cancel'" class="border-t border-ink/10 px-4 py-5 sm:px-6 bg-red-50/50">
+        <h4 class="text-sm font-semibold text-red-800 mb-1">Cancel this order</h4>
+        <p class="text-xs text-red-700/80 mb-3">Items are returned to stock, any gift card amount is re-credited, and the customer receives the reason below.</p>
+        <label class="block text-sm">
+          <span class="font-medium text-ink">Reason <span class="text-red-600">*</span></span>
+          <textarea [(ngModel)]="cancelReason" name="cancelReason" rows="2" required
+                    class="mt-1 block w-full py-2 px-3 border border-red-200 bg-white rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                    placeholder="e.g. Item no longer available; full refund issued to the original payment method."></textarea>
+        </label>
+        <div class="mt-4 flex gap-2">
+          <button type="button" (click)="submitCancel()" [disabled]="busy || !cancelReason.trim()" [class]="buttonClass('danger')">Confirm cancellation</button>
+          <button type="button" (click)="panel = null; cancelReason = ''" [class]="buttonClass('neutral')">Keep order</button>
+        </div>
+      </div>
     </div>
-    <div class="border-t border-ink">
-      <dl>
-        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-ink">Customer</dt>
-          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">{{ order.shippingAddress?.firstName }} {{ order.shippingAddress?.lastName }}</dd>
-        </div>
 
-        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-ink">Shipping Address</dt>
-          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
-            <p *ngIf="order.shippingAddress?.street">{{ order.shippingAddress.street }}</p>
-            <p *ngIf="order.shippingAddress?.city || order.shippingAddress?.state">
-              {{ order.shippingAddress.city }}<ng-container *ngIf="order.shippingAddress.city && order.shippingAddress.state">, </ng-container>
-              {{ order.shippingAddress.state }} {{ order.shippingAddress.zipCode }}
-            </p>
-            <p *ngIf="order.shippingAddress?.country">{{ order.shippingAddress.country }}</p>
-            <p *ngIf="order.shippingAddress?.phone">Phone: {{ order.shippingAddress.phone }}</p>
-          </dd>
-        </div>
+    <!-- Order information -->
+    <div class="bg-surface shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-ink">Order Information</h3>
+        <p class="mt-1 max-w-2xl text-sm text-ink">Details regarding the order.</p>
+      </div>
+      <div class="border-t border-ink">
+        <dl>
+          <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-ink">Customer</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
+              <p>{{ customerName }}</p>
+              <p *ngIf="customerEmail"><a [href]="'mailto:' + customerEmail" class="text-emerald-700 hover:underline">{{ customerEmail }}</a></p>
+              <p *ngIf="order.shippingAddress?.phone" class="text-ink/70">{{ order.shippingAddress.phone }}</p>
+            </dd>
+          </div>
 
-        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-ink">Order Items</dt>
-          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
-            <ul role="list" class="divide-y divide-gray-200 rounded-md border border-ink">
-              <li class="flex items-center justify-between py-3 pl-3 pr-4 text-sm" *ngFor="let item of order.items">
-                <div class="flex w-0 flex-1 items-center">
-                  <div class="ml-4 flex min-w-0 flex-1 gap-4">
-                    <img *ngIf="item.product.images?.length" [src]="item.product.images[0]" alt="{{item.product.name}}" class="h-12 w-12 flex-shrink-0 rounded-md object-cover border border-ink">
-                    <div class="flex flex-col">
-                      <span class="truncate font-medium">{{ item.product.name }}</span>
-                      <span class="text-ink text-xs mt-1">
-                        Qty: {{ item.quantity }} | {{ item.price | currency }}
-                      </span>
-                      <span class="text-ink text-xs mt-1" *ngIf="item.options">
-                        <ng-container *ngIf="item.options.metal">Metal: {{ item.options.metal.name }} </ng-container>
-                        <ng-container *ngIf="item.options.diamond">Diamond: {{ item.options.diamond.name }} </ng-container>
-                      </span>
+          <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-ink">Shipping Address</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
+              <p *ngIf="order.shippingAddress?.street">{{ order.shippingAddress.street }}</p>
+              <p *ngIf="order.shippingAddress?.city || order.shippingAddress?.state">
+                {{ order.shippingAddress.city }}<ng-container *ngIf="order.shippingAddress.city && order.shippingAddress.state">, </ng-container>
+                {{ order.shippingAddress.state }} {{ order.shippingAddress.zipCode }}
+              </p>
+              <p *ngIf="order.shippingAddress?.country">{{ order.shippingAddress.country }}</p>
+            </dd>
+          </div>
+
+          <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-ink">Payment</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
+              <p>{{ order.paymentMethod || '—' }}</p>
+              <p *ngIf="order.razorpayOrderId" class="text-xs text-ink/60 font-mono">Razorpay {{ order.razorpayOrderId }}</p>
+              <p *ngIf="order.appliedCoupon" class="text-xs text-ink/70">Coupon: {{ order.appliedCoupon }}</p>
+            </dd>
+          </div>
+
+          <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-ink">Order Items</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
+              <ul role="list" class="divide-y divide-gray-200 rounded-md border border-ink">
+                <li class="flex items-center justify-between py-3 pl-3 pr-4 text-sm" *ngFor="let item of order.items">
+                  <div class="flex w-0 flex-1 items-center">
+                    <div class="ml-4 flex min-w-0 flex-1 gap-4">
+                      <img *ngIf="item.product?.images?.length" [src]="item.product.images[0]" alt="{{item.product?.name}}" class="h-12 w-12 flex-shrink-0 rounded-md object-cover border border-ink">
+                      <div class="flex flex-col">
+                        <span class="truncate font-medium">{{ item.product?.name || 'Product' }}</span>
+                        <span class="text-ink text-xs mt-1 font-mono" *ngIf="item.product?.sku">{{ item.product.sku }}</span>
+                        <span class="text-ink text-xs mt-1">
+                          Qty: {{ item.quantity }} | {{ item.price | currency }}
+                        </span>
+                        <span class="text-ink text-xs mt-1" *ngIf="item.options">
+                          <ng-container *ngIf="item.options.metal">Metal: {{ item.options.metal.name }} </ng-container>
+                          <ng-container *ngIf="item.options.diamond">Diamond: {{ item.options.diamond.name }} </ng-container>
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="ml-4 flex-shrink-0">
-                  <span class="font-medium text-ink">{{ (item.quantity * item.price) | currency }}</span>
-                </div>
-              </li>
-            </ul>
-          </dd>
-        </div>
+                  <div class="ml-4 flex-shrink-0">
+                    <span class="font-medium text-ink">{{ (item.quantity * item.price) | currency }}</span>
+                  </div>
+                </li>
+              </ul>
+            </dd>
+          </div>
 
-        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-ink">Total Amount</dt>
-          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">{{ order.total | currency }}</dd>
-        </div>
-        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-ink">Status</dt>
-          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
-             <select [value]="order.status" (change)="onStatusChange($event)" [disabled]="isTerminal()" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm disabled:opacity-60">
-                <!-- Current status, plus only the transitions permitted from it. -->
-                <option [value]="order.status">{{ order.status }}</option>
-                <option *ngFor="let s of allowedNextStatuses()" [value]="s">{{ s }}</option>
-             </select>
-             <p *ngIf="isTerminal()" class="mt-1 text-xs text-ink/70">
-               {{ order.status }} is a final state; it cannot be changed here.
-             </p>
-          </dd>
-        </div>
-        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-ink">Tracking Number</dt>
-          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2 flex items-center gap-2">
-             <input type="text" #trackingInput [value]="order.trackingNumber || ''" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="Enter tracking number">
-             <button (click)="updateTracking(trackingInput.value)" class="mt-1 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">Save</button>
-          </dd>
-        </div>
+          <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-ink">Totals</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
+              <dl class="max-w-xs space-y-1">
+                <div class="flex justify-between" *ngIf="order.subtotal != null"><dt class="text-ink/70">Subtotal</dt><dd>{{ order.subtotal | currency }}</dd></div>
+                <div class="flex justify-between" *ngIf="order.discount"><dt class="text-ink/70">Discount</dt><dd>-{{ order.discount | currency }}</dd></div>
+                <div class="flex justify-between" *ngIf="order.tax != null"><dt class="text-ink/70">Tax</dt><dd>{{ order.tax | currency }}</dd></div>
+                <div class="flex justify-between" *ngIf="order.shipping != null"><dt class="text-ink/70">Shipping</dt><dd>{{ order.shipping | currency }}</dd></div>
+                <div class="flex justify-between text-emerald-700" *ngIf="giftCardAmount > 0 || order.appliedGiftCard">
+                  <dt>Gift card <span class="font-mono text-xs" *ngIf="order.appliedGiftCard">{{ order.appliedGiftCard }}</span></dt>
+                  <dd>-{{ giftCardAmount | currency }}</dd>
+                </div>
+                <div class="flex justify-between font-semibold border-t border-ink/10 pt-1"><dt>Total</dt><dd>{{ order.total | currency }}</dd></div>
+              </dl>
+            </dd>
+          </div>
 
-        <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-          <dt class="text-sm font-medium text-ink">Internal Notes</dt>
-          <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2 flex items-start gap-2">
-             <textarea #notesInput [value]="order.internalNotes || ''" rows="3" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="Add internal notes..."></textarea>
-             <button (click)="updateNotes(notesInput.value)" class="mt-1 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">Save</button>
-          </dd>
-        </div>
-      </dl>
+          <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-ink">Shipment</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2 space-y-2">
+              <p class="text-xs text-ink/70" *ngIf="order.shippingMethod || order.estimatedDelivery">
+                <span *ngIf="order.shippingMethod">{{ order.shippingMethod }}</span>
+                <span *ngIf="order.shippingMethod && order.estimatedDelivery"> · </span>
+                <span *ngIf="order.estimatedDelivery">ETA {{ order.estimatedDelivery | date:'mediumDate' }}</span>
+              </p>
+              <div class="flex items-center gap-2">
+                <input type="text" #trackingInput [value]="order.trackingNumber || ''" class="block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="Tracking number">
+                <button (click)="updateTracking(trackingInput.value)" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">Save</button>
+              </div>
+            </dd>
+          </div>
+
+          <div class="bg-surface px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-ink">Internal Notes</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2 flex items-start gap-2">
+              <textarea #notesInput [value]="order.internalNotes || ''" rows="3" class="mt-1 block w-full py-2 px-3 border border-ink bg-surface rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm" placeholder="Add internal notes..."></textarea>
+              <button (click)="updateNotes(notesInput.value)" class="mt-1 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">Save</button>
+            </dd>
+          </div>
+        </dl>
+      </div>
     </div>
   </div>
 </div>

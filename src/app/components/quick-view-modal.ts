@@ -70,7 +70,10 @@ import { unitLabel, unitRate, totalSuffix, secondaryLine } from "../core/product
               </div>
 
               <!-- Stock Status -->
-              <div class="mt-4 p-4 rounded-[12px]" [ngClass]="getStockClass()">
+              <div *ngIf="isSoldOut()" class="mt-4">
+                <span class="inline-flex items-center bg-[#1d1d1f] text-white text-[11px] font-semibold px-3 py-1 rounded-full">Sold out</span>
+              </div>
+              <div *ngIf="!isSoldOut()" class="mt-4 p-4 rounded-[12px]" [ngClass]="getStockClass()">
                 <p class="text-sm font-semibold">{{ getStockMessage() }}</p>
               </div>
             </div>
@@ -181,9 +184,10 @@ import { unitLabel, unitRate, totalSuffix, secondaryLine } from "../core/product
               <div class="flex gap-3">
                 <button
                   (click)="onAddToCart()"
-                  [disabled]="product?.stock === 0"
+                  [disabled]="isSoldOut()"
+                  [attr.aria-disabled]="isSoldOut() ? 'true' : null"
                   class="flex-1 btn-apple-pill">
-                  {{ product?.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
+                  {{ isSoldOut() ? 'Sold out' : 'Add to Cart' }}
                 </button>
               </div>
 
@@ -224,15 +228,20 @@ export class QuickViewModalComponent {
     this.close.emit();
   }
 
+  /** Stock at or below zero cannot be ordered; undefined stock is treated as purchasable. */
+  isSoldOut(): boolean {
+    const stock = this.product?.stock;
+    return stock !== undefined && stock !== null && stock <= 0;
+  }
+
   onAddToCart(): void {
-    if (this.product) {
-      this.addToCart.emit({
-        productId: this.product.id,
-        quantity: 1,
-        product: this.product,
-      });
-      this.close.emit();
-    }
+    if (!this.product || this.isSoldOut()) return;
+    this.addToCart.emit({
+      productId: this.product.id,
+      quantity: 1,
+      product: this.product,
+    });
+    this.close.emit();
   }
 
   onViewDetails(): void {

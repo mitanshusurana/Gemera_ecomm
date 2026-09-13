@@ -59,6 +59,14 @@ public class RFQService {
         return rfqRepository.findByRfqNumber(rfqNumber).orElseThrow(() -> new RuntimeException("RFQ not found"));
     }
 
+    /** Admin pipeline list: every request, optionally one status ("ALL" or blank means no filter). */
+    public Page<RFQ> getAllRequests(String status, Pageable pageable) {
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+            return rfqRepository.findByStatus(status.trim().toUpperCase(), pageable);
+        }
+        return rfqRepository.findAll(pageable);
+    }
+
     public Page<RFQ> getUserRequests(UUID userId, String status, Pageable pageable) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         if (status != null && !status.isEmpty()) {

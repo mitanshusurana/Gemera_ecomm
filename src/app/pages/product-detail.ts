@@ -204,8 +204,8 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
                     <span *ngIf="(product()?.stock ?? 0) < 5 && (product()?.stock ?? 0) > 0" class="bg-amber-100 text-amber-800 text-[11px] font-semibold px-3 py-1 rounded-full border border-amber-300">
                       Limited Edition ({{ product()?.stock }} left)
                     </span>
-                    <span *ngIf="product()?.stock === 0" class="bg-red-100 text-red-800 text-[11px] font-semibold px-3 py-1 rounded-full border border-red-300">
-                      Vault Reserved
+                    <span *ngIf="isSoldOut()" class="bg-[#1d1d1f] text-white text-[11px] font-semibold px-3 py-1 rounded-full">
+                      Sold out
                     </span>
                     <span *ngIf="hasCertification('GIA')" class="bg-white/90 backdrop-blur-md text-[#1d1d1f] text-[11px] font-semibold px-3 py-1 rounded-full border border-[#e0e0e0]">
                       GIA Certified
@@ -454,6 +454,56 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
                     <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.labReportNumber">
                       <span class="text-[#7a7a7a]">Lab Report Number</span>
                       <span class="font-semibold text-[#1d1d1f]">{{ product()?.labReportNumber }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Certification (operations contract section 2) -->
+                <div *ngIf="hasCertificationBlock()" class="mb-8">
+                  <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
+                    Certification
+                  </h4>
+                  <div class="flex flex-col sm:flex-row gap-6">
+                    <!-- Certificate thumbnail -->
+                    <button
+                      *ngIf="product()?.certificateImage"
+                      type="button"
+                      (click)="certificateOpen.set(true)"
+                      aria-label="View certificate at full size"
+                      class="shrink-0 w-full sm:w-40 aspect-[4/3] bg-[#f5f5f7] border border-[#e0e0e0] rounded-[12px] overflow-hidden active-press hover:border-[#D4AF37] transition-colors"
+                    >
+                      <img
+                        [src]="product()?.certificateImage"
+                        [alt]="'Certificate for ' + (product()?.name || 'this piece')"
+                        class="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </button>
+
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs content-start">
+                      <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.certificateLab">
+                        <span class="text-[#7a7a7a]">Laboratory</span>
+                        <span class="font-semibold text-[#1d1d1f]">{{ product()?.certificateLab }}</span>
+                      </div>
+                      <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.labReportNumber">
+                        <span class="text-[#7a7a7a]">Report Number</span>
+                        <span class="font-semibold text-[#1d1d1f] font-mono">{{ product()?.labReportNumber }}</span>
+                      </div>
+                      <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.treatmentStatus">
+                        <span class="text-[#7a7a7a]">Treatment</span>
+                        <span class="font-semibold text-[#1d1d1f] text-right">{{ treatmentLabel(product()?.treatmentStatus) }}</span>
+                      </div>
+                      <div class="flex justify-between py-2 border-b border-[#f0f0f0]" *ngIf="product()?.originProvenance || product()?.mineOrigin">
+                        <span class="text-[#7a7a7a]">Origin</span>
+                        <span class="font-semibold text-[#1d1d1f] text-right">{{ product()?.originProvenance || product()?.mineOrigin }}</span>
+                      </div>
+                      <div class="md:col-span-2 pt-2" *ngIf="product()?.labReportNumber">
+                        <a
+                          routerLink="/verify-certificate"
+                          [queryParams]="{ report: product()?.labReportNumber }"
+                          class="text-xs font-semibold text-[#D4AF37] hover:underline"
+                        >Verify this certificate &rarr;</a>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -927,22 +977,31 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
               <!-- Action CTAs -->
               <div class="space-y-3 pt-4 border-t border-[#e0e0e0]">
                 <button
-                  *ngIf="product()?.stock !== 0"
+                  *ngIf="!isSoldOut()"
                   (click)="handleAddToCart()"
                   class="btn-apple-pill w-full !py-3.5 text-sm"
                 >
                   Add to Bag
                 </button>
                 <button
-                  *ngIf="product()?.stock !== 0"
+                  *ngIf="!isSoldOut()"
                   (click)="handleBuyNow()"
                   class="btn-apple-pill-secondary w-full !py-3 text-sm"
                 >
                   Instant 1-Click Checkout
                 </button>
+                <button
+                  *ngIf="isSoldOut()"
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  class="btn-apple-pill w-full !py-3.5 text-sm"
+                >
+                  Sold out
+                </button>
                 <!-- Restock notification (out of stock only) -->
                 <form
-                  *ngIf="product()?.stock === 0"
+                  *ngIf="isSoldOut()"
                   (ngSubmit)="notifyMe()"
                   class="bg-[#f5f5f7] border border-[#e0e0e0] rounded-[18px] p-4 space-y-3"
                 >
@@ -1075,12 +1134,12 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
           <span class="text-xs font-semibold text-[#D4AF37]">{{ currentPriceBreakup()?.total || currentPrice() | currencyConvert }}</span>
         </div>
         <div class="flex items-center gap-3">
-          <button *ngIf="product()?.stock !== 0" (click)="handleAddToCart()" class="btn-apple-pill text-xs !py-2 !px-5">
+          <button *ngIf="!isSoldOut()" (click)="handleAddToCart()" class="btn-apple-pill text-xs !py-2 !px-5">
             Add to Bag
           </button>
-          <span *ngIf="product()?.stock === 0" class="bg-red-100 text-red-800 text-[11px] font-semibold px-3 py-1 rounded-full border border-red-300">
-            Out of Stock
-          </span>
+          <button *ngIf="isSoldOut()" type="button" disabled aria-disabled="true" class="btn-apple-pill text-xs !py-2 !px-5">
+            Sold out
+          </button>
         </div>
       </div>
 
@@ -1131,6 +1190,43 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
               {{ submittingAppointment() ? 'Booking...' : 'Confirm' }}
             </button>
           </form>
+        </div>
+      </div>
+
+      <!-- Certificate Modal (full-size certificate image) -->
+      <div
+        *ngIf="certificateOpen() && product()?.certificateImage"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+        (click)="certificateOpen.set(false)"
+      >
+        <div
+          class="bg-white rounded-[18px] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl relative flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Certificate"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-center justify-between p-5 border-b border-[#e0e0e0]">
+            <div>
+              <span class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] block">Certification</span>
+              <h3 class="font-display font-semibold text-lg text-[#1d1d1f]">
+                {{ product()?.certificateLab || 'Laboratory' }}<span *ngIf="product()?.labReportNumber" class="font-sans font-normal text-[#7a7a7a]"> &middot; {{ product()?.labReportNumber }}</span>
+              </h3>
+            </div>
+            <button
+              type="button"
+              (click)="certificateOpen.set(false)"
+              aria-label="Close"
+              class="text-[#7a7a7a] hover:text-[#1d1d1f] text-xl active-press"
+            >&times;</button>
+          </div>
+          <div class="bg-[#f5f5f7] p-4 overflow-auto flex items-center justify-center">
+            <img
+              [src]="product()?.certificateImage"
+              [alt]="'Certificate for ' + (product()?.name || 'this piece')"
+              class="max-w-full max-h-[70vh] object-contain rounded-[12px]"
+            />
+          </div>
         </div>
       </div>
 
@@ -1251,6 +1347,23 @@ export class ProductDetailComponent
   sizeGuideOpen = signal(false);
   showPriceBreakup = signal(true);
   tryAtHomeOpen = signal(false);
+  certificateOpen = signal(false);
+
+  /**
+   * Stock at or below zero blocks orders server-side; mirror that here so the
+   * page never offers Add to Bag for a piece that cannot be bought. Undefined
+   * stock (older DTOs) is treated as purchasable.
+   */
+  isSoldOut = computed(() => {
+    const stock = this.product()?.stock;
+    return stock !== undefined && stock !== null && stock <= 0;
+  });
+
+  /** The Certification block shows only when the piece carries a certificate record. */
+  hasCertificationBlock = computed(() => {
+    const p = this.product();
+    return !!(p?.labReportNumber || p?.certificateImage || p?.certificateLab);
+  });
 
   // Luxury Video Player State
   isVideoPlaying = signal(true);
@@ -1656,6 +1769,43 @@ export class ProductDetailComponent
     if (this.hasCertification('IGI')) held.push('IGI');
     if (this.product()?.bisHallmark) held.push('BIS Hallmarked');
     return held.join(' · ');
+  }
+
+  /**
+   * Treatment status in plain words. Lab codes (NONE, HEATED, NO_INDICATION ...)
+   * are mapped; anything else is shown as entered, with underscores spaced.
+   */
+  treatmentLabel(status?: string | null): string {
+    const raw = (status || '').trim();
+    if (!raw) return '';
+    const key = raw.toUpperCase().replace(/[\s-]+/g, '_');
+    const plain: Record<string, string> = {
+      NONE: 'No treatment detected',
+      UNTREATED: 'No treatment detected',
+      UNHEATED: 'Unheated, no treatment',
+      NO_HEAT: 'Unheated, no treatment',
+      NO_INDICATION: 'No indication of treatment',
+      NO_INDICATION_OF_HEATING: 'No indication of heating',
+      HEATED: 'Heated (standard heat treatment)',
+      HEAT: 'Heated (standard heat treatment)',
+      HEATED_ONLY: 'Heated only, no other treatment',
+      MINOR: 'Minor clarity enhancement',
+      MODERATE: 'Moderate clarity enhancement',
+      SIGNIFICANT: 'Significant clarity enhancement',
+      OILED: 'Oiled (traditional clarity enhancement)',
+      FILLED: 'Fracture filled',
+      GLASS_FILLED: 'Glass filled',
+      IRRADIATED: 'Irradiated',
+      DIFFUSED: 'Surface diffused',
+      DYED: 'Dyed',
+      COATED: 'Coated',
+      LAB_GROWN: 'Laboratory grown',
+      NATURAL: 'Natural, no treatment recorded',
+      UNKNOWN: 'Treatment not determined',
+    };
+    if (plain[key]) return plain[key];
+    const spaced = raw.replace(/_/g, ' ').toLowerCase();
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
   }
 
   /** Star glyphs for a real rating; never a fixed five. */

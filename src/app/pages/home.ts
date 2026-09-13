@@ -237,6 +237,9 @@ interface SimulatorShape {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-16 h-16"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a8 8 0 100-16 8 8 0 000 16zm0-16V2m-3 2h6M9 6l3-4 3 4" /></svg>
                 </div>
 
+                <!-- Sold out badge -->
+                <span *ngIf="(item.stock ?? 1) <= 0" class="absolute top-3 left-3 bg-[#1d1d1f] text-white text-[11px] font-semibold px-3 py-1 rounded-full">Sold out</span>
+
                 <!-- Instant Try On Button on Card -->
                 <button (click)="openQuickTryOn($event, item)"
                         class="absolute bottom-3 right-3 btn-apple-pill text-[11px] !py-1.5 !px-3 !bg-white/90 !text-[#1d1d1f] hover:!bg-white border border-[#e0e0e0] backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
@@ -253,8 +256,13 @@ interface SimulatorShape {
                 {{ item.price | currencyConvert }}<span *ngIf="totalSuffix(item)" class="text-xs font-normal text-[#7a7a7a] ml-1">{{ totalSuffix(item) }}</span>
                 <span *ngIf="unitRate(item) as rate" class="block text-xs font-normal text-[#7a7a7a]">{{ rate | currencyConvert }} {{ unitLabel(item) }}</span>
               </div>
-              <button (click)="handleAddToCart($event, item)" class="btn-apple-pill text-xs !py-1.5 !px-4">
-                Add to Bag
+              <button
+                (click)="handleAddToCart($event, item)"
+                [disabled]="(item.stock ?? 1) <= 0"
+                [attr.aria-disabled]="(item.stock ?? 1) <= 0 ? 'true' : null"
+                class="btn-apple-pill text-xs !py-1.5 !px-4"
+              >
+                {{ (item.stock ?? 1) <= 0 ? 'Sold out' : 'Add to Bag' }}
               </button>
             </div>
           </article>

@@ -54,6 +54,9 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
                 <span class="text-4xl">{{ getProductEmoji(product.category) }}</span>
               </div>
 
+              <!-- Sold out badge -->
+              <span *ngIf="(product.stock ?? 1) <= 0" class="absolute top-4 right-4 bg-[#1d1d1f] text-white text-[11px] font-semibold px-3 py-1 rounded-full z-10">Sold out</span>
+
               <!-- Remove Button -->
               <button (click)="handleRemove($event, product.id)" aria-label="Remove from wishlist" class="absolute top-4 left-4 w-10 h-10 bg-white/90 backdrop-blur-md border border-[#e0e0e0] text-[#1d1d1f] hover:text-red-600 hover:border-red-200 rounded-full flex items-center justify-center active-press z-10" title="Remove">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -83,7 +86,12 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
               </div>
 
               <!-- Add to Cart -->
-              <button (click)="handleAddToCart($event, product.id)" class="btn-apple-pill w-full text-sm !py-2.5">Add to Cart</button>
+              <button
+                (click)="handleAddToCart($event, product.id)"
+                [disabled]="(product.stock ?? 1) <= 0"
+                [attr.aria-disabled]="(product.stock ?? 1) <= 0 ? 'true' : null"
+                class="btn-apple-pill w-full text-sm !py-2.5"
+              >{{ (product.stock ?? 1) <= 0 ? 'Sold out' : 'Add to Cart' }}</button>
             </div>
           </a>
         </div>

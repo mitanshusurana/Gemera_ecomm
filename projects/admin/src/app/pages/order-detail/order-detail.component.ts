@@ -1,24 +1,70 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { OrderService } from '../../services/order.service';
+
+/** A status-change button on the order detail page (OPERATIONS-CONTRACT §3). */
+interface OrderAction {
+  status: string;
+  label: string;
+  /** Tailwind classes for the button; destructive ones are red. */
+  tone: 'primary' | 'neutral' | 'danger';
+  /** 'ship' opens the tracking form, 'cancel' the reason form; others confirm and PUT /status. */
+  flow: 'status' | 'ship' | 'cancel';
+}
 
 @Component({
   selector: 'app-order-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './order-detail.component.html'
 })
 export class OrderDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
-  // ngx-toastr is provided in app.config and used elsewhere; this screen
-  // was the only one still firing blocking window.alert() on every outcome.
   private toastr = inject(ToastrService);
 
   order: any = null;
   loading = true;
+  busy = false;
+
+  /** Which inline form is open, if any. */
+  panel: 'ship' | 'cancel' | null = null;
+
+  ship = { trackingNumber: '', shippingMethod: '', estimatedDelivery: '' };
+  cancelReason = '';
+
+  /**
+   * Fallback when the DTO has no `nextStatuses` (older backend). Mirrors
+   * OrderService.ALLOWED_TRANSITIONS; the server enforces it regardless.
+   */
+  private static readonly TRANSITIONS: Record<string, string[]> = {
+    PENDING_PAYMENT: ['PAID', 'CANCELLED'],
+    PAID: ['PROCESSING', 'CANCELLED', 'REFUNDED'],
+    PROCESSING: ['SHIPPED', 'CANCELLED'],
+    SHIPPED: ['DELIVERED'],
+    DELIVERED: ['RETURNED', 'COMPLETED'],
+    RETURNED: ['REFUNDED'],
+    COMPLETED: ['RETURNED'],
+    CANCELLED: [],
+    REFUNDED: [],
+  };
+
+  private static readonly ACTION_META: Record<string, Omit<OrderAction, 'status'>> = {
+    PAID: { label: 'Mark paid', tone: 'primary', flow: 'status' },
+    PROCESSING: { label: 'Start processing', tone: 'primary', flow: 'status' },
+    SHIPPED: { label: 'Mark shipped', tone: 'primary', flow: 'ship' },
+    DELIVERED: { label: 'Mark delivered', tone: 'primary', flow: 'status' },
+    COMPLETED: { label: 'Complete order', tone: 'neutral', flow: 'status' },
+    RETURNED: { label: 'Mark returned', tone: 'neutral', flow: 'status' },
+    REFUNDED: { label: 'Refund', tone: 'danger', flow: 'status' },
+    CANCELLED: { label: 'Cancel order', tone: 'danger', flow: 'cancel' },
+  };
+
+  /** Rough order of the lifecycle, for the timeline. */
+  readonly lifecycle = ['PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'];
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -32,6 +78,9 @@ export class OrderDetailComponent implements OnInit {
     this.orderService.getOrder(id).subscribe({
       next: (data) => {
         this.order = data;
+        this.ship.trackingNumber = data?.trackingNumber || '';
+        this.ship.shippingMethod = data?.shippingMethod || '';
+        this.ship.estimatedDelivery = data?.estimatedDelivery || '';
         this.loading = false;
       },
       error: (err) => {
@@ -41,89 +90,132 @@ export class OrderDetailComponent implements OnInit {
     });
   }
 
-  statusOptions = ['PENDING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+  // -------------------------------------------------------------------
+  // Derived display
+  // -------------------------------------------------------------------
 
-  /**
-   * Permitted transitions.
-   *
-   * There was no state machine: any status could jump to any other, so a
-   * single mis-click on the select could move DELIVERED back to
-   * PENDING_PAYMENT, or CANCELLED to PAID. The dropdown fired the PUT
-   * immediately with no confirmation and nothing recorded who did it.
-   */
-  private static readonly TRANSITIONS: Record<string, string[]> = {
-    PENDING_PAYMENT: ['PAID', 'CANCELLED'],
-    PAID: ['PROCESSING', 'CANCELLED', 'REFUNDED'],
-    PROCESSING: ['SHIPPED', 'CANCELLED'],
-    SHIPPED: ['DELIVERED'],
-    DELIVERED: ['RETURNED'],
-    RETURNED: ['REFUNDED'],
-    // Terminal.
-    CANCELLED: [],
-    REFUNDED: [],
-  };
+  get customerName(): string {
+    const o = this.order;
+    if (!o) return '';
+    const fromAddress = `${o.shippingAddress?.firstName ?? ''} ${o.shippingAddress?.lastName ?? ''}`.trim();
+    return o.customerName || fromAddress || '—';
+  }
 
-  /** Statuses reachable from where the order is now. */
+  get customerEmail(): string {
+    return this.order?.customerEmail || this.order?.email || this.order?.user?.email || '';
+  }
+
+  get giftCardAmount(): number {
+    const n = Number(this.order?.giftCardAmount ?? 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  /** Statuses reachable from where the order is now: the DTO's list, else the static map. */
   allowedNextStatuses(): string[] {
+    const fromDto = this.order?.nextStatuses;
+    if (Array.isArray(fromDto)) return fromDto.map((s: string) => String(s).toUpperCase());
     const current = (this.order?.status || '').toUpperCase();
     return OrderDetailComponent.TRANSITIONS[current] ?? [];
+  }
+
+  actions(): OrderAction[] {
+    return this.allowedNextStatuses().map(status => {
+      const meta = OrderDetailComponent.ACTION_META[status] ?? { label: `Move to ${status}`, tone: 'neutral' as const, flow: 'status' as const };
+      return { status, ...meta };
+    });
   }
 
   isTerminal(): boolean {
     return this.allowedNextStatuses().length === 0;
   }
 
-  onStatusChange(event: any) {
-    if (!this.order) return;
-
-    const select = event.target as HTMLSelectElement;
-    const newStatus = (select.value || '').toUpperCase();
-    const current = (this.order.status || '').toUpperCase();
-
-    if (!newStatus || newStatus === current) return;
-
-    if (!this.allowedNextStatuses().includes(newStatus)) {
-      this.toastr.error(
-        `An order cannot move from ${current} to ${newStatus}.`,
-        'Not a permitted transition',
-      );
-      select.value = current;
-      return;
+  /** Timeline steps with a done/current/upcoming state; terminal states are appended. */
+  timeline(): Array<{ status: string; state: 'done' | 'current' | 'upcoming' }> {
+    const current = (this.order?.status || '').toUpperCase();
+    const idx = this.lifecycle.indexOf(current);
+    if (idx === -1) {
+      // CANCELLED / REFUNDED / RETURNED: show the main path as done up to PAID-ish then the terminal step.
+      return [...this.lifecycle.slice(0, 2).map(s => ({ status: s, state: 'done' as const })), { status: current, state: 'current' as const }];
     }
-
-    // Confirm before the change: this is irreversible for the customer and
-    // there is no undo.
-    const ok = confirm(
-      `Change this order from ${current} to ${newStatus}?
-
-` +
-        'The customer may be notified and this cannot be undone here.',
-    );
-    if (!ok) {
-      select.value = current;
-      return;
-    }
-
-    this.updateStatus(newStatus);
+    return this.lifecycle.map((s, i) => ({ status: s, state: i < idx ? 'done' : i === idx ? 'current' : 'upcoming' }));
   }
 
-  updateStatus(status: string) {
+  buttonClass(tone: OrderAction['tone']): string {
+    const base = 'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ';
+    switch (tone) {
+      case 'primary': return base + 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500';
+      case 'danger': return base + 'border border-red-300 bg-white text-red-700 hover:bg-red-50 focus:ring-red-500';
+      default: return base + 'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 focus:ring-emerald-500';
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // Actions
+  // -------------------------------------------------------------------
+
+  run(action: OrderAction) {
+    if (!this.order || this.busy) return;
+    if (action.flow === 'ship') { this.panel = this.panel === 'ship' ? null : 'ship'; return; }
+    if (action.flow === 'cancel') { this.panel = this.panel === 'cancel' ? null : 'cancel'; return; }
+
+    const current = (this.order.status || '').toUpperCase();
+    const ok = confirm(`Change this order from ${current} to ${action.status}?\n\nThe customer will be notified and this cannot be undone here.`);
+    if (!ok) return;
+    this.updateStatus(action.status);
+  }
+
+  submitShip() {
     if (!this.order) return;
-
-    const previous = this.order.status;
-
-    this.orderService.updateOrderStatus(this.order.id, status).subscribe({
+    const trackingNumber = this.ship.trackingNumber.trim();
+    if (!trackingNumber) {
+      this.toastr.warning('Add a tracking number before marking the order shipped.');
+      return;
+    }
+    this.busy = true;
+    this.orderService.shipOrder(this.order.id, {
+      trackingNumber,
+      shippingMethod: this.ship.shippingMethod.trim() || undefined,
+      estimatedDelivery: this.ship.estimatedDelivery || undefined,
+    }).subscribe({
       next: () => {
+        this.busy = false;
+        this.panel = null;
+        this.toastr.success('Order marked shipped; the customer has been emailed the tracking number.');
+        this.loadOrder(this.order.id);
+      },
+      error: (err) => {
+        this.busy = false;
+        console.error('Failed to ship order', err);
+        this.toastr.error(err?.error?.message || 'The order was not marked shipped. Please try again.', 'Update failed');
+      }
+    });
+  }
+
+  submitCancel() {
+    if (!this.order) return;
+    const reason = this.cancelReason.trim();
+    if (!reason) {
+      this.toastr.warning('Give the customer a reason for the cancellation.');
+      return;
+    }
+    this.updateStatus('CANCELLED', reason);
+  }
+
+  updateStatus(status: string, reason?: string) {
+    if (!this.order) return;
+    this.busy = true;
+    this.orderService.updateOrderStatus(this.order.id, status, reason).subscribe({
+      next: () => {
+        this.busy = false;
+        this.panel = null;
+        this.cancelReason = '';
         this.toastr.success(`Order moved to ${status}.`, 'Status updated');
         this.loadOrder(this.order.id);
       },
       error: (err) => {
+        this.busy = false;
         console.error('Failed to update status', err);
-        this.toastr.error(
-          'The status was not changed. Please try again.',
-          'Update failed',
-        );
-        if (this.order) this.order.status = previous;
+        this.toastr.error(err?.error?.message || 'The status was not changed. Please try again.', 'Update failed');
       }
     });
   }

@@ -1,6 +1,7 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CertificateService } from '../services/certificate.service';
 import { ToastService } from '../services/toast.service';
 import { CertificateDetail } from '../core/models';
@@ -8,7 +9,7 @@ import { CertificateDetail } from '../core/models';
 @Component({
   selector: 'app-verify-certificate',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <!-- APPLE DESIGN SYSTEM: CERTIFICATE VERIFIER (DESIGN.md) -->
     <div class="min-h-screen bg-white font-sans text-[#1d1d1f] pb-24">
@@ -108,7 +109,13 @@ import { CertificateDetail } from '../core/models';
                   <span *ngIf="!result()?.imageUrl" class="text-4xl">💎</span>
                 </div>
                 <p class="font-semibold text-[#1d1d1f] mb-1">Digital Asset</p>
+                <p *ngIf="result()?.productName" class="text-xs text-[#1d1d1f] mb-1">{{ result()?.productName }}</p>
                 <p class="text-xs text-[#6e6e73] mb-4">Stored in our certificate archive</p>
+                <a
+                  *ngIf="result()?.productId"
+                  [routerLink]="['/products', result()?.productId]"
+                  class="btn-apple-pill text-sm !py-2.5 !px-6 mb-2"
+                >View product</a>
                 <button (click)="downloadPdf()" [disabled]="downloading()" class="btn-ghost text-sm !px-0 hover:underline">
                    <span *ngIf="downloading()" class="animate-spin h-3 w-3 border-2 border-[#D4AF37] border-t-transparent rounded-full"></span>
                    {{ downloading() ? 'Downloading...' : 'Download Original PDF' }}
@@ -129,7 +136,7 @@ import { CertificateDetail } from '../core/models';
     </div>
   `
 })
-export class VerifyCertificateComponent {
+export class VerifyCertificateComponent implements OnInit {
   reportNumber = '';
   loading = signal(false);
   downloading = signal(false);
@@ -138,6 +145,18 @@ export class VerifyCertificateComponent {
 
   private certificateService = inject(CertificateService);
   private toastService = inject(ToastService);
+  private route = inject(ActivatedRoute);
+
+  ngOnInit() {
+    // "Verify this certificate" on the product page links here with ?report=.
+    this.route.queryParamMap.subscribe((params) => {
+      const report = (params.get('report') || '').trim();
+      if (report && report !== this.reportNumber) {
+        this.reportNumber = report;
+        this.verify();
+      }
+    });
+  }
 
   verify() {
     if (!this.reportNumber.trim()) return;

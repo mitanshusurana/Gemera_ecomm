@@ -1,13 +1,13 @@
 import { environment } from '../../../environments/environment';
 import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { BrowserMultiFormatReader } from '@zxing/library';
-import jsPDF from 'jspdf';
-import * as QRCode from 'qrcode';
 import { QRCodeComponent } from 'angularx-qrcode';
+import { ToastrService } from 'ngx-toastr';
+import { extractSku, isLowStock, productQrUrl } from '../../core/labels';
 
 @Component({
   selector: 'app-product-list',
@@ -17,21 +17,25 @@ import { QRCodeComponent } from 'angularx-qrcode';
   styleUrl: './product-list.component.css'
 })
 export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
-  /** Storefront origin for the 'View Live' preview; was hardcoded to
-   *  http://localhost:4200, which is broken for every deployed user. */
+  /** Storefront origin for the 'View Live' preview and the QR payloads. */
   readonly storefrontUrl = environment.storefrontUrl;
 
   private productService = inject(ProductService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private toastr = inject(ToastrService);
 
   @ViewChild('searchInput') searchInput!: ElementRef;
 
+  /** Rows as returned by the API for the current search. */
   products: any[] = [];
   loading = true;
   searchQuery: string = '';
   searchTimeout: any;
 
-  // Bulk Print Queue full objects (resolved from IDs before printing)
-  printQueueObjects: any[] = [];
+  /** §5: `?lowStock=true` filters client-side to stock <= (reorderPointAlert ?? 1). */
+  lowStockOnly = false;
+
   get printQueueCount() {
     return this.productService.getPrintQueue().length;
   }
@@ -42,7 +46,10 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('scannerVideo') scannerVideo!: ElementRef<HTMLVideoElement>;
 
   ngOnInit() {
-    this.loadProducts();
+    this.route.queryParamMap.subscribe(params => {
+      this.lowStockOnly = params.get('lowStock') === 'true';
+      this.loadProducts(this.searchQuery);
+    });
   }
 
   ngOnDestroy() {
@@ -53,6 +60,31 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
     // Focus search input automatically so a barcode scanner can type immediately
     setTimeout(() => this.searchInput?.nativeElement?.focus(), 100);
   }
+
+  // ---------------------------------------------------------------------
+  // Rows
+  // ---------------------------------------------------------------------
+
+  /** What the table shows: the API rows, narrowed to low-stock ones when asked. */
+  get visibleProducts(): any[] {
+    return this.lowStockOnly ? this.products.filter(isLowStock) : this.products;
+  }
+
+  isLowStock(product: any): boolean {
+    return isLowStock(product);
+  }
+
+  qrUrl(sku: string): string {
+    return productQrUrl(this.storefrontUrl, sku);
+  }
+
+  clearLowStockFilter() {
+    this.router.navigate(['/products'], { queryParams: {} });
+  }
+
+  // ---------------------------------------------------------------------
+  // Scanner / SKU lookup (§1)
+  // ---------------------------------------------------------------------
 
   toggleScanner() {
     this.isScannerOpen = !this.isScannerOpen;
@@ -79,24 +111,22 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
               if (videoInputDevices.length > 0) {
                 // Try to find the back camera, fallback to the first one available
                 let selectedDeviceId = videoInputDevices[0].deviceId;
-              const backCamera = videoInputDevices.find((device) =>
-                device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')
-              );
-              if (backCamera) {
-                selectedDeviceId = backCamera.deviceId;
-              }
-
-              this.codeReader.decodeFromVideoDevice(selectedDeviceId, this.scannerVideo.nativeElement, (result, err) => {
-                if (result) {
-                  // We got a successful scan
-                  this.searchQuery = result.getText();
-                  this.stopScanner();
-                  this.isScannerOpen = false;
-                  this.loadProducts(this.searchQuery);
+                const backCamera = videoInputDevices.find((device) =>
+                  device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')
+                );
+                if (backCamera) {
+                  selectedDeviceId = backCamera.deviceId;
                 }
-              }).catch(console.error);
-            } else {
-              alert('No camera devices found.');
+
+                this.codeReader.decodeFromVideoDevice(selectedDeviceId, this.scannerVideo.nativeElement, (result) => {
+                  if (result) {
+                    this.stopScanner();
+                    this.isScannerOpen = false;
+                    this.lookupScanned(result.getText());
+                  }
+                }).catch(console.error);
+              } else {
+                alert('No camera devices found.');
                 this.isScannerOpen = false;
               }
             })
@@ -127,6 +157,35 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * A scan (camera or a wedge scanner pressing Enter in the search box) may be
+   * a raw SKU or a `/p/{sku}` URL. Resolve it and open the edit page when the
+   * SKU is known; otherwise fall back to a normal search for the text.
+   */
+  lookupScanned(raw: string) {
+    const sku = extractSku(raw);
+    if (!sku) return;
+    this.searchQuery = sku;
+    this.productService.getProductBySku(sku).subscribe({
+      next: (product) => {
+        if (product?.id) {
+          this.router.navigate(['/products/edit', product.id]);
+        } else {
+          this.loadProducts(sku);
+        }
+      },
+      error: () => {
+        this.toastr.info(`No product with SKU ${sku}; showing search results instead.`);
+        this.loadProducts(sku);
+      }
+    });
+  }
+
+  onSearchEnter() {
+    clearTimeout(this.searchTimeout);
+    this.lookupScanned(this.searchQuery);
+  }
+
   onSearch(event: any) {
     clearTimeout(this.searchTimeout);
     this.searchQuery = event.target.value;
@@ -145,9 +204,11 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   loadProducts(search?: string) {
     this.loading = true;
-    this.productService.getProducts(search).subscribe({
+    // The low-stock filter is applied client-side, so pull a large page for it.
+    const opts = this.lowStockOnly ? { page: 0, size: 500 } : {};
+    this.productService.getProducts(search, opts).subscribe({
       next: (data) => {
-        this.products = data.content;
+        this.products = Array.isArray(data) ? data : (data?.content ?? []);
         this.loading = false;
       },
       error: (err) => {
@@ -161,7 +222,8 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
     if (confirm('Are you sure you want to delete this product?')) {
       this.productService.deleteProduct(id).subscribe({
         next: () => {
-          this.loadProducts();
+          this.productService.removeFromPrintQueue(id);
+          this.loadProducts(this.searchQuery);
         },
         error: (err) => {
           console.error('Failed to delete product', err);
@@ -170,6 +232,10 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
   }
+
+  // ---------------------------------------------------------------------
+  // Label selection (§1)
+  // ---------------------------------------------------------------------
 
   togglePrintSelection(product: any, event: Event) {
     const isChecked = (event.target as HTMLInputElement).checked;
@@ -184,76 +250,31 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.productService.isInPrintQueue(product.id);
   }
 
-  async printSelectedQRCodes() {
-    this.printQueueObjects = this.productService.getPrintQueue();
-    if (this.printQueueObjects.length === 0) return;
+  /** True when every visible row is selected (and there is at least one). */
+  get allVisibleSelected(): boolean {
+    const rows = this.visibleProducts;
+    return rows.length > 0 && rows.every(p => this.isProductSelected(p));
+  }
 
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
+  get someVisibleSelected(): boolean {
+    return !this.allVisibleSelected && this.visibleProducts.some(p => this.isProductSelected(p));
+  }
 
-    // A4 size is 210 x 297 mm
-    // To fit 60 items, we can use 5 columns and 12 rows
-    // 5 * 12 = 60 items per page
-    const marginX = 10;
-    const marginY = 10;
-    const itemWidth = 38; // 190mm usable width / 5
-    const itemHeight = 23; // 277mm usable height / 12
-    const itemsPerRow = 5;
-    const itemsPerCol = 12;
-    const maxItemsPerPage = itemsPerRow * itemsPerCol;
-
-    for (let i = 0; i < this.printQueueObjects.length; i++) {
-      const product = this.printQueueObjects[i];
-      if (i > 0 && i % maxItemsPerPage === 0) {
-        doc.addPage();
-      }
-
-      const indexOnPage = i % maxItemsPerPage;
-      const row = Math.floor(indexOnPage / itemsPerRow);
-      const col = indexOnPage % itemsPerRow;
-
-      const x = marginX + col * itemWidth;
-      const y = marginY + row * itemHeight;
-
-      // Draw border box for label
-      doc.setDrawColor(200);
-      doc.rect(x, y, itemWidth - 2, itemHeight - 2);
-
-      // Generate QR Code data URL using local qrcode library
-      if (product.sku) {
-        try {
-          const qrDataUrl = await QRCode.toDataURL(product.sku, {
-            errorCorrectionLevel: 'M',
-            margin: 0,
-            width: 150
-          });
-          doc.addImage(qrDataUrl, 'PNG', x + 1, y + 1, 15, 15);
-        } catch (err) {
-          console.error('Failed to generate QR for sku:', product.sku, err);
-          doc.setFontSize(6);
-          doc.text('QR Error', x + 2, y + 5);
-        }
-      }
-
-      // Add product details (SKU & Name)
-      doc.setFontSize(7);
-      doc.setTextColor(0, 0, 0);
-      doc.text(product.sku || 'N/A', x + 17, y + 5);
-
-      doc.setFontSize(6);
-      doc.setTextColor(50, 50, 50);
-      const nameLines = doc.splitTextToSize(product.name || '', itemWidth - 19);
-      doc.text(nameLines.slice(0, 3), x + 17, y + 8);
+  toggleSelectPage(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    for (const p of this.visibleProducts) {
+      if (checked) this.productService.addToPrintQueue(p);
+      else this.productService.removeFromPrintQueue(p.id);
     }
+  }
 
-    doc.save('product-qr-codes.pdf');
+  printLabels() {
+    const ids = this.productService.getPrintQueue().map(p => p.id);
+    if (ids.length === 0) return;
+    this.router.navigate(['/products/labels'], { queryParams: { ids: ids.join(',') } });
   }
 
   clearPrintQueue() {
     this.productService.clearPrintQueue();
-    this.printQueueObjects = [];
   }
 }

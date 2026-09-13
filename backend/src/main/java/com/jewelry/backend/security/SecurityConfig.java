@@ -128,9 +128,14 @@ public class SecurityConfig {
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/gift-cards/purchase").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/gift-cards/*/confirm").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/treasure/config").permitAll()
+          // Razorpay server-to-server webhook: no JWT, authenticated by the
+          // X-Razorpay-Signature HMAC that PaymentWebhookService verifies.
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/certificates/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/orders/track/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/email/subscribe").permitAll()
+          // Guests can ask to be told when a sold-out piece is back.
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/notifications/stock").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/appointments").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/inquiries").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reviews/**").permitAll()

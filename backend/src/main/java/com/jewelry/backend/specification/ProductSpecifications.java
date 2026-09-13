@@ -3,6 +3,7 @@ package com.jewelry.backend.specification;
 import com.jewelry.backend.entity.MetalDetail;
 import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.entity.StoneDetail;
+import com.jewelry.backend.search.SearchSynonyms;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
@@ -47,8 +48,37 @@ public final class ProductSpecifications {
             BigDecimal priceMax,
             String search,
             Boolean certified,
-            Boolean featured) {
+            Boolean featured,
+            Boolean lowStock,
+            Integer lowStockThreshold) {
+
+        /** Original filter set; low-stock filtering off. */
+        public ProductFilter(
+                String category,
+                List<String> subCategories,
+                List<String> metals,
+                List<String> stones,
+                List<String> designStyles,
+                List<String> occasions,
+                List<String> styles,
+                List<String> gemGrades,
+                List<String> crafts,
+                List<String> saleModes,
+                BigDecimal priceMin,
+                BigDecimal priceMax,
+                String search,
+                Boolean certified,
+                Boolean featured) {
+            this(category, subCategories, metals, stones, designStyles, occasions, styles,
+                    gemGrades, crafts, saleModes, priceMin, priceMax, search, certified, featured,
+                    null, null);
+        }
     }
+
+    /** Fields a free-text search term is matched against (case-insensitive contains). */
+    private static final List<String> SEARCH_FIELDS = List.of(
+            "name", "description", "sku", "category", "subCategory",
+            "species", "variety", "material", "gemstoneMaterial");
 
     public static Specification<Product> withFilter(ProductFilter f) {
         return (root, query, cb) -> {
@@ -121,11 +151,34 @@ public final class ProductSpecifications {
             }
 
             if (hasText(f.search())) {
-                String pattern = "%" + f.search().trim().toLowerCase(Locale.ROOT) + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("sku")), pattern),
-                        cb.like(cb.lower(root.get("name")), pattern),
-                        cb.like(cb.lower(root.get("description")), pattern)));
+                // One OR-group per query token (token + synonyms, see
+                // SearchSynonyms); every term is tried against every
+                // searchable field; the groups are ANDed together.
+                for (List<String> group : SearchSynonyms.expand(f.search())) {
+                    List<Predicate> alternatives = new ArrayList<>();
+                    for (String term : group) {
+                        String pattern = "%" + term + "%";
+                        for (String field : SEARCH_FIELDS) {
+                            alternatives.add(cb.like(cb.lower(root.get(field)), pattern));
+                        }
+                    }
+                    if (!alternatives.isEmpty()) {
+                        predicates.add(cb.or(alternatives.toArray(new Predicate[0])));
+                    }
+                }
+            }
+
+            if (Boolean.TRUE.equals(f.lowStock())) {
+                // stock <= reorderPointAlert, or <= the global threshold when
+                // the product has no reorder point of its own.
+                int threshold = f.lowStockThreshold() == null ? 1 : f.lowStockThreshold();
+                Expression<Integer> stock = root.get("stock");
+                Expression<Integer> reorderPoint = root.get("reorderPointAlert");
+                predicates.add(cb.and(
+                        cb.isNotNull(stock),
+                        cb.or(
+                                cb.and(cb.isNotNull(reorderPoint), cb.lessThanOrEqualTo(stock, reorderPoint)),
+                                cb.and(cb.isNull(reorderPoint), cb.lessThanOrEqualTo(stock, threshold)))));
             }
 
             if (Boolean.TRUE.equals(f.certified())) {

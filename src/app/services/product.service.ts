@@ -89,6 +89,11 @@ export class ProductService {
     return this.http.get<ProductDetail>(`${this.baseUrl}/${productId}`);
   }
 
+  /** Label QR codes encode `/p/{sku}`; the API matches case-insensitively and answers 404 when unknown. */
+  getProductBySku(sku: string): Observable<Product> {
+    return this.http.get<Product>(`${this.baseUrl}/sku/${encodeURIComponent(sku.trim())}`);
+  }
+
   private categoriesCache$?: Observable<{ categories: Category[] }>;
 
   getCategories(): Observable<{ categories: Category[] }> {

@@ -95,6 +95,10 @@ export interface Product {
   treatmentStatus?: string;
   originProvenance?: string;
   labReportNumber?: string;
+  /** Image (or scan) of the grading certificate; opens full size on the product page. */
+  certificateImage?: string;
+  /** Issuing laboratory: GIA, IGI, GRS, SSEF, Gubelin, GII, IGL, Other. */
+  certificateLab?: string;
 
   // Inventory contract §3: sale mode and per-item-type fields
   /** PER_PIECE | PER_CARAT | PER_GRAM | PER_LOT | PER_STRAND (default PER_PIECE). */
@@ -354,6 +358,8 @@ export interface CertificateDetail {
   cut: string;
   shape: string;
   imageUrl?: string;
+  /** Set when the record was resolved from a product's lab report number. */
+  productId?: string;
 }
 
 export interface DeliveryAvailability {

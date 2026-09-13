@@ -16,6 +16,19 @@
           <span class="text-xs mr-1 text-amber-600">{{ stats ? stats.unreadRfqs : '...' }} Unread</span>
         </p>
       </div>
+      <a routerLink="/products" [queryParams]="{ lowStock: 'true' }"
+         class="flex min-w-[160px] flex-1 flex-col gap-1 rounded-xl p-5 bg-surface dark:bg-surface border shadow-sm hover:shadow-md transition-shadow"
+         [ngClass]="(lowStockCount ?? 0) > 0 ? 'border-amber-400' : 'border-ink dark:border-ink'"
+         title="Products at or below their reorder point">
+        <p class="text-ink dark:text-ink text-sm font-medium">Low stock</p>
+        <p class="text-2xl font-bold leading-tight" [ngClass]="(lowStockCount ?? 0) > 0 ? 'text-amber-600' : 'text-ink dark:text-ink'">
+          {{ lowStockCount !== null ? lowStockCount : (lowStockFailed ? '—' : '...') }}
+        </p>
+        <p class="text-xs font-bold mt-1 flex items-center" [ngClass]="(lowStockCount ?? 0) > 0 ? 'text-amber-600' : 'text-ink/60'">
+          <span class="material-symbols-outlined text-xs mr-1">inventory</span>
+          {{ lowStockFailed ? 'Unavailable' : (lowStockCount === 0 ? 'All stocked' : 'View products →') }}
+        </p>
+      </a>
       <div class="flex min-w-[160px] flex-1 flex-col gap-1 rounded-xl p-5 bg-surface dark:bg-surface border border-ink dark:border-ink shadow-sm">
         <p class="text-ink dark:text-ink text-sm font-medium">Total Customers</p>
         <p class="text-ink dark:text-ink text-2xl font-bold leading-tight">{{ stats ? stats.totalCustomers : '...' }}</p>

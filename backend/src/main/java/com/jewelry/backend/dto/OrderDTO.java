@@ -3,6 +3,7 @@ package com.jewelry.backend.dto;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.List;
 
@@ -29,4 +30,11 @@ public class OrderDTO {
     private String paymentMethod;
     private String shippingMethod;
     private String razorpayOrderId;
+
+    // Admin order flow (OPERATIONS-CONTRACT.md section 3)
+    private String customerEmail;
+    private String customerName;
+    private List<String> nextStatuses; // from OrderService.ALLOWED_TRANSITIONS
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

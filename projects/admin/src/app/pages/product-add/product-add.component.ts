@@ -86,6 +86,9 @@ export class ProductAddComponent implements OnInit {
   manufacturingStages = ['Rough', 'Preform', 'Cut', 'Polished', 'Ready for Setting'];
   componentTypes = ['Clasp', 'Lobster Clasp', 'Hook', 'Jump Ring', 'Wire', 'Loose Beads', 'Setting', 'Mounting', 'Chain by Length', 'Other'];
 
+  /** OPERATIONS-CONTRACT §2: offered via datalist; any other lab name is accepted. */
+  certificateLabs = ['GIA', 'IGI', 'GRS', 'SSEF', 'Gubelin', 'GII', 'IGL', 'Other'];
+
   treatmentStatuses = [
     'None (No Indications of Enhancement)',
     'F1 (Minor Clarity Enhancement)',
@@ -311,6 +314,7 @@ export class ProductAddComponent implements OnInit {
       clarity: [''],
       measurements: [''],
       treatmentStatus: ['None (No Indications of Enhancement)'],
+      certificateLab: [''],
       labReportNumber: [''],
       certificateImage: [''],
       polish: [''],
@@ -725,6 +729,7 @@ export class ProductAddComponent implements OnInit {
       clarity: product.clarity || '',
       measurements: product.measurements || '',
       treatmentStatus: product.treatmentStatus || '',
+      certificateLab: product.certificateLab || '',
       labReportNumber: product.labReportNumber || '',
       certificateImage: product.certificateImage || '',
       polish: product.polish || '',

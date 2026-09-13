@@ -1,0 +1,89 @@
+<div class="px-4 sm:px-6 lg:px-8">
+  <div class="sm:flex sm:items-center justify-between">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Quotes (RFQ)</h1>
+      <p class="mt-2 text-sm text-ink">Requests for quotation from trade and bulk buyers, newest first.</p>
+    </div>
+  </div>
+
+  <!-- Status chips; counts come from the rows on this page -->
+  <div class="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Filter by status">
+    <button type="button" role="tab" (click)="setStatus(null)" [attr.aria-selected]="currentStatus === null"
+            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
+            [ngClass]="currentStatus === null ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-ink/20 bg-surface text-ink hover:border-emerald-400 hover:text-emerald-700'">
+      All
+      <span class="rounded-full px-1.5 py-0.5 text-[10px] leading-none" [ngClass]="currentStatus === null ? 'bg-white/20 text-white' : 'bg-ink/5 text-ink/70'">{{ currentStatus === null ? totalElements : countFor(null) }}</span>
+    </button>
+    <button *ngFor="let s of statuses" type="button" role="tab" (click)="setStatus(s)" [attr.aria-selected]="currentStatus === s"
+            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
+            [ngClass]="currentStatus === s ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-ink/20 bg-surface text-ink hover:border-emerald-400 hover:text-emerald-700'">
+      {{ s }}
+      <span class="rounded-full px-1.5 py-0.5 text-[10px] leading-none" [ngClass]="currentStatus === s ? 'bg-white/20 text-white' : 'bg-ink/5 text-ink/70'">{{ currentStatus === s ? totalElements : countFor(s) }}</span>
+    </button>
+  </div>
+
+  <div *ngIf="error" class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">{{ error }}</div>
+
+  <div class="mt-6 flex flex-col">
+    <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-surface">
+              <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Number</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Company / customer</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Items</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Budget</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Created</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">View</span></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-surface">
+              <tr *ngFor="let rfq of rfqs" class="hover:bg-gray-50">
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-ink sm:pl-6 font-mono">
+                  <a [routerLink]="['/rfqs', rfq.id]" class="hover:text-emerald-700">{{ rfq.rfqNumber || (rfq.id | slice:0:8) }}</a>
+                </td>
+                <td class="px-3 py-4 text-sm text-ink">
+                  <div class="font-medium">{{ customerOf(rfq) }}</div>
+                  <div *ngIf="rfq.companyName && rfq.email" class="text-xs text-ink/60">{{ rfq.email }}</div>
+                </td>
+                <td class="px-3 py-4 text-sm text-ink max-w-xs truncate" [title]="itemsSummary(rfq)">{{ itemsSummary(rfq) }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ rfq.estimatedBudget != null ? (rfq.estimatedBudget | currency) : '—' }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ createdOf(rfq) ? (createdOf(rfq) | date:'mediumDate') : '—' }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                  <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5" [ngClass]="statusClass[rfq.status] || 'bg-gray-100 text-gray-700'">{{ rfq.status }}</span>
+                </td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                  <a [routerLink]="['/rfqs', rfq.id]" class="text-emerald-600 hover:text-emerald-900">View<span class="sr-only">, {{ rfq.rfqNumber }}</span></a>
+                </td>
+              </tr>
+              <tr *ngIf="rfqs.length === 0 && !loading">
+                <td colspan="7" class="px-6 py-6 text-center text-sm text-ink">
+                  {{ currentStatus ? 'No ' + currentStatus + ' requests.' : 'No quote requests yet.' }}
+                </td>
+              </tr>
+              <tr *ngIf="loading">
+                <td colspan="7" class="px-6 py-6 text-center text-sm text-ink/70">
+                  <span class="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4 flex items-center justify-between px-4 sm:px-0">
+    <p class="hidden sm:block text-sm text-ink">
+      Page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
+      (<span class="font-semibold">{{ totalElements }}</span> requests)
+    </p>
+    <div class="flex flex-1 justify-between sm:justify-end gap-2">
+      <button (click)="prevPage()" [disabled]="currentPage === 0" [class.opacity-50]="currentPage === 0" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</button>
+      <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1" [class.opacity-50]="currentPage >= totalPages - 1" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</button>
+    </div>
+  </div>
+</div>

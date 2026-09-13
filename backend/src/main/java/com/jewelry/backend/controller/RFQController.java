@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -51,12 +53,34 @@ public class RFQController {
         long pending = rfqService.getCountByStatus("PENDING");
         long accepted = rfqService.getCountByStatus("ACCEPTED");
         long quoted = rfqService.getCountByStatus("QUOTED");
+        long negotiating = rfqService.getCountByStatus("NEGOTIATING");
+        long rejected = rfqService.getCountByStatus("REJECTED");
+        long cancelled = rfqService.getCountByStatus("CANCELLED");
         return ResponseEntity.ok(Map.of(
             "total", total,
             "pending", pending,
+            "quoted", quoted,
+            "negotiating", negotiating,
             "accepted", accepted,
-            "quoted", quoted
+            "rejected", rejected,
+            "cancelled", cancelled
         ));
+    }
+
+    /** Admin pipeline (OPERATIONS-CONTRACT.md section 7): newest first, optional status filter. */
+    @GetMapping("/requests")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
+    @Operation(summary = "List all RFQs, newest first, optionally filtered by status (Admin Only)")
+    public ResponseEntity<Page<RFQRequestDTO>> getAllRequests(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        Page<RFQ> requests = rfqService.getAllRequests(status,
+                PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return ResponseEntity.ok(requests.map(entityMapper::toRFQRequestDTO));
     }
 
     @PostMapping("/requests")

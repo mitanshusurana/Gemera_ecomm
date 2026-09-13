@@ -24,9 +24,9 @@ public class CertificateController {
     EntityMapper entityMapper;
 
     @GetMapping("/{reportNumber}")
-    @Operation(summary = "Verify certificate")
+    @Operation(summary = "Verify certificate: Certificate table first, then a product's lab report number")
     public ResponseEntity<CertificateDetailDTO> verifyCertificate(@PathVariable String reportNumber) {
-        return ResponseEntity.ok(entityMapper.toCertificateDetailDTO(certificateService.getCertificate(reportNumber)));
+        return ResponseEntity.ok(certificateService.getCertificateDetail(reportNumber));
     }
 
     @GetMapping("/{reportNumber}/download")

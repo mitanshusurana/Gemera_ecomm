@@ -117,6 +117,7 @@ public class Product extends BaseEntity {
     private String measurements; // LxWxD
     private String treatmentStatus;
     private String labReportNumber; // e.g., GIA report number
+    private String certificateLab; // GIA, IGI, GRS, SSEF, Gubelin, GII, IGL, Other
     private String certificateImage;
     private String polish; // "Abr", "Brn", etc.
     private String symmetry; // "T/oc", "OR", etc.

@@ -38,6 +38,13 @@ The examples document every variable. The API has no defaults for the database, 
 left empty: online card payment and gift-card purchase then answer 503 until keys are provided. The storefront's
 `RAZORPAY_KEY` must equal `RAZORPAY_KEY_ID`.
 
+**Razorpay webhook.** On the Razorpay dashboard add a webhook with URL `https://<api-host>/api/v1/payments/webhook`
+subscribed to the events `payment.captured`, `order.paid` and `payment.failed`, and put the secret you choose there into
+`RAZORPAY_WEBHOOK_SECRET`. The endpoint needs no JWT; it verifies the `X-Razorpay-Signature` header against that secret
+and answers 401 when the secret is unset or the signature does not match. A captured payment marks the matching order
+PAID (or activates the matching gift card) and sends the confirmation e-mail, so an order completes even when the
+customer closes the browser before the checkout page can confirm it. Retries are safe: an already-PAID order is left alone.
+
 Frontend bundles are built once with placeholder tokens; `env-subst.sh` (storefront) and `admin-env-subst.sh` (admin)
 replace them from the environment when the container starts, so one image serves every environment. The admin container
 exits immediately if `API_URL` is missing.

@@ -269,8 +269,8 @@ const EMPTY_FACETS: ProductFacets = {
               <div *ngIf="product.stock !== undefined && product.stock <= 5 && product.stock > 0" class="mb-2 text-xs text-amber-600 font-medium">
                 Only {{ product.stock }} left in stock
               </div>
-              <div *ngIf="product.stock === 0" class="mb-2 text-xs text-red-600 font-medium">
-                Out of Stock
+              <div *ngIf="(product.stock ?? 1) <= 0" class="mb-2">
+                <span class="inline-flex items-center bg-[#1d1d1f] text-white text-[11px] font-semibold px-3 py-1 rounded-full">Sold out</span>
               </div>
             </div>
 
@@ -278,14 +278,15 @@ const EMPTY_FACETS: ProductFacets = {
             <div class="flex gap-2 pt-4 border-t border-[#f0f0f0]">
               <button
                 (click)="handleAddToCart($event, product)"
-                [disabled]="product.stock === 0"
+                [disabled]="(product.stock ?? 1) <= 0"
+                [attr.aria-disabled]="(product.stock ?? 1) <= 0 ? 'true' : null"
                 class="flex-1 btn-apple-pill text-xs !py-2 !px-3 disabled:opacity-50"
               >
-                {{ product.stock === 0 ? 'Sold Out' : 'Add to Bag' }}
+                {{ (product.stock ?? 1) <= 0 ? 'Sold out' : 'Add to Bag' }}
               </button>
               <button
                 (click)="handleBuyNow($event, product)"
-                [disabled]="product.stock === 0"
+                [disabled]="(product.stock ?? 1) <= 0"
                 class="btn-apple-pill-secondary text-xs !py-2 !px-3 disabled:opacity-50"
               >
                 Buy

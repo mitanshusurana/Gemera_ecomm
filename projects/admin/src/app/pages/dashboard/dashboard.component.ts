@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { OrderService } from '../../services/order.service';
+import { ProductService } from '../../services/product.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -13,13 +14,37 @@ import { environment } from '../../../environments/environment';
 })
 export class DashboardComponent implements OnInit {
   private orderService = inject(OrderService);
+  private productService = inject(ProductService);
   private http = inject(HttpClient);
 
   recentOrders: any[] = [];
   stats: any = null;
   loading = true;
 
+  /**
+   * OPERATIONS-CONTRACT §5: products at or below their reorder point from
+   * GET /admin/inventory/low-stock. `null` until loaded or when the endpoint
+   * is unavailable, in which case the card shows a dash rather than 0.
+   */
+  lowStock: any[] | null = null;
+  lowStockFailed = false;
+
+  get lowStockCount(): number | null {
+    return this.lowStock ? this.lowStock.length : null;
+  }
+
   ngOnInit() {
+    this.productService.getLowStock().subscribe({
+      next: (data: any) => {
+        const rows = Array.isArray(data) ? data : (data?.content ?? data?.items ?? []);
+        this.lowStock = Array.isArray(rows) ? rows : [];
+      },
+      error: (err) => {
+        console.warn('Low-stock list unavailable', err?.status);
+        this.lowStockFailed = true;
+      }
+    });
+
     this.orderService.getOrders().subscribe({
       next: (data) => {
         // Just take the first 3 or 4 for recent orders

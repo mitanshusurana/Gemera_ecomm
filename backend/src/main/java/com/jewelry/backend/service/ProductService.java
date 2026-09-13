@@ -30,6 +30,8 @@ import java.time.LocalDateTime;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 
+import jakarta.persistence.EntityNotFoundException;
+
 import java.math.BigDecimal;
 import java.beans.PropertyDescriptor;
 import java.util.HashSet;
@@ -59,6 +61,9 @@ public class ProductService {
 
     @Autowired
     ProductRulesService productRulesService;
+
+    @Autowired
+    InventoryAlertService inventoryAlertService;
 
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
 
@@ -97,12 +102,49 @@ public class ProductService {
             Boolean certified,
             Boolean featured,
             Pageable pageable) {
+        return getAllProducts(category, subCategories, metals, stones, designStyles, occasions, styles,
+                gemGrades, crafts, saleModes, priceMin, priceMax, search, certified, featured, null, pageable);
+    }
 
+    @Transactional(readOnly = true)
+    public Page<Product> getAllProducts(
+            String category,
+            List<String> subCategories,
+            List<String> metals,
+            List<String> stones,
+            List<String> designStyles,
+            List<String> occasions,
+            List<String> styles,
+            List<String> gemGrades,
+            List<String> crafts,
+            List<String> saleModes,
+            BigDecimal priceMin,
+            BigDecimal priceMax,
+            String search,
+            Boolean certified,
+            Boolean featured,
+            Boolean lowStock,
+            Pageable pageable) {
+
+        Integer lowStockThreshold = Boolean.TRUE.equals(lowStock)
+                ? inventoryAlertService.lowStockThreshold()
+                : null;
         ProductFilter filter = new ProductFilter(
                 category, subCategories, metals, stones, designStyles, occasions, styles,
                 gemGrades, crafts, saleModes,
-                priceMin, priceMax, search, certified, featured);
+                priceMin, priceMax, search, certified, featured,
+                lowStock, lowStockThreshold);
         return productRepository.findAll(ProductSpecifications.withFilter(filter), pageable);
+    }
+
+    /** Label QR codes encode the SKU; match is case-insensitive and trimmed. 404 when unknown. */
+    @Transactional(readOnly = true)
+    public Product getProductBySku(String sku) {
+        if (sku == null || sku.trim().isEmpty()) {
+            throw new IllegalArgumentException("A SKU is required.");
+        }
+        return productRepository.findFirstBySkuIgnoreCase(sku.trim())
+                .orElseThrow(() -> new EntityNotFoundException("No product with SKU " + sku.trim()));
     }
 
     @Transactional(readOnly = true)
@@ -272,6 +314,7 @@ public class ProductService {
     public Product updateProduct(UUID id, Product updatedProduct) {
         return productRepository.findById(id).map(existing -> {
             String originalSku = existing.getSku();
+            Integer stockBefore = existing.getStock();
 
             // Fix: Clear existing collections to let Hibernate manage orphanRemoval properly, rather than replacing the collection instance entirely.
             if (existing.getStoneDetails() != null) {
@@ -303,7 +346,15 @@ public class ProductService {
             // validated against the full product, not just the fields sent.
             productRulesService.applyRules(existing);
 
-            return productRepository.save(existing);
+            Product saved = productRepository.save(existing);
+
+            // Back in stock: an admin update that takes stock from <= 0 to > 0
+            // releases the waiting "notify me" subscriptions. Never fails the update.
+            Integer stockAfter = saved.getStock();
+            if (stockBefore != null && stockBefore <= 0 && stockAfter != null && stockAfter > 0) {
+                inventoryAlertService.notifyBackInStock(saved);
+            }
+            return saved;
         }).orElseThrow(() -> new RuntimeException("Product not found"));
     }
 

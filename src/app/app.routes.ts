@@ -27,6 +27,11 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/product-detail").then(m => m.ProductDetailComponent)
   },
   {
+    // Printed label QR codes point here; resolves the SKU and redirects to /products/:id.
+    path: "p/:sku",
+    loadComponent: () => import("./pages/sku-redirect").then(m => m.SkuRedirectComponent)
+  },
+  {
     path: "builder",
     loadComponent: () => import("./pages/builder").then(m => m.BuilderComponent)
   },

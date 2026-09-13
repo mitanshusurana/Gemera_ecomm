@@ -4,22 +4,34 @@
       <h1 class="text-xl font-semibold text-ink">Orders</h1>
       <p class="mt-2 text-sm text-ink">A list of all the orders in your store including their status and total.</p>
     </div>
-    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-       <label for="statusFilter" class="sr-only">Filter by Status</label>
-       <select id="statusFilter" [value]="currentStatus" (change)="onFilterChange($event)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-ink focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md">
-          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
-       </select>
-    </div>
   </div>
-  <div class="mt-8 flex flex-col">
+
+  <!-- Status filter chips (?status=), with counts from /orders/stats when available -->
+  <div class="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Filter by status">
+    <button *ngFor="let s of statusOptions" type="button" role="tab"
+            (click)="setStatus(s)"
+            [attr.aria-selected]="currentStatus === s"
+            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors"
+            [ngClass]="currentStatus === s
+              ? 'border-emerald-600 bg-emerald-600 text-white'
+              : 'border-ink/20 bg-surface text-ink hover:border-emerald-400 hover:text-emerald-700'">
+      {{ s === 'ALL' ? 'All' : s }}
+      <span *ngIf="countFor(s) !== null"
+            class="rounded-full px-1.5 py-0.5 text-[10px] leading-none"
+            [ngClass]="currentStatus === s ? 'bg-white/20 text-white' : 'bg-ink/5 text-ink/70'">{{ countFor(s) }}</span>
+    </button>
+  </div>
+
+  <div class="mt-6 flex flex-col">
     <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
       <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
         <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
           <table class="min-w-full divide-y divide-gray-300">
             <thead class="bg-surface">
               <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Order ID</th>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Order</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Customer</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Placed</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Total</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
                 <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -29,15 +41,22 @@
             </thead>
             <tbody class="divide-y divide-gray-200 bg-surface">
               <tr *ngFor="let order of orders">
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-ink sm:pl-6">{{ order.orderNumber || order.id }}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ order.shippingAddress?.firstName }} {{ order.shippingAddress?.lastName }}</td>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-ink sm:pl-6">{{ order.orderNumber || (order.id | slice:0:8) }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">
+                  <div>{{ customerOf(order) }}</div>
+                  <div *ngIf="order.customerEmail" class="text-xs text-ink/60">{{ order.customerEmail }}</div>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ order.createdAt ? (order.createdAt | date:'mediumDate') : '—' }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ order.total | currency }}</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">
                   <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5"
                     [ngClass]="{
-                      'bg-green-100 text-green-800': order.status === 'COMPLETED',
-                      'bg-yellow-100 text-yellow-800': order.status === 'PENDING',
-                      'bg-red-100 text-red-800': order.status === 'CANCELLED'
+                      'bg-yellow-100 text-yellow-800': order.status === 'PENDING_PAYMENT' || order.status === 'PENDING',
+                      'bg-sky-100 text-sky-800': order.status === 'PAID',
+                      'bg-purple-100 text-purple-800': order.status === 'PROCESSING',
+                      'bg-blue-100 text-blue-800': order.status === 'SHIPPED',
+                      'bg-green-100 text-green-800': order.status === 'COMPLETED' || order.status === 'DELIVERED',
+                      'bg-red-100 text-red-800': order.status === 'CANCELLED' || order.status === 'REFUNDED' || order.status === 'RETURNED'
                     }">
                     {{ order.status }}
                   </span>
@@ -47,7 +66,9 @@
                 </td>
               </tr>
               <tr *ngIf="orders.length === 0 && !loading">
-                <td colspan="5" class="px-6 py-4 text-center text-sm text-ink">No orders found.</td>
+                <td colspan="6" class="px-6 py-4 text-center text-sm text-ink">
+                  {{ currentStatus === 'ALL' ? 'No orders found.' : 'No ' + currentStatus + ' orders.' }}
+                </td>
               </tr>
             </tbody>
           </table>

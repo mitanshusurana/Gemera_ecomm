@@ -19,6 +19,9 @@ app:
 razorpay:
   key_id: ${RAZORPAY_KEY_ID:}
   key_secret: ${RAZORPAY_KEY_SECRET:}
+  # Secret configured on the Razorpay dashboard for the webhook pointing at
+  # POST /api/v1/payments/webhook. Empty => every webhook call answers 401.
+  webhook_secret: ${RAZORPAY_WEBHOOK_SECRET:}
 
 spring:
   application:

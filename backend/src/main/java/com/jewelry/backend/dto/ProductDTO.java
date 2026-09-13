@@ -80,6 +80,7 @@ public class ProductDTO {
     private String measurements;
     private String treatmentStatus;
     private String labReportNumber;
+    private String certificateLab;
     private String certificateImage;
     private String polish;
     private String symmetry;
