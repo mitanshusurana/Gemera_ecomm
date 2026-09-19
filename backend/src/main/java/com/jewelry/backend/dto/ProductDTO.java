@@ -29,6 +29,18 @@ public class ProductDTO {
     private String videoUrl;
     private Boolean featured;
 
+    // Drafts and feeds (GROWTH-CONTRACT.md sections 1 and 2). published is
+    // null on a create request when the client did not say; the service
+    // defaults it to true.
+    private Boolean published;
+    private Boolean excludeFromFeeds;
+
+    // Admin-only: the mapper never fills this, ProductController adds it for
+    // ADMIN callers and the create/update paths read it. Hidden when null so
+    // public responses do not carry the key at all.
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String internalNotes;
+
     private String seoTitle;
     private String seoDescription;
     private String ogImage;

@@ -50,6 +50,9 @@ public class EntityMapper {
         product.setStock(dto.getStock());
         product.setVideoUrl(dto.getVideoUrl());
         product.setFeatured(dto.getFeatured());
+        product.setPublished(dto.getPublished());
+        product.setExcludeFromFeeds(dto.getExcludeFromFeeds());
+        product.setInternalNotes(dto.getInternalNotes());
 
         product.setSeoTitle(dto.getSeoTitle());
         product.setSeoDescription(dto.getSeoDescription());
@@ -260,6 +263,10 @@ public class EntityMapper {
         dto.setStock(product.getStock());
         dto.setVideoUrl(product.getVideoUrl());
         dto.setFeatured(Boolean.TRUE.equals(product.getFeatured()));
+        // Null means published (rows older than the column); internalNotes is
+        // deliberately not copied here (admin-only, see ProductController).
+        dto.setPublished(!Boolean.FALSE.equals(product.getPublished()));
+        dto.setExcludeFromFeeds(Boolean.TRUE.equals(product.getExcludeFromFeeds()));
 
         dto.setSeoTitle(product.getSeoTitle());
         dto.setSeoDescription(product.getSeoDescription());

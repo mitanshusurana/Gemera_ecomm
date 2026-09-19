@@ -1,7 +1,8 @@
-import { Component, OnInit, signal, ChangeDetectionStrategy, PLATFORM_ID, inject } from "@angular/core";
+import { Component, OnInit, signal, computed, ChangeDetectionStrategy, PLATFORM_ID, inject } from "@angular/core";
 import { CommonModule, NgOptimizedImage, isPlatformBrowser } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
+import { AuthService } from "../services/auth.service";
 import { maskGiftCardCode } from "../services/gift-card.service";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { environment } from "../../environments/environment";
@@ -45,11 +46,21 @@ import { environment } from "../../environments/environment";
           </p>
 
           <!-- Order Number -->
-          <div
-            class="inline-block bg-white border border-[#e0e0e0] rounded-[18px] px-8 py-4 mb-12"
-          >
-            <p class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2">Order Number</p>
-            <p class="font-display font-semibold text-3xl text-[#1d1d1f]">{{ orderNumber() }}</p>
+          <div class="mb-12">
+            <div
+              class="inline-block bg-white border border-[#e0e0e0] rounded-[18px] px-8 py-4"
+            >
+              <p class="text-xs uppercase tracking-[0.2em] font-semibold text-[#D4AF37] mb-2">Order Number</p>
+              <p class="font-display font-semibold text-3xl text-[#1d1d1f]">{{ orderNumber() }}</p>
+            </div>
+
+            <!-- Optional preferences prompt: only for signed-in customers with neither field set -->
+            <p *ngIf="showPreferencePrompt()" class="mt-4 text-sm text-[#6e6e73]">
+              <a routerLink="/account" [queryParams]="{ tab: 'settings' }" class="hover:text-[#D4AF37]">
+                Tell us your ring size and preferred metal for faster custom orders
+                <span aria-hidden="true">→</span>
+              </a>
+            </p>
           </div>
         </div>
 
@@ -324,7 +335,17 @@ import { environment } from "../../environments/environment";
 })
 export class OrderConfirmationComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
+  private authService = inject(AuthService);
   whatsappUrl = `https://wa.me/${environment.whatsappNumber}`;
+
+  /**
+   * Growth contract, section 3: one optional line for signed-in customers who
+   * have told us neither a ring size nor a preferred metal. Guests never see it.
+   */
+  showPreferencePrompt = computed(() => {
+    const user = this.authService.currentUser();
+    return !!user && !user.ringSize && !user.preferredMetal;
+  });
   orderNumber = signal("");
   estimatedDelivery = signal("");
   orderItems = signal<any[]>([]);

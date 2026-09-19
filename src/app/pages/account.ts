@@ -318,6 +318,66 @@ import { COUNTRIES } from '../core/countries';
               <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f] mb-8">Settings</h2>
 
               <div class="space-y-8">
+                <!-- Preferences (growth contract, section 3): saved through the same PUT users/profile as name/phone -->
+                <div *ngIf="user()" class="border border-[#e0e0e0] rounded-[18px] p-6">
+                  <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-1">Preferences</h3>
+                  <p class="text-sm text-[#6e6e73] mb-6">Optional. Helps us size, source and suggest pieces for you faster.</p>
+
+                  <form (ngSubmit)="updateProfile()" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label for="prefBirthday" class="block text-sm font-medium text-[#1d1d1f] mb-2">Birthday</label>
+                        <input id="prefBirthday" type="date" [(ngModel)]="user()!.birthday" name="birthday" class="input-field">
+                      </div>
+                      <div>
+                        <label for="prefAnniversary" class="block text-sm font-medium text-[#1d1d1f] mb-2">Anniversary</label>
+                        <input id="prefAnniversary" type="date" [(ngModel)]="user()!.anniversary" name="anniversary" class="input-field">
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label for="prefRingSize" class="block text-sm font-medium text-[#1d1d1f] mb-2">Ring Size (US)</label>
+                        <select id="prefRingSize" [(ngModel)]="user()!.ringSize" name="ringSize" class="input-field">
+                          <option value="">Not set</option>
+                          <option *ngFor="let size of ringSizeOptions" [value]="size">{{ size }}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label for="prefMetal" class="block text-sm font-medium text-[#1d1d1f] mb-2">Preferred Metal</label>
+                        <select id="prefMetal" [(ngModel)]="user()!.preferredMetal" name="preferredMetal" class="input-field">
+                          <option value="">Not set</option>
+                          <option *ngFor="let metal of metalOptions" [value]="metal">{{ metal }}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span class="block text-sm font-medium text-[#1d1d1f] mb-2">Preferred Stones</span>
+                      <div class="flex flex-wrap gap-2" role="group" aria-label="Preferred stones">
+                        <button *ngFor="let stone of stoneOptions" type="button"
+                                (click)="toggleStone(stone)"
+                                [attr.aria-pressed]="hasStone(stone)"
+                                [ngClass]="hasStone(stone) ? 'bg-[#1d1d1f] text-white border-[#1d1d1f]' : 'bg-[#f5f5f7] text-[#1d1d1f] border-[#e0e0e0] hover:border-[#D4AF37]'"
+                                class="px-4 py-2 rounded-full border text-xs font-medium transition-colors active-press">
+                          {{ stone }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <label class="flex items-start gap-2">
+                      <input type="checkbox" [(ngModel)]="user()!.marketingOptIn" name="marketingOptIn"
+                             class="w-4 h-4 mt-1 rounded border-[#e0e0e0] accent-[#D4AF37]">
+                      <span class="text-sm text-[#1d1d1f]">
+                        Send me new collections and offers
+                        <span class="block text-xs text-[#6e6e73]">A few emails a year about new pieces and offers; you can turn this off any time.</span>
+                      </span>
+                    </label>
+
+                    <button type="submit" class="btn-apple-pill">Save Preferences</button>
+                  </form>
+                </div>
+
                 <div>
                   <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-4">Privacy & Security</h3>
                   <button *ngIf="!showChangePassword()" type="button" (click)="openChangePassword()"
@@ -409,6 +469,12 @@ export class AccountComponent implements OnInit {
   /** Address whose inline "Delete / Cancel" confirmation is showing. */
   pendingDeleteId = signal<string | null>(null);
   deletingAddress = signal(false);
+
+  // Preferences (growth contract, section 3)
+  /** US ring sizes 4 to 20 in half steps, as the strings the API stores. */
+  readonly ringSizeOptions: string[] = Array.from({ length: 33 }, (_, i) => String(4 + i * 0.5));
+  readonly metalOptions = ['Gold', 'White Gold', 'Rose Gold', 'Platinum', 'Silver'];
+  readonly stoneOptions = ['Diamond', 'Emerald', 'Ruby', 'Blue Sapphire', 'Yellow Sapphire', 'Pearl', 'Coral', 'Other'];
 
   // Change-password panel state
   showChangePassword = signal(false);
@@ -539,10 +605,42 @@ export class AccountComponent implements OnInit {
     });
   }
 
+  /** `preferredStones` is a comma list on the wire; split for the chips. */
+  private stonesOf(user: User | null): string[] {
+    return (user?.preferredStones || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  hasStone(stone: string): boolean {
+    return this.stonesOf(this.user()).includes(stone);
+  }
+
+  toggleStone(stone: string): void {
+    const current = this.user();
+    if (!current) return;
+    const stones = this.stonesOf(current);
+    const next = stones.includes(stone) ? stones.filter((s) => s !== stone) : [...stones, stone];
+    // New object so OnPush re-renders the chips; the same signal feeds updateProfile().
+    this.user.set({ ...current, preferredStones: next.join(',') });
+  }
+
   updateProfile(): void {
     const currentUser = this.user();
     if (currentUser) {
-        this.authService.updateProfile(currentUser).subscribe({
+        // Cleared date / select inputs bind to '' which the API cannot parse
+        // as a LocalDate or a meaningful size; send null so they clear.
+        const payload: Partial<User> = {
+          ...currentUser,
+          birthday: currentUser.birthday || null,
+          anniversary: currentUser.anniversary || null,
+          ringSize: currentUser.ringSize || null,
+          preferredMetal: currentUser.preferredMetal || null,
+          preferredStones: currentUser.preferredStones || null,
+          marketingOptIn: !!currentUser.marketingOptIn,
+        };
+        this.authService.updateProfile(payload).subscribe({
             next: () => {
                 this.toastService.show('Profile updated successfully', 'success');
             },

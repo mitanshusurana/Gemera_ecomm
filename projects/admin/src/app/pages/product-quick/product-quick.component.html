@@ -1,0 +1,169 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-16 max-w-3xl mx-auto">
+  <div class="flex items-center justify-between gap-3 mb-4 mt-2">
+    <div>
+      <h1 class="text-xl font-semibold text-ink">Quick capture</h1>
+      <p class="text-sm text-ink/70">Photo, category, price and weight. Saves a draft you can finish later.</p>
+    </div>
+    <a routerLink="/products/new" class="text-sm font-medium text-emerald-700 hover:underline whitespace-nowrap">Full form →</a>
+  </div>
+
+  <!-- 1. Photos first -->
+  <section class="bg-surface shadow sm:rounded-lg p-4 mb-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-bold text-ink uppercase tracking-wide">Photos</h2>
+      <span class="text-xs text-ink/60" *ngIf="photos.length">{{ photos.length }} photo{{ photos.length === 1 ? '' : 's' }}<span *ngIf="uploading"> · uploading…</span></span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <label class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50 py-6 cursor-pointer hover:bg-emerald-100 active:scale-[0.99] transition">
+        <span class="material-symbols-outlined text-4xl text-emerald-700">photo_camera</span>
+        <span class="text-sm font-semibold text-emerald-800">Take photo</span>
+        <input type="file" accept="image/*" capture="environment" class="sr-only" (change)="onFilesPicked($event)">
+      </label>
+      <label class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 py-6 cursor-pointer hover:bg-gray-100 active:scale-[0.99] transition">
+        <span class="material-symbols-outlined text-4xl text-ink/70">add_photo_alternate</span>
+        <span class="text-sm font-semibold text-ink">Choose photos</span>
+        <input type="file" accept="image/*" multiple class="sr-only" (change)="onFilesPicked($event)">
+      </label>
+    </div>
+
+    <div *ngIf="photos.length" class="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-3">
+      <div *ngFor="let p of photos; let i = index" class="relative group aspect-square">
+        <img [src]="p.preview" [alt]="'Photo ' + (i + 1)" class="h-full w-full object-cover rounded-lg border" [class.opacity-60]="p.state !== 'done'">
+        <span *ngIf="i === 0" class="absolute left-1 top-1 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">Main</span>
+        <span *ngIf="p.state === 'uploading'" class="absolute inset-0 flex items-center justify-center">
+          <span class="material-symbols-outlined animate-spin text-white drop-shadow">progress_activity</span>
+        </span>
+        <button *ngIf="p.state === 'failed'" type="button" (click)="retryPhoto(p)" class="absolute inset-0 flex flex-col items-center justify-center bg-red-600/70 text-white text-xs font-semibold rounded-lg">
+          <span class="material-symbols-outlined">refresh</span> Retry
+        </button>
+        <div class="absolute bottom-1 right-1 flex gap-1">
+          <button *ngIf="i > 0 && p.state === 'done'" type="button" (click)="makePrimary(i)" title="Make main photo" class="rounded-full bg-white/90 p-1 text-ink shadow hover:bg-white">
+            <span class="material-symbols-outlined text-base leading-none">star</span>
+          </button>
+          <button type="button" (click)="removePhoto(i)" title="Remove" class="rounded-full bg-white/90 p-1 text-red-600 shadow hover:bg-white">
+            <span class="material-symbols-outlined text-base leading-none">close</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <p *ngIf="failedUploads > 0" class="mt-2 text-xs text-red-700">{{ failedUploads }} photo{{ failedUploads === 1 ? '' : 's' }} failed to upload; retry or remove before saving.</p>
+  </section>
+
+  <!-- 2. What is it -->
+  <section class="bg-surface shadow sm:rounded-lg p-4 mb-4 space-y-4">
+    <h2 class="text-sm font-bold text-ink uppercase tracking-wide">What is it</h2>
+
+    <div>
+      <label class="block text-sm font-medium text-ink">Category *</label>
+      <select [(ngModel)]="category" name="category" (ngModelChange)="onCategoryChange()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm font-mono">
+        <option value="">Select category</option>
+        <option *ngFor="let cat of flatCategories" [value]="cat.name" [class.text-gray-400]="cat.isActive === false">{{ indent(cat.level) }}{{ cat.displayName }}</option>
+      </select>
+      <p class="mt-1 text-xs text-ink/60" *ngIf="selectedNode as node">
+        {{ node.path.join(' › ') }}
+        <span *ngIf="itemType" class="ml-1 inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200">{{ itemTypeLabel[itemType] }}</span>
+        <span *ngIf="!itemType" class="text-amber-700"> · no item type on this branch</span>
+      </p>
+      <p *ngIf="categoriesFailed" class="mt-1 text-xs text-red-700">Categories could not be loaded; refresh to try again.</p>
+    </div>
+
+    <div *ngIf="subCategories.length">
+      <label class="block text-sm font-medium text-ink">Sub-category</label>
+      <select [(ngModel)]="subCategory" name="subCategory" (ngModelChange)="onCategoryChange({ keepSaleMode: true })" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm">
+        <option value="">None</option>
+        <option *ngFor="let sub of subCategories" [value]="sub.name">{{ sub.displayName }}</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- 3. Price and weight -->
+  <section class="bg-surface shadow sm:rounded-lg p-4 mb-4 space-y-4">
+    <h2 class="text-sm font-bold text-ink uppercase tracking-wide">Price &amp; weight</h2>
+
+    <div>
+      <span class="block text-sm font-medium text-ink">Sold</span>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <label *ngFor="let mode of allowedSaleModes"
+               class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm cursor-pointer select-none"
+               [ngClass]="saleMode === mode ? 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold' : 'border-gray-300 text-ink'">
+          <input type="radio" name="saleMode" [value]="mode" [(ngModel)]="saleMode" (ngModelChange)="onSaleModeChange()" class="sr-only">
+          {{ saleModeLabel[mode] }}
+        </label>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div *ngIf="isPerPiece">
+        <label class="block text-sm font-medium text-ink">Price (₹)</label>
+        <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="price" name="price" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm">
+      </div>
+      <div *ngIf="!isPerPiece">
+        <label class="block text-sm font-medium text-ink">Unit price (₹)</label>
+        <div class="relative mt-1">
+          <input type="number" inputmode="decimal" min="0" step="0.01" [(ngModel)]="unitPrice" name="unitPrice" placeholder="0" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm pr-16">
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-ink/60">{{ unitPriceSuffix[saleMode] }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="weightField as w">
+        <label class="block text-sm font-medium text-ink">{{ w.label }}</label>
+        <div class="relative mt-1">
+          <input type="number" inputmode="decimal" min="0" step="0.001" [(ngModel)]="primaryWeight" name="primaryWeight" placeholder="0" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm pr-12">
+          <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-ink/60">{{ w.unit }}</span>
+        </div>
+      </div>
+      <div *ngIf="!weightField" class="text-xs text-ink/50 self-end pb-2">Pick a category with an item type to record a weight.</div>
+
+      <div>
+        <label class="block text-sm font-medium text-ink">Stock</label>
+        <input type="number" inputmode="numeric" min="0" step="1" [(ngModel)]="stock" name="stock" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm">
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Optional -->
+  <section class="bg-surface shadow sm:rounded-lg p-4 mb-4 space-y-4">
+    <h2 class="text-sm font-bold text-ink uppercase tracking-wide">Optional</h2>
+    <div>
+      <label class="block text-sm font-medium text-ink">Name <span class="text-xs font-normal text-ink/50">(auto-named when blank)</span></label>
+      <input type="text" [(ngModel)]="name" name="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-ink">Notes <span class="text-xs font-normal text-ink/50">(internal, never shown to customers)</span></label>
+      <textarea [(ngModel)]="notes" name="notes" rows="2" placeholder="Supplier, cost, what still needs checking…" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-base sm:text-sm"></textarea>
+    </div>
+  </section>
+
+  <div *ngIf="error" class="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ error }}</div>
+
+  <!-- Actions: sticky on phones so they are reachable without scrolling back -->
+  <div class="sticky bottom-24 lg:bottom-4 z-10 flex flex-col sm:flex-row gap-2 bg-background-light/95 backdrop-blur py-2 -mx-2 px-2 rounded-xl">
+    <button type="button" (click)="saveAndAddAnother()" [disabled]="!canSave"
+            class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-600 bg-white px-4 py-3 text-sm font-bold text-emerald-800 shadow-sm hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed">
+      <span class="material-symbols-outlined text-lg">add_circle</span>
+      {{ saving ? 'Saving…' : 'Save draft & add another' }}
+    </button>
+    <button type="button" (click)="saveAndComplete()" [disabled]="!canSave"
+            class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
+      <span class="material-symbols-outlined text-lg">edit_note</span>
+      {{ saving ? 'Saving…' : 'Save & complete now' }}
+    </button>
+  </div>
+
+  <!-- Drafts saved this visit -->
+  <section *ngIf="saved.length" class="mt-6">
+    <h2 class="text-sm font-bold text-ink uppercase tracking-wide mb-2">Saved this visit</h2>
+    <ul class="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-surface">
+      <li *ngFor="let d of saved" class="flex items-center justify-between px-3 py-2 text-sm">
+        <span class="truncate">
+          <span class="font-medium text-ink">{{ d.name }}</span>
+          <span *ngIf="d.sku" class="ml-2 font-mono text-xs text-ink/60">{{ d.sku }}</span>
+          <span class="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700">Draft</span>
+        </span>
+        <a [routerLink]="['/products/edit', d.id]" class="text-emerald-700 hover:underline text-xs font-medium whitespace-nowrap ml-3">Complete</a>
+      </li>
+    </ul>
+    <p class="mt-2 text-xs text-ink/60">Drafts are hidden from the storefront until published. <a routerLink="/products" [queryParams]="{ drafts: 'true' }" class="text-emerald-700 hover:underline">See all drafts</a>.</p>
+  </section>
+</div>

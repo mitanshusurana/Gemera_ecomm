@@ -31,6 +31,19 @@ public class Product extends BaseEntity {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private Boolean featured;
 
+    // Drafts (GROWTH-CONTRACT.md section 1). Null (rows created before the
+    // column existed) means published; only an explicit false hides a product
+    // from the storefront, sitemap and feeds.
+    @Column(columnDefinition = "boolean default true")
+    private Boolean published;
+
+    // Multi-channel feeds (GROWTH-CONTRACT.md section 2): admin opt-out per product.
+    private Boolean excludeFromFeeds;
+
+    // Counter notes from quick capture; admin-only, never on the public DTO.
+    @Column(columnDefinition = "TEXT")
+    private String internalNotes;
+
     // SEO Metadata
     private String seoTitle;
     private String seoDescription;

@@ -34,7 +34,8 @@ export class AuthService {
     }
   }
 
-  register(data: RegisterRequest): Observable<User> {
+  /** `marketingOptIn` is optional (growth contract, section 3); omitted when the form has no checkbox. */
+  register(data: RegisterRequest & { marketingOptIn?: boolean }): Observable<User> {
     return this.http.post<User>(`${this.baseUrl}/register`, data);
   }
 
@@ -99,6 +100,11 @@ export class AuthService {
     );
   }
 
+  /**
+   * PUT users/profile. Besides name and phone the body may carry the
+   * preference fields on `User` (birthday, anniversary, ringSize,
+   * preferredMetal, preferredStones as a comma list, marketingOptIn).
+   */
   updateProfile(data: Partial<User>): Observable<User> {
     return this.http.put<User>(`${this.usersUrl}/profile`, data).pipe(
       tap(user => this.user$.next(user))

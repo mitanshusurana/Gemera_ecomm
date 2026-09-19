@@ -200,6 +200,19 @@ import { ToastService } from "../services/toast.service";
                 </span>
               </label>
 
+              <label class="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="marketingOptIn"
+                  name="marketingOptIn"
+                  class="w-4 h-4 mt-1 rounded border-[#e0e0e0] accent-[#D4AF37]"
+                />
+                <span class="text-sm text-[#1d1d1f]">
+                  Send me new collections and offers
+                  <span class="block text-xs text-[#6e6e73]">Optional. A few emails a year; unsubscribe any time.</span>
+                </span>
+              </label>
+
               <button
                 type="submit"
                 [disabled]="
@@ -249,6 +262,8 @@ export class LoginComponent {
   phone = "";
   confirmPassword = "";
   rememberMe = false;
+  /** Registration only; default unchecked (growth contract, section 3). */
+  marketingOptIn = false;
 
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -294,6 +309,7 @@ export class LoginComponent {
         firstName: this.firstName,
         lastName: this.lastName,
         phone: this.phone,
+        marketingOptIn: this.marketingOptIn,
       })
       .subscribe({
         next: () => {

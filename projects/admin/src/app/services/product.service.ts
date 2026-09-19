@@ -3,6 +3,20 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+/** POST /products/quick body (GROWTH-CONTRACT §1). */
+export interface QuickCaptureRequest {
+  category: string;
+  subCategory?: string;
+  name?: string;
+  price?: number;
+  unitPrice?: number;
+  saleMode?: string;
+  stock?: number;
+  images: string[];
+  primaryWeight?: number;
+  notes?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,12 +25,53 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  getProducts(search?: string, opts: { page?: number; size?: number } = {}): Observable<any> {
+  /**
+   * GROWTH-CONTRACT §1: `published=false` lists drafts (admin JWT). Omitted,
+   * the admin sees everything.
+   */
+  getProducts(search?: string, opts: { page?: number; size?: number; published?: boolean } = {}): Observable<any> {
     let params = new HttpParams();
     if (search) params = params.set('search', search);
     if (opts.page !== undefined) params = params.set('page', String(opts.page));
     if (opts.size !== undefined) params = params.set('size', String(opts.size));
+    if (opts.published !== undefined) params = params.set('published', String(opts.published));
     return this.http.get(this.apiUrl, { params });
+  }
+
+  // --- Drafts and quick capture (GROWTH-CONTRACT §1) ---
+
+  /**
+   * Body `{ category, subCategory?, name?, price?, unitPrice?, saleMode?, stock?, images, primaryWeight?, notes? }`
+   * -> a draft ProductDTO with itemType resolved from the category and the SKU generated.
+   */
+  quickCreate(body: QuickCaptureRequest): Observable<any> {
+    return this.http.post(`${this.apiUrl}/quick`, body);
+  }
+
+  /** Runs the full item-type check and flips `published`; 400 lists the missing fields. */
+  publish(id: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/publish`, {});
+  }
+
+  unpublish(id: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/unpublish`, {});
+  }
+
+  // --- Multi-channel feeds (GROWTH-CONTRACT §2) ---
+
+  /** `{ published, includedInFeeds, excluded: [{ id, sku, name, reason }], urls }` */
+  getFeedStatus(): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/admin/feeds/status`);
+  }
+
+  /** Public feed URLs, built from the API origin so they match what the server serves. */
+  feedUrls(): { google: string; facebook: string; csv: string } {
+    const base = `${environment.apiUrl.replace(/\/+$/, '')}/feeds`;
+    return {
+      google: `${base}/google.xml`,
+      facebook: `${base}/facebook.csv`,
+      csv: `${base}/products.csv`
+    };
   }
 
   getProduct(id: string): Observable<any> {

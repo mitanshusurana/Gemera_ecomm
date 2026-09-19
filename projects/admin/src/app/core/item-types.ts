@@ -278,6 +278,31 @@ export function quantityFieldFor(type: ItemType | null, mode: SaleMode): Quantit
   }
 }
 
+/**
+ * GROWTH-CONTRACT §1: the one weight a quick capture asks for, mapped server-side
+ * to the item type's key weight field. Carats for stones / lots / rough, grams
+ * for everything else. `null` when the type is unknown (no weight input shown).
+ */
+export function primaryWeightFieldFor(type: ItemType | null): QuantityField | null {
+  switch (type) {
+    case 'LOOSE_GEMSTONE':
+      return { path: 'caratWeight', label: FIELD_LABELS['caratWeight'], unit: 'ct', requiredForPrice: false };
+    case 'GEMSTONE_LOT':
+      return { path: 'lotTotalCaratWeight', label: FIELD_LABELS['lotTotalCaratWeight'], unit: 'ct', requiredForPrice: false };
+    case 'ROUGH':
+      return { path: 'roughWeight', label: FIELD_LABELS['roughWeight'], unit: 'ct', requiredForPrice: false };
+    case 'COMPONENT':
+      return { path: 'totalWeight', label: FIELD_LABELS['totalWeight'], unit: 'g', requiredForPrice: false };
+    case 'JEWELLERY':
+    case 'SET':
+    case 'IDOL_CARVING':
+    case 'STRAND_BEADS':
+      return { path: 'grossWeight', label: FIELD_LABELS['grossWeight'], unit: 'g', requiredForPrice: false };
+    default:
+      return null;
+  }
+}
+
 export const UNIT_PRICE_SUFFIX: Record<SaleMode, string> = {
   PER_PIECE: '/ piece',
   PER_CARAT: '/ ct',

@@ -357,6 +357,20 @@ export interface User {
   token?: string;
   treasureChest?: TreasureChestAccount;
   loyaltyPoints?: number;
+
+  // Customer preferences (growth contract, section 3). All optional: the
+  // backend adds these columns as nullable and older responses omit them.
+  /** `YYYY-MM-DD`. */
+  birthday?: string | null;
+  /** `YYYY-MM-DD`. */
+  anniversary?: string | null;
+  /** US ring size as a string, e.g. "6.5". */
+  ringSize?: string | null;
+  /** Gold, White Gold, Rose Gold, Platinum, Silver. */
+  preferredMetal?: string | null;
+  /** Comma-separated list, e.g. "Diamond,Ruby". */
+  preferredStones?: string | null;
+  marketingOptIn?: boolean | null;
 }
 
 export interface AuthResponse {
