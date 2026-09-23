@@ -60,6 +60,10 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/gift-card").then(m => m.GiftCardComponent)
   },
   {
+    path: "exchange",
+    loadComponent: () => import("./pages/exchange").then(m => m.ExchangeComponent)
+  },
+  {
     path: "wishlist",
     loadComponent: () => import("./pages/wishlist").then(m => m.WishlistComponent)
   },
@@ -123,6 +127,19 @@ export const routes: Routes = [
   {
     path: "custom-design",
     loadComponent: () => import("./pages/custom-design").then(m => m.CustomDesignComponent)
+  },
+  {
+    // Repair and service jobs: catalogue + request form, then public tracking by job number + phone.
+    path: "repairs",
+    loadComponent: () => import("./pages/repairs").then(m => m.RepairsComponent)
+  },
+  {
+    path: "repairs/track",
+    loadComponent: () => import("./pages/repair-track").then(m => m.RepairTrackComponent)
+  },
+  {
+    path: "repairs/track/:jobNumber",
+    loadComponent: () => import("./pages/repair-track").then(m => m.RepairTrackComponent)
   },
   { path: "**", redirectTo: "" },
 ];

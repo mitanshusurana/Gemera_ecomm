@@ -75,6 +75,8 @@ import { environment } from "../../environments/environment";
               <li><a routerLink="/rfq" class="hover:text-[#D4AF37] transition-colors">Request Quote</a></li>
               <li><a routerLink="/treasure" class="hover:text-[#D4AF37] transition-colors">Treasure Investment Plan</a></li>
               <li><a routerLink="/custom-design" class="hover:text-[#D4AF37] transition-colors">Bespoke Design Service</a></li>
+              <li><a routerLink="/repairs" class="hover:text-[#D4AF37] transition-colors">Repairs &amp; Services</a></li>
+              <li><a routerLink="/exchange" class="hover:text-[#D4AF37] transition-colors">Old Gold Exchange</a></li>
             </ul>
           </div>
 

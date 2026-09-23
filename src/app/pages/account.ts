@@ -10,11 +10,13 @@ import { ToastService } from '../services/toast.service';
 import { CategoryLabelService } from '../services/category-label.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { COUNTRIES } from '../core/countries';
+import { AccountRepairsComponent } from '../components/account-repairs';
+import { AccountExchangeComponent } from '../components/account-exchange';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink, CurrencyConvertPipe],
+  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink, CurrencyConvertPipe, AccountRepairsComponent, AccountExchangeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
@@ -244,6 +246,10 @@ import { COUNTRIES } from '../core/countries';
                 </div>
               </div>
             </div>
+
+            <!-- Repairs & services (shown with the orders) -->
+            <app-account-repairs *ngIf="activeTab() === 'orders'" class="block animate-fadeIn" />
+            <app-account-exchange *ngIf="activeTab() === 'orders'" class="block animate-fadeIn" />
 
             <!-- Addresses Tab -->
             <div *ngIf="activeTab() === 'addresses'" class="space-y-6 animate-fadeIn">
