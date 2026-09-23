@@ -4,33 +4,55 @@ on:
   push:
     branches:
       - main
-  # Allow manual trigger
   workflow_dispatch:
 
 env:
-  # Use docker.io for Docker Hub if empty will default to GitHub Container Registry (GHCR)
   REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
 
 jobs:
-  build-and-push-images:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+            file: ./backend/Dockerfile
+            no-cache: false
+          - name: frontend
+            context: .
+            file: ./frontend.Dockerfile
+            # Fresh builds so the SSR manifest is always regenerated.
+            no-cache: true
+          - name: admin
+            context: .
+            file: ./admin.Dockerfile
+            no-cache: false
+          - name: erp-backend
+            context: ./projects/erp-backend
+            file: ./projects/erp-backend/Dockerfile
+            no-cache: false
+          - name: erp-frontend
+            context: ./projects/erp-frontend
+            file: ./projects/erp-frontend/Dockerfile
+            no-cache: false
 
     steps:
+      # GHCR requires a lower-case repository path.
       - name: Set lower case image name
-        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "${GITHUB_ENV}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Set up Buildx for multi-architecture builds if needed (e.g., if Oracle VM is ARM A1)
+      # Buildx is needed for multi-architecture builds (e.g. an Oracle Ampere A1 VM).
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Login against a Docker registry except on PR
       - name: Log into registry ${{ env.REGISTRY }}
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -39,62 +61,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Extract metadata for Docker
-      - name: Extract Docker metadata (Backend)
-        id: meta-backend
+      - name: Extract Docker metadata (${{ matrix.name }})
+        id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.name }}
 
-      # Build and push Backend image
-      - name: Build and push Backend Docker image
+      - name: Build and push ${{ matrix.name }} image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
-          # Uncomment if deploying to Oracle ARM VM (Ampere A1)
-          # platforms: linux/amd64,linux/arm64
-
-      # Extract metadata for Docker
-      - name: Extract Docker metadata (Frontend)
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
-
-      # Build and push Frontend image
-      - name: Build and push Frontend Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./frontend.Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
-          # platforms: linux/amd64,linux/arm64
-          # TEMPORARILY DISABLE CACHING to ensure fresh builds with proper SSR manifest generation
-          # cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:buildcache
-          # cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:buildcache,mode=max
-          no-cache: true
-
-
-      # Extract metadata for Docker
-      - name: Extract Docker metadata (Admin)
-        id: meta-admin
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin
-
-      # Build and push Admin image
-      - name: Build and push Admin Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./admin.Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:${{ github.sha }}
-          labels: ${{ steps.meta-admin.outputs.labels }}
+          no-cache: ${{ matrix.no-cache }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.name }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.name }}:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
           # platforms: linux/amd64,linux/arm64

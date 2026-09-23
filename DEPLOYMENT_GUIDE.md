@@ -1,9 +1,11 @@
 # Caratloop Deployment & Workflow Guide
 
-Three images are built by `.github/workflows/docker-build-push.yml` on every push to `main` and pushed to GHCR:
-`gemera_ecomm-backend` (Spring Boot API), `gemera_ecomm-frontend` (Angular SSR storefront) and `gemera_ecomm-admin`
-(Angular admin behind nginx). The image names follow the GitHub repository name; override them with
-`BACKEND_IMAGE`, `FRONTEND_IMAGE`, `ADMIN_IMAGE` if the repository is renamed.
+Five images are built by `.github/workflows/docker-build-push.yml` on every push to `main` and pushed to GHCR:
+`gemera_ecomm-backend` (Spring Boot API), `gemera_ecomm-frontend` (Angular SSR storefront), `gemera_ecomm-admin`
+(Angular admin behind nginx), `gemera_ecomm-erp-backend` (FastAPI ERP API) and `gemera_ecomm-erp-frontend` (Next.js
+ERP UI). The image names follow the GitHub repository name; override them with `BACKEND_IMAGE`, `FRONTEND_IMAGE`,
+`ADMIN_IMAGE`, `ERP_BACKEND_IMAGE`, `ERP_FRONTEND_IMAGE` if the repository is renamed. A package pushed to GHCR for
+the first time is private; make the two ERP packages public (or log the VM into GHCR) before the first `pull`.
 
 ## 1. Topology
 
@@ -79,13 +81,14 @@ configurator base price). Add stores under Stores and mark products "Show on hom
 
 ## 3a. ERP
 
-The ERP is built from source on the Core VM (no GHCR image yet):
-
 ```bash
 cp .env.erp.example .env.erp   # edit; POSTGRES_PASSWORD_URLENC is the URL-encoded password
-docker compose -f docker-compose.erp.yml --env-file .env.erp up -d --build
+docker compose -f docker-compose.erp.yml --env-file .env.erp pull
+docker compose -f docker-compose.erp.yml --env-file .env.erp up -d
 curl -fsS http://127.0.0.1:8010/health
 ```
+
+Add `--build` to `up` to build the two ERP images from `projects/` instead of pulling them.
 
 `erp-migrate` runs `alembic upgrade head` and the API waits for it. Put the ERP UI (127.0.0.1:3001) and API
 (127.0.0.1:8010) behind the same TLS proxy as the admin, and list the UI origin in `CORS_ORIGINS`.
@@ -95,6 +98,7 @@ curl -fsS http://127.0.0.1:8010/health
 ```bash
 docker compose -f docker-compose.backend.yml pull && docker compose -f docker-compose.backend.yml up -d
 docker compose -f docker-compose.frontend.yml pull && docker compose -f docker-compose.frontend.yml up -d
+docker compose -f docker-compose.erp.yml --env-file .env.erp pull && docker compose -f docker-compose.erp.yml --env-file .env.erp up -d
 ```
 
 ## 5. Local development

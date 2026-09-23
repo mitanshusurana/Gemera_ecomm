@@ -52,7 +52,7 @@ The ERP is a separate service with its own PostgreSQL database and its own login
 ```bash
 cd projects/erp-backend && pip install -r requirements.txt && python -m pytest -q   # 500 tests, no database needed
 cd projects/erp-frontend && npm install && npm run dev                              # http://localhost:3000
-docker compose -f docker-compose.erp.yml --env-file .env.erp up -d --build          # full stack, see .env.erp.example
+docker compose -f docker-compose.erp.yml --env-file .env.erp up -d                  # GHCR images; add --build to build from source
 ```
 
 The schema is owned by Alembic (`projects/erp-backend/migrations`); run `alembic upgrade head` against a
@@ -63,7 +63,7 @@ history; `git log -- projects/erp-backend` shows it.
 
 `DEPLOYMENT_GUIDE.md` describes the two-VM topology. Docker definitions: `frontend.Dockerfile`,
 `admin.Dockerfile`, `backend/Dockerfile`, `projects/erp-*/Dockerfile`, and the `docker-compose.*.yml` files. GitHub Actions
-(`.github/workflows/docker-build-push.yml`) builds and pushes the backend and storefront images on
-every push to `main`.
+(`.github/workflows/docker-build-push.yml`) builds and pushes all five images (backend, storefront, admin,
+ERP backend, ERP frontend) on every push to `main`.
 
 This repository is public: never commit `.env*` files with real values.

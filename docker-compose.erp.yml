@@ -3,8 +3,12 @@
 # its own PostgreSQL. Both services bind to loopback; put the same TLS reverse
 # proxy that fronts the API and admin in front of 3001 (UI) and 8010 (API).
 #
+# Images come from GHCR (built by .github/workflows/docker-build-push.yml on
+# every push to main); `--build` rebuilds them from projects/ instead.
+#
 #   cp .env.erp.example .env.erp   # edit
-#   docker compose -f docker-compose.erp.yml --env-file .env.erp up -d --build
+#   docker compose -f docker-compose.erp.yml --env-file .env.erp pull
+#   docker compose -f docker-compose.erp.yml --env-file .env.erp up -d
 services:
   erp-db:
     image: postgres:16-alpine
@@ -35,7 +39,7 @@ services:
   # Alembic runs to completion before the API starts. The schema is owned by
   # projects/erp-backend/migrations, not by initdb scripts.
   erp-migrate:
-    image: caratloop-erp-backend:latest
+    image: ${ERP_BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-erp-backend:latest}
     build:
       context: ./projects/erp-backend
       dockerfile: Dockerfile
@@ -50,7 +54,7 @@ services:
         condition: service_healthy
 
   erp-backend:
-    image: caratloop-erp-backend:latest
+    image: ${ERP_BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-erp-backend:latest}
     build:
       context: ./projects/erp-backend
       dockerfile: Dockerfile
@@ -88,6 +92,7 @@ services:
   # Next.js UI. It uses relative API URLs and reads the company from
   # GET /auth/me, so it needs no build-time NEXT_PUBLIC_* variables.
   erp-frontend:
+    image: ${ERP_FRONTEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-erp-frontend:latest}
     build:
       context: ./projects/erp-frontend
       dockerfile: Dockerfile
