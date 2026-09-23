@@ -114,6 +114,88 @@
       </div>
     </div>
 
+    <!-- Tax invoice and accounting (GST contract) -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+      <!-- Tax invoice -->
+      <div class="bg-surface shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-lg leading-6 font-medium text-ink">Tax invoice</h3>
+              <p class="mt-1 text-sm text-ink/70">Issued automatically once the order is paid.</p>
+            </div>
+            <span class="material-symbols-outlined text-ink/40">receipt_long</span>
+          </div>
+
+          <ng-container *ngIf="order.invoiceNumber; else noInvoice">
+            <dl class="mt-4 space-y-2 text-sm">
+              <div class="flex justify-between gap-4">
+                <dt class="text-ink/70">Invoice number</dt>
+                <dd class="font-mono font-semibold text-ink">{{ order.invoiceNumber }}</dd>
+              </div>
+              <div class="flex justify-between gap-4" *ngIf="order.invoiceDate">
+                <dt class="text-ink/70">Invoice date</dt>
+                <dd class="text-ink">{{ order.invoiceDate | date:'mediumDate' }}</dd>
+              </div>
+              <div class="flex justify-between gap-4" *ngIf="order.buyerGstin">
+                <dt class="text-ink/70">Buyer GSTIN</dt>
+                <dd class="font-mono text-ink">{{ order.buyerGstin }}</dd>
+              </div>
+            </dl>
+            <div class="mt-4">
+              <button type="button" (click)="downloadInvoice()" [disabled]="downloadingInvoice"
+                      class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                {{ downloadingInvoice ? 'Preparing PDF...' : 'Download' }}
+              </button>
+            </div>
+          </ng-container>
+          <ng-template #noInvoice>
+            <p class="mt-4 text-sm text-ink/60">Not issued yet.</p>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Accounting (ERP) -->
+      <div class="bg-surface shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-lg leading-6 font-medium text-ink">Accounting (ERP)</h3>
+              <p class="mt-1 text-sm text-ink/70">Whether this order has been posted to the ledger.</p>
+            </div>
+            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide" [ngClass]="erpChipClass()">
+              {{ erpChipLabel() }}
+            </span>
+          </div>
+
+          <dl class="mt-4 space-y-2 text-sm">
+            <div class="flex justify-between gap-4" *ngIf="erpStatus === 'SENT' && order.erpReference">
+              <dt class="text-ink/70">ERP reference</dt>
+              <dd class="font-mono font-semibold text-ink">{{ order.erpReference }}</dd>
+            </div>
+            <div *ngIf="erpStatus === 'FAILED'">
+              <dt class="text-ink/70 mb-1">Last error</dt>
+              <dd>
+                <pre class="whitespace-pre-wrap break-words rounded-md bg-gray-50 border border-ink/10 px-3 py-2 font-mono text-xs text-ink/70">{{ order.erpLastError || 'No error message was recorded.' }}</pre>
+              </dd>
+            </div>
+            <p *ngIf="erpStatus === 'PENDING'" class="text-ink/60">Waiting for the next sync run.</p>
+            <p *ngIf="!erpStatus" class="text-ink/60">This order has not been queued for the ERP.</p>
+          </dl>
+
+          <div class="mt-4">
+            <button type="button" (click)="syncToErp()" [disabled]="syncingErp || busy"
+                    class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50">
+              <span class="material-symbols-outlined text-[18px]" [class.animate-spin]="syncingErp">sync</span>
+              {{ syncingErp ? 'Syncing...' : 'Sync to ERP now' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Order information -->
     <div class="bg-surface shadow overflow-hidden sm:rounded-lg">
       <div class="px-4 py-5 sm:px-6">
@@ -128,6 +210,8 @@
               <p>{{ customerName }}</p>
               <p *ngIf="customerEmail"><a [href]="'mailto:' + customerEmail" class="text-emerald-700 hover:underline">{{ customerEmail }}</a></p>
               <p *ngIf="order.shippingAddress?.phone" class="text-ink/70">{{ order.shippingAddress.phone }}</p>
+              <p *ngIf="order.buyerGstin" class="text-xs text-ink/70 mt-1">GSTIN <span class="font-mono text-ink">{{ order.buyerGstin }}</span></p>
+              <p *ngIf="order.buyerPan" class="text-xs text-ink/70">PAN <span class="font-mono text-ink">{{ order.buyerPan }}</span></p>
             </dd>
           </div>
 
@@ -149,6 +233,10 @@
               <p>{{ order.paymentMethod || '—' }}</p>
               <p *ngIf="order.razorpayOrderId" class="text-xs text-ink/60 font-mono">Razorpay {{ order.razorpayOrderId }}</p>
               <p *ngIf="order.appliedCoupon" class="text-xs text-ink/70">Coupon: {{ order.appliedCoupon }}</p>
+              <div *ngIf="hasRefund" class="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+                <p class="font-semibold">Refunded<ng-container *ngIf="refundedAmount > 0"> {{ refundedAmount | currency:'INR':'symbol':'1.0-0' }}</ng-container></p>
+                <p *ngIf="order.razorpayRefundId" class="font-mono mt-0.5">Razorpay refund {{ order.razorpayRefundId }}</p>
+              </div>
             </dd>
           </div>
 

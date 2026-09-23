@@ -3,7 +3,7 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { User, Order, Address, OrderItem } from '../core/models';
+import { User, Order, Address, OrderItem, isPaidOrder } from '../core/models';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
 import { ToastService } from '../services/toast.service';
@@ -211,6 +211,23 @@ import { COUNTRIES } from '../core/countries';
                         </div>
                         <span class="text-xs font-medium text-[#1d1d1f] text-center">Delivered</span>
                       </div>
+                    </div>
+
+                    <!-- Tax invoice (GST contract) -->
+                    <div *ngIf="order.invoiceNumber || isPaid(order)" class="border-t border-[#f0f0f0] pt-4 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <ng-container *ngIf="order.invoiceNumber; else invoicePending">
+                        <div>
+                          <p class="text-sm font-semibold text-[#1d1d1f]">Tax invoice {{ order.invoiceNumber }}</p>
+                          <p *ngIf="order.invoiceDate" class="text-xs text-[#6e6e73] mt-0.5">Issued {{ order.invoiceDate | date:'mediumDate' }}</p>
+                        </div>
+                        <button type="button" (click)="downloadInvoice(order)" [disabled]="downloadingInvoiceId() === order.id"
+                                class="btn-outline !py-2 !px-4 text-sm whitespace-nowrap self-start sm:self-auto">
+                          {{ downloadingInvoiceId() === order.id ? 'Preparing…' : 'Download invoice' }}
+                        </button>
+                      </ng-container>
+                      <ng-template #invoicePending>
+                        <p class="text-sm text-[#6e6e73]">Your tax invoice will appear here shortly.</p>
+                      </ng-template>
                     </div>
 
                     <div class="border-t border-[#f0f0f0] pt-4 flex justify-between items-center">
@@ -461,6 +478,8 @@ export class AccountComponent implements OnInit {
   user = signal<User | null>(null);
   orders = signal<{ content: Order[] }>({ content: [] });
   loyalty = signal<{ points: number, tier: string }>({ points: 0, tier: 'Silver' });
+  /** Order whose invoice PDF is being fetched, so only that button shows progress. */
+  downloadingInvoiceId = signal<string | null>(null);
 
   // Address State
   isAddressModalOpen = signal(false);
@@ -667,6 +686,24 @@ export class AccountComponent implements OnInit {
       return item.product.name;
     }
     return 'Unknown Item';
+  }
+
+  /** Paid orders receive a tax invoice; the list says so until it is issued. */
+  isPaid(order: Order): boolean {
+    return isPaidOrder(order);
+  }
+
+  downloadInvoice(order: Order): void {
+    if (!order?.id || !order.invoiceNumber || this.downloadingInvoiceId()) return;
+    this.downloadingInvoiceId.set(order.id);
+    this.orderService.downloadInvoice(order.id, order.invoiceNumber).subscribe({
+      error: () => {
+        this.downloadingInvoiceId.set(null);
+        // GET failures stay silent in the error interceptor; say something here.
+        this.toastService.show('The invoice is not available yet. Please try again in a few minutes.', 'error');
+      },
+      complete: () => this.downloadingInvoiceId.set(null),
+    });
   }
 
   // Semantic tint layered over the neutral `badge` pill.

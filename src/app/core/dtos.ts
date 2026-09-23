@@ -33,13 +33,29 @@ export interface CreateOrderRequest {
   paymentMethod: string;
   shippingMethod: string;
   items: CartItem[];
-  total: number;
+  /** Never sent by the checkout: the server prices the order from its own cart. */
+  total?: number;
   paymentDetails?: {
     razorpay_payment_id: string;
     razorpay_order_id: string;
     razorpay_signature: string;
-  };
+  } | {};
+  /**
+   * Buyer tax identifiers (GST contract). Upper-cased and trimmed by the
+   * checkout. The server answers 400 with a `message` when the PAN is missing
+   * on a payable total of 2,00,000 INR or more (Income-tax Rule 114B), when
+   * cash on delivery is chosen at that level (Section 269ST), or when either
+   * value is malformed.
+   */
+  buyerGstin?: string;
+  buyerPan?: string;
 }
+
+/** Client-side format checks mirroring the server's (GST contract). */
+export const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+export const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+/** Payable total (INR, before gift card) from which a PAN is mandatory and COD is barred. */
+export const PAN_REQUIRED_FROM_INR = 200000;
 
 // Payment DTOs
 export interface CreateRazorpayOrderRequest {

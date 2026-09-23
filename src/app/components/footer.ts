@@ -96,6 +96,11 @@ import { environment } from "../../environments/environment";
               <p [innerHTML]="settings.address"></p>
               <p><a [href]="'tel:' + settings.phone" class="hover:text-[#1d1d1f]">{{ settings.phone }}</a></p>
               <p><a [href]="'mailto:' + settings.email" class="hover:text-[#1d1d1f]">{{ settings.email }}</a></p>
+              <!-- Registered entity and GSTIN (GST contract): shown only once the store has published them -->
+              <div *ngIf="settings.gstin" class="pt-1 space-y-1">
+                <p *ngIf="settings.legalName" class="text-[#7a7a7a]">{{ settings.legalName }}</p>
+                <p class="font-mono tracking-[0.05em] text-[#7a7a7a]">GSTIN: {{ settings.gstin }}</p>
+              </div>
             </div>
           </div>
 
@@ -135,7 +140,10 @@ export class FooterComponent implements OnInit {
           address: data?.companyAddress || this.env.companyAddress,
           facebookUrl: this.formatUrl(data?.companyFacebook || this.env.companyFacebook),
           instagramUrl: this.formatUrl(data?.companyInstagram || this.env.companyInstagram),
-          whatsappNumber: data?.whatsappNumber || this.env.whatsappNumber
+          whatsappNumber: data?.whatsappNumber || this.env.whatsappNumber,
+          // Public settings carry these once the admin fills in the tax-invoice section.
+          gstin: (data?.companyGstin || '').trim().toUpperCase(),
+          legalName: (data?.companyLegalName || '').trim(),
         };
         this.cdr.markForCheck();
       },
@@ -147,7 +155,9 @@ export class FooterComponent implements OnInit {
           address: this.env.companyAddress,
           facebookUrl: this.formatUrl(this.env.companyFacebook),
           instagramUrl: this.formatUrl(this.env.companyInstagram),
-          whatsappNumber: this.env.whatsappNumber
+          whatsappNumber: this.env.whatsappNumber,
+          gstin: '',
+          legalName: '',
         };
         this.cdr.markForCheck();
       }

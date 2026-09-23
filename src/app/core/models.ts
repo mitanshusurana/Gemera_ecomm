@@ -237,6 +237,35 @@ export interface Order {
   billingAddress?: string;
   paymentMethod?: string;
   shippingMethod?: string;
+
+  // Tax invoice and accounting (GST contract). All optional: older orders and
+  // unpaid orders have no invoice yet, and the ERP sync may never be queued.
+  /** Buyer GSTIN for a B2B invoice, as entered at checkout. */
+  buyerGstin?: string;
+  /** Buyer PAN; mandatory from the server for payable totals of 2,00,000 INR or more (Rule 114B). */
+  buyerPan?: string;
+  /** e.g. "WEB/2026-27/000123"; absent until the invoice is issued. */
+  invoiceNumber?: string;
+  /** ISO date or datetime the invoice was issued. */
+  invoiceDate?: string;
+  erpSyncStatus?: ErpSyncStatus | null;
+  /** The ERP's own document reference once SENT. */
+  erpReference?: string;
+  erpLastError?: string;
+  razorpayRefundId?: string;
+  /** Whole INR refunded through the gateway. */
+  refundedAmount?: number;
+}
+
+/** Whether the order has been pushed to the accounting ERP. */
+export type ErpSyncStatus = 'PENDING' | 'SENT' | 'FAILED';
+
+/** Order statuses for which a tax invoice is (or will be) issued. */
+export const INVOICED_ORDER_STATUSES = ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'] as const;
+
+/** True when the customer has paid and can expect a tax invoice. */
+export function isPaidOrder(order: Pick<Order, 'status'> | null | undefined): boolean {
+  return !!order && (INVOICED_ORDER_STATUSES as readonly string[]).includes(String(order.status || '').toUpperCase());
 }
 
 export interface OrderItem {

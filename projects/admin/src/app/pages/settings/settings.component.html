@@ -90,6 +90,49 @@
                 </div>
               </div>
 
+              <!-- Tax invoice (GST contract) -->
+              <div class="border-t border-ink dark:border-ink pt-6 mt-6">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+                  <h3 class="text-md font-bold text-ink dark:text-ink">Tax invoice</h3>
+                </div>
+                <p class="text-xs text-ink/70 mb-4">Printed on every tax invoice and shown in the storefront footer. The state code decides whether an order is charged CGST + SGST (same state) or IGST.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-2 md:col-span-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Registered legal name</label>
+                    <input formControlName="companyLegalName" placeholder="Caratloop Jewels Private Limited" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Company GSTIN</label>
+                    <input formControlName="companyGstin" (blur)="normaliseTaxField('companyGstin')" maxlength="15" placeholder="08ABCDE1234F1Z5" autocapitalize="characters" spellcheck="false"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <p *ngIf="fieldInvalid('companyGstin')" class="text-xs text-red-600">Enter a valid 15-character GSTIN.</p>
+                    <p *ngIf="!fieldInvalid('companyGstin') && gstinStateMismatch()" class="text-xs text-amber-700">The GSTIN starts with a different state code than the one selected below.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Company PAN</label>
+                    <input formControlName="companyPan" (blur)="normaliseTaxField('companyPan')" maxlength="10" placeholder="ABCDE1234F" autocapitalize="characters" spellcheck="false"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <p *ngIf="fieldInvalid('companyPan')" class="text-xs text-red-600">Enter a valid 10-character PAN.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Place of supply (GST state code)</label>
+                    <select formControlName="companyStateCode" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                      <option *ngFor="let s of gstStateCodes" [value]="s.code">{{ s.code }} &mdash; {{ s.name }}</option>
+                    </select>
+                    <p *ngIf="fieldInvalid('companyStateCode')" class="text-xs text-red-600">Choose the state the business is registered in.</p>
+                    <p *ngIf="!fieldInvalid('companyStateCode')" class="text-xs text-ink/60">Default 08 (Rajasthan).</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Invoice series prefix</label>
+                    <input formControlName="invoiceSeriesPrefix" (blur)="normaliseTaxField('invoiceSeriesPrefix')" maxlength="10" placeholder="WEB" autocapitalize="characters" spellcheck="false"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <p *ngIf="fieldInvalid('invoiceSeriesPrefix')" class="text-xs text-red-600">1 to 10 letters, digits or hyphens.</p>
+                    <p *ngIf="!fieldInvalid('invoiceSeriesPrefix')" class="text-xs text-ink/60">Invoices are numbered {{ settingsForm.get('invoiceSeriesPrefix')?.value || 'WEB' }}/2026-27/000001 and onwards. Changing it mid-year starts a new series.</p>
+                  </div>
+                </div>
+              </div>
+
               <div class="border-t border-ink dark:border-ink pt-6 mt-6">
                 <h3 class="text-md font-bold text-ink dark:text-ink mb-4">Currency Exchange Rates (Base 1 INR)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

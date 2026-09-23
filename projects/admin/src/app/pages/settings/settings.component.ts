@@ -5,6 +5,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SettingService } from '../../services/setting.service';
 import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
+import { DEFAULT_GST_STATE_CODE, GST_STATE_CODES, GSTIN_PATTERN, PAN_PATTERN } from '../../core/gst-state-codes';
+
+/** Default series prefix for web invoices: WEB/2026-27/000001. */
+const DEFAULT_INVOICE_SERIES_PREFIX = 'WEB';
 
 /**
  * Home-page keys from the API contract (section 1). Every one of these is a
@@ -62,8 +66,38 @@ export class SettingsComponent implements OnInit {
     // 100% is never valid.
     taxRateJewelry: ['0.03', [Validators.required, Validators.min(0), Validators.max(1)]],
     taxRateGemstones: ['0.0025', [Validators.required, Validators.min(0), Validators.max(1)]],
-    taxRateDefault: ['0.03', [Validators.required, Validators.min(0), Validators.max(1)]]
+    taxRateDefault: ['0.03', [Validators.required, Validators.min(0), Validators.max(1)]],
+    // Tax invoice (GST contract). The legal name, GSTIN and PAN print on every
+    // invoice; the state code decides CGST+SGST vs IGST and must match the
+    // GSTIN's first two digits; the prefix starts the invoice series.
+    companyLegalName: [''],
+    companyGstin: ['', [Validators.pattern(GSTIN_PATTERN)]],
+    companyPan: ['', [Validators.pattern(PAN_PATTERN)]],
+    companyStateCode: [DEFAULT_GST_STATE_CODE, [Validators.required, Validators.pattern(/^\d{2}$/)]],
+    invoiceSeriesPrefix: [DEFAULT_INVOICE_SERIES_PREFIX, [Validators.required, Validators.pattern(/^[A-Z0-9-]{1,10}$/)]],
   });
+
+  readonly gstStateCodes = GST_STATE_CODES;
+
+  fieldInvalid(control: string): boolean {
+    const c = this.settingsForm.get(control);
+    return !!c && c.invalid && (c.dirty || c.touched);
+  }
+
+  /** The GSTIN's first two digits are its state; flag a mismatch with the chosen state code. */
+  gstinStateMismatch(): boolean {
+    const gstin = String(this.settingsForm.get('companyGstin')?.value ?? '');
+    const state = String(this.settingsForm.get('companyStateCode')?.value ?? '');
+    return gstin.length === 15 && !!state && gstin.slice(0, 2) !== state;
+  }
+
+  /** Identifiers are stored the way they print: upper case, no spaces. */
+  normaliseTaxField(control: 'companyGstin' | 'companyPan' | 'invoiceSeriesPrefix') {
+    const c = this.settingsForm.get(control);
+    if (!c) return;
+    const next = String(c.value ?? '').toUpperCase().replace(/\s+/g, '');
+    if (next !== c.value) c.setValue(next);
+  }
 
   /**
    * Home-page card. Kept as a separate group because the keys contain dots,
@@ -122,6 +156,16 @@ export class SettingsComponent implements OnInit {
         if (settings) {
           this.settingsForm.patchValue(settings);
           this.patchHome(settings);
+          // Keys the API has not stored yet come back missing or empty; keep the defaults.
+          if (!String(this.settingsForm.get('companyStateCode')?.value ?? '').trim()) {
+            this.settingsForm.patchValue({ companyStateCode: DEFAULT_GST_STATE_CODE });
+          }
+          if (!String(this.settingsForm.get('invoiceSeriesPrefix')?.value ?? '').trim()) {
+            this.settingsForm.patchValue({ invoiceSeriesPrefix: DEFAULT_INVOICE_SERIES_PREFIX });
+          }
+          this.normaliseTaxField('companyGstin');
+          this.normaliseTaxField('companyPan');
+          this.normaliseTaxField('invoiceSeriesPrefix');
         }
       },
       error: (err) => console.error('Error loading settings', err)
@@ -205,6 +249,9 @@ export class SettingsComponent implements OnInit {
   }
 
   onSubmit() {
+    this.normaliseTaxField('companyGstin');
+    this.normaliseTaxField('companyPan');
+    this.normaliseTaxField('invoiceSeriesPrefix');
     if (this.settingsForm.invalid || this.homeForm.invalid || this.uploadingHero) {
       this.settingsForm.markAllAsTouched();
       this.homeForm.markAllAsTouched();

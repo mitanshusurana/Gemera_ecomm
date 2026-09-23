@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
-import { OrderService } from '../../services/order.service';
+import { AdminOrder, ErpSyncStatus, OrderService, saveBlobAs } from '../../services/order.service';
 
 /** A status-change button on the order detail page (OPERATIONS-CONTRACT §3). */
 interface OrderAction {
@@ -26,9 +26,14 @@ export class OrderDetailComponent implements OnInit {
   private orderService = inject(OrderService);
   private toastr = inject(ToastrService);
 
-  order: any = null;
+  order: AdminOrder | null = null;
   loading = true;
   busy = false;
+
+  /** Tax invoice PDF fetch in flight. */
+  downloadingInvoice = false;
+  /** POST /erp-sync in flight. */
+  syncingErp = false;
 
   /** Which inline form is open, if any. */
   panel: 'ship' | 'cancel' | null = null;
@@ -90,6 +95,12 @@ export class OrderDetailComponent implements OnInit {
     });
   }
 
+  /** Re-fetch the order after a mutation; callbacks cannot rely on `order` narrowing. */
+  private reload() {
+    const id = this.order?.id;
+    if (id) this.loadOrder(id);
+  }
+
   // -------------------------------------------------------------------
   // Derived display
   // -------------------------------------------------------------------
@@ -108,6 +119,37 @@ export class OrderDetailComponent implements OnInit {
   get giftCardAmount(): number {
     const n = Number(this.order?.giftCardAmount ?? 0);
     return Number.isFinite(n) ? n : 0;
+  }
+
+  /** Whole INR refunded through Razorpay, when any. */
+  get refundedAmount(): number {
+    const n = Number(this.order?.refundedAmount ?? 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  get hasRefund(): boolean {
+    return !!this.order?.razorpayRefundId || this.refundedAmount > 0;
+  }
+
+  /** Upper-cased ERP status, or null for "never queued". */
+  get erpStatus(): ErpSyncStatus | null {
+    const raw = this.order?.erpSyncStatus;
+    if (!raw) return null;
+    const s = String(raw).toUpperCase();
+    return s === 'PENDING' || s === 'SENT' || s === 'FAILED' ? s : null;
+  }
+
+  erpChipClass(): string {
+    switch (this.erpStatus) {
+      case 'PENDING': return 'bg-amber-100 text-amber-800';
+      case 'SENT': return 'bg-emerald-100 text-emerald-800';
+      case 'FAILED': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  }
+
+  erpChipLabel(): string {
+    return this.erpStatus ?? 'Not queued';
   }
 
   /** Statuses reachable from where the order is now: the DTO's list, else the static map. */
@@ -181,7 +223,7 @@ export class OrderDetailComponent implements OnInit {
         this.busy = false;
         this.panel = null;
         this.toastr.success('Order marked shipped; the customer has been emailed the tracking number.');
-        this.loadOrder(this.order.id);
+        this.reload();
       },
       error: (err) => {
         this.busy = false;
@@ -210,7 +252,7 @@ export class OrderDetailComponent implements OnInit {
         this.panel = null;
         this.cancelReason = '';
         this.toastr.success(`Order moved to ${status}.`, 'Status updated');
-        this.loadOrder(this.order.id);
+        this.reload();
       },
       error: (err) => {
         this.busy = false;
@@ -225,11 +267,58 @@ export class OrderDetailComponent implements OnInit {
     this.orderService.updateTrackingNumber(this.order.id, trackingNumber).subscribe({
       next: () => {
         this.toastr.success('Tracking number updated.');
-        this.loadOrder(this.order.id);
+        this.reload();
       },
       error: (err) => {
         console.error('Failed to update tracking', err);
         this.toastr.error('Tracking number was not saved. Please try again.');
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Tax invoice and ERP (GST contract)
+  // -------------------------------------------------------------------
+
+  downloadInvoice() {
+    if (!this.order?.invoiceNumber || this.downloadingInvoice) return;
+    const { id, invoiceNumber } = this.order;
+    this.downloadingInvoice = true;
+    this.orderService.downloadInvoice(id).subscribe({
+      next: (blob) => {
+        this.downloadingInvoice = false;
+        saveBlobAs(blob, `${invoiceNumber}.pdf`);
+      },
+      error: (err) => {
+        this.downloadingInvoice = false;
+        console.error('Failed to download invoice', err);
+        this.toastr.error(
+          err?.status === 404 ? 'No invoice has been issued for this order yet.' : 'The invoice could not be downloaded. Please try again.',
+          'Download failed'
+        );
+      }
+    });
+  }
+
+  syncToErp() {
+    if (!this.order || this.syncingErp) return;
+    this.syncingErp = true;
+    this.orderService.syncToErp(this.order.id).subscribe({
+      next: (updated) => {
+        this.syncingErp = false;
+        this.order = updated ?? this.order;
+        const status = String(updated?.erpSyncStatus ?? '').toUpperCase();
+        if (status === 'FAILED') {
+          this.toastr.error(updated?.erpLastError || 'The ERP rejected the order.', 'ERP sync failed');
+        } else {
+          this.toastr.success(status === 'SENT' ? 'Order posted to the ERP.' : 'ERP sync queued.');
+        }
+        this.reload();
+      },
+      error: (err) => {
+        this.syncingErp = false;
+        console.error('Failed to sync order to ERP', err);
+        this.toastr.error(err?.error?.message || 'The order was not sent to the ERP. Please try again.', 'ERP sync failed');
       }
     });
   }
@@ -239,7 +328,7 @@ export class OrderDetailComponent implements OnInit {
     this.orderService.updateNotes(this.order.id, notes).subscribe({
       next: () => {
         this.toastr.success('Notes saved.');
-        this.loadOrder(this.order.id);
+        this.reload();
       },
       error: (err) => {
         console.error('Failed to update notes', err);

@@ -33,6 +33,7 @@ export const routes: Routes = [
       { path: 'treasure', loadComponent: () => import('./pages/treasure-plans/treasure-plan-list.component').then(m => m.TreasurePlanListComponent) },
       { path: 'stores', loadComponent: () => import('./pages/stores/store-list.component').then(m => m.StoreListComponent) },
       { path: 'gift-cards', loadComponent: () => import('./pages/gift-cards/gift-card-list.component').then(m => m.GiftCardListComponent) },
+      { path: 'coupons', loadComponent: () => import('./pages/coupons/coupon-list.component').then(m => m.CouponListComponent) },
       { path: 'settings', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
       { path: 'logs', loadComponent: () => import('./pages/audit-logs/audit-log.component').then(m => m.AuditLogComponent) },
       { path: 'system-maintenance', loadComponent: () => import('./pages/system-maintenance/system-maintenance.component').then(m => m.SystemMaintenanceComponent) },

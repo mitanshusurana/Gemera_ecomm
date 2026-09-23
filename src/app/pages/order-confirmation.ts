@@ -3,7 +3,9 @@ import { CommonModule, NgOptimizedImage, isPlatformBrowser } from "@angular/comm
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
 import { AuthService } from "../services/auth.service";
+import { ToastService } from "../services/toast.service";
 import { maskGiftCardCode } from "../services/gift-card.service";
+import { isPaidOrder } from "../core/models";
 import { CurrencyConvertPipe } from "../pipes/currency-convert.pipe";
 import { environment } from "../../environments/environment";
 
@@ -87,6 +89,35 @@ import { environment } from "../../environments/environment";
                     Your order is being prepared for shipment. We'll notify you
                     when it ships.
                   </p>
+                </div>
+
+                <!-- Tax invoice (GST contract): issued once the order is paid -->
+                <div *ngIf="invoiceNumber() || isPaid()" class="border-t border-[#e0e0e0] pt-6">
+                  <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
+                    Tax invoice
+                  </h3>
+                  <div
+                    *ngIf="invoiceNumber(); else invoicePending"
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#f5f5f7] rounded-[12px] p-4"
+                  >
+                    <div>
+                      <p class="font-semibold text-[#1d1d1f]">Tax invoice {{ invoiceNumber() }}</p>
+                      <p *ngIf="invoiceDate()" class="text-sm text-[#6e6e73] mt-0.5">
+                        Issued {{ invoiceDate() | date: 'mediumDate' }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      (click)="downloadInvoice()"
+                      [disabled]="downloadingInvoice()"
+                      class="btn-apple-pill !py-2.5 !px-5 text-sm whitespace-nowrap"
+                    >
+                      {{ downloadingInvoice() ? 'Preparing…' : 'Download invoice' }}
+                    </button>
+                  </div>
+                  <ng-template #invoicePending>
+                    <p class="text-sm text-[#6e6e73]">Your tax invoice will appear here shortly.</p>
+                  </ng-template>
                 </div>
 
                 <!-- Estimated Delivery -->
@@ -349,6 +380,15 @@ export class OrderConfirmationComponent implements OnInit {
   orderNumber = signal("");
   estimatedDelivery = signal("");
   orderItems = signal<any[]>([]);
+
+  // Tax invoice (GST contract)
+  private orderId = signal("");
+  invoiceNumber = signal("");
+  invoiceDate = signal("");
+  /** Paid orders get an invoice; until it is issued the page says so. */
+  isPaid = signal(false);
+  downloadingInvoice = signal(false);
+  private toastService = inject(ToastService);
   shippingAddress = signal<any>({
     firstName: "",
     lastName: "",
@@ -410,6 +450,10 @@ export class OrderConfirmationComponent implements OnInit {
       next: (order) => {
         this.orderNumber.set(order.orderNumber || `ORD-${order.id?.substring(0, 8)}`);
         this.orderItems.set(order.items);
+        this.orderId.set(order.id);
+        this.invoiceNumber.set(order.invoiceNumber || "");
+        this.invoiceDate.set(order.invoiceDate || "");
+        this.isPaid.set(isPaidOrder(order));
 
         // Use what the server charged. This previously recomputed a subtotal
         // from the line items and applied 10% tax -- against a 3% cart -- so
@@ -449,6 +493,25 @@ export class OrderConfirmationComponent implements OnInit {
       error: () => {
         // Error loading order
       },
+    });
+  }
+
+  downloadInvoice(): void {
+    const id = this.orderId();
+    const number = this.invoiceNumber();
+    if (!id || !number || this.downloadingInvoice()) return;
+    this.downloadingInvoice.set(true);
+    this.orderService.downloadInvoice(id, number).subscribe({
+      next: () => this.downloadingInvoice.set(false),
+      error: () => {
+        this.downloadingInvoice.set(false);
+        // GET failures stay silent in the error interceptor; say something here.
+        this.toastService.show(
+          "The invoice is not available yet. Please try again in a few minutes.",
+          "error",
+        );
+      },
+      complete: () => this.downloadingInvoice.set(false),
     });
   }
 }

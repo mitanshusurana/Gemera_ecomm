@@ -68,6 +68,10 @@
         <span class="material-symbols-outlined text-xl">card_giftcard</span>
         Gift Cards
       </a>
+      <a routerLink="/coupons" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-xl">local_offer</span>
+        Coupons
+      </a>
       <a routerLink="/stores" routerLinkActive="!text-amber-400 !bg-slate-700/60" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-medium">
         <span class="material-symbols-outlined text-xl">storefront</span>
         Stores
@@ -135,8 +139,8 @@
 
       <!--
         The mobile bar stays at six items; Appointments, Inquiries, Customers,
-        Stores, Treasure Plans and System Maintenance are reached from the
-        desktop sidebar or by URL.
+        Coupons, Stores, Treasure Plans and System Maintenance are reached from
+        the desktop sidebar or by URL.
       -->
       <a routerLink="/appointments" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: false}" class="flex flex-1 flex-col items-center justify-center gap-1 text-ink dark:text-ink hover:text-primary transition-colors">
         <span class="material-symbols-outlined">event</span>

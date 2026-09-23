@@ -22,6 +22,7 @@ import { ToastService } from '../services/toast.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Address, Cart, CartItem } from '../core/models';
+import { CreateOrderRequest, GSTIN_PATTERN, PAN_PATTERN, PAN_REQUIRED_FROM_INR } from '../core/dtos';
 import { environment } from '../../environments/environment';
 import { COUNTRIES } from '../core/countries';
 
@@ -421,6 +422,73 @@ import { COUNTRIES } from '../core/countries';
                     </div>
                   </div>
 
+                  <!-- Billing details: optional tax identifiers for the invoice -->
+                  <div class="border-t border-[#e0e0e0] pt-6">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-1">
+                      Billing details
+                    </h3>
+                    <p class="text-sm text-[#6e6e73] mb-4">
+                      Optional. Add a GSTIN to receive a business tax invoice; your PAN is
+                      printed on the invoice where the law requires it.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label for="checkout-gstin" class="block text-sm font-semibold text-[#1d1d1f] mb-2">
+                          GSTIN <span class="font-normal text-[#6e6e73]">(for a business invoice)</span>
+                        </label>
+                        <input
+                          id="checkout-gstin"
+                          type="text"
+                          [ngModel]="buyerGstin()"
+                          (ngModelChange)="setBuyerGstin($event)"
+                          [ngModelOptions]="{standalone: true}"
+                          maxlength="15"
+                          autocomplete="off"
+                          autocapitalize="characters"
+                          spellcheck="false"
+                          placeholder="08ABCDE1234F1Z5"
+                          class="input-field font-mono uppercase tracking-[0.08em]"
+                          [attr.aria-invalid]="gstinError() ? 'true' : null"
+                          aria-describedby="checkout-gstin-help"
+                        />
+                        <p id="checkout-gstin-help" class="text-xs mt-1" [ngClass]="gstinError() ? 'text-red-600' : 'text-[#6e6e73]'">
+                          {{ gstinError() || '15 characters, as registered with GST.' }}
+                        </p>
+                      </div>
+                      <div>
+                        <label for="checkout-pan" class="block text-sm font-semibold text-[#1d1d1f] mb-2">
+                          PAN
+                          <span *ngIf="panRequired()" class="text-[#D4AF37]" aria-hidden="true">*</span>
+                          <span *ngIf="!panRequired()" class="font-normal text-[#6e6e73]">(optional)</span>
+                        </label>
+                        <input
+                          id="checkout-pan"
+                          type="text"
+                          [ngModel]="buyerPan()"
+                          (ngModelChange)="setBuyerPan($event)"
+                          [ngModelOptions]="{standalone: true}"
+                          maxlength="10"
+                          autocomplete="off"
+                          autocapitalize="characters"
+                          spellcheck="false"
+                          placeholder="ABCDE1234F"
+                          class="input-field font-mono uppercase tracking-[0.08em]"
+                          [required]="panRequired()"
+                          [attr.aria-invalid]="panError() ? 'true' : null"
+                          aria-describedby="checkout-pan-help"
+                        />
+                        <p id="checkout-pan-help" class="text-xs mt-1" [ngClass]="panError() ? 'text-red-600' : 'text-[#6e6e73]'">
+                          {{
+                            panError() ||
+                              (panRequired()
+                                ? 'Required by Income-tax Rule 114B for purchases of ₹2,00,000 or more'
+                                : '10 characters, e.g. ABCDE1234F.')
+                          }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="border-t border-[#e0e0e0] pt-6">
                     <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
                       Shipping Method
@@ -490,11 +558,13 @@ import { COUNTRIES } from '../core/countries';
                         </div>
                       </label>
                       <label
-                        class="flex items-center gap-3 p-4 border rounded-[12px] cursor-pointer transition-colors"
+                        class="flex items-center gap-3 p-4 border rounded-[12px] transition-colors"
                         [ngClass]="
-                          selectedPaymentMethod === 'COD'
-                            ? 'border-[#D4AF37] bg-[#fbf8ef]'
-                            : 'border-[#e0e0e0] hover:border-[#1d1d1f]'
+                          codBlocked()
+                            ? 'border-[#e0e0e0] bg-[#f5f5f7] cursor-not-allowed'
+                            : selectedPaymentMethod === 'COD'
+                              ? 'border-[#D4AF37] bg-[#fbf8ef] cursor-pointer'
+                              : 'border-[#e0e0e0] hover:border-[#1d1d1f] cursor-pointer'
                         "
                       >
                         <input
@@ -502,14 +572,19 @@ import { COUNTRIES } from '../core/countries';
                           name="paymentMethod"
                           value="COD"
                           [(ngModel)]="selectedPaymentMethod"
-                          class="w-4 h-4 accent-[#D4AF37]"
+                          [disabled]="codBlocked()"
+                          class="w-4 h-4 accent-[#D4AF37] disabled:cursor-not-allowed"
                         />
                         <div>
-                          <p class="font-semibold text-[#1d1d1f]">
+                          <p class="font-semibold" [ngClass]="codBlocked() ? 'text-[#7a7a7a]' : 'text-[#1d1d1f]'">
                             Cash on Delivery (COD)
                           </p>
                           <p class="text-sm text-[#6e6e73]">
-                            Pay when your order is delivered
+                            {{
+                              codBlocked()
+                                ? 'Cash on delivery is not available above ₹2,00,000 (Section 269ST)'
+                                : 'Pay when your order is delivered'
+                            }}
                           </p>
                         </div>
                       </label>
@@ -561,6 +636,16 @@ import { COUNTRIES } from '../core/countries';
                     </ng-template>
                   </div>
                 </div>
+              </div>
+
+              <!-- Server-side rejections (400 with a message) and tax-ID checks, inline next to the action -->
+              <div
+                *ngIf="orderError()"
+                role="alert"
+                class="flex items-start gap-3 p-4 border border-red-200 bg-red-50 rounded-[12px] text-sm text-red-700"
+              >
+                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" d="M12 8v4m0 4h.01" /></svg>
+                <p>{{ orderError() }}</p>
               </div>
 
               <div class="flex gap-4">
@@ -727,6 +812,54 @@ export class CheckoutComponent implements OnInit {
   isProcessing = signal(false);
   isRecovering = signal(false);
   pendingOrderData: any = null;
+
+  // ---- Tax identifiers (GST contract) --------------------------------------
+  /**
+   * Payable total before the gift card, in INR: what the summary shows as the
+   * order total and what Rule 114B / Section 269ST measure. A gift card does
+   * not lower the consideration for those rules, only how it is settled.
+   */
+  cartTotalBeforeGiftCard = signal(0);
+  payableTotal = computed(() =>
+    this.cartTotalBeforeGiftCard() || this.cartTotal() + this.cartGiftCardAmount(),
+  );
+  /** PAN is mandatory from 2,00,000 INR (Income-tax Rule 114B). */
+  panRequired = computed(() => this.payableTotal() >= PAN_REQUIRED_FROM_INR);
+  /** Cash above 2,00,000 INR is barred by Section 269ST, so COD is blocked at the same level. */
+  codBlocked = this.panRequired;
+
+  buyerGstin = signal('');
+  buyerPan = signal('');
+  /** Set on the first place-order attempt so "required" messages do not fire while typing. */
+  private taxIdsTouched = signal(false);
+
+  gstinError = computed(() => {
+    const v = this.buyerGstin();
+    if (!v) return '';
+    return GSTIN_PATTERN.test(v) ? '' : 'Enter a valid 15-character GSTIN (e.g. 08ABCDE1234F1Z5).';
+  });
+  panError = computed(() => {
+    const v = this.buyerPan();
+    if (!v) {
+      return this.panRequired() && this.taxIdsTouched()
+        ? 'PAN is required for purchases of ₹2,00,000 or more.'
+        : '';
+    }
+    return PAN_PATTERN.test(v) ? '' : 'Enter a valid 10-character PAN (e.g. ABCDE1234F).';
+  });
+
+  /** Inline message next to the place-order button: client checks or the server's 400 `message`. */
+  orderError = signal<string | null>(null);
+
+  setBuyerGstin(value: string) {
+    this.buyerGstin.set(normaliseTaxId(value));
+    this.orderError.set(null);
+  }
+
+  setBuyerPan(value: string) {
+    this.buyerPan.set(normaliseTaxId(value));
+    this.orderError.set(null);
+  }
   // Marketing consent. The previous flag (createAccountForGuest) was bound
   // to a checkbox and read nowhere, and it implied the account was optional
   // when the order cannot be placed without one. This governs the only part
@@ -878,6 +1011,89 @@ export class CheckoutComponent implements OnInit {
     this.cartDiscount.set(cart.appliedDiscount ?? cart.discount ?? 0);
     this.cartGiftCard.set(cart.appliedGiftCard || null);
     this.cartGiftCardAmount.set(cart.giftCardAmount || 0);
+    this.cartTotalBeforeGiftCard.set(Number(cart.totalBeforeGiftCard) || 0);
+    // A coupon removal or gift-card change can push the total over the cash
+    // limit while COD is already selected; fall back to the gateway.
+    if (this.codBlocked() && this.selectedPaymentMethod === 'COD') {
+      this.selectedPaymentMethod = 'RAZORPAY';
+    }
+  }
+
+  /**
+   * Client-side mirror of the server's tax-ID rules so the customer is told
+   * before paying rather than after. The server remains authoritative.
+   */
+  private validateTaxIds(): boolean {
+    this.taxIdsTouched.set(true);
+    if (this.panRequired() && !this.buyerPan()) {
+      this.orderError.set(
+        'A PAN is required for purchases of ₹2,00,000 or more (Income-tax Rule 114B). Please add it under Billing details.',
+      );
+      return false;
+    }
+    if (this.panError()) {
+      this.orderError.set(this.panError());
+      return false;
+    }
+    if (this.gstinError()) {
+      this.orderError.set(this.gstinError());
+      return false;
+    }
+    if (this.codBlocked() && this.selectedPaymentMethod === 'COD' && !this.isFullyCoveredByGiftCard()) {
+      this.orderError.set('Cash on delivery is not available above ₹2,00,000 (Section 269ST). Please pay online.');
+      return false;
+    }
+    this.orderError.set(null);
+    return true;
+  }
+
+  /**
+   * POST /orders body shared by the COD, gift-card and Razorpay flows. Address
+   * data excludes the email to match the backend DTO; cart item ids are
+   * dropped because guest carts carry random ones. `total` is deliberately
+   * not sent: the server prices the order from its own cart and never reads a
+   * client total, and sending one would imply it is authoritative.
+   */
+  private buildOrderData(
+    paymentMethod: 'COD' | 'GIFT_CARD' | 'RAZORPAY',
+    paymentDetails: CreateOrderRequest['paymentDetails'],
+  ): CreateOrderRequest {
+    const { email, ...shippingAddr } = this.shippingForm.value;
+    const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
+    const sanitizedItems = this.cartItems().map((item) => {
+      const { id, ...itemWithoutId } = item;
+      return itemWithoutId as CartItem;
+    });
+
+    const orderData: CreateOrderRequest = {
+      shippingAddress: shippingAddr,
+      billingAddress: billingAddr,
+      paymentMethod,
+      shippingMethod: 'EXPRESS',
+      items: sanitizedItems,
+      paymentDetails: paymentDetails ?? {},
+    };
+    if (this.buyerGstin()) orderData.buyerGstin = this.buyerGstin();
+    if (this.buyerPan()) orderData.buyerPan = this.buyerPan();
+    return orderData;
+  }
+
+  /**
+   * The server's own explanation for a 400 (missing PAN, COD over the cash
+   * limit, malformed GSTIN/PAN). Tolerates `message`, `error` and `detail`
+   * bodies; null for anything that is not a validation failure.
+   */
+  private rejectionMessage(err: unknown): string | null {
+    if (!(err instanceof HttpErrorResponse) || err.status !== 400) return null;
+    const body = err.error;
+    if (typeof body === 'string' && body.trim()) return body.trim();
+    if (body && typeof body === 'object') {
+      for (const key of ['message', 'error', 'detail'] as const) {
+        const value = (body as Record<string, unknown>)[key];
+        if (typeof value === 'string' && value.trim()) return value.trim();
+      }
+    }
+    return 'The order could not be placed. Please check your billing details and try again.';
   }
 
   selectAddress(address: Address) {
@@ -1049,6 +1265,8 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
+    if (!this.validateTaxIds()) return;
+
     this.isProcessing.set(true);
 
     // If using a new address and user is authenticated, save it to their profile
@@ -1093,36 +1311,23 @@ export class CheckoutComponent implements OnInit {
 
   /** Orders that do not go through the gateway: COD, or fully covered by a gift card. */
   private placeUnpaidOrder(paymentMethod: 'COD' | 'GIFT_CARD') {
-    // Sanitize address data to match Backend DTO (exclude email)
-    const { email, ...shippingAddr } = this.shippingForm.value;
-    const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
-
-    // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
-    const sanitizedItems = this.cartItems().map((item) => {
-      const { id, ...itemWithoutId } = item;
-      return itemWithoutId;
-    });
-
-    const orderData: any = {
-      shippingAddress: shippingAddr,
-      billingAddress: billingAddr,
-      paymentMethod,
-      shippingMethod: 'EXPRESS',
-      items: sanitizedItems,
-      // `total` is deliberately not sent. OrderService prices the order from
-      // the server-side cart (order.setTotal(cart.getTotal())) and never reads
-      // a client-supplied total. Sending one implies it is authoritative and
-      // invites someone to start trusting it.
-      paymentDetails: {}, // No gateway payment to reference
-    };
+    // No gateway payment to reference.
+    const orderData = this.buildOrderData(paymentMethod, {});
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
         sessionStorage.setItem('lastOrderId', order.id);
         this.router.navigate(['/order-confirmation']);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.isProcessing.set(false);
+        const rejection = this.rejectionMessage(err);
+        if (rejection) {
+          // The error interceptor has already toasted the API message; keep
+          // it on screen next to the button so it can be acted on.
+          this.orderError.set(rejection);
+          return;
+        }
         this.toastService.show(
           'Order placement failed. Please contact support.',
           'error',
@@ -1225,32 +1430,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   handlePaymentSuccess(response: Razorpay.PaymentSuccessResponse) {
-    // Sanitize address data to match Backend DTO (exclude email)
-    const { email, ...shippingAddr } = this.shippingForm.value;
-    const billingAddr = this.billingSameAsShipping ? shippingAddr : {};
-
-    // Map cart items to DTO (exclude random ids for guest cart or invalid uuids)
-    const sanitizedItems = this.cartItems().map((item) => {
-      const { id, ...itemWithoutId } = item;
-      return itemWithoutId;
+    const orderData = this.buildOrderData('RAZORPAY', {
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_signature: response.razorpay_signature,
     });
-
-    const orderData: any = {
-      shippingAddress: shippingAddr,
-      billingAddress: billingAddr,
-      paymentMethod: 'RAZORPAY',
-      shippingMethod: 'EXPRESS',
-      items: sanitizedItems,
-      // `total` is deliberately not sent. OrderService prices the order from
-      // the server-side cart (order.setTotal(cart.getTotal())) and never reads
-      // a client-supplied total. Sending one implies it is authoritative and
-      // invites someone to start trusting it.
-      paymentDetails: {
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_signature: response.razorpay_signature,
-      },
-    };
 
     this.orderService.createOrder(orderData).subscribe({
       next: (order) => {
@@ -1258,8 +1442,18 @@ export class CheckoutComponent implements OnInit {
         sessionStorage.setItem('lastOrderId', order.id);
         this.router.navigate(['/order-confirmation']);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.isProcessing.set(false);
+        const rejection = this.rejectionMessage(err);
+        if (rejection) {
+          // A validation rejection will not pass on retry with the same body,
+          // so do not enter the automatic recovery loop; show the reason and
+          // keep the payment reference for support.
+          this.orderError.set(
+            `${rejection} Your payment ${response.razorpay_payment_id} has been recorded; please contact support if the amount was debited.`,
+          );
+          return;
+        }
         this.toastService.show(
           'Payment successful but order placement failed. We saved your payment details, please try again.',
           'error',
@@ -1280,8 +1474,19 @@ export class CheckoutComponent implements OnInit {
         sessionStorage.setItem('lastOrderId', order.id);
         this.router.navigate(['/order-confirmation']);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.isProcessing.set(false);
+        const rejection = this.rejectionMessage(err);
+        if (rejection) {
+          // Retrying the same body cannot fix a validation error; leave
+          // recovery mode so the customer can see and correct the details.
+          sessionStorage.removeItem('pendingOrderData');
+          this.pendingOrderData = null;
+          this.isRecovering.set(false);
+          this.currentStep.set(2);
+          this.orderError.set(rejection);
+          return;
+        }
         this.toastService.show('Still unable to place order. Please contact support with your payment ID.', 'error');
       }
     });
@@ -1357,4 +1562,9 @@ export class CheckoutComponent implements OnInit {
       },
     });
   }
+}
+
+/** Upper-case, trim and strip inner whitespace: how PAN and GSTIN are printed. */
+function normaliseTaxId(value: unknown): string {
+  return String(value ?? '').toUpperCase().replace(/\s+/g, '').trim();
 }
