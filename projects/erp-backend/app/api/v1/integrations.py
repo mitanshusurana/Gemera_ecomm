@@ -24,7 +24,15 @@ person, and its postings must be attributable as such):
   debited, bank credited). The existing voucher credit note cannot be used
   here: it "settles" the invoice, which a fully paid invoice refuses.
 
-Both are idempotent on the shop's document numbers, so the storefront's
+* ``POST /integrations/ecommerce/old-gold-purchases`` -- old gold or silver
+  bought from a customer through the shop's exchange programme. Recorded as
+  a reverse-charge purchase from an unregistered person (the customer's
+  party, widened to Customer-and-Vendor). The customer is paid in store
+  credit, so the payable stays open until a later web sale carries an
+  ``exchange_credit``: the sale then nets the two on the party's single
+  ledger account and marks both documents settled by that amount.
+
+All three are idempotent on the shop's document numbers, so the storefront's
 retry queue can replay them safely.
 """
 from __future__ import annotations
@@ -42,6 +50,11 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.parties import CreatePartyRequest, create_party
+from app.api.v1.purchases import (
+    CreatePurchaseInvoiceRequest,
+    PurchaseLineRequest,
+    create_purchase_invoice,
+)
 from app.api.v1.sales import (
     CreateSalesInvoiceRequest,
     InvoiceLineRequest,
@@ -52,12 +65,14 @@ from app.api.v1.vouchers import (
     create_receipt,
     get_fy,
     post_journal,
+    settle_invoice,
 )
 from app.core.config import settings
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
 from app.core.security import hash_password
+from app.core.tenancy import resolve_uom
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.tax.gstin import STATE_NAMES
 from app.tax.job_work import JOB_WORK_SAC
@@ -110,6 +125,9 @@ class BridgeCustomer(BaseModel):
 class BridgeLine(BaseModel):
     description: str = Field(min_length=1)
     sku: Optional[str] = None
+    # ERP item master code. When set, the sale relieves that material's stock
+    # and posts cost of goods sold; unknown codes are ignored by sales.py.
+    material_code: Optional[str] = None
     hsn_sac_code: str = Field(min_length=2, max_length=8)
     quantity: Decimal = Field(default=Decimal("1"), gt=0)
     # Value after discount, before tax: the base the shop taxed.
@@ -132,6 +150,13 @@ class BridgePayment(BaseModel):
     date: Optional[date] = None
 
 
+class BridgeExchangeCredit(BaseModel):
+    """Part of a sale paid with old-gold exchange credit."""
+    amount: Decimal = Field(gt=0)
+    reference: str = Field(min_length=1, max_length=40)   # the exchange request number
+    purchase_ref: Optional[str] = None                     # this ledger's purchase bill number, if known
+
+
 class BridgeSaleRequest(BaseModel):
     external_ref: str = Field(min_length=1, max_length=40)
     invoice_no: str = Field(min_length=1, max_length=30)
@@ -143,6 +168,21 @@ class BridgeSaleRequest(BaseModel):
     other_charges: Decimal = Field(default=Decimal("0"), ge=0)
     totals: BridgeTotals
     payment: Optional[BridgePayment] = None
+    exchange_credit: Optional[BridgeExchangeCredit] = None
+
+
+class BridgeOldGoldPurchase(BaseModel):
+    external_ref: str = Field(min_length=1, max_length=40)   # exchange request number
+    purchase_date: date
+    customer: BridgeCustomer
+    metal: str = Field(pattern="^(GOLD|SILVER)$")
+    purity: Decimal = Field(gt=0, le=1)
+    gross_weight: Decimal = Field(gt=0)
+    net_weight: Decimal = Field(gt=0)
+    rate_per_gram: Decimal = Field(ge=0)
+    # What the customer is paid (in store credit), before any GST treatment.
+    value: Decimal = Field(gt=0)
+    description: str = Field(min_length=1, max_length=255)
 
 
 class BridgeCreditNoteRequest(BaseModel):
@@ -405,6 +445,142 @@ async def _post_receipt_if_due(
     return result.get("voucher_no")
 
 
+async def _net_exchange_credit(
+    db: AsyncSession, request: Request, user: dict, company_id: str,
+    party_id: str, invoice_id: str, invoice_no: str, credit: BridgeExchangeCredit,
+) -> Optional[str]:
+    """Settle a web sale with old-gold exchange credit.
+
+    The customer's party account already carries a credit from the old-gold
+    purchase and a debit from this sale, so the ledger nets itself. What the
+    ledger does not do on its own is mark the two documents settled, and the
+    day book would show no trace of the set-off; hence a zero-sum journal
+    voucher on the party account and a settlement of each document by the
+    credited amount. Returns the voucher number, or None when nothing was
+    left outstanding on the sale.
+    """
+    user_id = str(user["id"])
+    ip_address = request.client.host if request.client else "0.0.0.0"
+    reference_no = f"{invoice_no}/EXCH/{credit.reference}"[:50]
+
+    dup = await db.execute(
+        text(
+            "SELECT entry_no FROM caratloop.journal_entries WHERE company_id = CAST(:cid AS UUID) "
+            "AND entry_type = 'Journal' AND reference_no = :ref"
+        ),
+        {"cid": company_id, "ref": reference_no},
+    )
+    prior = dup.scalar()
+    if prior:
+        return prior
+
+    inv = await db.execute(
+        text(
+            "SELECT grand_total, amount_paid FROM caratloop.sales_invoices "
+            "WHERE id = CAST(:iid AS UUID) AND company_id = CAST(:cid AS UUID)"
+        ),
+        {"iid": invoice_id, "cid": company_id},
+    )
+    row = inv.mappings().first()
+    outstanding = (to_decimal(row["grand_total"]) - to_decimal(row["amount_paid"] or 0)).quantize(PAISA, ROUND_HALF_UP)
+    amount = min(to_decimal(credit.amount).quantize(PAISA, ROUND_HALF_UP), outstanding)
+    if amount <= 0:
+        return None
+
+    acc_res = await db.execute(
+        text("SELECT account_id FROM caratloop.parties WHERE id = CAST(:pid AS UUID) AND company_id = CAST(:cid AS UUID)"),
+        {"pid": party_id, "cid": company_id},
+    )
+    party_acc = acc_res.scalar()
+    if not party_acc:
+        raise HTTPException(status_code=400, detail="Customer has no ledger account; nothing was saved.")
+
+    await set_audit_context(db, user_id, "0", ip_address, f"Exchange credit {credit.reference} set off against {invoice_no}")
+    fy = await get_fy(db, company_id)
+    await settle_invoice(db, "sales_invoices", company_id, amount, invoice_id=invoice_id, party_id=party_id)
+    if credit.purchase_ref:
+        # The old-gold bill may already be partly set off by an earlier sale,
+        # or may carry a paise of rounding; settle what it still has.
+        pres = await db.execute(
+            text(
+                "SELECT id, grand_total, amount_paid FROM caratloop.purchase_invoices "
+                "WHERE company_id = CAST(:cid AS UUID) AND vendor_id = CAST(:pid AS UUID) "
+                "AND (bill_no = :ref OR vendor_inv_no = :ref) ORDER BY bill_date DESC LIMIT 1"
+            ),
+            {"cid": company_id, "pid": party_id, "ref": credit.purchase_ref.strip()},
+        )
+        prow = pres.mappings().first()
+        if prow:
+            p_out = (to_decimal(prow["grand_total"]) - to_decimal(prow["amount_paid"] or 0)).quantize(PAISA, ROUND_HALF_UP)
+            p_amt = min(amount, p_out)
+            if p_amt > 0:
+                await settle_invoice(db, "purchase_invoices", company_id, p_amt, invoice_id=prow["id"], party_id=party_id)
+        else:
+            logger.warning("Bridge: exchange purchase %s not found for party %s; sale %s settled by credit only",
+                           credit.purchase_ref, party_id, invoice_no)
+
+    narr = f"Old gold exchange credit {credit.reference} set off against {invoice_no}"
+    no_res = await db.execute(
+        text("SELECT 'JV/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+        {"fy": fy["year_label"]},
+    )
+    vno = no_res.scalar()
+    je_id = await post_journal(
+        db, company_id, str(fy["id"]), vno, date.today(), "Journal", narr,
+        reference_no, amount, user_id, ip_address, "0",
+        [
+            {"acc": str(party_acc), "dr": amount, "cr": 0, "narr": narr},
+            {"acc": str(party_acc), "dr": 0, "cr": amount, "narr": narr},
+        ],
+        ref_type="SalesInvoice", ref_id=invoice_id,
+    )
+    await assert_journal_balanced(db, je_id, context="exchange credit set-off")
+    await db.commit()
+    return vno
+
+
+def _old_metal_material_code(metal: str) -> str:
+    return (
+        settings.ECOMMERCE_OLD_SILVER_MATERIAL_CODE
+        if metal.upper() == "SILVER"
+        else settings.ECOMMERCE_OLD_GOLD_MATERIAL_CODE
+    )
+
+
+async def _ensure_old_metal_material(db: AsyncSession, company_id: str, user_id: str, metal: str) -> str:
+    """The item-master row old gold or silver is booked into, created on
+    first use in grams under HSN 7113 so a purchase never fails for want of
+    a master record the accountant did not know to create. The stock
+    account is left for the item master screen; a purchase that needs one
+    says so."""
+    code = _old_metal_material_code(metal)
+    res = await db.execute(
+        text("SELECT id FROM caratloop.materials WHERE company_id = CAST(:cid AS UUID) AND code = :code"),
+        {"cid": company_id, "code": code},
+    )
+    if res.scalar():
+        return code
+    uom_id = await resolve_uom(db, "gm")
+    is_silver = metal.upper() == "SILVER"
+    await db.execute(
+        text(
+            "INSERT INTO caratloop.materials (company_id, code, name, category, hsn_code, uom_id, "
+            " is_raw_material, is_finished_good, gst_tax_rate, description, created_by) "
+            "VALUES (CAST(:cid AS UUID), :code, :name, :cat, '7113', :uom, TRUE, FALSE, 3.00, :descr, CAST(:cb AS UUID))"
+        ),
+        {
+            "cid": company_id, "code": code,
+            "name": "Old silver (exchange)" if is_silver else "Old gold (exchange)",
+            "cat": "Old_Silver" if is_silver else "Old_Gold",
+            "uom": str(uom_id),
+            "descr": "Created by the storefront exchange bridge. Set a stock account before the first purchase posts.",
+            "cb": user_id,
+        },
+    )
+    await db.commit()
+    return code
+
+
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.post("/ecommerce/sales", dependencies=[Depends(require_api_key)])
@@ -434,16 +610,23 @@ async def record_ecommerce_sale(
     if row:
         receipt_no = None
         outstanding = to_decimal(row["grand_total"]) - to_decimal(row["amount_paid"] or 0)
+        setoff_no = None
         if payload.payment and outstanding > 0:
             receipt_no = await _post_receipt_if_due(
                 db, request, user, company_id, str(row["customer_id"]), str(row["id"]),
                 invoice_no, to_decimal(row["grand_total"]), payload.payment, payload.external_ref,
+            )
+        if payload.exchange_credit:
+            setoff_no = await _net_exchange_credit(
+                db, request, user, company_id, str(row["customer_id"]), str(row["id"]),
+                invoice_no, payload.exchange_credit,
             )
         return {
             "status": "success",
             "invoice_no": invoice_no,
             "invoice_id": str(row["id"]),
             "receipt_voucher_no": receipt_no,
+            "setoff_voucher_no": setoff_no,
             "already_recorded": True,
         }
 
@@ -472,6 +655,7 @@ async def record_ecommerce_sale(
             descr = f"{descr} [{ln.sku.strip()}]"
         lines.append(
             InvoiceLineRequest(
+                material_id=(ln.material_code or "").strip() or None,
                 hsn_sac_code=ln.hsn_sac_code.strip(),
                 description=descr[:255],
                 quantity=to_decimal(ln.quantity),
@@ -501,10 +685,15 @@ async def record_ecommerce_sale(
     erp_grand = to_decimal(str(result["tax_summary"]["grand_total"]))
 
     receipt_no = None
+    setoff_no = None
     if payload.payment:
         receipt_no = await _post_receipt_if_due(
             db, request, user, company_id, party_id, invoice_id, invoice_no,
             erp_grand, payload.payment, payload.external_ref,
+        )
+    if payload.exchange_credit:
+        setoff_no = await _net_exchange_credit(
+            db, request, user, company_id, party_id, invoice_id, invoice_no, payload.exchange_credit,
         )
 
     return {
@@ -513,7 +702,97 @@ async def record_ecommerce_sale(
         "invoice_id": invoice_id,
         "party_id": party_id,
         "receipt_voucher_no": receipt_no,
+        "setoff_voucher_no": setoff_no,
         "grand_total": str(erp_grand),
+    }
+
+
+@router.post("/ecommerce/old-gold-purchases", dependencies=[Depends(require_api_key)])
+async def record_old_gold_purchase(
+    payload: BridgeOldGoldPurchase,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    company_id = await _resolve_company(db)
+    user = await _service_user(db, company_id)
+    user_id = str(user["id"])
+    ref = payload.external_ref.strip()
+
+    existing = await db.execute(
+        text(
+            "SELECT id, bill_no FROM caratloop.purchase_invoices "
+            "WHERE company_id = CAST(:cid AS UUID) AND vendor_inv_no = :ref"
+        ),
+        {"cid": company_id, "ref": ref},
+    )
+    row = existing.mappings().first()
+    if row:
+        return {
+            "status": "success",
+            "purchase_invoice_no": row["bill_no"],
+            "purchase_id": str(row["id"]),
+            "already_recorded": True,
+        }
+
+    if payload.net_weight > payload.gross_weight:
+        raise HTTPException(status_code=422, detail="net_weight cannot exceed gross_weight.")
+
+    party_id = await _find_or_create_customer(db, request, user, company_id, payload.customer, ref)
+    # A customer who sells us metal is also a vendor; the party keeps its one
+    # ledger account (Sundry Debtors), which is what lets the later sale net.
+    pan = (payload.customer.pan or "").strip().upper() or None
+    await db.execute(
+        text(
+            "UPDATE caratloop.parties SET party_type = 'Both', is_old_gold_supplier = TRUE, "
+            "pan = COALESCE(:pan, pan) WHERE id = CAST(:pid AS UUID) AND company_id = CAST(:cid AS UUID)"
+        ),
+        {"pan": pan, "pid": party_id, "cid": company_id},
+    )
+    await db.commit()
+
+    material_code = await _ensure_old_metal_material(db, company_id, user_id, payload.metal)
+
+    seller_state = settings.COMPANY_STATE_CODE
+    pos = (payload.customer.state_code or "").strip() or seller_state
+    net = to_decimal(payload.net_weight)
+    value = to_decimal(payload.value).quantize(PAISA, ROUND_HALF_UP)
+    # Booked by weight so the stock ledger carries grams; the rate is derived
+    # so quantity x rate reproduces the value paid to within a paisa.
+    rate = (value / net).quantize(Decimal("0.0001"), ROUND_HALF_UP)
+
+    result = await create_purchase_invoice(
+        CreatePurchaseInvoiceRequest(
+            supplier_id=party_id,
+            invoice_date=payload.purchase_date,
+            supplier_invoice_no=ref,
+            place_of_supply=pos,
+            items=[
+                PurchaseLineRequest(
+                    material_id=material_code,
+                    description=payload.description[:200],
+                    quantity=float(net),
+                    gross_weight=float(payload.gross_weight),
+                    net_weight=float(net),
+                    purity=float(payload.purity),
+                    rate=float(rate),
+                    making_charges=0.0,
+                    hsn_code="7113",
+                    gst_rate=3.0,
+                )
+            ],
+            is_rcm=True,
+            reason=f"Old {payload.metal.lower()} bought from customer under exchange request {ref}",
+        ),
+        request,
+        db,
+        user,
+    )
+    return {
+        "status": "success",
+        "purchase_invoice_no": result["bill_no"],
+        "purchase_id": str(result["id"]),
+        "party_id": party_id,
+        "material_code": material_code,
     }
 
 

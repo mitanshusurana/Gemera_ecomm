@@ -753,11 +753,3 @@ async def export_hsn_summary(period: str, db: AsyncSession = Depends(get_db), cu
     rows = await _hsn_summary_rows(db, period, current_user["company_id"])
     return {"period": period, "table": "12", "hsn": rows}
 
-@router.post("/eway-bill", status_code=501)
-async def eway_bill(current_user: dict = Depends(get_current_user)):
-    """Not implemented: 501, and only for an authenticated caller.
-
-    The stub answered 200 to anyone, which made it a public endpoint that
-    looked like a working e-Way Bill service to any client probing it.
-    """
-    return {"status": "not_implemented", "message": "e-Way Bill provisions ready. Integration with NIC portal pending."}

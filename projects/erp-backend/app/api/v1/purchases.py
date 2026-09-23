@@ -16,6 +16,7 @@ from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
 from app.tax.purchase_tax import DEFAULT_RCM_RATE, PurchaseLineInput, PurchaseTotals, compute_purchase_totals
+from app.tax.tds_tcs import Withholding, has_valid_pan, tds_on_purchase
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
@@ -121,6 +122,96 @@ async def _post_rcm_liability(
     )
 
 
+async def _compute_tds(
+    db: AsyncSession,
+    *,
+    company_id,
+    fiscal_year_id,
+    supplier,
+    taxable_value,
+    amend_invoice_id: str | None,
+) -> Withholding | None:
+    """TDS s.194Q for this bill, or None when it does not apply.
+
+    Cumulative purchases from the supplier in the fiscal year are read from
+    the bills already on file (Draft, Approved or Posted -- anything not
+    cancelled counts towards the threshold). When a bill is being amended it
+    is excluded, because its own old value is about to be replaced.
+    """
+    if not settings.TDS_194Q_ENABLED or not supplier.get("tds_applicable"):
+        return None
+    if amend_invoice_id:
+        cum_res = await db.execute(
+            text(
+                "SELECT COALESCE(SUM(subtotal_value), 0) FROM caratloop.purchase_invoices "
+                "WHERE company_id = :cid AND vendor_id = :vid AND fiscal_year_id = :fyid "
+                "AND status <> 'Cancelled' AND id <> CAST(:exclude AS UUID)"
+            ),
+            {"cid": company_id, "vid": str(supplier["id"]), "fyid": str(fiscal_year_id), "exclude": amend_invoice_id},
+        )
+    else:
+        cum_res = await db.execute(
+            text(
+                "SELECT COALESCE(SUM(subtotal_value), 0) FROM caratloop.purchase_invoices "
+                "WHERE company_id = :cid AND vendor_id = :vid AND fiscal_year_id = :fyid "
+                "AND status <> 'Cancelled'"
+            ),
+            {"cid": company_id, "vid": str(supplier["id"]), "fyid": str(fiscal_year_id)},
+        )
+    tds = tds_on_purchase(
+        to_decimal(cum_res.scalar()),
+        taxable_value,
+        settings.TDS_194Q_THRESHOLD_INR,
+        settings.TDS_194Q_RATE,
+        has_pan=has_valid_pan(supplier.get("pan")),
+        no_pan_rate=settings.TDS_NO_PAN_RATE,
+        lower_pct=supplier.get("lower_deduction_pct"),
+    )
+    return tds if tds.applies else None
+
+
+async def _post_tds_register(
+    db: AsyncSession,
+    *,
+    company_id,
+    fiscal_year_id,
+    tds: Withholding,
+    supplier,
+    invoice_id,
+    bill_no: str,
+    bill_date: date,
+    user_id,
+) -> None:
+    """One row per bill in the TDS/TCS register (the Form 26Q feed)."""
+    await db.execute(
+        text("""
+            INSERT INTO caratloop.tds_tcs_register (
+                company_id, fiscal_year_id, kind, section, party_id,
+                document_type, document_id, document_no, document_date,
+                base_amount, rate, amount, pan, created_by
+            ) VALUES (
+                :cid, :fyid, 'TDS', :section, :party_id,
+                'PurchaseInvoice', CAST(:doc_id AS UUID), :doc_no, :doc_date,
+                :base, :rate, :amount, :pan, :cb
+            )
+        """),
+        {
+            "cid": company_id,
+            "fyid": str(fiscal_year_id),
+            "section": tds.section,
+            "party_id": str(supplier["id"]),
+            "doc_id": str(invoice_id),
+            "doc_no": bill_no,
+            "doc_date": bill_date,
+            "base": tds.base,
+            "rate": tds.rate,
+            "amount": tds.amount,
+            "pan": (str(supplier.get("pan") or "").strip().upper() or None),
+            "cb": user_id,
+        },
+    )
+
+
 def _as_uuid(value) -> str | None:
     """The value if it is a UUID, else None.
 
@@ -176,6 +267,7 @@ async def create_purchase_invoice(
     Post Purchase Invoice with Stock Inward Ledger, Party Ledger, and ITC Register entries.
     Handles statutory distinction between Registered Suppliers (ITC Eligible) and Unregistered Dealers (No GST/ITC [CGST Sec 9(4)]).
     """
+    amend_invoice_id: str | None = None
     user_id = str(current_user["id"])
     company_id = current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"
@@ -187,7 +279,7 @@ async def create_purchase_invoice(
         fy = await resolve_fiscal_year(db, company_id)
 
         supp_res = await db.execute(
-            text("SELECT id, name, trade_name, gstin, pan, state_code FROM caratloop.parties WHERE id = :id AND company_id = :cid LIMIT 1"),
+            text("SELECT id, name, trade_name, gstin, pan, state_code, tds_applicable, lower_deduction_pct, tds_pan_verified FROM caratloop.parties WHERE id = :id AND company_id = :cid LIMIT 1"),
             {"id": str(payload.supplier_id), "cid": company_id}
         )
         supplier = supp_res.mappings().first()
@@ -228,6 +320,22 @@ async def create_purchase_invoice(
         rcm_applicable = totals.rcm_applicable
         grand_total = totals.grand_total
 
+        # ─── TDS s.194Q ──────────────────────────────────────────────────────
+        # Deducted from what the supplier is paid, on the value before GST
+        # (circular 13/2021), once this year's purchases from them pass the
+        # threshold. grand_total stays the bill's face value; the supplier's
+        # credit is grand_total less the TDS, and the TDS is credited to the
+        # payable account until it is deposited.
+        tds = await _compute_tds(
+            db,
+            company_id=company_id,
+            fiscal_year_id=fy["id"],
+            supplier=supplier,
+            taxable_value=material_subtotal + making_subtotal,
+            amend_invoice_id=amend_invoice_id,
+        )
+        tds_amount = tds.amount if tds else to_decimal(0)
+
         bill_no_res = await db.execute(
             text("SELECT 'PI/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
             {"fy": fy['year_label']}
@@ -240,10 +348,12 @@ async def create_purchase_invoice(
                     company_id, fiscal_year_id, bill_no, vendor_inv_no, vendor_invoice_date, bill_date,
                     vendor_id, place_of_supply, attachment_url, is_old_gold_purchase, is_rcm_applicable,
                     subtotal_value, taxable_value, cgst_amount, sgst_amount, igst_amount,
-                    rcm_cgst, rcm_sgst, total_gst, grand_total, created_by
+                    rcm_cgst, rcm_sgst, total_gst, grand_total,
+                    tds_section, tds_rate, tds_base, tds_amount, created_by
                 ) VALUES (
                     :cid, :fyid, :bill, :vinv, :vdate, :date, :vid, :pos, :attach, :rcm, :rcm,
-                    :sub, :sub, :cgst, :sgst, :igst, :rcmc, :rcms, :tot_gst, :grand, :cb
+                    :sub, :sub, :cgst, :sgst, :igst, :rcmc, :rcms, :tot_gst, :grand,
+                    :tds_section, :tds_rate, :tds_base, :tds_amount, :cb
                 ) RETURNING id
             """),
             {
@@ -265,6 +375,10 @@ async def create_purchase_invoice(
                 "rcms": rcm_sgst,
                 "tot_gst": total_gst,
                 "grand": grand_total,
+                "tds_section": tds.section if tds else None,
+                "tds_rate": tds.rate if tds else None,
+                "tds_base": tds.base if tds else None,
+                "tds_amount": tds_amount,
                 "cb": user_id
             }
         )
@@ -458,9 +572,26 @@ async def create_purchase_invoice(
 
         await db.execute(
             text("INSERT INTO caratloop.journal_entry_lines (journal_entry_id, sequence_no, account_id, party_id, dr_amount, cr_amount, narration) VALUES (:jid, :seq, :aid, :pid, 0, :cr, 'Supplier Sundry Creditors Payable')"),
-            {"jid": je_id, "seq": seq, "aid": supp_acc_id, "pid": str(payload.supplier_id), "cr": grand_total}
+            {"jid": je_id, "seq": seq, "aid": supp_acc_id, "pid": str(payload.supplier_id), "cr": grand_total - tds_amount}
         )
         seq += 1
+
+        if tds_amount > 0:
+            tds_ins = await db.execute(
+                text(
+                    "INSERT INTO caratloop.journal_entry_lines "
+                    "(journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration) "
+                    "SELECT :jid, :seq, a.id, 0, :cr, 'TDS deducted — s.194Q' "
+                    "FROM caratloop.accounts a WHERE a.code = 'TDS-194Q' AND a.company_id = :cid"
+                ),
+                {"jid": je_id, "seq": seq, "cr": tds_amount, "cid": company_id},
+            )
+            if tds_ins.rowcount == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Chart of accounts is missing 'TDS-194Q' (TDS payable). Run migration 0007 or create it. No data was saved.",
+                )
+            seq += 1
 
         if rcm_applicable and (rcm_cgst + rcm_sgst) > 0:
             rcm_itc_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'ITC-004' AND company_id = :cid LIMIT 1"), {"cid": company_id})
@@ -532,6 +663,12 @@ async def create_purchase_invoice(
                 }
             )
 
+        if tds is not None:
+            await _post_tds_register(
+                db, company_id=company_id, fiscal_year_id=fy["id"], tds=tds, supplier=supplier,
+                invoice_id=invoice_id, bill_no=bill_no, bill_date=payload.invoice_date, user_id=user_id,
+            )
+
         # Catches the RCM case where ITC debit legs were posted while the
         # supplier credit excluded the tax.
         await assert_journal_balanced(db, je_id, context="purchase invoice journal entry")
@@ -566,6 +703,7 @@ async def update_purchase_invoice(
     Update an existing purchase invoice with complete stock & ledger reversal & re-sync.
     Handles statutory distinction between Registered Suppliers and Unregistered Dealers.
     """
+    amend_invoice_id: str | None = str(id)
     user_id = str(current_user["id"])
     company_id = current_user["company_id"]
     ip_address = request.client.host if request.client else "0.0.0.0"
@@ -591,7 +729,7 @@ async def update_purchase_invoice(
         # company's party as the supplier on their own invoice.
         supp_res = await db.execute(
             text(
-                "SELECT id, name, trade_name, gstin, pan, state_code FROM caratloop.parties "
+                "SELECT id, name, trade_name, gstin, pan, state_code, tds_applicable, lower_deduction_pct, tds_pan_verified FROM caratloop.parties "
                 "WHERE id = :id AND company_id = :cid LIMIT 1"
             ),
             {"id": str(payload.supplier_id), "cid": company_id}
@@ -639,6 +777,22 @@ async def update_purchase_invoice(
         rcm_applicable = totals.rcm_applicable
         grand_total = totals.grand_total
 
+        # ─── TDS s.194Q ──────────────────────────────────────────────────────
+        # Deducted from what the supplier is paid, on the value before GST
+        # (circular 13/2021), once this year's purchases from them pass the
+        # threshold. grand_total stays the bill's face value; the supplier's
+        # credit is grand_total less the TDS, and the TDS is credited to the
+        # payable account until it is deposited.
+        tds = await _compute_tds(
+            db,
+            company_id=company_id,
+            fiscal_year_id=fy["id"],
+            supplier=supplier,
+            taxable_value=material_subtotal + making_subtotal,
+            amend_invoice_id=amend_invoice_id,
+        )
+        tds_amount = tds.amount if tds else to_decimal(0)
+
         upd_res = await db.execute(
             text("""
                 UPDATE caratloop.purchase_invoices
@@ -654,6 +808,10 @@ async def update_purchase_invoice(
                     igst_amount = :igst,
                     total_gst = :tot_gst,
                     grand_total = :grand,
+                    tds_section = :tds_section,
+                    tds_rate = :tds_rate,
+                    tds_base = :tds_base,
+                    tds_amount = :tds_amount,
                     -- The status is derived from what has been paid against
                     -- the NEW total; re-deriving here keeps it coherent after
                     -- an amendment instead of letting it go stale.
@@ -681,7 +839,11 @@ async def update_purchase_invoice(
                 "sgst": total_sgst,
                 "igst": total_igst,
                 "tot_gst": total_gst,
-                "grand": grand_total
+                "grand": grand_total,
+                "tds_section": tds.section if tds else None,
+                "tds_rate": tds.rate if tds else None,
+                "tds_base": tds.base if tds else None,
+                "tds_amount": tds_amount,
             }
         )
         if upd_res.rowcount == 0:
@@ -703,6 +865,10 @@ async def update_purchase_invoice(
         await db.execute(text("DELETE FROM caratloop.stock_ledger_entries WHERE source_document_id::text = :pid AND source_document_type = 'PurchaseInvoice'"), {"pid": str(id)})
         await db.execute(text("DELETE FROM caratloop.itc_register WHERE invoice_id::text = :pid"), {"pid": str(id)})
         await db.execute(text("DELETE FROM caratloop.rcm_liability_register WHERE purchase_invoice_id::text = :pid"), {"pid": str(id)})
+        await db.execute(
+            text("DELETE FROM caratloop.tds_tcs_register WHERE document_type = 'PurchaseInvoice' AND document_id = CAST(:pid AS UUID)"),
+            {"pid": str(id)},
+        )
 
         # Delete previous double-entry journals
         await db.execute(text("DELETE FROM caratloop.journal_entry_lines WHERE journal_entry_id IN (SELECT id FROM caratloop.journal_entries WHERE reference_id::text = :pid AND reference_type = 'PurchaseInvoice')"), {"pid": str(id)})
@@ -898,9 +1064,26 @@ async def update_purchase_invoice(
 
         await db.execute(
             text("INSERT INTO caratloop.journal_entry_lines (journal_entry_id, sequence_no, account_id, party_id, dr_amount, cr_amount, narration) VALUES (:jid, :seq, :aid, :pid, 0, :cr, 'Supplier Sundry Creditors Payable')"),
-            {"jid": je_id, "seq": seq, "aid": supp_acc_id, "pid": str(payload.supplier_id), "cr": grand_total}
+            {"jid": je_id, "seq": seq, "aid": supp_acc_id, "pid": str(payload.supplier_id), "cr": grand_total - tds_amount}
         )
         seq += 1
+
+        if tds_amount > 0:
+            tds_ins = await db.execute(
+                text(
+                    "INSERT INTO caratloop.journal_entry_lines "
+                    "(journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration) "
+                    "SELECT :jid, :seq, a.id, 0, :cr, 'TDS deducted — s.194Q' "
+                    "FROM caratloop.accounts a WHERE a.code = 'TDS-194Q' AND a.company_id = :cid"
+                ),
+                {"jid": je_id, "seq": seq, "cr": tds_amount, "cid": company_id},
+            )
+            if tds_ins.rowcount == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Chart of accounts is missing 'TDS-194Q' (TDS payable). Run migration 0007 or create it. No data was saved.",
+                )
+            seq += 1
 
         if rcm_applicable and (rcm_cgst + rcm_sgst) > 0:
             rcm_itc_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'ITC-004' AND company_id = :cid LIMIT 1"), {"cid": company_id})
@@ -972,6 +1155,12 @@ async def update_purchase_invoice(
                 }
             )
 
+        if tds is not None:
+            await _post_tds_register(
+                db, company_id=company_id, fiscal_year_id=fy["id"], tds=tds, supplier=supplier,
+                invoice_id=id, bill_no=bill_no, bill_date=payload.invoice_date, user_id=user_id,
+            )
+
         await assert_journal_balanced(db, je_id, context="revised purchase invoice journal entry")
 
         await db.commit()
@@ -1009,6 +1198,7 @@ async def list_purchases(
             pi.id, pi.bill_no, pi.vendor_inv_no, pi.vendor_invoice_date, pi.bill_date,
             pi.vendor_id, pi.subtotal_value, pi.total_gst, pi.cgst_amount, pi.sgst_amount, pi.igst_amount,
             pi.grand_total, pi.place_of_supply, pi.attachment_url, pi.is_rcm_applicable,
+            pi.tds_section, pi.tds_rate, pi.tds_base, pi.tds_amount,
             p.name AS vendor_name, p.trade_name AS vendor_trade_name, p.gstin AS vendor_gstin, p.address_line1, p.city
         FROM caratloop.purchase_invoices pi
         LEFT JOIN caratloop.parties p ON p.id = pi.vendor_id

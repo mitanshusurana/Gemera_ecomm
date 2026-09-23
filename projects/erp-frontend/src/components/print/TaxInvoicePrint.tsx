@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
+
 import { formatCurrency } from '@/lib/utils';
 import { Printer, X } from 'lucide-react';
 
@@ -17,6 +20,22 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
   // It then read invoice.company, which nothing populated, so every invoice
   // went out headed "COMPANY NOT CONFIGURED". The company master is the source.
   const { company: masterCompany } = useCompany();
+
+  // Rule 48(4): a B2B invoice above the mandate carries the IRP's IRN and its
+  // signed QR. The QR text is the IRP's JWS; it is rendered as an image so a
+  // GST officer's app can scan it. Rendering is async, hence the state.
+  const irn: string | null = invoice?.e_invoice_status === 'Generated' ? invoice?.e_invoice_irn || null : null;
+  const qrText: string | null = irn ? invoice?.e_invoice_qr_code || null : null;
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!qrText) { setQrDataUrl(null); return; }
+    QRCode.toDataURL(qrText, { margin: 0, width: 220, errorCorrectionLevel: 'M' })
+      .then((url) => { if (!cancelled) setQrDataUrl(url); })
+      .catch((err) => { console.error('QR render failed', err); if (!cancelled) setQrDataUrl(null); });
+    return () => { cancelled = true; };
+  }, [qrText]);
+
   if (!invoice) return null;
 
   const company = invoice.company || masterCompany || {};
@@ -45,7 +64,8 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
   const subtotalMaking = Number(invoice.subtotal_making_charges || 0);
   const totalTaxable = subtotalMaterial + subtotalMaking;
   const totalGst = Number(invoice.total_gst || 0);
-  const grandTotal = Number(invoice.grand_total || (totalTaxable + totalGst));
+  const tcsAmount = Number(invoice.tcs_amount || 0);
+  const grandTotal = Number(invoice.grand_total || (totalTaxable + totalGst + tcsAmount));
   const isInterState = invoice.is_inter_state || false;
 
   return (
@@ -123,6 +143,31 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
               <p className="text-xs">Payment Terms: {invoice.payment_terms || 'Immediate'}</p>
             </div>
           </div>
+
+          {/* e-Invoice: IRN, acknowledgement and signed QR [Rule 48(4)] */}
+          {irn && (
+            <div className="flex items-center justify-between gap-4 border border-black p-3 rounded-sm">
+              <div className="text-xs space-y-1 min-w-0">
+                <p className="font-bold uppercase text-gray-700">e-Invoice</p>
+                <p className="font-mono break-all"><strong>IRN:</strong> {irn}</p>
+                <p className="font-mono">
+                  <strong>Ack No:</strong> {invoice.e_invoice_ack_no || '—'}
+                  {'  '}<strong className="ml-3">Ack Date:</strong>{' '}
+                  {invoice.e_invoice_ack_date ? new Date(invoice.e_invoice_ack_date).toLocaleString('en-IN') : '—'}
+                </p>
+                {invoice.eway_bill_no && (
+                  <p className="font-mono"><strong>e-Way Bill:</strong> {invoice.eway_bill_no}
+                    {invoice.eway_bill_valid_upto ? ` (valid till ${new Date(invoice.eway_bill_valid_upto).toLocaleDateString('en-IN')})` : ''}
+                  </p>
+                )}
+              </div>
+              <div className="shrink-0 w-24 h-24 flex items-center justify-center border border-gray-300">
+                {qrDataUrl
+                  ? <img src={qrDataUrl} alt="Signed e-invoice QR" className="w-24 h-24" />
+                  : <span className="text-[9px] text-gray-500 text-center px-1">{qrText ? 'Rendering QR…' : 'Signed QR not on record'}</span>}
+              </div>
+            </div>
+          )}
 
           {/* Customer Details */}
           <div className="grid grid-cols-2 gap-4 border border-black p-4 rounded-sm bg-gray-50">
@@ -237,6 +282,12 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
                 <div className="flex justify-between text-gray-700">
                   <span>IGST:</span>
                   <span>{formatCurrency(totalGst)}</span>
+                </div>
+              )}
+              {tcsAmount > 0 && (
+                <div className="flex justify-between text-gray-700">
+                  <span>TCS u/s 206C(1H){invoice.tcs_rate ? ` @ ${Number(invoice.tcs_rate)}%` : ''}:</span>
+                  <span>{formatCurrency(tcsAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between border-t border-black pt-1 text-sm font-bold">

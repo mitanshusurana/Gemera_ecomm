@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import QRCode from 'qrcode';
 
 /**
  * Printed where a required particular is absent.
@@ -21,12 +22,26 @@ const formatPdfMoney = (val: number | string) => {
 };
 
 // ─── 1. GST TAX INVOICE [CGST Rule 46] ────────────────────────────────────────
-export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print' = 'download', companyArg?: any) => {
+// Async because the signed e-invoice QR is rendered to a PNG first. Callers
+// that do not await still get the file: the promise resolves after save().
+export const generateTaxInvoicePDF = async (invoice: any, action: 'download' | 'print' = 'download', companyArg?: any) => {
   // The on-screen preview was corrected to read the company master; this
   // engine still printed a literal seller, a placeholder GSTIN
   // (08AAACC1234F1Z9) and a bank account belonging to nobody. Same source
   // now: the invoice detail carries the company, or the caller passes it.
   const company = companyArg || invoice.company || {};
+
+  // Rule 48(4): IRN, acknowledgement and the IRP's signed QR, when generated.
+  const irn: string | null = invoice.e_invoice_status === 'Generated' ? invoice.e_invoice_irn || null : null;
+  let qrPng: string | null = null;
+  if (irn && invoice.e_invoice_qr_code) {
+    try {
+      qrPng = await QRCode.toDataURL(String(invoice.e_invoice_qr_code), { margin: 0, width: 300, errorCorrectionLevel: 'M' });
+    } catch (err) {
+      console.error('QR render failed', err);
+    }
+  }
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -125,6 +140,42 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
 
   y += 26;
 
+  // e-Invoice block: IRN and acknowledgement on the left, signed QR on the right.
+  if (irn) {
+    const blockH = 26;
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(210, 200, 180);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(10, y, width - 20, blockH, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(110, 110, 110);
+    doc.text('E-INVOICE [RULE 48(4)]', 13, y + 5);
+
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(30, 30, 30);
+    const irnLines = doc.splitTextToSize(`IRN: ${irn}`, width - 60);
+    doc.text(irnLines, 13, y + 10);
+    const ackDt = invoice.e_invoice_ack_date ? new Date(invoice.e_invoice_ack_date).toLocaleString('en-IN') : '—';
+    doc.text(`Ack No: ${invoice.e_invoice_ack_no || '—'}    Ack Date: ${ackDt}`, 13, y + 17);
+    if (invoice.eway_bill_no) {
+      const valid = invoice.eway_bill_valid_upto ? ` (valid till ${new Date(invoice.eway_bill_valid_upto).toLocaleDateString('en-IN')})` : '';
+      doc.text(`e-Way Bill: ${invoice.eway_bill_no}${valid}`, 13, y + 22);
+    }
+    doc.setFont('helvetica', 'normal');
+
+    if (qrPng) {
+      doc.addImage(qrPng, 'PNG', width - 10 - 23, y + 1.5, 23, 23);
+    } else {
+      doc.setFontSize(6);
+      doc.setTextColor(120, 120, 120);
+      doc.text('Signed QR not on record', width - 13, y + 13, { align: 'right' });
+    }
+    y += blockH + 4;
+  }
+
   // Line Items Table
   // No invented line. With no lines this printed "22K Gold Bangle / Ornament,
   // HSN 71131910, 10 g, 50,000 + 2,500" -- a fabricated item on a tax invoice.
@@ -186,18 +237,21 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
   y = (doc as any).lastAutoTable.finalY + 6;
 
   // Tax Summary & Bank Details Side-by-Side
-  const matTotal = parseFloat(invoice.subtotal_material_value || invoice.taxable_material_value || 50000);
-  const makTotal = parseFloat(invoice.subtotal_making_charges || invoice.taxable_making_value || 2500);
+  // No invented totals: a missing figure prints as zero, not as a sample value.
+  const matTotal = parseFloat(invoice.subtotal_material_value || invoice.taxable_material_value || 0);
+  const makTotal = parseFloat(invoice.subtotal_making_charges || invoice.taxable_making_value || 0);
   const totalTaxable = matTotal + makTotal;
-  const totalGst = parseFloat(invoice.total_gst || 1625);
-  const grandTotal = parseFloat(invoice.grand_total || (totalTaxable + totalGst));
+  const totalGst = parseFloat(invoice.total_gst || 0);
+  const tcsAmount = parseFloat(invoice.tcs_amount || 0);
+  const grandTotal = parseFloat(invoice.grand_total || (totalTaxable + totalGst + tcsAmount));
   const isInterState = invoice.is_inter_state || false;
+  const boxH = 34 + (tcsAmount > 0 ? 5 : 0);
 
   // Bank Box (Left)
   doc.setLineWidth(0.3);
   doc.setDrawColor(210, 200, 180);
   doc.setFillColor(253, 251, 247);
-  doc.rect(10, y, 95, 34, 'FD');
+  doc.rect(10, y, 95, boxH, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
@@ -222,7 +276,7 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
 
   // Totals Box (Right)
   doc.setFillColor(253, 251, 247);
-  doc.rect(110, y, width - 120, 34, 'FD');
+  doc.rect(110, y, width - 120, boxH, 'FD');
   let ty = y + 6;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -248,6 +302,12 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
     ty += 5;
   }
 
+  if (tcsAmount > 0) {
+    doc.text(`TCS u/s 206C(1H)${invoice.tcs_rate ? ' @ ' + Number(invoice.tcs_rate) + '%' : ''}:`, 113, ty);
+    doc.text(formatPdfMoney(tcsAmount), width - 13, ty, { align: 'right' });
+    ty += 5;
+  }
+
   doc.setLineWidth(0.4);
   doc.line(113, ty - 1, width - 13, ty - 1);
   doc.setFont('helvetica', 'bold');
@@ -256,7 +316,7 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
   doc.text('Grand Total Payable:', 113, ty + 3);
   doc.text(formatPdfMoney(grandTotal), width - 13, ty + 3, { align: 'right' });
 
-  y += 40;
+  y += boxH + 6;
 
   // Footer Signatory
   doc.setLineWidth(0.2);

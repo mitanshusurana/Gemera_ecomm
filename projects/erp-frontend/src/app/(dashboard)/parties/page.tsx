@@ -41,6 +41,12 @@ export default function PartiesPage() {
     credit_days: 30,
     opening_balance: 0,
     opening_bal_type: 'Dr',
+    // TDS s.194Q (we deduct on purchases from them), TCS s.206C(1H) (we
+    // collect on sales to them), s.197 lower-deduction certificate rate.
+    tds_applicable: false,
+    tcs_applicable: false,
+    lower_deduction_pct: '' as string | number,
+    tds_pan_verified: false,
     kyc_documents: {
       pan_card: '',
       gst_cert: '',
@@ -150,6 +156,10 @@ export default function PartiesPage() {
       credit_days: 30,
       opening_balance: 0,
       opening_bal_type: 'Dr',
+      tds_applicable: false,
+      tcs_applicable: false,
+      lower_deduction_pct: '',
+      tds_pan_verified: false,
       kyc_documents: {
         pan_card: '',
         gst_cert: '',
@@ -184,6 +194,10 @@ export default function PartiesPage() {
       credit_days: Number(party.credit_days || 30),
       opening_balance: Number(party.opening_balance || 0),
       opening_bal_type: party.opening_bal_type || 'Dr',
+      tds_applicable: Boolean(party.tds_applicable),
+      tcs_applicable: Boolean(party.tcs_applicable),
+      lower_deduction_pct: party.lower_deduction_pct === null || party.lower_deduction_pct === undefined ? '' : Number(party.lower_deduction_pct),
+      tds_pan_verified: Boolean(party.tds_pan_verified),
       kyc_documents: party.kyc_documents || {
         pan_card: '',
         gst_cert: '',
@@ -216,10 +230,16 @@ export default function PartiesPage() {
     setSaving(true);
     setError('');
     try {
+      // An empty certificate field means "no certificate held", i.e. null,
+      // not 0% (which would be a nil-deduction certificate).
+      const body = {
+        ...formData,
+        lower_deduction_pct: formData.lower_deduction_pct === '' ? null : Number(formData.lower_deduction_pct),
+      };
       if (editingPartyId) {
-        await partiesApi.update(editingPartyId, formData);
+        await partiesApi.update(editingPartyId, body);
       } else {
-        await partiesApi.create(formData);
+        await partiesApi.create(body);
       }
       setIsDrawerOpen(false);
       fetchParties();
@@ -817,12 +837,77 @@ export default function PartiesPage() {
                 </div>
                 <div>
                   <label className="block text-sm text-textSecondary mb-1">Credit Days</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
                     value={formData.credit_days}
                     onChange={(e) => setFormData({ ...formData, credit_days: Number(e.target.value) })}
                   />
+                </div>
+              </div>
+
+              {/* TDS / TCS on trade [s.194Q, s.206C(1H)] */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-white">Tax withheld on trade</p>
+                  <p className="text-xs text-textSecondary">
+                    Applies only once our turnover crossed Rs 10 crore and the setting is on; then on the value above Rs 50 lakh per party per year.
+                    No PAN on record means the higher rate (s.206AA / s.206CC).
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <label className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-primary"
+                      checked={formData.tds_applicable}
+                      onChange={(e) => setFormData({ ...formData, tds_applicable: e.target.checked })}
+                    />
+                    <span>
+                      <span className="block text-sm text-white">Deduct TDS u/s 194Q on purchases</span>
+                      <span className="block text-xs text-textSecondary">We buy from this party; 0.1% above the threshold is withheld from what we pay them.</span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-primary"
+                      checked={formData.tcs_applicable}
+                      onChange={(e) => setFormData({ ...formData, tcs_applicable: e.target.checked })}
+                    />
+                    <span>
+                      <span className="block text-sm text-white">Collect TCS u/s 206C(1H) on sales</span>
+                      <span className="block text-xs text-textSecondary">We sell to this party; 0.1% above the threshold is added to their invoice.</span>
+                    </span>
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-textSecondary mb-1">Lower-deduction certificate (s.197) %</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      placeholder="None held"
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                      value={formData.lower_deduction_pct}
+                      onChange={(e) => setFormData({ ...formData, lower_deduction_pct: e.target.value === '' ? '' : Number(e.target.value) })}
+                    />
+                    <p className="text-[11px] text-textSecondary mt-1">Leave blank when no certificate is held. 0 = nil-deduction certificate.</p>
+                  </div>
+                  <label className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background cursor-pointer self-end">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-primary"
+                      checked={formData.tds_pan_verified}
+                      onChange={(e) => setFormData({ ...formData, tds_pan_verified: e.target.checked })}
+                    />
+                    <span>
+                      <span className="block text-sm text-white">PAN verified</span>
+                      <span className="block text-xs text-textSecondary">Checked against the department's PAN database.</span>
+                    </span>
+                  </label>
                 </div>
               </div>
 

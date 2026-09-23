@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
+from app.core.config import settings
 from app.core.database import get_db
 from decimal import Decimal
 
@@ -639,6 +640,92 @@ async def get_gst_tax_register(
             "total_rcm_liability": tot_rcm_tax,
             "net_payable_cash": max(0.0, tot_output_tax - tot_itc_tax) + tot_rcm_tax
         }
+    }
+
+
+@router.get("/tds-tcs-register")
+async def get_tds_tcs_register(
+    kind: Optional[str] = Query(default=None, description="TDS or TCS; both when omitted"),
+    from_date: Optional[date] = Query(default=None, alias="from"),
+    to_date: Optional[date] = Query(default=None, alias="to"),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Tax deducted on purchases (s.194Q) and collected on sales (s.206C(1H)).
+
+    One row per document, with the party's PAN, so the quarterly Form 26Q
+    (TDS) and 27EQ (TCS) can be prepared from it. Totals are by kind and by
+    party. Dates default to the current financial year.
+    """
+    cid = current_user["company_id"]
+    if not to_date:
+        to_date = date.today()
+    if not from_date:
+        from_date = date(to_date.year if to_date.month >= 4 else to_date.year - 1, 4, 1)
+
+    kind_filter = (kind or "").strip().upper() or None
+    if kind_filter and kind_filter not in {"TDS", "TCS"}:
+        raise HTTPException(status_code=422, detail="kind must be TDS or TCS")
+
+    query = """
+        SELECT
+            r.id, r.kind, r.section, r.document_type, r.document_id, r.document_no, r.document_date,
+            r.base_amount, r.rate, r.amount, r.pan,
+            p.id AS party_id, p.name AS party_name, p.gstin AS party_gstin,
+            p.tds_pan_verified, p.lower_deduction_pct,
+            fy.year_label
+        FROM caratloop.tds_tcs_register r
+        JOIN caratloop.parties p ON p.id = r.party_id
+        LEFT JOIN caratloop.fiscal_years fy ON fy.id = r.fiscal_year_id
+        WHERE r.company_id = :cid
+          AND r.document_date BETWEEN :from_date AND :to_date
+    """
+    params: Dict[str, Any] = {"cid": cid, "from_date": from_date, "to_date": to_date}
+    if kind_filter:
+        query += " AND r.kind = :kind"
+        params["kind"] = kind_filter
+    query += " ORDER BY r.document_date DESC, r.id DESC"
+
+    res = await db.execute(text(query), params)
+    rows = [dict(r) for r in res.mappings().all()]
+
+    by_kind: Dict[str, Dict[str, Any]] = {}
+    by_party: Dict[str, Dict[str, Any]] = {}
+    for r in rows:
+        r["document_id"] = str(r["document_id"])
+        r["party_id"] = str(r["party_id"])
+        k = by_kind.setdefault(r["kind"], {"documents": 0, "base_amount": Decimal("0"), "amount": Decimal("0")})
+        k["documents"] += 1
+        k["base_amount"] += to_decimal(r["base_amount"])
+        k["amount"] += to_decimal(r["amount"])
+        pk = f"{r['kind']}:{r['party_id']}"
+        pp = by_party.setdefault(pk, {
+            "kind": r["kind"], "party_id": r["party_id"], "party_name": r["party_name"],
+            "pan": r["pan"], "documents": 0, "base_amount": Decimal("0"), "amount": Decimal("0"),
+        })
+        pp["documents"] += 1
+        pp["base_amount"] += to_decimal(r["base_amount"])
+        pp["amount"] += to_decimal(r["amount"])
+
+    return {
+        "from_date": str(from_date),
+        "to_date": str(to_date),
+        "kind": kind_filter or "ALL",
+        "entries": rows,
+        "summary": {
+            "by_kind": by_kind,
+            "by_party": sorted(by_party.values(), key=lambda x: (x["kind"], -x["amount"])),
+            "total_amount": sum((to_decimal(r["amount"]) for r in rows), Decimal("0")),
+            "without_pan": sum(1 for r in rows if not r.get("pan")),
+        },
+        "settings": {
+            "tds_194q_enabled": bool(settings.TDS_194Q_ENABLED),
+            "tds_threshold": float(settings.TDS_194Q_THRESHOLD_INR),
+            "tds_rate": float(settings.TDS_194Q_RATE),
+            "tcs_206c1h_enabled": bool(settings.TCS_206C1H_ENABLED),
+            "tcs_threshold": float(settings.TCS_206C1H_THRESHOLD_INR),
+            "tcs_rate": float(settings.TCS_206C1H_RATE),
+        },
     }
 
 

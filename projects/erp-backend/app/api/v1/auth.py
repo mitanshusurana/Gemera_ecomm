@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from pydantic import BaseModel
 
-from app.core.database import get_db
+from app.core.database import get_db, set_audit_context
 from app.core.security import create_access_token, get_current_user
+from app.core.user_policy import password_policy_errors
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,12 @@ async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depe
     )
     s_row = s_res.mappings().first()
     session_id = s_row["id"] if s_row else None
+    # last_login_at existed in the schema but nothing wrote it, so the users
+    # page could not show who has actually been signing in.
+    await db.execute(
+        text("UPDATE caratloop.users SET last_login_at = NOW() WHERE id = :uid"),
+        {"uid": str(user["id"])},
+    )
     await db.commit()
 
     token = create_access_token({
@@ -123,6 +130,67 @@ async def logout(
 
     logger.info("User %s logged out (session %s)", current_user["email"], session_id)
     return {"status": "success", "message": "Signed out"}
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+async def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Change your own password.
+
+    Any signed-in user may do this; there was previously no way at all. The
+    current password is re-verified so a browser left unlocked cannot be used
+    to lock its owner out, and every *other* session of the user is ended --
+    the session this request came in on stays alive, because the person
+    changing the password is the one holding it.
+    """
+    user_id = str(current_user["id"])
+    res = await db.execute(
+        text("SELECT email, password_hash FROM caratloop.users WHERE id = :uid"),
+        {"uid": user_id},
+    )
+    row = res.mappings().first()
+    if row is None or not verify_password(payload.current_password, row["password_hash"]):
+        logger.warning("Failed password change for %s from %s", current_user.get("email"), _client_ip(request))
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    problems = password_policy_errors(payload.new_password, row["email"])
+    if problems:
+        raise HTTPException(status_code=422, detail=" ".join(problems))
+    if verify_password(payload.new_password, row["password_hash"]):
+        raise HTTPException(status_code=422, detail="New password must differ from the current one.")
+
+    session_id = current_user.get("session_id")
+    keep_sid = int(session_id) if session_id and str(session_id).isdigit() else 0
+
+    await set_audit_context(db, user_id, session_id, _client_ip(request), "Password change")
+    await db.execute(
+        text("UPDATE caratloop.users SET password_hash = :password_hash WHERE id = :uid"),
+        {"password_hash": hash_password(payload.new_password), "uid": user_id},
+    )
+    ended = await db.execute(
+        text(
+            "UPDATE caratloop.session_logs SET logout_at = NOW(), is_active = FALSE "
+            "WHERE user_id = :uid AND logout_at IS NULL AND id <> :keep"
+        ),
+        {"uid": user_id, "keep": keep_sid},
+    )
+    await db.commit()
+
+    logger.info("User %s changed their password", current_user.get("email"))
+    return {
+        "status": "success",
+        "message": "Password changed. Other sessions have been signed out.",
+        "sessions_ended": ended.rowcount if ended.rowcount is not None and ended.rowcount >= 0 else 0,
+    }
 
 
 @router.get("/me")

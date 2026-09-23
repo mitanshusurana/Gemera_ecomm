@@ -519,6 +519,7 @@ export default function PurchasesPage() {
                     <th className="pb-3 font-medium">Place of Supply</th>
                     <th className="pb-3 font-medium text-right">Taxable Value</th>
                     <th className="pb-3 font-medium text-right">ITC Tax</th>
+                    <th className="pb-3 font-medium text-right">TDS 194Q</th>
                     <th className="pb-3 font-medium text-right">Total Amount</th>
                     <th className="pb-3 font-medium">Scan</th>
                     <th className="pb-3 font-medium">Actions</th>
@@ -536,6 +537,11 @@ export default function PurchasesPage() {
                         <td className="py-4 text-textSecondary text-xs">{inv.place_of_supply || '08 - Rajasthan'}</td>
                         <td className="py-4 text-right text-textSecondary">{formatCurrency(inv.subtotal_value || 0)}</td>
                         <td className="py-4 text-right text-emerald-400 font-mono font-semibold">{formatCurrency(itcTax)}</td>
+                        <td className="py-4 text-right font-mono text-xs" title={Number(inv.tds_amount) > 0 ? `${inv.tds_section} @ ${inv.tds_rate}% on ${formatCurrency(inv.tds_base || 0)}` : 'No TDS on this bill'}>
+                          {Number(inv.tds_amount) > 0
+                            ? <span className="text-warning font-semibold">− {formatCurrency(inv.tds_amount)}</span>
+                            : <span className="text-textSecondary">—</span>}
+                        </td>
                         <td className="py-4 text-right font-medium text-primary">{formatCurrency(inv.grand_total || 0)}</td>
                         <td className="py-4">
                           {inv.attachment_url ? (
@@ -1020,9 +1026,21 @@ export default function PurchasesPage() {
                   </>
                 )}
                 <div className="border-t border-gray-300 pt-2 flex justify-between font-bold text-sm text-gray-900">
-                  <span>Grand Total Payable:</span>
+                  <span>{Number(selectedInvoice.tds_amount) > 0 ? 'Bill Total:' : 'Grand Total Payable:'}</span>
                   <span className="text-[#D4A843]">{formatCurrency(selectedInvoice.grand_total || 0)}</span>
                 </div>
+                {Number(selectedInvoice.tds_amount) > 0 && (
+                  <>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Less TDS u/s {selectedInvoice.tds_section || '194Q'} @ {Number(selectedInvoice.tds_rate || 0)}% on {formatCurrency(selectedInvoice.tds_base || 0)}:</span>
+                      <span className="font-semibold text-gray-900">− {formatCurrency(selectedInvoice.tds_amount)}</span>
+                    </div>
+                    <div className="border-t border-gray-300 pt-2 flex justify-between font-bold text-sm text-gray-900">
+                      <span>Net Payable to Supplier:</span>
+                      <span className="text-[#D4A843]">{formatCurrency(Number(selectedInvoice.grand_total || 0) - Number(selectedInvoice.tds_amount || 0))}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

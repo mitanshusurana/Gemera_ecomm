@@ -103,6 +103,34 @@ export const itemsApi = {
   create: (data: any) => apiClient.post('/inventory/items', data),
 };
 
+// e-Invoice (IRN) and e-Way Bill through the configured GSP. All under /gst.
+export interface EwayBillPayload {
+  transporter_id?: string;
+  transporter_name?: string;
+  transport_mode: '1' | '2' | '3' | '4';
+  vehicle_no?: string;
+  vehicle_type?: 'R' | 'O';
+  distance_km: number;
+  document_no?: string;
+  document_date?: string; // DD/MM/YYYY
+}
+export const einvoiceApi = {
+  // Stored IRN details plus the payload preview and validation errors.
+  get: (invoiceId: string) => apiClient.get(`/gst/einvoice/${invoiceId}`),
+  generate: (invoiceId: string) => apiClient.post(`/gst/einvoice/${invoiceId}/generate`),
+  cancel: (invoiceId: string, data: { reason_code: string; remarks: string }) =>
+    apiClient.post(`/gst/einvoice/${invoiceId}/cancel`, data),
+  generateEwayBill: (invoiceId: string, data: EwayBillPayload) => apiClient.post(`/gst/eway-bill/${invoiceId}`, data),
+  cancelEwayBill: (invoiceId: string, data: { reason_code: string; remarks?: string }) =>
+    apiClient.post(`/gst/eway-bill/${invoiceId}/cancel`, data),
+};
+
+// TDS s.194Q / TCS s.206C(1H) register (Form 26Q / 27EQ feed)
+export const tdsTcsApi = {
+  register: (params: { kind?: string; from?: string; to?: string }) =>
+    apiClient.get('/reports/tds-tcs-register', { params }),
+};
+
 // Approval memos (jangad): goods out on approval, returned or invoiced later
 export const approvalMemosApi = {
   list: (params?: { status?: string; party_id?: string; overdue?: boolean; limit?: number; offset?: number }) =>
@@ -113,6 +141,54 @@ export const approvalMemosApi = {
   returnGoods: (id: string, data: any) => apiClient.post(`/approval-memos/${id}/return`, data),
   convert: (id: string, data: any) => apiClient.post(`/approval-memos/${id}/convert`, data),
   cancel: (id: string, data: any) => apiClient.post(`/approval-memos/${id}/cancel`, data),
+};
+
+// Users (owner/admin) and the signed-in user's own password
+export interface ErpUser {
+  id: string;
+  company_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  department: string | null;
+  employee_code: string | null;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_at: string | null;
+}
+
+export interface CreateUserPayload {
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  role: string;
+  department?: string | null;
+  employee_code?: string | null;
+  password: string;
+}
+
+export interface UpdateUserPayload {
+  full_name?: string;
+  phone?: string | null;
+  role?: string;
+  department?: string | null;
+  employee_code?: string | null;
+  is_active?: boolean;
+}
+
+export const usersApi = {
+  list: () => apiClient.get<{ data: ErpUser[] }>('/users'),
+  create: (data: CreateUserPayload) => apiClient.post<ErpUser>('/users', data),
+  update: (id: string, data: UpdateUserPayload) => apiClient.patch<ErpUser>(`/users/${id}`, data),
+  resetPassword: (id: string, new_password: string) =>
+    apiClient.post(`/users/${id}/reset-password`, { new_password }),
+};
+
+export const authApi = {
+  me: () => apiClient.get('/auth/me'),
+  changePassword: (current_password: string, new_password: string) =>
+    apiClient.post('/auth/change-password', { current_password, new_password }),
 };
 
 export default api;

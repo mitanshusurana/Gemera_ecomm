@@ -26,3 +26,7 @@ api_router.include_router(purchases.router,   prefix="/purchases", tags=["Purcha
 api_router.include_router(job_work.router,    prefix="",           tags=["Job Work [CGST s.143]"])
 api_router.include_router(integrations.router, prefix="/integrations", tags=["Integrations"])
 api_router.include_router(approval_memos.router, prefix="", tags=["Approval Memos (Jangad)"])
+from app.api.v1 import einvoice  # noqa: E402  (kept beside its include so the two land together)
+api_router.include_router(einvoice.router,   prefix="/gst",       tags=["e-Invoice & e-Way Bill [Rule 48(4), Rule 138]"])
+from app.api.v1 import users  # noqa: E402  (user management; owner/admin only)
+api_router.include_router(users.router,       prefix="",           tags=["Users"])

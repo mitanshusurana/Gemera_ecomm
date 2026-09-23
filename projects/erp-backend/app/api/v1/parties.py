@@ -35,6 +35,13 @@ class UpdatePartyRequest(BaseModel):
     is_old_gold_supplier: Optional[bool] = None
     credit_limit: Optional[float] = None
     credit_days: Optional[int] = None
+    # TDS s.194Q (we deduct on purchases from them) / TCS s.206C(1H) (we
+    # collect on sales to them); a s.197 lower-deduction certificate rate;
+    # whether their PAN has been verified.
+    tds_applicable: Optional[bool] = None
+    tcs_applicable: Optional[bool] = None
+    lower_deduction_pct: Optional[float] = None
+    tds_pan_verified: Optional[bool] = None
     reason: str = "Party update"
 
 async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
@@ -284,6 +291,10 @@ class CreatePartyRequest(BaseModel):
     credit_days: int = 30
     opening_balance: Optional[float] = 0
     opening_bal_type: str = "Dr"
+    tds_applicable: bool = False
+    tcs_applicable: bool = False
+    lower_deduction_pct: Optional[float] = None
+    tds_pan_verified: bool = False
     reason: str = "Party creation"
 
 @router.post("")
@@ -393,11 +404,15 @@ async def create_party(
                     company_id, account_id, party_type, party_code, name, trade_name,
                     gstin, pan, aadhaar_no, kyc_documents, gst_reg_type, address_line1, address_line2, city,
                     state_code, state_name, pincode, phone, email, is_old_gold_supplier,
-                    credit_limit, credit_days, created_by
+                    credit_limit, credit_days,
+                    tds_applicable, tcs_applicable, lower_deduction_pct, tds_pan_verified,
+                    created_by
                 ) VALUES (
                     :cid, :acc_id, :ptype, :pcode, :name, :tname, :gstin, :pan, :aadhaar, CAST(:kyc_docs AS JSONB),
                     :gst_reg, :addr1, :addr2, :city, :state_c, :state_n, :pin,
-                    :phone, :email, :old_gold, :limit, :days, :created_by
+                    :phone, :email, :old_gold, :limit, :days,
+                    :tds_applicable, :tcs_applicable, :lower_pct, :pan_verified,
+                    :created_by
                 ) RETURNING id
             """),
             {
@@ -409,7 +424,10 @@ async def create_party(
                 "addr1": payload.address_line1, "addr2": payload.address_line2, "city": payload.city,
                 "state_c": state_code, "state_n": state_name, "pin": payload.pincode,
                 "phone": payload.mobile or payload.phone, "email": payload.email, "old_gold": payload.is_old_gold_supplier,
-                "limit": payload.credit_limit or 0, "days": payload.credit_days or 30, "created_by": user_id
+                "limit": payload.credit_limit or 0, "days": payload.credit_days or 30,
+                "tds_applicable": bool(payload.tds_applicable), "tcs_applicable": bool(payload.tcs_applicable),
+                "lower_pct": payload.lower_deduction_pct, "pan_verified": bool(payload.tds_pan_verified),
+                "created_by": user_id
             }
         )
         party_id = party_result.scalar()

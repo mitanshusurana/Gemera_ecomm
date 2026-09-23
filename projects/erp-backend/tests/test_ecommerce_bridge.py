@@ -107,3 +107,39 @@ async def test_bridge_rejects_a_wrong_key(monkeypatch):
 async def test_bridge_admits_the_configured_key(monkeypatch):
     monkeypatch.setattr(settings, "ECOMMERCE_API_KEY", "k" * 40)
     assert await require_api_key(x_api_key="k" * 40) is None
+
+
+def test_old_gold_payload_accepts_gold_and_silver_only():
+    from pydantic import ValidationError
+    from app.api.v1.integrations import BridgeCustomer, BridgeOldGoldPurchase, _old_metal_material_code
+
+    base = dict(
+        external_ref="EX-2026-00001", purchase_date="2026-09-24",
+        customer=BridgeCustomer(name="A Customer", phone="9999999999"),
+        purity="0.916", gross_weight="12.5", net_weight="12.3",
+        rate_per_gram="6100", value="68000", description="22K bangle",
+    )
+    gold = BridgeOldGoldPurchase(metal="GOLD", **base)
+    assert _old_metal_material_code(gold.metal) == settings.ECOMMERCE_OLD_GOLD_MATERIAL_CODE
+    silver = BridgeOldGoldPurchase(metal="SILVER", **base)
+    assert _old_metal_material_code(silver.metal) == settings.ECOMMERCE_OLD_SILVER_MATERIAL_CODE
+    with pytest.raises(ValidationError):
+        BridgeOldGoldPurchase(metal="PLATINUM", **base)
+    # Purity is a fraction, never millesimal 916.
+    with pytest.raises(ValidationError):
+        BridgeOldGoldPurchase(metal="GOLD", **{**base, "purity": "916"})
+
+
+def test_exchange_credit_rides_on_the_sale_payload():
+    from app.api.v1.integrations import BridgeCustomer, BridgeExchangeCredit, BridgeSaleRequest
+
+    sale = BridgeSaleRequest(
+        external_ref="ORD-1", invoice_no="WEB/2026-27/00001", invoice_date="2026-09-24",
+        customer=BridgeCustomer(name="A"), lines=[line("10000")],
+        totals=BridgeTotals(taxable="10000", cgst="150", sgst="150", grand_total="10300"),
+        payment=None,
+        exchange_credit=BridgeExchangeCredit(amount="10300", reference="EX-2026-00001", purchase_ref="PI/2026-27/00007"),
+    )
+    assert sale.payment is None
+    assert sale.exchange_credit.amount == Decimal("10300")
+    assert sale.lines[0].material_code is None

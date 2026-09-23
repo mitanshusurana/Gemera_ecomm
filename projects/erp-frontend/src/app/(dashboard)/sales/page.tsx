@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, Download, Printer, Trash2, Calendar, Search, Filter } from 'lucide-react';
+import { Plus, Download, Printer, Trash2, Calendar, Search, Filter, QrCode } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import SalesInvoiceForm from '@/components/forms/SalesInvoiceForm';
 import TaxInvoicePrint from '@/components/print/TaxInvoicePrint';
+import EInvoicePanel, { eInvoiceBadge } from '@/components/einvoice/EInvoicePanel';
 import PartySelect from '@/components/ui/PartySelect';
 import { formatCurrency } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
@@ -17,6 +18,8 @@ export default function SalesPage() {
   const [salesData, setSalesData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPrintInvoice, setSelectedPrintInvoice] = useState<any | null>(null);
+  // The invoice whose IRN / e-way bill panel is open.
+  const [einvoiceFor, setEinvoiceFor] = useState<{ id: string; invoice_no: string } | null>(null);
 
   // Filters
   const [fromDate, setFromDate] = useState(financialYearStart());
@@ -93,11 +96,24 @@ export default function SalesPage() {
         </Badge>
       );
     }},
+    { header: 'e-Invoice', accessorKey: 'e_invoice_status', cell: (item: any) => (
+      <div className="flex flex-col gap-1 items-start">
+        {eInvoiceBadge(item.e_invoice_status, item.e_invoice_irn)}
+        {item.eway_bill_no && <span className="text-[10px] font-mono text-textSecondary">EWB {item.eway_bill_no}</span>}
+      </div>
+    )},
     { header: 'Actions', accessorKey: 'actions', cell: (item: any) => (
       <div className="flex gap-2 items-center">
-        <button 
+        <button
+          onClick={(e) => { e.stopPropagation(); setEinvoiceFor({ id: item.id, invoice_no: item.invoice_no }); }}
+          className="p-1 text-textSecondary hover:text-primary transition-colors"
+          title="e-Invoice (IRN) and e-Way Bill"
+        >
+          <QrCode className="w-4 h-4" />
+        </button>
+        <button
           onClick={(e) => { e.stopPropagation(); openPrint(item); }}
-          className="p-1 text-textSecondary hover:text-white transition-colors" 
+          className="p-1 text-textSecondary hover:text-white transition-colors"
           title="Print Statutory Tax Invoice"
         >
           <Printer className="w-4 h-4" />
@@ -219,6 +235,15 @@ export default function SalesPage() {
         <TaxInvoicePrint
           invoice={selectedPrintInvoice}
           onClose={() => setSelectedPrintInvoice(null)}
+        />
+      )}
+
+      {einvoiceFor && (
+        <EInvoicePanel
+          invoiceId={einvoiceFor.id}
+          invoiceNo={einvoiceFor.invoice_no}
+          onClose={() => setEinvoiceFor(null)}
+          onChanged={fetchSalesData}
         />
       )}
     </div>

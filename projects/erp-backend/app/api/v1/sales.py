@@ -29,6 +29,7 @@ from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.tax.job_work import JOB_WORK_SAC
+from app.tax.tds_tcs import has_valid_pan, tcs_on_sale
 from app.core.config import settings
 from app.core.tenancy import resolve_default_uom, resolve_fiscal_year, resolve_stock_location
 from app.tax.gstin import is_gstin_shaped
@@ -263,6 +264,36 @@ async def create_sales_invoice(
         # ─── Generate invoice number ──────────────────────────────────────────
         fy = await resolve_fiscal_year(db, company_id)
 
+        # ─── TCS s.206C(1H) ──────────────────────────────────────────────────
+        # Collected from a flagged customer once this year's sales to them
+        # pass the threshold, on the invoice value including GST (CBDT
+        # circular 17/2020). Prior invoices are counted net of their own TCS
+        # so the tax is not collected on tax. Added to the grand total: the
+        # customer pays it, and the credit sits in TCS-206C until deposited.
+        tcs = None
+        if settings.TCS_206C1H_ENABLED and customer.get("tcs_applicable"):
+            cum_res = await db.execute(
+                text(
+                    "SELECT COALESCE(SUM(grand_total - COALESCE(tcs_amount, 0)), 0) "
+                    "FROM caratloop.sales_invoices "
+                    "WHERE company_id = :cid AND customer_id = :pid AND fiscal_year_id = :fyid "
+                    "AND status <> 'Cancelled'"
+                ),
+                {"cid": company_id, "pid": str(payload.customer_id), "fyid": str(fy["id"])},
+            )
+            tcs = tcs_on_sale(
+                to_decimal(cum_res.scalar()),
+                grand_total,
+                settings.TCS_206C1H_THRESHOLD_INR,
+                settings.TCS_206C1H_RATE,
+                has_pan=has_valid_pan(customer.get("pan")),
+                lower_pct=customer.get("lower_deduction_pct"),
+            )
+            if not tcs.applies:
+                tcs = None
+        tcs_amount = tcs.amount if tcs else Decimal("0")
+        grand_total = grand_total + tcs_amount
+
         if payload.external_invoice_no:
             invoice_no = payload.external_invoice_no.strip()
             dup = await db.execute(
@@ -294,6 +325,7 @@ async def create_sales_invoice(
                     igst_material, igst_making,
                     cgst_material, sgst_material, cgst_making, sgst_making,
                     total_gst, grand_total,
+                    tcs_section, tcs_rate, tcs_base, tcs_amount,
                     payment_terms,
                     narration, status, created_by
                 ) VALUES (
@@ -305,6 +337,7 @@ async def create_sales_invoice(
                     :igst_mat, :igst_mak,
                     :cgst_mat, :sgst_mat, :cgst_mak, :sgst_mak,
                     :total_gst, :grand_total,
+                    :tcs_section, :tcs_rate, :tcs_base, :tcs_amount,
                     :payment_terms,
                     :narration, 'Posted', :created_by
                 )
@@ -331,6 +364,10 @@ async def create_sales_invoice(
                 "sgst_mak": total_sgst_mak,
                 "total_gst": total_gst,
                 "grand_total": grand_total,
+                "tcs_section": tcs.section if tcs else None,
+                "tcs_rate": tcs.rate if tcs else None,
+                "tcs_base": tcs.base if tcs else None,
+                "tcs_amount": tcs_amount,
                 "payment_terms": payload.payment_terms,
                 "narration": payload.narration,
                 "created_by": user_id,
@@ -640,6 +677,10 @@ async def create_sales_invoice(
                 ("GST-003", total_cgst_mak, "CGST Output — Making 2.5%"),
                 ("GST-004", total_sgst_mak, "SGST Output — Making 2.5%"),
             ])
+        if tcs_amount > 0:
+            # The customer is debited the TCS above; it is owed to the
+            # government, not earned, so it is credited to the payable.
+            credit_lines.append(("TCS-206C", tcs_amount, "TCS collected — s.206C(1H)"))
 
         seq = 2
         for acc_code, cr_val, narr in credit_lines:
@@ -713,6 +754,36 @@ async def create_sales_invoice(
                 )
                 seq += 1
 
+        # ─── TDS/TCS register (Form 27EQ feed) ───────────────────────────────
+        if tcs is not None:
+            await db.execute(
+                text("""
+                    INSERT INTO caratloop.tds_tcs_register (
+                        company_id, fiscal_year_id, kind, section, party_id,
+                        document_type, document_id, document_no, document_date,
+                        base_amount, rate, amount, pan, created_by
+                    ) VALUES (
+                        :cid, :fyid, 'TCS', :section, :party_id,
+                        'SalesInvoice', :doc_id, :doc_no, :doc_date,
+                        :base, :rate, :amount, :pan, :cb
+                    )
+                """),
+                {
+                    "cid": company_id,
+                    "fyid": str(fy["id"]),
+                    "section": tcs.section,
+                    "party_id": str(payload.customer_id),
+                    "doc_id": str(invoice_id),
+                    "doc_no": invoice_no,
+                    "doc_date": inv_date_obj,
+                    "base": tcs.base,
+                    "rate": tcs.rate,
+                    "amount": tcs.amount,
+                    "pan": (str(customer.get("pan") or "").strip().upper() or None),
+                    "cb": user_id,
+                },
+            )
+
         # Update invoice with journal entry UUID reference
         await db.execute(
             text("UPDATE caratloop.sales_invoices SET journal_entry_id = :je_uuid WHERE id = :inv_id"),
@@ -740,6 +811,7 @@ async def create_sales_invoice(
                 "total_cgst": float(total_cgst_mat + total_cgst_mak),
                 "total_sgst": float(total_sgst_mat + total_sgst_mak),
                 "total_gst": float(total_gst),
+                "tcs_amount": float(tcs_amount),
                 "grand_total": float(grand_total),
             },
             "compliance": {
@@ -783,7 +855,8 @@ async def list_sales_invoices(
             p.pincode AS customer_pincode, p.phone AS customer_phone, p.email AS customer_email,
             si.is_inter_state, si.place_of_supply,
             si.subtotal_material_value, si.subtotal_making_charges,
-            si.total_gst, si.grand_total
+            si.total_gst, si.tcs_amount, si.grand_total,
+            si.e_invoice_status, si.e_invoice_irn, si.eway_bill_no
         FROM caratloop.sales_invoices si
         JOIN caratloop.parties p ON p.id = si.customer_id
         WHERE si.company_id = :cid
@@ -842,8 +915,10 @@ async def get_sales_invoice(
                 si.igst_material, si.igst_making, si.cgst_material, si.sgst_material,
                 si.cgst_making, si.sgst_making, si.total_gst, si.round_off,
                 si.grand_total, si.amount_in_words,
+                si.tcs_section, si.tcs_rate, si.tcs_base, si.tcs_amount,
                 si.e_invoice_irn, si.e_invoice_ack_no, si.e_invoice_ack_date,
-                si.e_invoice_status, si.eway_bill_no, si.eway_bill_date,
+                si.e_invoice_qr_code, si.e_invoice_cancelled_at,
+                si.e_invoice_status, si.eway_bill_no, si.eway_bill_date, si.eway_bill_valid_upto,
                 p.id AS customer_id, p.name AS customer_name, p.trade_name AS customer_trade_name,
                 p.gstin AS customer_gstin, p.pan AS customer_pan,
                 p.address_line1 AS customer_address1, p.address_line2 AS customer_address2,

@@ -2,17 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Factory, 
-  ShoppingCart, 
-  ShoppingBag, 
-  BookOpen, 
-  FileText, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Package,
+  Factory,
+  ShoppingCart,
+  ShoppingBag,
+  BookOpen,
+  FileText,
+  BarChart3,
   ShieldCheck,
   Users,
+  UserCog,
   ArrowDownLeft,
   ArrowUpRight,
   ArrowLeftRight,
@@ -27,8 +28,20 @@ import {
 import { cn } from '@/lib/utils';
 import { financialYearLabel } from '@/lib/fiscal';
 import { useCompany } from '@/lib/company';
+import { normaliseRole, useMe } from '@/lib/session';
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  group: string;
+  /** Roles that see the entry; absent means everyone. The API enforces the
+   *  real check -- this only keeps a door out of the menu for people it
+   *  would refuse. */
+  roles?: string[];
+}
+
+const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, group: 'Main' },
   { name: 'Parties', href: '/parties', icon: Users, group: 'Masters' },
   { name: 'Stock Items', href: '/inventory', icon: Package, group: 'Masters' },
@@ -53,19 +66,25 @@ const navigation = [
   // The reports page picks its tab by component state, not by URL, so the
   // nearest reachable target for the audit trail is the reports page itself.
   { name: 'Audit Trail', href: '/reports', icon: ShieldCheck, group: 'Admin' },
+  // Only owners and admins may manage users (app.core.roles.CAN_AMEND).
+  { name: 'Users', href: '/users', icon: UserCog, group: 'Admin', roles: ['owner', 'admin'] },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { company } = useCompany();
+  const { me } = useMe();
+  const role = normaliseRole(me?.role);
 
-  const groupedNav = navigation.reduce((acc, item) => {
+  const visible = navigation.filter((item) => !item.roles || item.roles.includes(role));
+
+  const groupedNav = visible.reduce((acc, item) => {
     if (!acc[item.group]) {
       acc[item.group] = [];
     }
     acc[item.group].push(item);
     return acc;
-  }, {} as Record<string, typeof navigation>);
+  }, {} as Record<string, NavItem[]>);
 
   const groupOrder = ['Main', 'Masters', 'Operations', 'Vouchers', 'Books', 'Finance', 'Banking', 'Admin'];
 
@@ -106,8 +125,8 @@ export default function Sidebar() {
                         href={item.href}
                         className={cn(
                           "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                          isActive 
-                            ? "bg-primary/10 text-primary border-l-2 border-primary" 
+                          isActive
+                            ? "bg-primary/10 text-primary border-l-2 border-primary"
                             : "text-textSecondary hover:bg-white/5 hover:text-white"
                         )}
                       >

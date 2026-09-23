@@ -58,6 +58,38 @@ class Settings(BaseSettings):
     # Company the bridge posts into. Empty = the single active company; the
     # bridge refuses to guess when there is more than one.
     ECOMMERCE_COMPANY_ID: str = ""
+    # Item-master codes old metal bought through the exchange programme is
+    # booked into; created on first use when absent.
+    ECOMMERCE_OLD_GOLD_MATERIAL_CODE: str = "OLD-GOLD"
+    ECOMMERCE_OLD_SILVER_MATERIAL_CODE: str = "OLD-SILVER"
+
+    # ─── e-Invoice (IRN) and e-Way Bill through a GSP ─────────────
+    # disabled: the endpoints answer 503. fake: deterministic IRNs for tests
+    # and the sandbox. nic: the NIC IRP / GSP REST flow in app/einvoice.
+    EINVOICE_PROVIDER: str = "disabled"
+    EINVOICE_BASE_URL: str = ""
+    EINVOICE_CLIENT_ID: str = ""
+    EINVOICE_CLIENT_SECRET: str = ""
+    EINVOICE_USERNAME: str = ""
+    EINVOICE_PASSWORD: str = ""
+    EINVOICE_GSTIN: str = ""
+    # Invoice value below which an IRN is not requested. 0 = every B2B
+    # invoice (the e-invoicing mandate is by the seller's turnover, not by
+    # the invoice value, so the default is to e-invoice everything B2B).
+    EINVOICE_THRESHOLD_INR: float = 0
+
+    # ─── TDS s.194Q on purchases, TCS s.206C(1H) on sales ─────────
+    # Both apply only once the deductor/collector crossed Rs 10 crore
+    # turnover in the preceding year, so both are off until the business
+    # says otherwise. Threshold is per supplier/customer per financial year.
+    TDS_194Q_ENABLED: bool = False
+    TDS_194Q_THRESHOLD_INR: float = 5000000
+    TDS_194Q_RATE: float = 0.10
+    # s.206AA: no PAN on record, deduct at the higher rate.
+    TDS_NO_PAN_RATE: float = 5.00
+    TCS_206C1H_ENABLED: bool = False
+    TCS_206C1H_THRESHOLD_INR: float = 5000000
+    TCS_206C1H_RATE: float = 0.10
 
     # ─── CORS ───────────────────────────────────────────────────
     # Never include "*" here: the API is served with allow_credentials=True,

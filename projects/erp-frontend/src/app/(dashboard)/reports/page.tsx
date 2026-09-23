@@ -18,6 +18,8 @@ export default function ReportsPage() {
   const [fromDate, setFromDate] = useState(financialYearStart());
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
   const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7));
+  // TDS/TCS register: '' = both kinds.
+  const [tdsKind, setTdsKind] = useState('');
 
   const reportTypes = [
     { id: 'Trial Balance', name: 'Trial Balance [S44AA]', desc: 'Double-entry trial balance verifying total Dr = Cr balance equality' },
@@ -26,6 +28,7 @@ export default function ReportsPage() {
     { id: 'Stock Register', name: 'Stock Register [CGST-R56-2]', desc: 'Quantitative commodity-wise stock movements and valuation' },
     { id: 'Production Account', name: 'Production Account [CGST-R56-12]', desc: 'Monthly manufacturing account (WIP, output, wastage loss, scrap)' },
     { id: 'GST Tax Register', name: 'GST Tax Register [CGST-R56-4]', desc: 'Dual-rate tax register (3% Material, 5% Making), ITC & RCM' },
+    { id: 'TDS/TCS Register', name: 'TDS / TCS Register [s.194Q, s.206C(1H)]', desc: 'Tax deducted on purchases and collected on sales, per document with PAN — Form 26Q / 27EQ feed' },
     { id: 'Age-Wise Outstanding', name: 'Age-Wise Aging [S44AA]', desc: 'Receivables & Payables aging breakdown (0-30, 31-60, 61-90, 90+ days)' },
     { id: 'Audit Trail Log', name: 'Audit Trail Log [MCA-11g]', desc: 'Immutable database change history with sequence numbers & row hashes' },
   ];
@@ -51,6 +54,9 @@ export default function ReportsPage() {
       } else if (selectedReport === 'GST Tax Register') {
         const res = await apiClient.get(`/reports/gst-tax-register?from_date=${fromDate}&to_date=${toDate}`);
         setReportData(res.data);
+      } else if (selectedReport === 'TDS/TCS Register') {
+        const res = await apiClient.get('/reports/tds-tcs-register', { params: { from: fromDate, to: toDate, kind: tdsKind || undefined } });
+        setReportData(res.data);
       } else if (selectedReport === 'Age-Wise Outstanding') {
         const res = await apiClient.get(`/reports/outstanding-aging?as_of_date=${asOfDate}`);
         setReportData(res.data);
@@ -67,7 +73,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchReport();
-  }, [selectedReport, asOfDate, fromDate, toDate, monthYear]);
+  }, [selectedReport, asOfDate, fromDate, toDate, monthYear, tdsKind]);
 
   // Column definitions for different statutory tables
   const trialColumns = [
@@ -190,7 +196,18 @@ export default function ReportsPage() {
               </div>
             )}
 
-            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'Audit Trail Log') && (
+            {selectedReport === 'TDS/TCS Register' && (
+              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
+                <span className="text-textSecondary">Kind:</span>
+                <select value={tdsKind} onChange={(e) => setTdsKind(e.target.value)} className="bg-transparent border-none text-white focus:outline-none text-xs">
+                  <option value="" className="bg-background">TDS and TCS</option>
+                  <option value="TDS" className="bg-background">TDS 194Q (purchases)</option>
+                  <option value="TCS" className="bg-background">TCS 206C(1H) (sales)</option>
+                </select>
+              </div>
+            )}
+
+            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'TDS/TCS Register' || selectedReport === 'Audit Trail Log') && (
               <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
                 <Calendar className="w-3.5 h-3.5 text-textSecondary" />
                 <span className="text-textSecondary">From:</span>
@@ -554,6 +571,102 @@ export default function ReportsPage() {
                           <td className="py-2 font-mono">{formatCurrency(out.making_taxable_value)}</td>
                           <td className="py-2 font-mono text-warning">{formatCurrency(out.total_tax_amount)}</td>
                           <td className="py-2 text-right font-mono font-bold text-white">{formatCurrency(out.grand_total)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : selectedReport === 'TDS/TCS Register' ? (
+          /* 6b. TDS / TCS Register [s.194Q, s.206C(1H)] */
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-surface border border-border rounded-xl p-4">
+                <span className="text-xs text-textSecondary">TDS deducted (194Q)</span>
+                <p className="text-xl font-bold text-white mt-1">{formatCurrency(reportData?.summary?.by_kind?.TDS?.amount || 0)}</p>
+                <p className="text-[11px] text-textSecondary">{reportData?.summary?.by_kind?.TDS?.documents || 0} bills · {reportData?.settings?.tds_194q_enabled ? 'enabled' : 'disabled in settings'}</p>
+              </div>
+              <div className="bg-surface border border-border rounded-xl p-4">
+                <span className="text-xs text-textSecondary">TCS collected (206C(1H))</span>
+                <p className="text-xl font-bold text-white mt-1">{formatCurrency(reportData?.summary?.by_kind?.TCS?.amount || 0)}</p>
+                <p className="text-[11px] text-textSecondary">{reportData?.summary?.by_kind?.TCS?.documents || 0} invoices · {reportData?.settings?.tcs_206c1h_enabled ? 'enabled' : 'disabled in settings'}</p>
+              </div>
+              <div className="bg-surface border border-border rounded-xl p-4">
+                <span className="text-xs text-textSecondary">Total to deposit</span>
+                <p className="text-xl font-bold text-primary mt-1">{formatCurrency(reportData?.summary?.total_amount || 0)}</p>
+                <p className="text-[11px] text-textSecondary">Threshold Rs {Number(reportData?.settings?.tds_threshold || 0).toLocaleString('en-IN')} · {Number(reportData?.settings?.tds_rate || 0)}%</p>
+              </div>
+              <div className="bg-surface border border-border rounded-xl p-4">
+                <span className="text-xs text-textSecondary">Entries without PAN</span>
+                <p className={`text-xl font-bold mt-1 ${Number(reportData?.summary?.without_pan) > 0 ? 'text-warning' : 'text-success'}`}>{reportData?.summary?.without_pan || 0}</p>
+                <p className="text-[11px] text-textSecondary">Higher rate applied (s.206AA / s.206CC)</p>
+              </div>
+            </div>
+
+            {(reportData?.summary?.by_party || []).length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-playfair font-bold text-white text-base">By party (Form 26Q / 27EQ deductee rows)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="text-textSecondary border-b border-border">
+                      <tr>
+                        <th className="pb-2">Kind</th>
+                        <th className="pb-2">Party</th>
+                        <th className="pb-2">PAN</th>
+                        <th className="pb-2 text-right">Documents</th>
+                        <th className="pb-2 text-right">Base above threshold</th>
+                        <th className="pb-2 text-right">Tax</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {reportData.summary.by_party.map((p: any) => (
+                        <tr key={`${p.kind}:${p.party_id}`}>
+                          <td className="py-2"><Badge variant={p.kind === 'TDS' ? 'warning' : 'info'}>{p.kind}</Badge></td>
+                          <td className="py-2 text-white font-medium">{p.party_name}</td>
+                          <td className="py-2 font-mono text-xs">{p.pan || <span className="text-warning">No PAN</span>}</td>
+                          <td className="py-2 text-right font-mono">{p.documents}</td>
+                          <td className="py-2 text-right font-mono">{formatCurrency(p.base_amount)}</td>
+                          <td className="py-2 text-right font-mono font-bold text-white">{formatCurrency(p.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <h3 className="font-playfair font-bold text-white text-base">Documents</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="text-textSecondary border-b border-border">
+                    <tr>
+                      <th className="pb-2">Date</th>
+                      <th className="pb-2">Kind / Section</th>
+                      <th className="pb-2">Document</th>
+                      <th className="pb-2">Party</th>
+                      <th className="pb-2">PAN</th>
+                      <th className="pb-2 text-right">Base</th>
+                      <th className="pb-2 text-right">Rate</th>
+                      <th className="pb-2 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {(reportData?.entries || []).length === 0 ? (
+                      <tr><td colSpan={8} className="py-4 text-center text-textSecondary">No TDS or TCS entries in the selected period. Entries appear once the setting is enabled, the party is flagged, and the year's total crosses the threshold.</td></tr>
+                    ) : (
+                      reportData.entries.map((e: any) => (
+                        <tr key={e.id}>
+                          <td className="py-2 text-textSecondary">{new Date(e.document_date).toLocaleDateString('en-IN')}</td>
+                          <td className="py-2"><Badge variant={e.kind === 'TDS' ? 'warning' : 'info'}>{e.kind} {e.section}</Badge></td>
+                          <td className="py-2 text-primary font-mono">{e.document_no}</td>
+                          <td className="py-2 text-white font-medium">{e.party_name}</td>
+                          <td className="py-2 font-mono text-xs">{e.pan || <span className="text-warning">—</span>}</td>
+                          <td className="py-2 text-right font-mono">{formatCurrency(e.base_amount)}</td>
+                          <td className="py-2 text-right font-mono">{Number(e.rate)}%</td>
+                          <td className="py-2 text-right font-mono font-bold text-white">{formatCurrency(e.amount)}</td>
                         </tr>
                       ))
                     )}
