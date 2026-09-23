@@ -4,8 +4,8 @@ Five images are built by `.github/workflows/docker-build-push.yml` on every push
 `gemera_ecomm-backend` (Spring Boot API), `gemera_ecomm-frontend` (Angular SSR storefront), `gemera_ecomm-admin`
 (Angular admin behind nginx), `gemera_ecomm-erp-backend` (FastAPI ERP API) and `gemera_ecomm-erp-frontend` (Next.js
 ERP UI). The image names follow the GitHub repository name; override them with `BACKEND_IMAGE`, `FRONTEND_IMAGE`,
-`ADMIN_IMAGE`, `ERP_BACKEND_IMAGE`, `ERP_FRONTEND_IMAGE` if the repository is renamed. A package pushed to GHCR for
-the first time is private; make the two ERP packages public (or log the VM into GHCR) before the first `pull`.
+`ADMIN_IMAGE`, `ERP_BACKEND_IMAGE`, `ERP_FRONTEND_IMAGE` if the repository is renamed. All five packages are public, so
+the VMs pull them without logging into GHCR.
 
 ## 1. Topology
 
