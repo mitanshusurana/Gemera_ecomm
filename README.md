@@ -1,12 +1,14 @@
 # Caratloop e-commerce
 
-Three deployables live in this repository:
+Five deployables live in this repository:
 
 | Path | What it is | Stack |
 |---|---|---|
 | `src/` | Public storefront (SSR) | Angular 20 standalone components, Tailwind CSS v4, Express SSR |
 | `projects/admin/` | Back-office admin app | Angular 20, Tailwind CSS v4 |
 | `backend/` | REST API | Spring Boot, PostgreSQL, Razorpay, Cloudflare R2 |
+| `projects/erp-backend/` | ERP API: double-entry ledger, GST, inventory costing, job work | FastAPI, SQLAlchemy, Alembic, PostgreSQL |
+| `projects/erp-frontend/` | ERP web UI | Next.js 14, React 18, Tailwind CSS v3 |
 
 ## Storefront
 
@@ -43,10 +45,24 @@ The admin has its own `projects/admin/tailwind.config.js`.
 See `backend/` (Gradle). Required environment variables are listed in `.env.backend.example`; the
 service refuses to start without `JWT_SECRET`, admin credentials and Razorpay keys.
 
+## ERP
+
+The ERP is a separate service with its own PostgreSQL database and its own login; it is not wired to the store API yet.
+
+```bash
+cd projects/erp-backend && pip install -r requirements.txt && python -m pytest -q   # 500 tests, no database needed
+cd projects/erp-frontend && npm install && npm run dev                              # http://localhost:3000
+docker compose -f docker-compose.erp.yml --env-file .env.erp up -d --build          # full stack, see .env.erp.example
+```
+
+The schema is owned by Alembic (`projects/erp-backend/migrations`); run `alembic upgrade head` against a
+fresh database rather than any SQL dump. Both ERP folders were imported with `git subtree` and keep their
+history; `git log -- projects/erp-backend` shows it.
+
 ## Deployment
 
 `DEPLOYMENT_GUIDE.md` describes the two-VM topology. Docker definitions: `frontend.Dockerfile`,
-`admin.Dockerfile`, `backend/Dockerfile`, and the `docker-compose.*.yml` files. GitHub Actions
+`admin.Dockerfile`, `backend/Dockerfile`, `projects/erp-*/Dockerfile`, and the `docker-compose.*.yml` files. GitHub Actions
 (`.github/workflows/docker-build-push.yml`) builds and pushes the backend and storefront images on
 every push to `main`.
 

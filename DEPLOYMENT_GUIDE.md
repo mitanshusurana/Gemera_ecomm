@@ -11,6 +11,7 @@ Three images are built by `.github/workflows/docker-build-push.yml` on every pus
 |---|---|---|---|
 | Core VM | `docker-compose.backend.yml` | PostgreSQL, API, admin SPA | 8080 (API), 81 (admin) |
 | Storefront VM | `docker-compose.frontend.yml` | SSR storefront | 80 |
+| Core VM | `docker-compose.erp.yml` | ERP PostgreSQL, ERP API, ERP UI | none (loopback 8010 API, 3001 UI; proxy them) |
 | Laptop | `docker-compose.local.yml` | everything from source | 5432 (localhost only), 8080, 4200, 4300 |
 
 PostgreSQL is not published on the Core VM; connect through an SSH tunnel:
@@ -32,6 +33,7 @@ Each compose file reads one env file next to it; copy the matching example and f
 | `docker-compose.backend.yml` | `.env.backend` | `.env.backend.example` |
 | `docker-compose.frontend.yml` | `.env.frontend` | `.env.frontend.example` |
 | `docker-compose.local.yml` | `.env.local` | `.env.local.example` |
+| `docker-compose.erp.yml` | `.env.erp` | `.env.erp.example` |
 
 The examples document every variable. The API has no defaults for the database, `JWT_SECRET`, admin credentials, SMTP,
 `GOLDAPI_KEY` and the R2 bucket, and refuses to start if one is missing. `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` may be
@@ -74,6 +76,19 @@ docker compose -f docker-compose.frontend.yml up -d
 Then sign in to the admin (port 81) with `ADMIN_EMAIL` / `ADMIN_PASSWORD` and fill in Settings: company contact details
 (shown in the storefront footer), tax rates, currency rates, and the Home page card (hero copy, hero image, trust badges,
 configurator base price). Add stores under Stores and mark products "Show on home page" to feature them.
+
+## 3a. ERP
+
+The ERP is built from source on the Core VM (no GHCR image yet):
+
+```bash
+cp .env.erp.example .env.erp   # edit; POSTGRES_PASSWORD_URLENC is the URL-encoded password
+docker compose -f docker-compose.erp.yml --env-file .env.erp up -d --build
+curl -fsS http://127.0.0.1:8010/health
+```
+
+`erp-migrate` runs `alembic upgrade head` and the API waits for it. Put the ERP UI (127.0.0.1:3001) and API
+(127.0.0.1:8010) behind the same TLS proxy as the admin, and list the UI origin in `CORS_ORIGINS`.
 
 ## 4. Updating
 

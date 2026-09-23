@@ -22,12 +22,24 @@ Read `README.md` first for the layout. This file records the conventions an agen
   interceptors in `src/app/interceptors`. Do not read `window`/`document` without a platform check: the app is SSR.
 - The repository is public. Never commit secrets; `.env*` files are ignored for that reason.
 
+## ERP (`projects/erp-backend`, `projects/erp-frontend`)
+
+- Backend: FastAPI, async SQLAlchemy with raw SQL under the `caratloop` schema, Decimal for every money value,
+  Alembic owns the schema. A new column or CHECK vocabulary is a new migration under `migrations/versions`
+  plus its SQL twin under `migrations/sql`; never edit an applied migration.
+- Ledger postings must balance; `tests/test_ledger_invariant.py` and `tests/test_check_constraint_vocabularies.py`
+  guard this. Run `python -m pytest -q` in `projects/erp-backend` (no database needed except
+  `test_migrations_integration.py`).
+- Frontend: Next.js app router, relative API URLs only (no `NEXT_PUBLIC_API_URL`), company data from `/auth/me`.
+  Printed documents use the invoice's stored lines; never derive lines client-side.
+
 ## Checks before finishing
 
 ```bash
 npx tsc --noEmit -p tsconfig.app.json                      # storefront types
 npx ng build fusion-angular-tailwind-starter --configuration production
 npx ng build admin --configuration production               # when the admin changed
+(cd projects/erp-backend && python -m pytest -q)            # when the ERP backend changed
 ```
 
 The storefront build prints one Beasties warning ("1 rules skipped due to selector errors"); it is a critical-CSS

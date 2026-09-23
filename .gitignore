@@ -66,3 +66,13 @@ backend/backend_server.log
 
 # Local Claude Code session files
 .claude/
+
+# ERP (projects/erp-backend, projects/erp-frontend)
+**/node_modules/
+**/__pycache__/
+*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.venv/
+**/.next/
+*.tsbuildinfo

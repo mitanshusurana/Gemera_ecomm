@@ -1,0 +1,107 @@
+# Caratloop ERP: accounting, GST, inventory costing, job work.
+# Runs beside the store stack (docker-compose.backend.yml) on the Core VM with
+# its own PostgreSQL. Both services bind to loopback; put the same TLS reverse
+# proxy that fronts the API and admin in front of 3001 (UI) and 8010 (API).
+#
+#   cp .env.erp.example .env.erp   # edit
+#   docker compose -f docker-compose.erp.yml --env-file .env.erp up -d --build
+services:
+  erp-db:
+    image: postgres:16-alpine
+    container_name: caratloop_erp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: caratloop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: caratloop_erp
+      TZ: Asia/Kolkata
+      PGTZ: Asia/Kolkata
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - erp_postgres_data:/var/lib/postgresql/data
+    command: >
+      postgres
+        -c log_statement=mod
+        -c log_min_duration_statement=500
+        -c timezone=Asia/Kolkata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U caratloop -d caratloop_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Alembic runs to completion before the API starts. The schema is owned by
+  # projects/erp-backend/migrations, not by initdb scripts.
+  erp-migrate:
+    image: caratloop-erp-backend:latest
+    build:
+      context: ./projects/erp-backend
+      dockerfile: Dockerfile
+    container_name: caratloop_erp_migrate
+    restart: "no"
+    environment:
+      SYNC_DATABASE_URL: postgresql://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
+      TZ: Asia/Kolkata
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      erp-db:
+        condition: service_healthy
+
+  erp-backend:
+    image: caratloop-erp-backend:latest
+    build:
+      context: ./projects/erp-backend
+      dockerfile: Dockerfile
+    container_name: caratloop_erp_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
+      SYNC_DATABASE_URL: postgresql://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      R2_ACCESS_KEY: ${R2_ACCESS_KEY:-}
+      R2_SECRET_KEY: ${R2_SECRET_KEY:-}
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      # GSTIN lookup used by the party form to auto-fill a ledger from a GST number.
+      GSTIN_API_KEY: ${GSTIN_API_KEY:-}
+      SUREPASS_TOKEN: ${SUREPASS_TOKEN:-}
+      COMPANY_STATE_CODE: ${COMPANY_STATE_CODE:-08}
+      COMPANY_STATE_NAME: ${COMPANY_STATE_NAME:-Rajasthan}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      TZ: Asia/Kolkata
+      # JSON list, quoted as a whole. A wildcard with credentials would reflect
+      # any origin and expose ledger data to any site a signed-in user visits.
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3001"]}'
+    ports:
+      - "127.0.0.1:8010:8000"
+    depends_on:
+      erp-db:
+        condition: service_healthy
+      erp-migrate:
+        condition: service_completed_successfully
+
+  # Next.js UI. It uses relative API URLs and reads the company from
+  # GET /auth/me, so it needs no build-time NEXT_PUBLIC_* variables.
+  erp-frontend:
+    build:
+      context: ./projects/erp-frontend
+      dockerfile: Dockerfile
+    container_name: caratloop_erp_frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - erp-backend
+
+volumes:
+  erp_postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: caratloop_erp_network
