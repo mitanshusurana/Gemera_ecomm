@@ -10,12 +10,15 @@ import openpyxl
 
 from app.core.database import get_db, set_audit_context
 from app.core.pagination import Page, paginate
+from app.core.roles import CAN_POST, require
 from app.core.security import get_current_user
 
 router = APIRouter(tags=["Banking & BRS"])
 
 class MatchPayload(BaseModel):
-    book_entry_id: UUID
+    # journal_entry_lines.id is a BIGINT; the reconciliation screen sends the
+    # id it was given by GET /reconciliation, which is that integer.
+    book_entry_id: int
     bank_entry_id: UUID
 
 class UnmatchPayload(BaseModel):
@@ -36,7 +39,7 @@ async def list_bank_accounts(page: Page = Depends(paginate),
                            {"cid": str(company_id), **page.params})
     return [dict(r) for r in res.mappings().all()]
 
-@router.post("/statement/import")
+@router.post("/statement/import", dependencies=[Depends(require(*CAN_POST))])
 async def import_statement(
     bank_account_id: Optional[str] = Form(None),
     account_id: Optional[str] = Form(None),
@@ -108,7 +111,7 @@ async def import_statement(
 @router.get("/reconciliation")
 async def get_reconciliation(
     account_id: Optional[str] = None,
-    month: Optional[str] = "2026-08",
+    month: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -125,7 +128,9 @@ async def get_reconciliation(
         account_id = str(first_acc)
 
     import calendar
-    y_val, m_val = 2026, 8
+    # Default to the current month, not a month frozen at the time of writing.
+    today = date.today()
+    y_val, m_val = today.year, today.month
     if month and '-' in month:
         parts = month.split('-')
         y_val, m_val = int(parts[0]), int(parts[1])
@@ -167,32 +172,55 @@ async def get_reconciliation(
         "summary": {"unreconciled_count": len(book_entries) + len(bank_entries)}
     }
 
-@router.post("/reconciliation/match")
+@router.post("/reconciliation/match", dependencies=[Depends(require(*CAN_POST))])
 async def match_entries(payload: MatchPayload, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     company_id = current_user["company_id"]
     user_id = current_user["id"]
-    
-    await db.execute(
+
+    # The book entry was addressed by id alone, so any caller could mark any
+    # company's journal line as reconciled. journal_entry_lines carries no
+    # company_id; ownership is on the parent journal entry.
+    owner_res = await db.execute(
         text("""
-            UPDATE caratloop.journal_entry_lines 
-            SET is_reconciled = TRUE, reconciled_at = NOW(), reconciled_by = CAST(:uid AS UUID)
-            WHERE id = CAST(:book_id AS BIGINT)
+            SELECT jel.id
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            WHERE jel.id = :book_id AND je.company_id = CAST(:cid AS UUID)
+            LIMIT 1
         """),
-        {"book_id": str(payload.book_entry_id), "uid": str(user_id)}
+        {"book_id": payload.book_entry_id, "cid": str(company_id)}
     )
+    if owner_res.scalar() is None:
+        raise HTTPException(status_code=404, detail="Book entry not found")
+
+    # Bank line first, and only if it is ours: otherwise the book line would
+    # be flagged reconciled against a statement line that never changed.
+    bank_res = await db.execute(
+        text("""
+            UPDATE caratloop.bank_statement_lines
+            SET is_reconciled = TRUE, reconciled_at = NOW()
+            WHERE id = CAST(:bank_id AS UUID) AND company_id = CAST(:cid AS UUID)
+              AND NOT is_reconciled
+        """),
+        {"cid": str(company_id), "bank_id": str(payload.bank_entry_id)}
+    )
+    if bank_res.rowcount != 1:
+        await db.rollback()
+        raise HTTPException(status_code=404, detail="Bank statement line not found or already reconciled")
+
     await db.execute(
         text("""
-            UPDATE caratloop.bank_statement_lines 
-            SET is_reconciled = TRUE, reconciled_entry_id = CAST(:book_id AS UUID), reconciled_at = NOW()
-            WHERE id = CAST(:bank_id AS UUID) AND company_id = CAST(:cid AS UUID)
+            UPDATE caratloop.journal_entry_lines
+            SET is_reconciled = TRUE, reconciled_at = NOW(), reconciled_by = CAST(:uid AS UUID)
+            WHERE id = :book_id
         """),
-        {"cid": str(company_id), "book_id": str(payload.book_entry_id), "bank_id": str(payload.bank_entry_id)}
+        {"book_id": payload.book_entry_id, "uid": str(user_id)}
     )
     await db.commit()
     return {"status": "success", "message": "Entries reconciled successfully"}
 
 
-@router.post("/reconciliation/unmatch")
+@router.post("/reconciliation/unmatch", dependencies=[Depends(require(*CAN_POST))])
 async def unmatch_entries(payload: UnmatchPayload, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     company_id = current_user["company_id"]
     await db.execute(
@@ -205,7 +233,7 @@ async def unmatch_entries(payload: UnmatchPayload, db: AsyncSession = Depends(ge
 @router.get("/reconciliation/report")
 async def get_brs_report(
     account_id: Optional[str] = None,
-    month: Optional[str] = "2026-08",
+    month: Optional[str] = None,
     as_of_date: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)

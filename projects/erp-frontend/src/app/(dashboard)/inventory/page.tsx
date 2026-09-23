@@ -27,7 +27,7 @@ export default function InventoryPage() {
     hsn_code: '71131910',
     gst_tax_rate: 3.00,
     opening_qty: 0,
-    purity_standard: '916 BIS'
+    purity_standard: ''
   });
 
   const fetchInventoryData = async () => {
@@ -85,7 +85,7 @@ export default function InventoryPage() {
       hsn_code: '71131910',
       gst_tax_rate: 3.00,
       opening_qty: 0,
-      purity_standard: '916 BIS'
+      purity_standard: ''
     });
     setIsDrawerOpen(true);
   };
@@ -100,7 +100,7 @@ export default function InventoryPage() {
       hsn_code: item.hsn_code || '71131910',
       gst_tax_rate: Number(item.gst_tax_rate ?? item.material_gst_rate ?? 3.0),
       opening_qty: Number(item.current_stock || 0),
-      purity_standard: item.purity_standard || '916 BIS'
+      purity_standard: item.purity_standard || ''
     });
     setIsDrawerOpen(true);
   };

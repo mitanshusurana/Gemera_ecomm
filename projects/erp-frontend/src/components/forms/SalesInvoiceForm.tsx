@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2, MapPin, Calculator } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
 import { apiClient } from '@/lib/api';
+import { useCompany } from '@/lib/company';
 
 interface LineItem {
   id: number;
@@ -19,17 +20,29 @@ interface LineItem {
   makingCharges: number;
 }
 
-const INDIAN_STATES = [
-  { code: '08', name: '08 - Rajasthan (Home State)' },
-  { code: '33', name: '33 - Tamil Nadu (Inter-State)' },
-  { code: '27', name: '27 - Maharashtra (Inter-State)' },
-  { code: '07', name: '07 - Delhi (Inter-State)' },
-  { code: '24', name: '24 - Gujarat (Inter-State)' },
-  { code: '09', name: '09 - Uttar Pradesh (Inter-State)' },
-  { code: '19', name: '19 - West Bengal (Inter-State)' },
-  { code: '06', name: '06 - Haryana (Inter-State)' },
-  { code: '23', name: '23 - Madhya Pradesh (Inter-State)' },
+// Every GST state code, in the order and with the names of the backend's
+// app/tax/gstin.py STATE_NAMES. The nine-state list this replaced could not
+// record a supply to most of the country. 99 (Centre Jurisdiction) is a
+// registration jurisdiction, not a place of supply, so it is left out.
+const GST_STATES: { code: string; name: string }[] = [
+  { code: '01', name: 'Jammu & Kashmir' }, { code: '02', name: 'Himachal Pradesh' }, { code: '03', name: 'Punjab' },
+  { code: '04', name: 'Chandigarh' }, { code: '05', name: 'Uttarakhand' }, { code: '06', name: 'Haryana' }, { code: '07', name: 'Delhi' },
+  { code: '08', name: 'Rajasthan' }, { code: '09', name: 'Uttar Pradesh' }, { code: '10', name: 'Bihar' }, { code: '11', name: 'Sikkim' },
+  { code: '12', name: 'Arunachal Pradesh' }, { code: '13', name: 'Nagaland' }, { code: '14', name: 'Manipur' },
+  { code: '15', name: 'Mizoram' }, { code: '16', name: 'Tripura' }, { code: '17', name: 'Meghalaya' }, { code: '18', name: 'Assam' },
+  { code: '19', name: 'West Bengal' }, { code: '20', name: 'Jharkhand' }, { code: '21', name: 'Odisha' },
+  { code: '22', name: 'Chhattisgarh' }, { code: '23', name: 'Madhya Pradesh' }, { code: '24', name: 'Gujarat' },
+  { code: '26', name: 'Dadra & Nagar Haveli and Daman & Diu' }, { code: '27', name: 'Maharashtra' },
+  { code: '29', name: 'Karnataka' }, { code: '30', name: 'Goa' }, { code: '31', name: 'Lakshadweep' }, { code: '32', name: 'Kerala' },
+  { code: '33', name: 'Tamil Nadu' }, { code: '34', name: 'Puducherry' }, { code: '35', name: 'Andaman & Nicobar Islands' },
+  { code: '36', name: 'Telangana' }, { code: '37', name: 'Andhra Pradesh' }, { code: '38', name: 'Ladakh' },
+  { code: '97', name: 'Other Territory' },
 ];
+
+const normaliseStateCode = (code?: string | null) => {
+  const c = (code || '').trim();
+  return c ? c.padStart(2, '0') : '';
+};
 
 interface SalesInvoiceFormProps {
   /** Called after a successful create so the caller can close and refresh. */
@@ -37,23 +50,35 @@ interface SalesInvoiceFormProps {
 }
 
 export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
+  const { company } = useCompany();
+  const homeState = normaliseStateCode(company?.state_code);
   const [customerId, setCustomerId] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [placeOfSupply, setPlaceOfSupply] = useState('08');
-  const [isInterState, setIsInterState] = useState(false);
+  // Home state from /auth/me, not a hard-coded '08'; until the company has
+  // loaded, and until a customer is chosen, the field is blank.
+  const [placeOfSupply, setPlaceOfSupply] = useState('');
+  const [posTouched, setPosTouched] = useState(false);
+  useEffect(() => {
+    if (!posTouched && homeState && !placeOfSupply) setPlaceOfSupply(homeState);
+  }, [homeState, posTouched, placeOfSupply]);
+  const isInterState = !!placeOfSupply && !!homeState && placeOfSupply !== homeState;
   const [items, setItems] = useState<LineItem[]>([
     { id: 1, material_id: '', name: '', code: '', hsn_code: '71131910', material_gst_rate: 3.0, materialValue: 0, makingCharges: 0 }
   ]);
 
   const handlePlaceOfSupplyChange = (code: string) => {
-    setPlaceOfSupply(code);
-    setIsInterState(code !== '08');
+    setPosTouched(true);
+    setPlaceOfSupply(normaliseStateCode(code));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerId) {
       alert('Please select a customer from master');
+      return;
+    }
+    if (!placeOfSupply) {
+      alert('Please select the place of supply');
       return;
     }
     const validLines = items.filter(i => i.material_id && (i.materialValue > 0 || i.makingCharges > 0));
@@ -183,8 +208,11 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
             onChange={(e) => handlePlaceOfSupplyChange(e.target.value)}
             className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none font-medium"
           >
-            {INDIAN_STATES.map(s => (
-              <option key={s.code} value={s.code}>{s.name}</option>
+            <option value="" disabled>Select state...</option>
+            {GST_STATES.map(s => (
+              <option key={s.code} value={s.code}>
+                {s.code} - {s.name}{s.code === homeState ? ' (Home State)' : ''}
+              </option>
             ))}
           </select>
         </div>

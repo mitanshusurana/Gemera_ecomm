@@ -37,6 +37,9 @@ export default function GstExportsPage() {
       if (type === 'gstr1') res = await gstExportApi.gstr1Json(period);
       else if (type === 'gstr3b') res = await gstExportApi.gstr3bJson(period);
       else if (type === 'gstr1_excel') res = await gstExportApi.gstr1Excel(period);
+      // /gst/export/hsn-summary answers JSON. It used to be saved with an
+      // .xlsx name, which Excel refused to open. The HSN sheet as a
+      // spreadsheet is inside the GSTR-1 Excel workbook above.
       else res = await api.get('/gst/export/hsn-summary', { params: { period }, responseType: 'blob' });
       
       const blob = res.data;
@@ -56,10 +59,18 @@ export default function GstExportsPage() {
     }
   };
 
-  const totalTaxable = summary.reduce((acc, r) => acc + (Number(r.taxable_material_value || 0) + Number(r.taxable_making_value || 0)), 0);
-  const totalCgst = summary.reduce((acc, r) => acc + Number(r.cgst_amount || 0), 0);
-  const totalSgst = summary.reduce((acc, r) => acc + Number(r.sgst_amount || 0), 0);
-  const totalIgst = summary.reduce((acc, r) => acc + Number(r.igst_amount || 0), 0);
+  // The register lists credit notes with positive amounts and an
+  // is_credit_note flag. A credit note reduces output tax, so it is netted
+  // off here exactly as /gst/tax-register's own summary does; adding it
+  // overstated the liability for every cancelled invoice.
+  const sumOf = (rows: any[], pick: (r: any) => number) => rows.reduce((acc, r) => acc + pick(r), 0);
+  const invoices = summary.filter((r) => !r.is_credit_note);
+  const creditNotes = summary.filter((r) => r.is_credit_note);
+  const net = (pick: (r: any) => number) => sumOf(invoices, pick) - sumOf(creditNotes, pick);
+  const totalTaxable = net((r) => Number(r.taxable_material_value || 0) + Number(r.taxable_making_value || 0));
+  const totalCgst = net((r) => Number(r.cgst_amount || 0));
+  const totalSgst = net((r) => Number(r.sgst_amount || 0));
+  const totalIgst = net((r) => Number(r.igst_amount || 0));
   const totalTax = totalCgst + totalSgst + totalIgst;
 
   return (
@@ -146,17 +157,17 @@ export default function GstExportsPage() {
             </div>
             <div>
               <h3 className="text-xl font-bold text-white mb-1">HSN Table 12 Summary</h3>
-              <p className="text-sm text-textSecondary">HSN 7113 / SAC 9988 commodity & service supply breakdown for Table 12 compliance.</p>
+              <p className="text-sm text-textSecondary">HSN 7113 / SAC 9988 commodity & service supply breakdown for Table 12 compliance, as JSON. The same table is a sheet in the GSTR-1 Excel workbook.</p>
             </div>
           </div>
           <div className="mt-auto pt-4">
             <button 
-              onClick={() => handleDownload('hsn', 'xlsx')} 
+              onClick={() => handleDownload('hsn', 'json')} 
               disabled={downloading === 'hsn'}
               className="w-full flex justify-center items-center gap-2 px-4 py-2 border border-border text-white font-medium rounded-lg hover:bg-white/5 disabled:opacity-50 text-sm"
             >
               {downloading === 'hsn' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Download HSN Summary Excel
+              Download HSN Summary JSON
             </button>
           </div>
         </div>
@@ -185,7 +196,7 @@ export default function GstExportsPage() {
       <div className="glass-card mt-8">
         <div className="p-4 border-b border-border flex justify-between items-center">
           <h3 className="text-lg font-bold text-white">GST Summary for Return Filing ({period})</h3>
-          <span className="text-xs text-textSecondary">{summary.length} registered invoices</span>
+          <span className="text-xs text-textSecondary">{invoices.length} invoices{creditNotes.length > 0 ? `, ${creditNotes.length} credit notes netted` : ''}</span>
         </div>
         <div className="p-4 overflow-x-auto">
           <table className="w-full text-left text-sm">

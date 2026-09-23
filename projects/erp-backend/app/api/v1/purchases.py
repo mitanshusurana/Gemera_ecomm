@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
-from app.tax.purchase_tax import PurchaseLineInput, compute_purchase_totals
+from app.tax.purchase_tax import DEFAULT_RCM_RATE, PurchaseLineInput, PurchaseTotals, compute_purchase_totals
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
@@ -53,6 +53,72 @@ class CreatePurchaseInvoiceRequest(BaseModel):
     items: List[PurchaseLineRequest]
     is_rcm: bool = False
     reason: str = "Purchase invoice creation"
+
+
+async def _post_rcm_liability(
+    db: AsyncSession,
+    *,
+    company_id,
+    fiscal_year_id,
+    invoice_id,
+    invoice_date: date,
+    supplier,
+    supplier_id,
+    description: str,
+    items,
+    totals: PurchaseTotals,
+    journal_entry_id,
+    user_id,
+) -> None:
+    """One row in the RCM liability register for a reverse-charge purchase.
+
+    [CGST Rule 56(4)] The register was read by GSTR-3B, the RCM register
+    screen and the tax audit report, but nothing ever wrote to it, so every
+    reverse-charge purchase posted its self-liability to the ledger and then
+    vanished from the returns. Amounts come from the same PurchaseTotals that
+    the journal entry was posted from, so the two cannot disagree.
+    """
+    if not totals.rcm_applicable or totals.total_rcm <= 0:
+        return
+    # The rate the material lines were taxed at when they all agree; the
+    # notified default otherwise (making charges carry their own rate, so a
+    # single "effective" rate would misstate a mixed bill).
+    line_rates = {to_decimal(getattr(it, "gst_rate", 0) or 0) for it in items}
+    line_rates.discard(to_decimal(0))
+    rcm_rate = line_rates.pop() if len(line_rates) == 1 else to_decimal(DEFAULT_RCM_RATE)
+    await db.execute(
+        text("""
+            INSERT INTO caratloop.rcm_liability_register (
+                company_id, fiscal_year_id, return_period, transaction_date,
+                vendor_id, vendor_name, vendor_pan, purchase_invoice_id, description,
+                purchase_value, rcm_rate, igst_rcm, cgst_rcm, sgst_rcm, total_rcm,
+                journal_entry_id, created_by
+            ) VALUES (
+                :cid, :fyid, :period, :tdate,
+                :vid, :vname, :vpan, :pid, :descr,
+                :pval, :rate, 0, :cgst, :sgst, :total,
+                :jid, :cb
+            )
+        """),
+        {
+            "cid": company_id,
+            "fyid": str(fiscal_year_id),
+            "period": invoice_date.strftime("%Y-%m"),
+            "tdate": invoice_date,
+            "vid": str(supplier_id),
+            "vname": (supplier.get("name") or supplier.get("trade_name") or "Unregistered supplier")[:200],
+            "vpan": ((supplier.get("pan") or "").strip().upper() or None),
+            "pid": str(invoice_id),
+            "descr": description[:500],
+            "pval": totals.material_subtotal + totals.making_subtotal,
+            "rate": rcm_rate,
+            "cgst": totals.rcm_cgst,
+            "sgst": totals.rcm_sgst,
+            "total": totals.total_rcm,
+            "jid": journal_entry_id,
+            "cb": user_id,
+        },
+    )
 
 
 def _as_uuid(value) -> str | None:
@@ -121,7 +187,7 @@ async def create_purchase_invoice(
         fy = await resolve_fiscal_year(db, company_id)
 
         supp_res = await db.execute(
-            text("SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties WHERE id = :id AND company_id = :cid LIMIT 1"),
+            text("SELECT id, name, trade_name, gstin, pan, state_code FROM caratloop.parties WHERE id = :id AND company_id = :cid LIMIT 1"),
             {"id": str(payload.supplier_id), "cid": company_id}
         )
         supplier = supp_res.mappings().first()
@@ -414,6 +480,22 @@ async def create_purchase_invoice(
                 {"jid": je_id, "seq": seq, "aid": rcm_sgst_acc_id, "cr": rcm_sgst})
             seq += 1
 
+            # ─── RCM LIABILITY REGISTER [CGST Rule 56(4)] ───────────────────────
+            await _post_rcm_liability(
+                db,
+                company_id=company_id,
+                fiscal_year_id=fy["id"],
+                invoice_id=invoice_id,
+                invoice_date=payload.invoice_date,
+                supplier=supplier,
+                supplier_id=payload.supplier_id,
+                description=f"Reverse charge on {bill_no} (supplier ref {payload.supplier_invoice_no or '-'})",
+                items=payload.items,
+                totals=totals,
+                journal_entry_id=je_id,
+                user_id=user_id,
+            )
+
         # ─── ITC REGISTER POSTING (ONLY REGISTERED SUPPLIERS) ────────────────────
         if not is_unregistered and not payload.is_rcm and total_gst > 0:
             return_period = payload.invoice_date.strftime("%Y-%m")
@@ -509,7 +591,7 @@ async def update_purchase_invoice(
         # company's party as the supplier on their own invoice.
         supp_res = await db.execute(
             text(
-                "SELECT id, name, trade_name, gstin, state_code FROM caratloop.parties "
+                "SELECT id, name, trade_name, gstin, pan, state_code FROM caratloop.parties "
                 "WHERE id = :id AND company_id = :cid LIMIT 1"
             ),
             {"id": str(payload.supplier_id), "cid": company_id}
@@ -531,7 +613,15 @@ async def update_purchase_invoice(
         )
         bill_no = bill_res.scalar() or "PI-UPDATED"
 
-        pos = payload.place_of_supply or (supplier.get("state_code") if supplier else None) or "08"
+        pos = payload.place_of_supply or supplier.get("state_code")
+        if not pos:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Place of supply is required: the supplier has no state on record and none "
+                    "was given. It decides whether IGST or CGST+SGST applies."
+                ),
+            )
         is_inter_state = pos.strip().zfill(2) != settings.COMPANY_STATE_CODE.strip().zfill(2)
 
         priced = await _resolve_line_rates(db, company_id, payload.items)
@@ -612,6 +702,7 @@ async def update_purchase_invoice(
         await db.execute(text("DELETE FROM caratloop.purchase_invoice_lines WHERE invoice_id::text = :pid"), {"pid": str(id)})
         await db.execute(text("DELETE FROM caratloop.stock_ledger_entries WHERE source_document_id::text = :pid AND source_document_type = 'PurchaseInvoice'"), {"pid": str(id)})
         await db.execute(text("DELETE FROM caratloop.itc_register WHERE invoice_id::text = :pid"), {"pid": str(id)})
+        await db.execute(text("DELETE FROM caratloop.rcm_liability_register WHERE purchase_invoice_id::text = :pid"), {"pid": str(id)})
 
         # Delete previous double-entry journals
         await db.execute(text("DELETE FROM caratloop.journal_entry_lines WHERE journal_entry_id IN (SELECT id FROM caratloop.journal_entries WHERE reference_id::text = :pid AND reference_type = 'PurchaseInvoice')"), {"pid": str(id)})
@@ -828,6 +919,22 @@ async def update_purchase_invoice(
             await db.execute(text("INSERT INTO caratloop.journal_entry_lines (journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration) VALUES (:jid, :seq, :aid, 0, :cr, 'RCM SGST Liability')"),
                 {"jid": je_id, "seq": seq, "aid": rcm_sgst_acc_id, "cr": rcm_sgst})
             seq += 1
+
+            # ─── RE-POST RCM LIABILITY REGISTER [CGST Rule 56(4)] ───────────────
+            await _post_rcm_liability(
+                db,
+                company_id=company_id,
+                fiscal_year_id=fy["id"],
+                invoice_id=id,
+                invoice_date=payload.invoice_date,
+                supplier=supplier,
+                supplier_id=payload.supplier_id,
+                description=f"Reverse charge on {bill_no} (supplier ref {payload.supplier_invoice_no or '-'})",
+                items=payload.items,
+                totals=totals,
+                journal_entry_id=je_id,
+                user_id=user_id,
+            )
 
         # ─── RE-POST ITC REGISTER (ONLY REGISTERED SUPPLIERS) ────────────────────
         if not is_unregistered and not payload.is_rcm and total_gst > 0:

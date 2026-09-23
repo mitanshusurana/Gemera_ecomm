@@ -260,6 +260,7 @@ async def complete_production_order(
     All changes are APPEND-ONLY. No DELETE or UPDATE on any ledger table.
     """
     user_id = str(current_user["id"])
+    company_id = current_user["company_id"]
     session_id = current_user.get("session_id", "0")
     ip_address = request.client.host if request.client else "0.0.0.0"
 
@@ -271,7 +272,7 @@ async def complete_production_order(
             JOIN caratloop.products p ON p.id = po.product_id
             WHERE po.id = :order_id AND po.company_id = :company_id
         """),
-        {"order_id": str(order_id), "company_id": current_user["company_id"]},
+        {"order_id": str(order_id), "company_id": company_id},
     )
     order = order_result.mappings().first()
     if not order:
@@ -292,12 +293,6 @@ async def complete_production_order(
     )
 
     try:
-        # ─── STEP 1: Get next sequence number for stock ledger ────────────────
-        seq_result = await db.execute(
-            text("SELECT nextval('caratloop.stock_ledger_entries_id_seq')")
-        )
-        # Not needed — BIGSERIAL handles it
-
         total_material_cost = Decimal("0")
         consumption_entry_ids = []
         output_entry_ids = []

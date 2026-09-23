@@ -272,7 +272,7 @@ async def get_dashboard_stats(
                 TO_CHAR(je.entry_date, 'Mon') AS month_name,
                 EXTRACT(YEAR FROM je.entry_date) AS yr,
                 EXTRACT(MONTH FROM je.entry_date) AS mo,
-                COALESCE(SUM(CASE WHEN ag.nature = 'Revenue' THEN jel.cr_amount - jel.dr_amount ELSE 0 END), 0) AS revenue,
+                COALESCE(SUM(CASE WHEN ag.nature = 'Income' THEN jel.cr_amount - jel.dr_amount ELSE 0 END), 0) AS revenue,
                 COALESCE(SUM(CASE WHEN ag.nature = 'Expenses' THEN jel.dr_amount - jel.cr_amount ELSE 0 END), 0) AS expenses
             FROM caratloop.journal_entries je
             JOIN caratloop.journal_entry_lines jel ON jel.journal_entry_id = je.id
@@ -772,14 +772,14 @@ async def get_profit_and_loss(
             LEFT JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
                 AND je.status = 'Posted'
                 AND je.entry_date BETWEEN :from_date AND :to_date
-            WHERE a.company_id = :cid AND ag.nature IN ('Revenue', 'Expenses')
+            WHERE a.company_id = :cid AND ag.nature IN ('Income', 'Expenses')
             GROUP BY ag.nature, ag.name, a.id, a.code, a.name
             ORDER BY ag.nature, a.code
         """),
         {"from_date": from_date, "to_date": to_date, "cid": current_user["company_id"]},
     )
     rows = [dict(r) for r in result.mappings().all()]
-    revenue = [r for r in rows if r["nature"] == "Revenue"]
+    revenue = [r for r in rows if r["nature"] == "Income"]
     expenses = [r for r in rows if r["nature"] == "Expenses"]
 
     total_revenue = sum(r["total_cr"] - r["total_dr"] for r in revenue)
