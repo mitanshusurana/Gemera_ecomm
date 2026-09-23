@@ -13,7 +13,7 @@ the first time is private; make the two ERP packages public (or log the VM into 
 |---|---|---|---|
 | Core VM | `docker-compose.backend.yml` | PostgreSQL, API, admin SPA | 8080 (API), 81 (admin) |
 | Storefront VM | `docker-compose.frontend.yml` | SSR storefront | 80 |
-| Core VM | `docker-compose.erp.yml` | ERP PostgreSQL, ERP API, ERP UI | none (loopback 8010 API, 3001 UI; proxy them) |
+| Core VM | `docker-compose.erp.yml` | ERP PostgreSQL, ERP API, ERP UI, nginx | 80, 443 (ERP nginx) |
 | Laptop | `docker-compose.local.yml` | everything from source | 5432 (localhost only), 8080, 4200, 4300 |
 
 PostgreSQL is not published on the Core VM; connect through an SSH tunnel:
@@ -90,8 +90,10 @@ curl -fsS http://127.0.0.1:8010/health
 
 Add `--build` to `up` to build the two ERP images from `projects/` instead of pulling them.
 
-`erp-migrate` runs `alembic upgrade head` and the API waits for it. Put the ERP UI (127.0.0.1:3001) and API
-(127.0.0.1:8010) behind the same TLS proxy as the admin, and list the UI origin in `CORS_ORIGINS`.
+`erp-migrate` runs `alembic upgrade head` and the API waits for it. `erp-nginx` (`nginx/erp.conf`) is the public
+entry point: it proxies `/api/` to the ERP API, everything else to the ERP UI, rate-limits the login endpoint and
+blocks the OpenAPI docs. It serves plain HTTP on 80 until you follow `nginx/TLS.md` to issue a certificate and
+enable the 443 listener. Set `CORS_ORIGINS` to the JSON list of origins the UI is served from.
 
 ## 4. Updating
 

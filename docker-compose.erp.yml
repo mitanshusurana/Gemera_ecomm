@@ -1,7 +1,8 @@
 # Caratloop ERP: accounting, GST, inventory costing, job work.
 # Runs beside the store stack (docker-compose.backend.yml) on the Core VM with
-# its own PostgreSQL. Both services bind to loopback; put the same TLS reverse
-# proxy that fronts the API and admin in front of 3001 (UI) and 8010 (API).
+# its own PostgreSQL. erp-nginx (nginx/erp.conf) is the only public entry point,
+# on 80 and 443; the API and UI bind to loopback for debugging only. TLS is a
+# two-step certbot flow described in nginx/TLS.md.
 #
 # Images come from GHCR (built by .github/workflows/docker-build-push.yml on
 # every push to main); `--build` rebuilds them from projects/ instead.
@@ -80,7 +81,7 @@ services:
       TZ: Asia/Kolkata
       # JSON list, quoted as a whole. A wildcard with credentials would reflect
       # any origin and expose ledger data to any site a signed-in user visits.
-      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3001"]}'
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost","http://localhost:3001"]}'
     ports:
       - "127.0.0.1:8010:8000"
     depends_on:
@@ -102,6 +103,49 @@ services:
       - "127.0.0.1:3001:3000"
     depends_on:
       - erp-backend
+
+  erp-nginx:
+    image: nginx:alpine
+    container_name: caratloop_erp_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/erp.conf:/etc/nginx/conf.d/default.conf:ro
+      # TLS server blocks; empty until you enable one (see nginx/TLS.md).
+      - ./nginx/tls:/etc/nginx/conf.d/tls:ro
+      # Certificates and the ACME challenge webroot. Both are empty until
+      # certbot has run; nginx serves plain HTTP on 80 until then.
+      - ./nginx/certs:/etc/letsencrypt:ro
+      - ./nginx/acme:/var/www/certbot
+    depends_on:
+      - erp-backend
+      - erp-frontend
+
+  # One-shot certificate issuance and renewal. Not started by default:
+  #   docker compose -f docker-compose.erp.yml --env-file .env.erp --profile tls run --rm erp-certbot
+  erp-certbot:
+    image: certbot/certbot:latest
+    container_name: caratloop_erp_certbot
+    profiles: ["tls"]
+    volumes:
+      - ./nginx/certs:/etc/letsencrypt
+      - ./nginx/acme:/var/www/certbot
+    # Compose interpolates every service regardless of profiles, so the
+    # required variables are checked inside the container, not with ${VAR:?}.
+    environment:
+      TLS_EMAIL: ${TLS_EMAIL:-}
+      TLS_DOMAIN: ${TLS_DOMAIN:-}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ -z "$$TLS_EMAIL" ] || [ -z "$$TLS_DOMAIN" ]; then
+          echo "FATAL: set TLS_EMAIL and TLS_DOMAIN before issuing a certificate." >&2
+          exit 1
+        fi
+        exec certbot certonly --webroot --webroot-path=/var/www/certbot           --email "$$TLS_EMAIL" -d "$$TLS_DOMAIN"           --agree-tos --no-eff-email --non-interactive
 
 volumes:
   erp_postgres_data:

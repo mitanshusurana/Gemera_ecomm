@@ -76,3 +76,8 @@ backend/backend_server.log
 **/.venv/
 **/.next/
 *.tsbuildinfo
+
+# ERP nginx: issued certificates, ACME webroot and the live TLS server block
+nginx/certs/
+nginx/acme/
+nginx/tls/*.conf
