@@ -21,7 +21,12 @@ const formatPdfMoney = (val: number | string) => {
 };
 
 // ─── 1. GST TAX INVOICE [CGST Rule 46] ────────────────────────────────────────
-export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print' = 'download') => {
+export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print' = 'download', companyArg?: any) => {
+  // The on-screen preview was corrected to read the company master; this
+  // engine still printed a literal seller, a placeholder GSTIN
+  // (08AAACC1234F1Z9) and a bank account belonging to nobody. Same source
+  // now: the invoice detail carries the company, or the caller passes it.
+  const company = companyArg || invoice.company || {};
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -61,17 +66,17 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(170, 120, 10);
-  doc.text('CARATLOOP MANUFACTURING ERP', 13, y + 6);
-  
+  doc.text((company.legal_name || company.trade_name || company.name || '— COMPANY NOT CONFIGURED —').toUpperCase(), 13, y + 6);
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(50, 50, 50);
-  doc.text('Export Zone, Sitapura Industrial Area, Phase II', 13, y + 11);
-  doc.text('Jaipur, Rajasthan — 302022', 13, y + 15);
+  doc.text(company.address_line1 || '', 13, y + 11);
+  doc.text([company.city, company.state_name, company.pincode].filter(Boolean).join(', '), 13, y + 15);
   doc.setFont('helvetica', 'bold');
-  doc.text('GSTIN: 08AAACC1234F1Z9', 13, y + 20);
+  doc.text(company.gstin ? `GSTIN: ${company.gstin}` : 'GSTIN: — not configured —', 13, y + 20);
   doc.setFont('helvetica', 'normal');
-  doc.text('State Code: 08 - Rajasthan', 13, y + 24);
+  doc.text(company.state_code ? `State Code: ${company.state_code}${company.state_name ? ' - ' + company.state_name : ''}` : 'State Code: —', 13, y + 24);
 
   // Invoice Meta
   const rightX = 10 + (width - 24) / 2 + 7;
@@ -121,19 +126,13 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
   y += 26;
 
   // Line Items Table
-  const lines = invoice.lines || [
-    {
-      description: '22K Gold Bangle / Ornament',
-      hsn_sac_code: '71131910',
-      quantity: 1,
-      gross_weight: 10.0,
-      net_weight: 10.0,
-      material_value: invoice.subtotal_material_value || 50000,
-      making_charges: invoice.subtotal_making_charges || 2500,
-    }
-  ];
+  // No invented line. With no lines this printed "22K Gold Bangle / Ornament,
+  // HSN 71131910, 10 g, 50,000 + 2,500" -- a fabricated item on a tax invoice.
+  const lines: any[] = Array.isArray(invoice.lines) && invoice.lines.length ? invoice.lines : [];
 
-  const tableBody = lines.map((l: any, i: number) => {
+  const tableBody = lines.length === 0
+    ? [[{ content: 'LINE ITEMS NOT AVAILABLE — do not issue this document; reopen the invoice and export again.', colSpan: 8, styles: { halign: 'center', fontStyle: 'italic' } }]]
+    : lines.map((l: any, i: number) => {
     const matVal = parseFloat(l.material_value || 0);
     const makVal = parseFloat(l.making_charges || 0);
     const taxable = matVal + makVal;
@@ -207,11 +206,19 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(40, 40, 40);
-  doc.text('Bank Name: State Bank of India (Jaipur Main Branch)', 13, y + 11);
-  doc.text('Account Name: CARATLOOP MANUFACTURING ERP', 13, y + 16);
-  doc.text('Account No: 409988776611', 13, y + 21);
-  doc.text('IFSC Code: SBIN0001234', 13, y + 26);
-  doc.text('Branch Code: 001234 — Jaipur', 13, y + 31);
+  if (company.bank && company.bank.account_no && company.bank.ifsc) {
+    // Only what the company entered in its own master. This printed a literal
+    // SBI account and IFSC on every invoice -- a customer paying against them
+    // paid into nothing.
+    doc.text(`Bank Name: ${company.bank.bank_name || ''}${company.bank.bank_branch ? ' (' + company.bank.bank_branch + ')' : ''}`, 13, y + 11);
+    doc.text(`Account Name: ${company.legal_name || company.name || ''}`, 13, y + 16);
+    doc.text(`Account No: ${company.bank.account_no}`, 13, y + 21);
+    doc.text(`IFSC Code: ${company.bank.ifsc}`, 13, y + 26);
+  } else {
+    doc.setFont('helvetica', 'italic');
+    doc.text('Remittance details not on record. Add the bank account to the company master.', 13, y + 11);
+    doc.setFont('helvetica', 'normal');
+  }
 
   // Totals Box (Right)
   doc.setFillColor(253, 251, 247);
@@ -266,7 +273,7 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(30, 30, 30);
-  doc.text('For CARATLOOP MANUFACTURING ERP', width - 10, y, { align: 'right' });
+  doc.text(`For ${company.legal_name || company.trade_name || company.name || '—'}`, width - 10, y, { align: 'right' });
   doc.text('Authorized Signatory', width - 10, y + 10, { align: 'right' });
 
   const filename = `Tax_Invoice_${invoice.invoice_no || 'CL'}.pdf`;
@@ -279,7 +286,8 @@ export const generateTaxInvoicePDF = (invoice: any, action: 'download' | 'print'
 
 
 // ─── 2. STATUTORY PURCHASE VOUCHER [CGST Rule 56(4)] ─────────────────────────
-export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'print' = 'download') => {
+export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'print' = 'download', companyArg?: any) => {
+  const company = companyArg || voucher.company || {};
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const width = doc.internal.pageSize.getWidth();
   let y = 10;
@@ -313,14 +321,14 @@ export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'p
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(170, 120, 10);
-  doc.text('CARATLOOP MANUFACTURING ERP', 13, y + 6);
+  doc.text((company.legal_name || company.trade_name || company.name || '— COMPANY NOT CONFIGURED —').toUpperCase(), 13, y + 6);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(50, 50, 50);
-  doc.text('Export Zone, Sitapura Industrial Area, Phase II', 13, y + 11);
-  doc.text('Jaipur, Rajasthan — 302022', 13, y + 15);
+  doc.text(company.address_line1 || '', 13, y + 11);
+  doc.text([company.city, company.state_name, company.pincode].filter(Boolean).join(', '), 13, y + 15);
   doc.setFont('helvetica', 'bold');
-  doc.text('GSTIN: 08AAACC1234F1Z9 | State: 08 - Rajasthan', 13, y + 20);
+  doc.text(`${company.gstin ? `GSTIN: ${company.gstin}` : 'GSTIN: — not configured —'} | ${company.state_code ? `State Code: ${company.state_code}${company.state_name ? ' - ' + company.state_name : ''}` : 'State Code: —'}`, 13, y + 20);
 
   const rightX = 10 + (width - 24) / 2 + 7;
   doc.setFont('helvetica', 'bold');
@@ -359,19 +367,13 @@ export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'p
   y += 24;
 
   // Items Table — Cream Headers
-  const items = voucher.items || [
-    {
-      material_name: 'Emerald Gemstone Lot',
-      hsn_sac_code: '71131910',
-      quantity: 1,
-      gross_weight: 10,
-      net_weight: 10,
-      rate: 3000,
-      material_value: 3000
-    }
-  ];
+  // No invented item. With none this printed "Emerald Gemstone Lot, HSN
+  // 71131910, 10 g, 3,000" on a statutory purchase voucher.
+  const items: any[] = Array.isArray(voucher.items) && voucher.items.length ? voucher.items : [];
 
-  const tableBody = items.map((item: any, idx: number) => [
+  const tableBody = items.length === 0
+    ? [[{ content: 'LINE ITEMS NOT AVAILABLE — reopen the bill and export again.', colSpan: 7, styles: { halign: 'center', fontStyle: 'italic' } }]]
+    : items.map((item: any, idx: number) => [
     (idx + 1).toString(),
     item.material_name || item.description || MISSING,
     item.hsn_sac_code || MISSING,
@@ -443,7 +445,7 @@ export const generatePurchaseVoucherPDF = (voucher: any, action: 'download' | 'p
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(30, 30, 30);
-  doc.text('For CARATLOOP MANUFACTURING ERP', width - 10, y, { align: 'right' });
+  doc.text(`For ${company.legal_name || company.trade_name || company.name || '—'}`, width - 10, y, { align: 'right' });
   doc.text('Authorized Signatory', width - 10, y + 10, { align: 'right' });
 
   const filename = `Purchase_Voucher_${voucher.bill_no || 'PI'}.pdf`;

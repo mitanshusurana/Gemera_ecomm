@@ -58,7 +58,7 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
             <button
               onClick={() => {
                 const { generateTaxInvoicePDF } = require('@/lib/vectorPdfEngine');
-                generateTaxInvoicePDF(invoice, 'download');
+                generateTaxInvoicePDF(invoice, 'download', company);
               }}
               className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white font-medium rounded-md hover:bg-amber-700 transition-colors shadow-sm"
             >
@@ -67,7 +67,7 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
             <button
               onClick={() => {
                 const { generateTaxInvoicePDF } = require('@/lib/vectorPdfEngine');
-                generateTaxInvoicePDF(invoice, 'print');
+                generateTaxInvoicePDF(invoice, 'print', company);
               }}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-800 font-medium rounded-md hover:bg-gray-100 transition-colors"
             >

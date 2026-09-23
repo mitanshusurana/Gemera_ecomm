@@ -911,7 +911,7 @@ export default function PurchasesPage() {
                 <button 
                   onClick={() => {
                     const { generatePurchaseVoucherPDF } = require('@/lib/vectorPdfEngine');
-                    generatePurchaseVoucherPDF(selectedInvoice, 'download');
+                    generatePurchaseVoucherPDF(selectedInvoice, 'download', company);
                   }}
                   className="px-4 py-2 bg-[#D4A843] text-black font-bold text-xs uppercase rounded hover:bg-[#b88f34] transition-colors flex items-center gap-2 shadow-sm"
                 >
