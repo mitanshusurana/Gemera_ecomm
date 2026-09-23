@@ -22,6 +22,8 @@ services:
     image: ${BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-backend:latest}
     container_name: jewelry-backend
     restart: unless-stopped
+    # Every backend variable, including the optional ERP_BASE_URL / ERP_API_KEY
+    # for the ERP outbox, is read from this file (see .env.backend.example).
     env_file:
       - .env.backend
     ports:

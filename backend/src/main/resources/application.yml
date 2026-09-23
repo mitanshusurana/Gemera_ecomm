@@ -23,6 +23,13 @@ razorpay:
   # POST /api/v1/payments/webhook. Empty => every webhook call answers 401.
   webhook_secret: ${RAZORPAY_WEBHOOK_SECRET:}
 
+# ERP e-commerce integration (ErpSyncService). Invoices and refunds are
+# queued in erp_sync_events and pushed to {base-url}/api/v1/integrations/
+# ecommerce/*. Either value blank => events stay PENDING; nothing is sent.
+erp:
+  base-url: ${ERP_BASE_URL:}
+  api-key: ${ERP_API_KEY:}
+
 spring:
   application:
     name: jewelry-backend

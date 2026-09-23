@@ -25,6 +25,9 @@ public class OrderCompletionService {
     @Autowired
     OrderNotificationService orderNotificationService;
 
+    @Autowired
+    InvoiceService invoiceService;
+
     /**
      * If an order exists for {@code razorpayOrderId} and is still
      * PENDING_PAYMENT, marks it PAID, records the payment id and sends the
@@ -56,6 +59,10 @@ public class OrderCompletionService {
         LOGGER.info("Order " + saved.getOrderNumber() + " marked PAID for Razorpay order " + razorpayOrderId);
 
         orderNotificationService.sendOrderConfirmation(saved);
+        // The GST invoice is issued after this transaction commits and can
+        // never fail the payment (InvoiceService logs and the download
+        // endpoint regenerates lazily).
+        invoiceService.issueAfterCommit(saved);
         return Optional.of(saved);
     }
 }

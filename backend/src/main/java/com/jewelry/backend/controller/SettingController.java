@@ -24,6 +24,10 @@ import java.util.TreeMap;
 public class SettingController {
 
     private static final Set<String> PUBLIC_KEYS = Set.of(
+            // Legal name and GSTIN are printed on every tax invoice and are
+            // public registration data, so the storefront may show them.
+            "companyLegalName",
+            "companyGstin",
             "companyAddress",
             "companyPhone",
             "companyEmail",

@@ -15,6 +15,12 @@ public class CreateOrderRequest {
     private PaymentDetailsDTO paymentDetails;
     private String idempotencyKey;
 
+    // Optional buyer tax identifiers. PAN becomes mandatory at or above
+    // Rs. 2,00,000 (OrderService enforces Rule 114B); GSTIN is for business
+    // buyers who need input credit on the invoice.
+    private String buyerGstin;
+    private String buyerPan;
+
     @Data
     public static class PaymentDetailsDTO {
         private String razorpay_payment_id;

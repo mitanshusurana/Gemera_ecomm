@@ -26,6 +26,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    # Every backend variable, including the optional ERP_BASE_URL / ERP_API_KEY
+    # for the ERP outbox, is read from this file (same keys as .env.backend.example).
     env_file:
       - .env.local
     ports:

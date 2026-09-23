@@ -205,7 +205,14 @@ public class CartService {
             if (coupon.getUsageLimit() != null && coupon.getTimesUsed() >= coupon.getUsageLimit()) {
                 throw new RuntimeException("Coupon usage limit reached");
             }
-            
+            // Explicit here so the shopper learns the floor instead of the
+            // code silently doing nothing in recalculateCart.
+            BigDecimal currentSubtotal = cart.getSubtotal() == null ? BigDecimal.ZERO : cart.getSubtotal();
+            if (coupon.getMinOrderValue() != null && currentSubtotal.compareTo(coupon.getMinOrderValue()) < 0) {
+                throw new RuntimeException("This coupon needs a minimum order of "
+                        + coupon.getMinOrderValue().setScale(2, RoundingMode.HALF_UP).toPlainString());
+            }
+
             cart.setAppliedCoupon(coupon.getCode());
         }
         recalculateCart(cart);
@@ -246,9 +253,13 @@ public class CartService {
         BigDecimal discount = BigDecimal.ZERO;
         if (cart.getAppliedCoupon() != null) {
             Coupon coupon = couponRepository.findByCodeIgnoreCase(cart.getAppliedCoupon()).orElse(null);
-            if (coupon != null && coupon.getActive() && 
+            // A coupon with a minimum order value stops applying the moment
+            // the cart drops below it (an item removed after the code was
+            // entered), the same way an expired code is dropped.
+            if (coupon != null && coupon.getActive() &&
                (coupon.getExpiryDate() == null || !coupon.getExpiryDate().isBefore(LocalDateTime.now())) &&
-               (coupon.getUsageLimit() == null || coupon.getTimesUsed() < coupon.getUsageLimit())) {
+               (coupon.getUsageLimit() == null || coupon.getTimesUsed() < coupon.getUsageLimit()) &&
+               (coupon.getMinOrderValue() == null || subtotal.compareTo(coupon.getMinOrderValue()) >= 0)) {
                
                 if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
                     discount = subtotal.multiply(coupon.getDiscountValue().divide(new BigDecimal("100")));

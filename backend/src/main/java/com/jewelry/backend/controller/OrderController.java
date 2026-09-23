@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,12 @@ public class OrderController {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    com.jewelry.backend.service.InvoiceService invoiceService;
+
+    @Autowired
+    com.jewelry.backend.service.ErpSyncService erpSyncService;
 
     @PostMapping
     @Transactional
@@ -85,6 +93,44 @@ public class OrderController {
             return ResponseEntity.status(403).build();
         }
         return ResponseEntity.ok(entityMapper.toOrderDTO(order));
+    }
+
+    /**
+     * GST tax invoice as PDF. Issues it on first request when the order is
+     * eligible; 404 (JSON, with "message") while it is not, e.g. a
+     * cash-on-delivery order that has not shipped.
+     */
+    // No "produces": that would pin the 404 ProblemDetail to application/pdf
+    // and turn it into a 406. The content type is set on the response instead.
+    @GetMapping("/{orderId}/invoice")
+    @Transactional
+    @Operation(summary = "Download the GST tax invoice PDF — owner or Admin")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable UUID orderId, Principal principal) {
+        Order order = orderService.getOrder(orderId);
+        User requestingUser = userRepository.findByEmail(principal.getName()).orElseThrow();
+        if (!"ADMIN".equals(requestingUser.getRole()) &&
+                (order.getUser() == null || !order.getUser().getId().equals(requestingUser.getId()))) {
+            return ResponseEntity.status(403).build();
+        }
+        com.jewelry.backend.entity.Invoice invoice = invoiceService.ensureInvoice(order);
+        byte[] pdf = invoiceService.renderPdf(invoice);
+        // "/" is not valid in a file name on any desktop OS; the browser
+        // would replace it anyway, so do it predictably here.
+        String filename = invoice.getInvoiceNumber().replace('/', '-') + ".pdf";
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(pdf);
+    }
+
+    /** Pushes the order's invoice (and any pending credit note) to the ERP immediately. */
+    @PostMapping("/{id}/erp-sync")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    @Operation(summary = "Send the order's sale / credit note to the ERP now — Admin only")
+    public ResponseEntity<OrderDTO> erpSync(@PathVariable UUID id) {
+        erpSyncService.syncNow(id);
+        return ResponseEntity.ok(entityMapper.toOrderDTO(orderService.getOrder(id)));
     }
 
     @GetMapping("/track/{id}")

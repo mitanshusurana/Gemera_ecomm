@@ -31,6 +31,23 @@ public class OrderDTO {
     private String shippingMethod;
     private String razorpayOrderId;
 
+    // Buyer tax identifiers captured at checkout (GST invoice, Rule 114B).
+    private String buyerGstin;
+    private String buyerPan;
+
+    // GST tax invoice, null until the order becomes eligible (see InvoiceService).
+    private String invoiceNumber;
+    private LocalDate invoiceDate;
+
+    // ERP outbox state of the SALE event; all null when no invoice exists yet.
+    private String erpSyncStatus;
+    private String erpReference;
+    private String erpLastError;
+
+    // Refund bookkeeping (REFUNDED / CANCELLED after online payment).
+    private String razorpayRefundId;
+    private BigDecimal refundedAmount;
+
     // Admin order flow (OPERATIONS-CONTRACT.md section 3)
     private String customerEmail;
     private String customerName;

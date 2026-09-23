@@ -53,7 +53,24 @@ public class Order extends BaseEntity {
     private String razorpayOrderId;
     private String razorpayPaymentId;
     private String razorpaySignature;
-    
+
     @Column(unique = true)
     private String idempotencyKey;
+
+    // Buyer tax identifiers for the GST invoice. PAN is mandatory at or above
+    // Rs. 2,00,000 (Income-tax Rule 114B); GSTIN lets a business buyer claim
+    // input credit. Both stored uppercased and format-checked by OrderService.
+    private String buyerGstin;
+    private String buyerPan;
+
+    // Refund bookkeeping: the gateway refund id and the amount actually
+    // returned, so a REFUNDED transition is never sent to Razorpay twice.
+    private String razorpayRefundId;
+    private BigDecimal refundedAmount;
+
+    // Stock is returned once per order (RETURNED, REFUNDED or CANCELLED can
+    // each restock; only the first one should). Null on rows that pre-date
+    // the column means "not yet".
+    @Column(columnDefinition = "boolean default false")
+    private Boolean restocked;
 }

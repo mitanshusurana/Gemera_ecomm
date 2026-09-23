@@ -65,6 +65,19 @@ public class OrderService {
     @Autowired
     OrderNotificationService orderNotificationService;
 
+    @Autowired
+    InvoiceService invoiceService;
+
+    @Autowired
+    ErpSyncService erpSyncService;
+
+    // Income-tax Rule 114B (PAN mandatory) and Section 269ST (no cash receipt)
+    // both bite at two lakh rupees per transaction.
+    static final java.math.BigDecimal PAN_THRESHOLD = new java.math.BigDecimal("200000");
+    private static final java.util.regex.Pattern PAN_FORMAT = java.util.regex.Pattern.compile("[A-Z]{5}[0-9]{4}[A-Z]");
+    private static final java.util.regex.Pattern GSTIN_FORMAT =
+            java.util.regex.Pattern.compile("^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$");
+
     @Transactional(rollbackFor = Exception.class)
     public Order createOrder(String userEmail, CreateOrderRequest request) {
         if (request.getPaymentDetails() != null && request.getPaymentDetails().getRazorpay_order_id() != null) {
@@ -86,8 +99,36 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
+        // Compliance before anything is written. The payable value is the
+        // invoice value before the gift card: the statutory limits look at
+        // the transaction, not at how much of it was prepaid.
+        String buyerPan = normalizeIdentifier(request.getBuyerPan());
+        String buyerGstin = normalizeIdentifier(request.getBuyerGstin());
+        if (buyerPan != null && !PAN_FORMAT.matcher(buyerPan).matches()) {
+            throw new IllegalArgumentException("The PAN must be 10 characters in the form AAAAA9999A.");
+        }
+        if (buyerGstin != null && !GSTIN_FORMAT.matcher(buyerGstin).matches()) {
+            throw new IllegalArgumentException("The GSTIN must be 15 characters, e.g. 08AAAAA9999A1Z5.");
+        }
+        java.math.BigDecimal payable = nz(cart.getSubtotal()).subtract(nz(cart.getDiscount()))
+                .add(nz(cart.getTax())).add(nz(cart.getShipping()))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+        if (payable.compareTo(PAN_THRESHOLD) >= 0) {
+            if (buyerPan == null) {
+                throw new IllegalArgumentException(
+                        "A PAN is required for purchases of ₹2,00,000 or more (Income-tax Rule 114B).");
+            }
+            if (isCodMethod(request.getPaymentMethod())) {
+                throw new IllegalArgumentException(
+                        "Cash on delivery is not available for purchases of ₹2,00,000 or more "
+                                + "(Income-tax Act Section 269ST). Please pay online.");
+            }
+        }
+
         Order order = new Order();
         order.setUser(user);
+        order.setBuyerPan(buyerPan);
+        order.setBuyerGstin(buyerGstin);
         order.setTotal(cart.getTotal());
         order.setStatus("PENDING_PAYMENT");
         order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -221,7 +262,31 @@ public class OrderService {
             orderNotificationService.sendOrderConfirmation(savedOrder);
         }
 
+        // GST invoice for a settled online order. Issued after this
+        // transaction commits so it can never roll the payment back.
+        if ("PAID".equals(savedOrder.getStatus())) {
+            invoiceService.issueAfterCommit(savedOrder);
+        }
+
         return savedOrder;
+    }
+
+    /** Uppercases and trims a PAN/GSTIN; blank becomes null. */
+    private static String normalizeIdentifier(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String value = raw.trim().toUpperCase();
+        return value.isEmpty() ? null : value;
+    }
+
+    private static boolean isCodMethod(String paymentMethod) {
+        return paymentMethod != null
+                && ("COD".equalsIgnoreCase(paymentMethod.trim()) || "CASH_ON_DELIVERY".equalsIgnoreCase(paymentMethod.trim()));
+    }
+
+    private static java.math.BigDecimal nz(java.math.BigDecimal value) {
+        return value == null ? java.math.BigDecimal.ZERO : value;
     }
 
     public Page<Order> getUserOrders(String userEmail, String status, Pageable pageable) {
@@ -371,10 +436,26 @@ public class OrderService {
                     "An order cannot move from " + current + " to " + next + ".");
         }
 
+        String reason = extra.get("reason");
+        boolean moneyReturned = false;
+
         switch (next) {
             case "SHIPPED" -> applyShippingDetails(order, extra, true);
+            case "RETURNED" -> restockOnce(order);
+            case "REFUNDED" -> {
+                // Gateway first: if Razorpay refuses, the IllegalStateException
+                // aborts the whole transition and the order stays where it was.
+                refundOnlinePayment(order, reason);
+                recreditGiftCard(order);
+                restockOnce(order);
+                moneyReturned = true;
+            }
             case "CANCELLED" -> {
-                restock(order);
+                if ("PAID".equals(current)) {
+                    refundOnlinePayment(order, reason);
+                    moneyReturned = true;
+                }
+                restockOnce(order);
                 recreditGiftCard(order);
             }
             default -> { }
@@ -383,8 +464,44 @@ public class OrderService {
         order.setStatus(next);
         Order saved = orderRepository.save(order);
 
-        orderNotificationService.sendForStatus(saved, next, extra.get("reason"));
+        // Reverse the sale in the ERP when an invoiced order is refunded or
+        // cancelled after payment. enqueueCreditNote is a no-op without an invoice.
+        if (moneyReturned) {
+            invoiceService.findForOrder(saved.getId()).ifPresent(invoice ->
+                    erpSyncService.enqueueCreditNote(saved, invoice.getGrandTotal(),
+                            "Refund: " + (reason == null || reason.isBlank() ? "order " + next.toLowerCase() : reason.trim())));
+        }
+
+        // Cash-on-delivery orders get their tax invoice when they ship;
+        // anything else that is now eligible and somehow has none is caught
+        // here too. Runs after commit and never fails the transition.
+        if (invoiceService.isEligible(saved)) {
+            invoiceService.issueAfterCommit(saved);
+        }
+
+        orderNotificationService.sendForStatus(saved, next, reason);
         return saved;
+    }
+
+    /**
+     * Refunds order.total through Razorpay once. Orders without a gateway
+     * payment (COD, gift-card only) or already refunded are left alone.
+     */
+    private void refundOnlinePayment(Order order, String reason) {
+        String paymentId = order.getRazorpayPaymentId();
+        if (paymentId == null || paymentId.isBlank() || order.getRefundedAmount() != null) {
+            return;
+        }
+        java.math.BigDecimal amount = order.getTotal() == null ? java.math.BigDecimal.ZERO
+                : order.getTotal().setScale(2, java.math.RoundingMode.HALF_UP);
+        if (amount.signum() <= 0) {
+            return;
+        }
+        String note = "Order " + order.getOrderNumber()
+                + (reason == null || reason.isBlank() ? "" : ": " + reason.trim());
+        String refundId = paymentService.refund(paymentId, amount, note);
+        order.setRazorpayRefundId(refundId);
+        order.setRefundedAmount(amount);
     }
 
     /**
@@ -439,8 +556,16 @@ public class OrderService {
         }
     }
 
-    /** Adds each item's quantity back to Product.stock (products without stock tracking are skipped). */
-    private void restock(Order order) {
+    /**
+     * Adds each item's quantity back to Product.stock, once per order
+     * (products without stock tracking are skipped). RETURNED followed by
+     * REFUNDED would otherwise count the same pieces twice.
+     */
+    private void restockOnce(Order order) {
+        if (Boolean.TRUE.equals(order.getRestocked())) {
+            return;
+        }
+        order.setRestocked(true);
         if (order.getItems() == null) {
             return;
         }

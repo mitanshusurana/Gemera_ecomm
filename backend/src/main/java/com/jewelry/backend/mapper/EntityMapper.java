@@ -17,6 +17,15 @@ public class EntityMapper {
     @Autowired
     private ObjectMapper objectMapper;
 
+    // Invoice and ERP state are looked up per order rather than mapped on
+    // the entity: Order is a Lombok @Data class and a bidirectional link
+    // would recurse in toString/hashCode.
+    @Autowired
+    private com.jewelry.backend.repository.InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private com.jewelry.backend.repository.ErpSyncEventRepository erpSyncEventRepository;
+
     // --- User ---
     public UserDTO toUserDTO(User user) {
         if (user == null) return null;
@@ -540,6 +549,24 @@ public class EntityMapper {
         dto.setNextStatuses(com.jewelry.backend.service.OrderService.nextStatuses(order.getStatus()));
         dto.setCreatedAt(order.getCreatedAt());
         dto.setUpdatedAt(order.getUpdatedAt());
+
+        // Tax identifiers, refund bookkeeping, invoice and ERP outbox state.
+        dto.setBuyerGstin(order.getBuyerGstin());
+        dto.setBuyerPan(order.getBuyerPan());
+        dto.setRazorpayRefundId(order.getRazorpayRefundId());
+        dto.setRefundedAmount(order.getRefundedAmount());
+        if (order.getId() != null) {
+            invoiceRepository.findByOrderId(order.getId()).ifPresent(invoice -> {
+                dto.setInvoiceNumber(invoice.getInvoiceNumber());
+                dto.setInvoiceDate(invoice.getInvoiceDate());
+            });
+            erpSyncEventRepository.findByOrderIdAndEventType(order.getId(), ErpSyncEvent.TYPE_SALE)
+                    .ifPresent(event -> {
+                        dto.setErpSyncStatus(event.getStatus());
+                        dto.setErpReference(event.getErpReference());
+                        dto.setErpLastError(event.getLastError());
+                    });
+        }
 
         return dto;
     }

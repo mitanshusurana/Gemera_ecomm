@@ -123,4 +123,43 @@ public class PaymentService {
     public void logFailure(TransactionFailureRequest request) {
         LOGGER.severe("Transaction Failed: " + request.toString());
     }
+
+    /**
+     * Refunds {@code amountInr} of a captured payment through Razorpay and
+     * returns the refund id. IllegalStateException (503 with the message)
+     * when the gateway is not configured or declines: the caller is a status
+     * transition that must not complete if the money did not move.
+     */
+    public String refund(String paymentId, java.math.BigDecimal amountInr, String note) {
+        if (paymentId == null || paymentId.isBlank()) {
+            throw new IllegalStateException("No Razorpay payment is recorded on this order, so nothing can be refunded.");
+        }
+        if (amountInr == null || amountInr.signum() <= 0) {
+            throw new IllegalStateException("Refund amount must be greater than zero.");
+        }
+        if (razorpayClient == null) {
+            throw new IllegalStateException("Payment gateway is not configured; the refund could not be issued.");
+        }
+        try {
+            JSONObject request = new JSONObject();
+            // Razorpay takes paise; scale 2 then shift keeps it exact.
+            request.put("amount", amountInr.setScale(2, java.math.RoundingMode.HALF_UP).movePointRight(2).longValueExact());
+            request.put("speed", "normal");
+            if (note != null && !note.isBlank()) {
+                JSONObject notes = new JSONObject();
+                notes.put("reason", note.length() > 250 ? note.substring(0, 250) : note);
+                request.put("notes", notes);
+            }
+            com.razorpay.Refund refund = razorpayClient.payments.refund(paymentId, request);
+            String refundId = refund.get("id");
+            LOGGER.info("Razorpay refund " + refundId + " issued for payment " + paymentId + " (" + amountInr + " INR)");
+            return refundId;
+        } catch (com.razorpay.RazorpayException e) {
+            LOGGER.severe("Razorpay refund failed for payment " + paymentId + ": " + e.getMessage());
+            throw new IllegalStateException("Razorpay refused the refund: " + e.getMessage(), e);
+        } catch (Exception e) {
+            LOGGER.severe("Razorpay refund failed for payment " + paymentId + ": " + e.getMessage());
+            throw new IllegalStateException("Payment gateway error while refunding: " + e.getMessage(), e);
+        }
+    }
 }
