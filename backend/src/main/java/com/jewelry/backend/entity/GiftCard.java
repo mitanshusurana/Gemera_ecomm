@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "gift_cards")
@@ -46,4 +47,19 @@ public class GiftCard extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String note; // admin-only
+
+    /**
+     * How the card came to exist: PURCHASE (storefront, paid), ADMIN (issued
+     * offline) or EXCHANGE (store credit for old gold). The ERP sale payload
+     * reports EXCHANGE redemptions as exchange credit, not as a payment.
+     */
+    @Column(length = 16)
+    private String source = SOURCE_PURCHASE;
+
+    /** The ExchangeRequest this card credits; only set when source is EXCHANGE. */
+    private UUID exchangeRequestId;
+
+    public static final String SOURCE_PURCHASE = "PURCHASE";
+    public static final String SOURCE_ADMIN = "ADMIN";
+    public static final String SOURCE_EXCHANGE = "EXCHANGE";
 }

@@ -30,6 +30,8 @@ public class InvoiceLine extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
     private String sku;
+    // ERP item-master code at the time of invoicing; lets the sale relieve ERP stock.
+    private String erpMaterialCode;
     private String hsnCode;
     private int quantity;
     private BigDecimal unitPrice;

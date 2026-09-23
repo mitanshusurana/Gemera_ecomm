@@ -104,6 +104,7 @@ public class GiftCardService {
         card.setMessage(message);
         card.setTheme(theme);
         card.setStatus(GiftCard.STATUS_PENDING_PAYMENT);
+        card.setSource(GiftCard.SOURCE_PURCHASE);
         card.setRazorpayOrderId(razorpayOrder.getId());
 
         GiftCard saved = giftCardRepository.save(card);
@@ -334,12 +335,44 @@ public class GiftCardService {
         card.setTheme(DEFAULT_THEME);
         card.setIssuedBy(adminEmail);
         card.setStatus(GiftCard.STATUS_PENDING_PAYMENT);
+        card.setSource(GiftCard.SOURCE_ADMIN);
 
         activate(card);
         GiftCard saved = giftCardRepository.save(card);
 
         sendRecipientEmail(saved);
         return saved;
+    }
+
+    /**
+     * Store credit for an old-gold exchange: an ACTIVE card for the assayed
+     * value, source EXCHANGE, linked to the request. The 500..1,00,000 rule
+     * for sold cards does not apply (an exchange is worth whatever the metal
+     * is worth), and no generic gift-card e-mail is sent: ExchangeService
+     * sends the exchange-credited template with the code instead.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public GiftCard issueExchangeCredit(UUID exchangeRequestId, String requestNumber, BigDecimal amount,
+                                        String recipientName, String recipientEmail, String adminEmail) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("The exchange value must be above zero before credit can be issued.");
+        }
+        GiftCard card = new GiftCard();
+        card.setInitialAmount(money(amount));
+        card.setCurrency(CURRENCY);
+        card.setRecipientName(requireText(recipientName, "recipientName", 120));
+        card.setRecipientEmail(recipientEmail == null || recipientEmail.isBlank() ? null
+                : normalizeEmail(recipientEmail, "recipientEmail"));
+        card.setMessage(null);
+        card.setNote("Old gold exchange " + requestNumber);
+        card.setTheme(DEFAULT_THEME);
+        card.setIssuedBy(adminEmail);
+        card.setStatus(GiftCard.STATUS_PENDING_PAYMENT);
+        card.setSource(GiftCard.SOURCE_EXCHANGE);
+        card.setExchangeRequestId(exchangeRequestId);
+
+        activate(card);
+        return giftCardRepository.save(card);
     }
 
     @Transactional(rollbackFor = Exception.class)

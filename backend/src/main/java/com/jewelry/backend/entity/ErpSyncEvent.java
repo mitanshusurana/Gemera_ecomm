@@ -17,17 +17,21 @@ import java.time.LocalDateTime;
  * The store must never block a payment on the ERP being reachable, so the
  * order flow only writes a row here (with the JSON snapshot it will send)
  * and ErpSyncService.flush() delivers it later. One row per (order, event
- * type): a sale is posted once, and a credit note once.
+ * type): a sale is posted once, and a credit note once. Old-gold purchases
+ * are keyed on the exchange request instead of an order, so the uniqueness
+ * covers (order, exchange request, event type); in PostgreSQL the NULL side
+ * never collides.
  */
 @Entity
 @Table(name = "erp_sync_events",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"order_id", "event_type"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"order_id", "exchange_request_id", "event_type"}))
 @Getter
 @Setter
 public class ErpSyncEvent extends BaseEntity {
 
     public static final String TYPE_SALE = "SALE";
     public static final String TYPE_CREDIT_NOTE = "CREDIT_NOTE";
+    public static final String TYPE_OLD_GOLD_PURCHASE = "OLD_GOLD_PURCHASE";
 
     public static final String STATUS_PENDING = "PENDING";
     public static final String STATUS_SENT = "SENT";
@@ -36,6 +40,11 @@ public class ErpSyncEvent extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;
+
+    // Set instead of order for OLD_GOLD_PURCHASE events.
+    @ManyToOne
+    @JoinColumn(name = "exchange_request_id")
+    private ExchangeRequest exchangeRequest;
 
     @Column(name = "event_type", nullable = false)
     private String eventType;

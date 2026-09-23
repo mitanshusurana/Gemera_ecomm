@@ -24,7 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/gift-cards")
 @Tag(name = "Admin Gift Cards", description = "Admin API for listing, issuing and disabling gift cards")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@access.has('giftcards.write')")
 public class AdminGiftCardController {
 
     @Autowired

@@ -60,6 +60,7 @@ public class SettingController {
     }
 
     static boolean isPublic(String key) {
-        return PUBLIC_KEYS.contains(key) || key.startsWith(PUBLIC_PREFIX);
+        // repairPrice* holds the "from" price guidance shown on the repairs page.
+        return PUBLIC_KEYS.contains(key) || key.startsWith(PUBLIC_PREFIX) || key.startsWith("repairPrice");
     }
 }

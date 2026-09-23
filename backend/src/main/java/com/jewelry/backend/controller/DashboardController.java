@@ -18,7 +18,7 @@ public class DashboardController {
     private DashboardService dashboardService;
 
     @GetMapping("/stats")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('dashboard.read')")
     public ResponseEntity<DashboardStatsDTO> getStats() {
         return ResponseEntity.ok(dashboardService.getStats());
     }

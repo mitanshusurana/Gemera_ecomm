@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/stores")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@access.has('stores.write')")
 @Tag(name = "Admin Stores", description = "Store locator management (Admin)")
 public class AdminStoreController {
 

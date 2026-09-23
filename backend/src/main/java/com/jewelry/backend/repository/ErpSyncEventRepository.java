@@ -16,6 +16,8 @@ public interface ErpSyncEventRepository extends JpaRepository<ErpSyncEvent, UUID
 
     List<ErpSyncEvent> findByOrderId(UUID orderId);
 
+    Optional<ErpSyncEvent> findByExchangeRequestIdAndEventType(UUID exchangeRequestId, String eventType);
+
     // Delivery queue: oldest first so the ERP receives documents in the order
     // they were issued, and a cap on attempts so a permanently broken row
     // stops consuming the scheduler.

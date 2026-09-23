@@ -10,7 +10,10 @@ import com.jewelry.backend.repository.OrderItemRepository;
 import com.jewelry.backend.repository.OrderRepository;
 import com.jewelry.backend.repository.UserRepository;
 import com.jewelry.backend.repository.ProductRepository;
+import com.jewelry.backend.security.AccessService;
+import com.jewelry.backend.security.StaffPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,9 @@ import java.util.logging.Logger;
 public class OrderService {
 
     private static final Logger LOGGER = Logger.getLogger(OrderService.class.getName());
+
+    @Autowired
+    AccessService access;
 
     @Autowired
     OrderRepository orderRepository;
@@ -434,6 +440,12 @@ public class OrderService {
         if (!allowed.contains(next)) {
             throw new IllegalArgumentException(
                     "An order cannot move from " + current + " to " + next + ".");
+        }
+
+        if ("REFUNDED".equals(next) && !access.isSystemContext() && !access.has(StaffPermissions.ORDERS_REFUND)) {
+            // orders.write lets staff move an order along; returning money is
+            // a separate permission (ACCOUNTS, MANAGER, ADMIN).
+            throw new AccessDeniedException("Refunding an order requires the orders.refund permission.");
         }
 
         String reason = extra.get("reason");

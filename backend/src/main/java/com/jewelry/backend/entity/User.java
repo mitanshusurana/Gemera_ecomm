@@ -22,7 +22,14 @@ public class User extends BaseEntity {
     private String firstName;
     private String lastName;
     private String phone;
-    private String role; // USER, ADMIN
+    private String role; // USER, or a staff role from StaffPermissions (ADMIN, MANAGER, SALES, INVENTORY, ACCOUNTS, SUPPORT)
+
+    /**
+     * Staff accounts can be switched off without deleting them (their audit
+     * trail stays). Null (rows created before the column existed) counts as
+     * active, see {@link #isActiveAccount()}.
+     */
+    private Boolean active = true;
 
     private Integer loyaltyPoints = 0;
 
@@ -33,4 +40,8 @@ public class User extends BaseEntity {
     @JsonManagedReference
     @ToString.Exclude
     private List<Address> addresses = new ArrayList<>();
+
+    public boolean isActiveAccount() {
+        return active == null || active;
+    }
 }

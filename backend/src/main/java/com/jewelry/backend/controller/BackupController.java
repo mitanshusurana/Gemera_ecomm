@@ -34,7 +34,7 @@ public class BackupController {
     private String dbPassword;
 
     @PostMapping("/trigger")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('maintenance.write')")
     public ResponseEntity<Map<String, Object>> triggerBackup() {
         Map<String, Object> response = new HashMap<>();
         

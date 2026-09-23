@@ -86,6 +86,10 @@ public class AuthService {
                 .map(refreshTokenService::verifyExpiration)
                 .map(com.jewelry.backend.entity.RefreshToken::getUser)
                 .map(user -> {
+                    if (!user.isActiveAccount()) {
+                        throw new org.springframework.security.authentication.DisabledException(
+                                "This account has been deactivated.");
+                    }
                     String token = jwtUtils.generateTokenForUser(user.getEmail(), user.getRole());
                     return new AuthResponse(token, requestRefreshToken, entityMapper.toUserDTO(user));
                 })

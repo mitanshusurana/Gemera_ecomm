@@ -28,8 +28,10 @@ import java.lang.management.OperatingSystemMXBean;
 
 @RestController
 @RequestMapping("/api/v1/admin")
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
+
+    @Autowired
+    com.jewelry.backend.security.AccessService access;
 
     @Autowired
     UserRepository userRepository;
@@ -53,6 +55,7 @@ public class AdminController {
     MetalPriceService metalPriceService;
 
     @GetMapping("/users")
+    @PreAuthorize("@access.has('customers.read')")
     @Operation(summary = "Get all users with CRM stats")
     public ResponseEntity<Page<UserDTO>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -69,13 +72,14 @@ public class AdminController {
     }
 
     @GetMapping("/analytics/kpis")
+    @PreAuthorize("@access.has('dashboard.read')")
     @Operation(summary = "Get Dashboard KPIs")
     public ResponseEntity<Map<String, Object>> getKpis() {
         BigDecimal totalSales = orderRepository.sumTotalByStatusIn(List.of("COMPLETED", "DELIVERED"));
 
         long activeRfqs = rfqRepository.countByStatusIn(List.of("PENDING", "NEGOTIATING"));
 
-        long newCustomers = userRepository.countByRoleNot("ADMIN");
+        long newCustomers = userRepository.countByRole(com.jewelry.backend.security.StaffPermissions.ROLE_USER);
 
         return ResponseEntity.ok(Map.of(
                 "totalSales", totalSales,
@@ -85,6 +89,7 @@ public class AdminController {
     }
 
     @GetMapping("/market/prices")
+    @PreAuthorize("@access.has('dashboard.read')")
     @Operation(summary = "Get Live Market Prices for Dashboard")
     public ResponseEntity<Map<String, Object>> getMarketPrices() {
         Map<String, Object> prices = metalPriceService.getMetalPricesWithMeta();
@@ -92,6 +97,7 @@ public class AdminController {
     }
 
     @GetMapping("/settings")
+    @PreAuthorize("@access.has('settings.read')")
     @Operation(summary = "Get Global Settings")
     public ResponseEntity<Map<String, String>> getSettings() {
         Map<String, String> settings = new java.util.HashMap<>();
@@ -100,6 +106,7 @@ public class AdminController {
     }
 
     @PutMapping("/settings")
+    @PreAuthorize("@access.has('settings.write')")
     @Operation(summary = "Update Global Settings")
     public ResponseEntity<Void> updateSettings(@RequestBody Map<String, String> newSettings) {
         if (newSettings == null || newSettings.isEmpty()) {
@@ -125,13 +132,14 @@ public class AdminController {
         AuditLog log = new AuditLog();
         log.setEventType("SETTINGS_UPDATE");
         log.setDetails("Updated global settings.");
-        log.setUserEmail("admin");
+        log.setUserEmail(access.currentEmailOr("admin"));
         auditLogRepository.save(log);
 
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/logs")
+    @PreAuthorize("@access.has('logs.read')")
     @Operation(summary = "Get Audit Logs")
     public ResponseEntity<Page<AuditLog>> getLogs(
             @RequestParam(defaultValue = "0") int page,
@@ -140,6 +148,7 @@ public class AdminController {
     }
 
     @GetMapping("/health")
+    @PreAuthorize("@access.has('maintenance.write')")
     @Operation(summary = "Get System Health")
     public ResponseEntity<Map<String, Object>> getSystemHealth() {
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
@@ -159,12 +168,13 @@ public class AdminController {
     }
 
     @PostMapping("/backup")
+    @PreAuthorize("@access.has('maintenance.write')")
     @Operation(summary = "Trigger Database Backup")
     public ResponseEntity<Map<String, String>> triggerBackup() {
         AuditLog log = new AuditLog();
         log.setEventType("SYSTEM_BACKUP");
         log.setDetails("Manual database backup triggered.");
-        log.setUserEmail("admin");
+        log.setUserEmail(access.currentEmailOr("admin"));
         auditLogRepository.save(log);
 
         return ResponseEntity.ok(Map.of(

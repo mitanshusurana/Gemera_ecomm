@@ -40,13 +40,20 @@ public class RFQController {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    com.jewelry.backend.security.AccessService access;
+
+    /** Staff who handle quotes see every RFQ; a customer sees only their own. */
     private boolean isOwnerOrAdmin(UUID ownerId, Principal principal) {
+        if (access.has(com.jewelry.backend.security.StaffPermissions.RFQ_WRITE)) {
+            return true;
+        }
         User user = userRepository.findByEmail(principal.getName()).orElseThrow();
-        return "ADMIN".equals(user.getRole()) || user.getId().equals(ownerId);
+        return user.getId().equals(ownerId);
     }
 
     @GetMapping("/statistics")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('rfq.write')")
     @Operation(summary = "Get RFQ statistics for admin dashboard")
     public ResponseEntity<Map<String, Object>> getStatistics() {
         long total = rfqService.getTotalCount();
@@ -69,7 +76,7 @@ public class RFQController {
 
     /** Admin pipeline (OPERATIONS-CONTRACT.md section 7): newest first, optional status filter. */
     @GetMapping("/requests")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('rfq.write')")
     @Transactional(readOnly = true)
     @Operation(summary = "List all RFQs, newest first, optionally filtered by status (Admin Only)")
     public ResponseEntity<Page<RFQRequestDTO>> getAllRequests(
@@ -127,7 +134,7 @@ public class RFQController {
     }
 
     @PutMapping("/requests/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('rfq.write')")
     @Operation(summary = "Update RFQ (Admin Only)")
     public ResponseEntity<RFQRequestDTO> updateRequest(@PathVariable UUID id, @RequestBody Map<String, Object> updates) {
         return ResponseEntity.ok(entityMapper.toRFQRequestDTO(rfqService.updateRequest(id, updates)));
@@ -155,7 +162,7 @@ public class RFQController {
     }
 
     @PostMapping("/requests/{id}/quote")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('rfq.write')")
     @Operation(summary = "Push Formal Quote (Admin Only)")
     public ResponseEntity<RFQQuoteDTO> createQuote(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
         java.math.BigDecimal proposedPrice = new java.math.BigDecimal(body.get("proposedPrice").toString());

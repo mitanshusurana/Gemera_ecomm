@@ -23,6 +23,17 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    /** Deactivated staff account: a clear 401 instead of the generic 400 below. */
+    @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+    public ProblemDetail handleDisabledException(org.springframework.security.authentication.DisabledException ex) {
+        String message = "This account has been deactivated.";
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, message);
+        problemDetail.setTitle("Account deactivated");
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/account-deactivated"));
+        problemDetail.setProperty("message", message);
+        return problemDetail;
+    }
+
     /**
      * Bad input. More specific than the RuntimeException handler below, so it
      * wins for IllegalArgumentException. The body stays a ProblemDetail (the

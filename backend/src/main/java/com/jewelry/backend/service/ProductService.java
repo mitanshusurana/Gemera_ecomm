@@ -378,6 +378,57 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
+    /**
+     * CSV-style SKU to ERP material mapping (PUT /admin/inventory/erp-codes).
+     * Each row names a SKU; a blank code clears the mapping. Unknown SKUs are
+     * reported, not fatal, so one bad line does not lose the rest of a paste.
+     * The whole product cache is dropped because many ids may have changed.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "products", allEntries = true)
+    public com.jewelry.backend.dto.ErpCodeMappingResultDTO bulkSetErpMaterialCodes(
+            List<com.jewelry.backend.dto.ErpCodeMappingDTO> rows) {
+        com.jewelry.backend.dto.ErpCodeMappingResultDTO result = new com.jewelry.backend.dto.ErpCodeMappingResultDTO();
+        if (rows == null) {
+            return result;
+        }
+        for (com.jewelry.backend.dto.ErpCodeMappingDTO row : rows) {
+            String sku = row == null || row.getSku() == null ? "" : row.getSku().trim();
+            String code = row == null || row.getErpMaterialCode() == null ? "" : row.getErpMaterialCode().trim().toUpperCase();
+            if (sku.isEmpty()) {
+                result.setInvalid(result.getInvalid() + 1);
+                result.getRows().add(new com.jewelry.backend.dto.ErpCodeMappingResultDTO.Row(sku, code, "INVALID", null));
+                continue;
+            }
+            Product product = productRepository.findFirstBySkuIgnoreCase(sku).orElse(null);
+            if (product == null) {
+                result.setNotFound(result.getNotFound() + 1);
+                result.getRows().add(new com.jewelry.backend.dto.ErpCodeMappingResultDTO.Row(sku, code, "NOT_FOUND", null));
+                continue;
+            }
+            String before = product.getErpMaterialCode();
+            String after = code.isEmpty() ? null : code;
+            String status;
+            if (java.util.Objects.equals(before, after)) {
+                status = "UNCHANGED";
+                result.setUnchanged(result.getUnchanged() + 1);
+            } else {
+                product.setErpMaterialCode(after);
+                productRepository.save(product);
+                if (after == null) {
+                    status = "CLEARED";
+                    result.setCleared(result.getCleared() + 1);
+                } else {
+                    status = "UPDATED";
+                    result.setUpdated(result.getUpdated() + 1);
+                }
+            }
+            result.getRows().add(new com.jewelry.backend.dto.ErpCodeMappingResultDTO.Row(
+                    product.getSku(), after, status, product.getName()));
+        }
+        return result;
+    }
+
     public void logProductView(String email, UUID productId) {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found"));

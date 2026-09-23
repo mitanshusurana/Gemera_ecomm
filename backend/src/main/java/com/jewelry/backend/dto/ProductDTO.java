@@ -66,6 +66,8 @@ public class ProductDTO {
     private String dimensions;
     private String currentLocation;
     private String hsnCode;
+    // ERP item-master code (Product.erpMaterialCode); null when the SKU is not mapped.
+    private String erpMaterialCode;
     private String huid;
     private Boolean bisHallmark;
     private String hallmarkingDate;

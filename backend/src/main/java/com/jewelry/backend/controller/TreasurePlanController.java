@@ -97,7 +97,7 @@ public class TreasurePlanController {
     @GetMapping("/accounts")
     @Transactional(readOnly = true)
     @Operation(summary = "Get all plans (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('treasure.write')")
     public ResponseEntity<Iterable<TreasureChestAccountDTO>> getAllAccounts() {
         List<TreasureChestAccountDTO> dtoList = new ArrayList<>();
         treasurePlanService.getAllAccounts().forEach(account -> dtoList.add(entityMapper.toTreasureChestAccountDTO(account)));
@@ -107,7 +107,7 @@ public class TreasurePlanController {
     @PostMapping("/accounts/{id}/payment")
     @Transactional
     @Operation(summary = "Record a cash installment (Admin); optional body { note }")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('treasure.write')")
     public ResponseEntity<TreasureChestAccountDTO> recordPayment(
             @PathVariable UUID id,
             @RequestBody(required = false) TreasurePaymentNoteRequest body) {
@@ -117,14 +117,14 @@ public class TreasurePlanController {
 
     @PostMapping("/accounts/{id}/skip")
     @Operation(summary = "Skip Month (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('treasure.write')")
     public ResponseEntity<TreasureChestAccountDTO> skipMonth(@PathVariable UUID id) {
         return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.skipMonth(id)));
     }
 
     @PostMapping("/accounts/{id}/close")
     @Operation(summary = "Close Plan (Admin)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('treasure.write')")
     public ResponseEntity<TreasureChestAccountDTO> closePlan(@PathVariable UUID id) {
         return ResponseEntity.ok(entityMapper.toTreasureChestAccountDTO(treasurePlanService.closePlan(id)));
     }

@@ -39,6 +39,25 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
             + "ORDER BY p.stock ASC, p.name ASC")
     List<Product> findLowStock(@Param("threshold") int threshold);
 
+    // ----- Warehouse (Product.stock) views for the admin stock pages -----
+
+    @Query(value = "SELECT p FROM Product p WHERE p.stock IS NOT NULL AND ("
+            + "LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%'))) ORDER BY p.name ASC",
+            countQuery = "SELECT COUNT(p) FROM Product p WHERE p.stock IS NOT NULL AND ("
+            + "LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Product> searchWarehouseStock(@Param("search") String search, Pageable pageable);
+
+    /** Snapshot source for a warehouse stock take: every product with sellable pieces. */
+    @Query("SELECT p FROM Product p WHERE p.stock IS NOT NULL AND p.stock > 0")
+    List<Product> findWithPositiveStock();
+
+    /** Warehouse totals: SKUs with pieces, pieces, value at list price. */
+    @Query("SELECT COUNT(p), COALESCE(SUM(p.stock), 0), COALESCE(SUM(p.stock * COALESCE(p.price, 0)), 0) "
+            + "FROM Product p WHERE p.stock IS NOT NULL AND p.stock > 0")
+    List<Object[]> summarizeWarehouseStock();
+
     @Query("SELECT DISTINCT p.category FROM Product p")
     List<String> findAllCategories();
 

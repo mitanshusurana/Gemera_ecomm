@@ -22,7 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/coupons")
 @Tag(name = "Admin Coupons", description = "Admin API for creating and managing discount coupons")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@access.has('coupons.write')")
 public class AdminCouponController {
 
     @Autowired

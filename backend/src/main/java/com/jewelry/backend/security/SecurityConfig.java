@@ -117,7 +117,9 @@ public class SecurityConfig {
       // Authorization rules
       .authorizeHttpRequests(auth ->
         auth.requestMatchers("/api/v1/auth/**").permitAll()
-          .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+          // Any back-office role may enter the admin URL space; each endpoint
+          // then demands its own permission via @PreAuthorize("@access.has(...)").
+          .requestMatchers("/api/v1/admin/**").hasAnyRole(StaffPermissions.STAFF_ROLES.toArray(String[]::new))
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/settings").permitAll()
@@ -128,6 +130,10 @@ public class SecurityConfig {
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/gift-cards/purchase").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/gift-cards/*/confirm").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/treasure/config").permitAll()
+          // Old gold exchange: public quote, guest intake, and tracking by request number + phone.
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/exchange/quote").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/exchange/requests").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/exchange/requests/track/**").permitAll()
           // Razorpay server-to-server webhook: no JWT, authenticated by the
           // X-Razorpay-Signature HMAC that PaymentWebhookService verifies.
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
@@ -137,6 +143,11 @@ public class SecurityConfig {
           // Guests can ask to be told when a sold-out piece is back.
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/notifications/stock").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/appointments").permitAll()
+          // Repair jobs: guests may book, upload a photo, track and approve by job number + phone.
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/repairs/requests").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/repairs/photos").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/repairs/track/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/repairs/*/approve-estimate").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/inquiries").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reviews/**").permitAll()
           .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN")

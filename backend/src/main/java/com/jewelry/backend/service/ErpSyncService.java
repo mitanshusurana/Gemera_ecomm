@@ -4,10 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jewelry.backend.dto.AddressDTO;
 import com.jewelry.backend.entity.ErpSyncEvent;
+import com.jewelry.backend.entity.ExchangeRequest;
+import com.jewelry.backend.entity.GiftCard;
 import com.jewelry.backend.entity.Invoice;
 import com.jewelry.backend.entity.InvoiceLine;
 import com.jewelry.backend.entity.Order;
 import com.jewelry.backend.repository.ErpSyncEventRepository;
+import com.jewelry.backend.repository.ExchangeRequestRepository;
+import com.jewelry.backend.repository.GiftCardRepository;
 import com.jewelry.backend.repository.InvoiceRepository;
 import com.jewelry.backend.repository.OrderRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -56,6 +60,7 @@ public class ErpSyncService {
     static final String NOT_CONFIGURED = "ERP integration is not configured";
     static final String SALES_PATH = "/api/v1/integrations/ecommerce/sales";
     static final String CREDIT_NOTES_PATH = "/api/v1/integrations/ecommerce/credit-notes";
+    static final String OLD_GOLD_PATH = "/api/v1/integrations/ecommerce/old-gold-purchases";
     // lastError prefix that marks a totals mismatch (HTTP 409); flush() skips these.
     private static final String CONFLICT_PREFIX = "HTTP 409";
 
@@ -73,6 +78,12 @@ public class ErpSyncService {
 
     @Autowired
     OrderRepository orderRepository;
+
+    @Autowired
+    GiftCardRepository giftCardRepository;
+
+    @Autowired
+    ExchangeRequestRepository exchangeRequestRepository;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -121,6 +132,46 @@ public class ErpSyncService {
         body.put("date", LocalDate.now(InvoiceService.INDIA).toString());
         ErpSyncEvent event = newEvent(order, ErpSyncEvent.TYPE_CREDIT_NOTE, toJson(body));
         return Optional.of(eventRepository.save(event));
+    }
+
+    /**
+     * Records the RCM purchase of a customer's old gold for the ERP; called
+     * when the exchange request is credited. Idempotent per request.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public ErpSyncEvent enqueueOldGoldPurchase(ExchangeRequest request) {
+        Optional<ErpSyncEvent> existing = eventRepository.findByExchangeRequestIdAndEventType(
+                request.getId(), ErpSyncEvent.TYPE_OLD_GOLD_PURCHASE);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        ErpSyncEvent event = newEvent(null, ErpSyncEvent.TYPE_OLD_GOLD_PURCHASE, oldGoldPayload(request));
+        event.setExchangeRequest(request);
+        return eventRepository.save(event);
+    }
+
+    /** Admin action for one exchange request: send its OLD_GOLD_PURCHASE now, ignoring the attempt cap. */
+    public void syncExchangeNow(UUID exchangeRequestId) {
+        if (!isConfigured()) {
+            throw new IllegalStateException(NOT_CONFIGURED + ". Set ERP_BASE_URL and ERP_API_KEY on the API.");
+        }
+        ExchangeRequest request = exchangeRequestRepository.findById(exchangeRequestId)
+                .orElseThrow(() -> new EntityNotFoundException("Exchange request not found"));
+        if (!ExchangeRequest.STATUS_CREDITED.equals(request.getStatus())) {
+            throw new IllegalArgumentException("Only a credited exchange is posted to the ERP.");
+        }
+        ErpSyncEvent event = eventRepository.findByExchangeRequestIdAndEventType(
+                        exchangeRequestId, ErpSyncEvent.TYPE_OLD_GOLD_PURCHASE)
+                .orElseGet(() -> enqueueOldGoldPurchase(request));
+        if (!ErpSyncEvent.STATUS_SENT.equals(event.getStatus())) {
+            deliver(event);
+        }
+    }
+
+    /** The outbox row for an exchange request, if any (admin detail view). */
+    @Transactional(readOnly = true)
+    public Optional<ErpSyncEvent> findExchangeEvent(UUID exchangeRequestId) {
+        return eventRepository.findByExchangeRequestIdAndEventType(exchangeRequestId, ErpSyncEvent.TYPE_OLD_GOLD_PURCHASE);
     }
 
     private ErpSyncEvent newEvent(Order order, String type, String payload) {
@@ -194,8 +245,14 @@ public class ErpSyncService {
      * on purpose: the call may take seconds and must not hold a connection.
      */
     private void deliver(ErpSyncEvent event) {
-        boolean sale = ErpSyncEvent.TYPE_SALE.equals(event.getEventType());
-        String path = sale ? SALES_PATH : CREDIT_NOTES_PATH;
+        String type = event.getEventType();
+        boolean oldGold = ErpSyncEvent.TYPE_OLD_GOLD_PURCHASE.equals(type);
+        String path = ErpSyncEvent.TYPE_SALE.equals(type) ? SALES_PATH
+                : oldGold ? OLD_GOLD_PATH
+                : CREDIT_NOTES_PATH;
+        String referenceKey = ErpSyncEvent.TYPE_SALE.equals(type) ? "invoice_id"
+                : oldGold ? "purchase_invoice_no"
+                : "voucher_no";
         event.setAttempts(event.getAttempts() + 1);
         try {
             ResponseEntity<String> response = client().post()
@@ -209,14 +266,15 @@ public class ErpSyncService {
             if (!"success".equalsIgnoreCase(node.path("status").asText())) {
                 fail(event, "HTTP " + response.getStatusCode().value() + " without status=success: " + abbreviate(body));
             } else {
-                String reference = node.path(sale ? "invoice_id" : "voucher_no").asText(null);
+                String reference = node.path(referenceKey).asText(null);
                 event.setStatus(ErpSyncEvent.STATUS_SENT);
                 event.setErpReference(reference == null || reference.isBlank() ? null : reference);
                 event.setSentAt(LocalDateTime.now());
                 event.setLastError(null);
-                LOGGER.info("ERP accepted " + event.getEventType() + " for order "
-                        + (event.getOrder() == null ? "?" : event.getOrder().getOrderNumber())
-                        + " as " + reference);
+                if (oldGold && event.getExchangeRequest() != null) {
+                    recordPurchaseRef(event.getExchangeRequest().getId(), event.getErpReference());
+                }
+                LOGGER.info("ERP accepted " + event.getEventType() + " for " + label(event) + " as " + reference);
             }
         } catch (RestClientResponseException e) {
             // 409 = totals mismatch: recorded with the ERP's detail and held
@@ -231,9 +289,33 @@ public class ErpSyncService {
     private void fail(ErpSyncEvent event, String error) {
         event.setStatus(ErpSyncEvent.STATUS_FAILED);
         event.setLastError(error);
-        LOGGER.warning("ERP sync " + event.getEventType() + " for order "
-                + (event.getOrder() == null ? "?" : event.getOrder().getOrderNumber())
+        LOGGER.warning("ERP sync " + event.getEventType() + " for " + label(event)
                 + " failed (attempt " + event.getAttempts() + "): " + error);
+    }
+
+    private static String label(ErpSyncEvent event) {
+        if (event.getOrder() != null) {
+            return "order " + event.getOrder().getOrderNumber();
+        }
+        if (event.getExchangeRequest() != null) {
+            return "exchange " + event.getExchangeRequest().getRequestNumber();
+        }
+        return "?";
+    }
+
+    /** Stores the purchase invoice number the ERP issued on the exchange request (own transaction; deliver() has none). */
+    private void recordPurchaseRef(UUID exchangeRequestId, String purchaseRef) {
+        if (purchaseRef == null) {
+            return;
+        }
+        try {
+            exchangeRequestRepository.findById(exchangeRequestId).ifPresent(request -> {
+                request.setErpPurchaseRef(purchaseRef);
+                exchangeRequestRepository.save(request);
+            });
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Could not store ERP purchase ref on exchange " + exchangeRequestId, e);
+        }
     }
 
     private RestClient client() {
@@ -291,6 +373,8 @@ public class ErpSyncService {
             Map<String, Object> l = new LinkedHashMap<>();
             l.put("description", line.getDescription());
             l.put("sku", line.getSku());
+            // Null when the product is not mapped; the ERP then books the sale without a stock movement.
+            l.put("material_code", line.getErpMaterialCode());
             l.put("hsn_sac_code", line.getHsnCode());
             l.put("quantity", line.getQuantity());
             l.put("taxable_value", money(line.getTaxableValue()));
@@ -305,15 +389,25 @@ public class ErpSyncService {
         totals.put("igst", money(invoice.getIgst()));
         totals.put("grand_total", money(invoice.getGrandTotal()));
 
+        // A gift card issued for old gold is not money the customer paid; it
+        // is metal the shop bought (already posted as an RCM purchase). The
+        // ERP nets it against the invoice as exchange credit, so it leaves
+        // the payment and travels in its own block.
+        Map<String, Object> exchangeCredit = exchangeCredit(order);
+        BigDecimal creditAmount = exchangeCredit == null ? BigDecimal.ZERO : (BigDecimal) exchangeCredit.get("amount");
+
         Map<String, Object> payment = null;
         if (!InvoiceService.isCashOnDelivery(order)) {
-            payment = new LinkedHashMap<>();
-            boolean gateway = notBlank(order.getRazorpayPaymentId());
-            payment.put("mode", gateway ? "Razorpay" : "Gift card");
-            payment.put("reference", gateway ? order.getRazorpayPaymentId().trim() : order.getAppliedGiftCard());
-            payment.put("amount", money(invoice.getGrandTotal()));
-            payment.put("date", invoice.getInvoiceDate() == null ? LocalDate.now(InvoiceService.INDIA).toString()
-                    : invoice.getInvoiceDate().toString());
+            BigDecimal paid = money(invoice.getGrandTotal()).subtract(creditAmount);
+            if (paid.signum() > 0) {
+                payment = new LinkedHashMap<>();
+                boolean gateway = notBlank(order.getRazorpayPaymentId());
+                payment.put("mode", gateway ? "Razorpay" : "Gift card");
+                payment.put("reference", gateway ? order.getRazorpayPaymentId().trim() : order.getAppliedGiftCard());
+                payment.put("amount", paid);
+                payment.put("date", invoice.getInvoiceDate() == null ? LocalDate.now(InvoiceService.INDIA).toString()
+                        : invoice.getInvoiceDate().toString());
+            }
         }
 
         Map<String, Object> body = new LinkedHashMap<>();
@@ -332,7 +426,81 @@ public class ErpSyncService {
                 .add(roundOff.signum() > 0 ? roundOff : BigDecimal.ZERO);
         body.put("other_charges", money(otherCharges));
         body.put("totals", totals);
-        body.put("payment", payment);
+        if (exchangeCredit != null) {
+            // Settled wholly by exchange credit: no payment block at all.
+            if (payment != null) {
+                body.put("payment", payment);
+            }
+            body.put("exchange_credit", exchangeCredit);
+        } else {
+            body.put("payment", payment);
+        }
+        return toJson(body);
+    }
+
+    /**
+     * {amount, reference, purchase_ref} when the order was (partly) paid with
+     * a gift card whose source is EXCHANGE; null for every other order.
+     */
+    private Map<String, Object> exchangeCredit(Order order) {
+        if (!notBlank(order.getAppliedGiftCard()) || order.getGiftCardAmount() == null
+                || order.getGiftCardAmount().signum() <= 0) {
+            return null;
+        }
+        Optional<GiftCard> card = giftCardRepository.findByCodeIgnoreCase(order.getAppliedGiftCard().trim());
+        if (card.isEmpty() || !GiftCard.SOURCE_EXCHANGE.equals(card.get().getSource())) {
+            return null;
+        }
+        ExchangeRequest request = card.get().getExchangeRequestId() == null ? null
+                : exchangeRequestRepository.findById(card.get().getExchangeRequestId()).orElse(null);
+        Map<String, Object> credit = new LinkedHashMap<>();
+        credit.put("amount", money(order.getGiftCardAmount()));
+        credit.put("reference", request == null ? order.getAppliedGiftCard() : request.getRequestNumber());
+        credit.put("purchase_ref", request == null ? null : request.getErpPurchaseRef());
+        return credit;
+    }
+
+    /** Body for POST /api/v1/integrations/ecommerce/old-gold-purchases. */
+    private String oldGoldPayload(ExchangeRequest request) {
+        Map<String, Object> customer = new LinkedHashMap<>();
+        customer.put("name", request.getCustomerName());
+        customer.put("email", request.getEmail());
+        customer.put("phone", request.getPhone());
+        customer.put("pan", request.getPan());
+        customer.put("state_code", request.getStateCode());
+        customer.put("address_line1", null);
+        customer.put("city", null);
+        customer.put("pincode", null);
+
+        BigDecimal purity = request.getAssayedPurityFraction() != null ? request.getAssayedPurityFraction()
+                : request.getDeclaredPurityFraction();
+        BigDecimal netWeight = request.getAssayedNetWeightGrams() != null ? request.getAssayedNetWeightGrams()
+                : request.getDeclaredWeightGrams();
+        BigDecimal grossWeight = request.getDeclaredWeightGrams() != null ? request.getDeclaredWeightGrams() : netWeight;
+        BigDecimal rate = request.getAssayedRatePerGram() != null ? request.getAssayedRatePerGram()
+                : request.getQuotedRatePerGram();
+        BigDecimal value = request.getFinalValue() != null ? request.getFinalValue() : request.getQuotedValue();
+
+        String description = "Old gold exchange " + request.getRequestNumber();
+        if (notBlank(request.getItemDescription())) {
+            description += ": " + abbreviate(request.getItemDescription().trim());
+        } else if (notBlank(request.getDeclaredPurity())) {
+            description += ": " + request.getDeclaredPurity() + " " + request.getMetal().toLowerCase();
+        }
+
+        LocalDateTime creditedAt = request.getCreditedAt() != null ? request.getCreditedAt() : LocalDateTime.now();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("external_ref", request.getRequestNumber());
+        body.put("purchase_date", creditedAt.toLocalDate().toString());
+        body.put("customer", customer);
+        body.put("metal", request.getMetal());
+        body.put("purity", purity == null ? null : purity.setScale(3, RoundingMode.HALF_UP));
+        body.put("gross_weight", grossWeight == null ? null : grossWeight.setScale(3, RoundingMode.HALF_UP));
+        body.put("net_weight", netWeight == null ? null : netWeight.setScale(3, RoundingMode.HALF_UP));
+        body.put("rate_per_gram", money(rate));
+        body.put("value", money(value));
+        body.put("description", description);
         return toJson(body);
     }
 

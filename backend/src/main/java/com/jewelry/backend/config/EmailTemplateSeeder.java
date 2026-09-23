@@ -29,6 +29,13 @@ public class EmailTemplateSeeder {
     public static final String BACK_IN_STOCK = "back-in-stock";
     public static final String TREASURE_INSTALLMENT = "treasure-installment";
     public static final String TREASURE_MATURED = "treasure-matured";
+    public static final String REPAIR_RECEIVED = "repair-received";
+    public static final String REPAIR_ESTIMATE = "repair-estimate";
+    public static final String REPAIR_READY = "repair-ready";
+    public static final String REPAIR_DELIVERED = "repair-delivered";
+    public static final String EXCHANGE_RECEIVED = "exchange-received";
+    public static final String EXCHANGE_CREDITED = "exchange-credited";
+    public static final String EXCHANGE_REJECTED = "exchange-rejected";
 
     private static final String GOLD = "#c9a44c";
     private static final String DARK_GOLD = "#8a6d1f";
@@ -185,7 +192,122 @@ public class EmailTemplateSeeder {
                     <p style="margin:0 0 16px;">Redeem it against any piece in our collection: visit a store or reply to this email and our team will help you choose.</p>
                     <p style="margin:0;">Browse the collection at <a href="{{storefrontUrl}}/products" style="color:#8a6d1f;">caratloop</a>.</p>
                     """,
-                    List.of("customerName", "storefrontUrl", "balance", "bonus")));
+                    List.of("customerName", "storefrontUrl", "balance", "bonus")),
+
+            // ----- Repair and service jobs (RepairNotificationService) -----
+            new Seed(REPAIR_RECEIVED,
+                    "Repair request {{jobNumber}} received",
+                    "Repair request received",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">We have logged your request for <strong>{{serviceType}}</strong> on your <strong>{{itemDescription}}</strong> as job <strong>{{jobNumber}}</strong>.</p>
+                    <p style="margin:0 0 16px;">Please bring the piece to the store (or send it insured) quoting the job number. Our goldsmith will assess it and send you an estimate to approve before any work begins.</p>
+                    <p style="margin:0 0 20px;text-align:center;">
+                      <a href="{{trackingUrl}}" style="display:inline-block;padding:12px 28px;background:#1c1c1c;color:#c9a44c;text-decoration:none;letter-spacing:2px;text-transform:uppercase;font-size:12px;">Track this job</a>
+                    </p>
+                    <p style="margin:0;font-size:13px;color:#666;">Tracking asks for the phone number you gave us. Questions? Reply to this email or visit <a href="{{storefrontUrl}}/repairs" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "jobNumber", "itemDescription", "serviceType", "trackingUrl", "promisedDate")),
+
+            new Seed(REPAIR_ESTIMATE,
+                    "Your estimate for repair job {{jobNumber}}",
+                    "Estimate ready",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">We have assessed your <strong>{{itemDescription}}</strong> (job <strong>{{jobNumber}}</strong>, {{serviceType}}).</p>
+                    <div style="margin:20px 0;padding:20px;border:1px solid #e3d7b8;border-radius:8px;background:#fffdf7;text-align:center;">
+                      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a6d1f;">Estimate</div>
+                      <div style="font-size:26px;letter-spacing:1px;font-weight:bold;margin:8px 0;color:#1c1c1c;">{{estimateAmount}}</div>
+                      <div style="font-size:13px;color:#666;">Promised by {{promisedDate}}</div>
+                    </div>
+                    <p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #c9a44c;background:#faf7f0;">{{estimateNote}}</p>
+                    <p style="margin:0 0 16px;">Work begins as soon as you approve. You can approve online in one click:</p>
+                    <p style="margin:0 0 20px;text-align:center;">
+                      <a href="{{trackingUrl}}" style="display:inline-block;padding:12px 28px;background:#1c1c1c;color:#c9a44c;text-decoration:none;letter-spacing:2px;text-transform:uppercase;font-size:12px;">Review and approve</a>
+                    </p>
+                    <p style="margin:0;font-size:13px;color:#666;">Prefer to talk it through first? Reply to this email or call the store.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "jobNumber", "itemDescription", "serviceType", "trackingUrl", "estimateAmount", "estimateNote", "promisedDate")),
+
+            new Seed(REPAIR_READY,
+                    "Your {{itemDescription}} is ready for collection ({{jobNumber}})",
+                    "Ready for collection",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Good news: the <strong>{{serviceType}}</strong> on your <strong>{{itemDescription}}</strong> is complete and job <strong>{{jobNumber}}</strong> is ready for collection.</p>
+                    <table style="border-collapse:collapse;margin:0 0 16px;font-size:14px;">
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Amount due</td><td style="padding:6px 0;"><strong>{{amountDue}}</strong></td></tr>
+                    </table>
+                    <p style="margin:0 0 16px;">Please bring your receipt stub or quote the job number at the counter.</p>
+                    <p style="margin:0;">Job history: <a href="{{trackingUrl}}" style="color:#8a6d1f;">{{trackingUrl}}</a></p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "jobNumber", "itemDescription", "serviceType", "trackingUrl", "amountDue")),
+
+            new Seed(REPAIR_DELIVERED,
+                    "Repair job {{jobNumber}} delivered",
+                    "Delivered",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Job <strong>{{jobNumber}}</strong> ({{serviceType}} on your {{itemDescription}}) has been handed over. Thank you for trusting us with your piece.</p>
+                    <table style="border-collapse:collapse;margin:0 0 16px;font-size:14px;">
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Bill</td><td style="padding:6px 0;"><strong>{{finalAmount}}</strong></td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Paid</td><td style="padding:6px 0;">{{paidAmount}}</td></tr>
+                    </table>
+                    <p style="margin:0 0 16px;">Every Caratloop piece is welcome back for complimentary cleaning. Book any time at <a href="{{storefrontUrl}}/repairs" style="color:#8a6d1f;">caratloop</a>.</p>
+                    <p style="margin:0;">If anything is not as expected, reply to this email within 7 days and we will make it right.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "jobNumber", "itemDescription", "serviceType", "trackingUrl", "finalAmount", "paidAmount")),
+
+            new Seed(EXCHANGE_RECEIVED,
+                    "We have received your old {{metal}} ({{requestNumber}})",
+                    "Old gold exchange",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Your item for exchange request <strong>{{requestNumber}}</strong> has reached us safely.</p>
+                    <table style="border-collapse:collapse;margin:0 0 16px;font-size:14px;">
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Metal</td><td style="padding:6px 0;">{{metal}}</td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Declared purity</td><td style="padding:6px 0;">{{declaredPurity}}</td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Declared weight</td><td style="padding:6px 0;">{{declaredWeight}} g</td></tr>
+                    </table>
+                    <p style="margin:0 0 16px;">Our assayer will now test the purity and weigh the piece net of stones and solder. The final value follows the assay and the rate of the day; we will email it to you as store credit.</p>
+                    <p style="margin:0;">Follow the request any time at <a href="{{storefrontUrl}}/exchange" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "requestNumber", "metal", "declaredPurity", "declaredWeight")),
+
+            new Seed(EXCHANGE_CREDITED,
+                    "Your store credit of {{amount}} is ready ({{requestNumber}})",
+                    "Store credit issued",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">The assay of your old {{metal}} for request <strong>{{requestNumber}}</strong> is complete and its value has been issued as Caratloop store credit.</p>
+                    <table style="border-collapse:collapse;margin:0 0 16px;font-size:14px;">
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Assayed purity</td><td style="padding:6px 0;">{{purity}}</td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Net weight</td><td style="padding:6px 0;">{{netWeight}} g</td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Rate (fine, per gram)</td><td style="padding:6px 0;">{{rate}}</td></tr>
+                    </table>
+                    <div style="margin:20px 0;padding:20px;border:1px solid #e3d7b8;border-radius:8px;background:#faf7f0;text-align:center;">
+                      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a6d1f;">Store credit</div>
+                      <div style="font-size:26px;font-weight:bold;margin:8px 0;color:#1c1c1c;">{{amount}}</div>
+                      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a6d1f;margin-top:12px;">Your code</div>
+                      <div style="font-family:monospace;font-size:20px;letter-spacing:2px;margin:6px 0;color:#1c1c1c;">{{code}}</div>
+                      <div style="font-size:12px;color:#666;">Valid until {{expiresAt}}</div>
+                    </div>
+                    <p style="margin:0 0 16px;">Enter the code in the gift card field at checkout; any unused balance stays on the code. Keep this email safe: the code is as good as cash in our store.</p>
+                    <p style="margin:0;">Browse the collection at <a href="{{storefrontUrl}}/products" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "requestNumber", "metal", "purity", "netWeight", "rate", "amount", "code", "expiresAt")),
+
+            new Seed(EXCHANGE_REJECTED,
+                    "About your exchange request {{requestNumber}}",
+                    "Old gold exchange",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">We are sorry: we could not accept the item under exchange request <strong>{{requestNumber}}</strong>.</p>
+                    <p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #c9a44c;background:#faf7f0;">{{reason}}</p>
+                    <p style="margin:0 0 16px;">If the item is with us it is being returned to you by insured courier, or is ready for collection at the store where you handed it in.</p>
+                    <p style="margin:0;">Questions? Reply to this email or visit <a href="{{storefrontUrl}}/contact" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "requestNumber", "reason")));
 
     /** Create-if-missing by name; existing rows (possibly admin-edited) are left untouched. */
     public void seed() {

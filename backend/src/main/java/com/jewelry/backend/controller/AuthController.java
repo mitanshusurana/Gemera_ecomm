@@ -4,7 +4,10 @@ import com.jewelry.backend.dto.AuthResponse;
 import com.jewelry.backend.dto.LoginRequest;
 import com.jewelry.backend.dto.RegisterRequest;
 import com.jewelry.backend.dto.RefreshTokenRequest;
+import com.jewelry.backend.security.AccessService;
+import com.jewelry.backend.security.StaffPermissions;
 import com.jewelry.backend.service.AuthService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +29,9 @@ public class AuthController {
 
     @Autowired
     AuthService authService;
+
+    @Autowired
+    AccessService access;
 
     private final ConcurrentHashMap<String, AtomicInteger> loginAttempts = new ConcurrentHashMap<>();
 
@@ -61,6 +67,23 @@ public class AuthController {
     @Operation(summary = "Refresh JWT token")
     public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
+    }
+
+    /**
+     * Role and permission keys of the signed-in user. The admin SPA fetches
+     * this after login to decide which routes and buttons to show; the API
+     * still enforces every key server-side.
+     */
+    @GetMapping("/me/permissions")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Role and permission keys of the current user")
+    public ResponseEntity<Map<String, Object>> myPermissions() {
+        String role = access.currentRole();
+        return ResponseEntity.ok(Map.of(
+                "role", role == null ? StaffPermissions.ROLE_USER : role,
+                "staff", access.isStaff(),
+                "permissions", new java.util.ArrayList<>(access.currentPermissions())
+        ));
     }
 
     @PostMapping("/logout")

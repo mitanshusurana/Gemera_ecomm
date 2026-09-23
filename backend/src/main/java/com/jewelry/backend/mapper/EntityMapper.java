@@ -85,6 +85,7 @@ public class EntityMapper {
         product.setDimensions(dto.getDimensions());
         product.setCurrentLocation(dto.getCurrentLocation());
         product.setHsnCode(dto.getHsnCode());
+        product.setErpMaterialCode(dto.getErpMaterialCode());
         product.setHuid(dto.getHuid());
         product.setBisHallmark(dto.getBisHallmark());
         product.setHallmarkingDate(dto.getHallmarkingDate());
@@ -299,6 +300,7 @@ public class EntityMapper {
         dto.setDimensions(product.getDimensions());
         dto.setCurrentLocation(product.getCurrentLocation());
         dto.setHsnCode(product.getHsnCode());
+        dto.setErpMaterialCode(product.getErpMaterialCode());
         dto.setHuid(product.getHuid());
         dto.setBisHallmark(product.getBisHallmark());
         dto.setHallmarkingDate(product.getHallmarkingDate());

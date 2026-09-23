@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 @Tag(name = "Admin Categories", description = "Admin API for managing categories")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@access.has('categories.write')")
 @Transactional
 public class AdminCategoryController {
 
@@ -31,6 +31,7 @@ public class AdminCategoryController {
     @Autowired
     private EntityMapper entityMapper;
 
+    @PreAuthorize("@access.has('products.read')")
     @GetMapping
     @Operation(summary = "Get all categories (including inactive)")
     public ResponseEntity<CategoryResponse> getAllCategories() {

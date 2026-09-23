@@ -48,6 +48,9 @@ public class OrderController {
     @Autowired
     com.jewelry.backend.service.ErpSyncService erpSyncService;
 
+    @Autowired
+    com.jewelry.backend.security.AccessService access;
+
     @PostMapping
     @Transactional
     @Operation(summary = "Create new order")
@@ -58,14 +61,13 @@ public class OrderController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    @Operation(summary = "Get user orders (Admin sees all)")
+    @Operation(summary = "Get user orders (staff with orders.read see all)")
     public ResponseEntity<Page<OrderDTO>> getOrders(
             @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "10") int size,
             Principal principal) {
-        User user = userRepository.findByEmail(principal.getName()).orElse(null);
-        if (user != null && "ADMIN".equals(user.getRole())) {
+        if (access.has("orders.read")) {
             Page<Order> orders = orderService.getAllOrders(status, PageRequest.of(page, size));
             return ResponseEntity.ok(orders.map(entityMapper::toOrderDTO));
         }
@@ -75,7 +77,7 @@ public class OrderController {
 
     // Declared before "/{orderId}" so "stats" is never parsed as a UUID.
     @GetMapping("/stats")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('orders.read')")
     @Operation(summary = "Order counts per status for the admin list chips — Admin only")
     public ResponseEntity<Map<String, Long>> getStats() {
         return ResponseEntity.ok(orderService.getOrderStats());
@@ -87,8 +89,8 @@ public class OrderController {
     public ResponseEntity<OrderDTO> getOrder(@PathVariable UUID orderId, Principal principal) {
         Order order = orderService.getOrder(orderId);
         User requestingUser = userRepository.findByEmail(principal.getName()).orElseThrow();
-        // Only allow if ADMIN or the order belongs to this user
-        if (!"ADMIN".equals(requestingUser.getRole()) &&
+        // Only allow if staff with orders.read or the order belongs to this user
+        if (!access.has("orders.read") &&
                 !order.getUser().getId().equals(requestingUser.getId())) {
             return ResponseEntity.status(403).build();
         }
@@ -108,7 +110,7 @@ public class OrderController {
     public ResponseEntity<byte[]> downloadInvoice(@PathVariable UUID orderId, Principal principal) {
         Order order = orderService.getOrder(orderId);
         User requestingUser = userRepository.findByEmail(principal.getName()).orElseThrow();
-        if (!"ADMIN".equals(requestingUser.getRole()) &&
+        if (!access.has("invoices.read") &&
                 (order.getUser() == null || !order.getUser().getId().equals(requestingUser.getId()))) {
             return ResponseEntity.status(403).build();
         }
@@ -125,7 +127,7 @@ public class OrderController {
 
     /** Pushes the order's invoice (and any pending credit note) to the ERP immediately. */
     @PostMapping("/{id}/erp-sync")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('erp.sync')")
     @Transactional
     @Operation(summary = "Send the order's sale / credit note to the ERP now — Admin only")
     public ResponseEntity<OrderDTO> erpSync(@PathVariable UUID id) {
@@ -141,7 +143,7 @@ public class OrderController {
         OrderTracking tracking = orderService.trackOrder(id);
         Order order = orderService.getOrderByIdentifier(id);
         User requestingUser = userRepository.findByEmail(principal.getName()).orElseThrow();
-        if (!"ADMIN".equals(requestingUser.getRole()) &&
+        if (!access.has("orders.read") &&
                 !order.getUser().getId().equals(requestingUser.getId())) {
             return ResponseEntity.status(403).build();
         }
@@ -153,7 +155,7 @@ public class OrderController {
      * The optional keys feed the SHIPPED (tracking) and CANCELLED (reason) transitions.
      */
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('orders.write')")
     @Transactional
     @Operation(summary = "Update order status — Admin only")
     public ResponseEntity<OrderDTO> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
@@ -163,7 +165,7 @@ public class OrderController {
 
     /** Body: {@code { trackingNumber, shippingMethod?, estimatedDelivery? (YYYY-MM-DD) }}. Sets tracking, then transitions to SHIPPED. */
     @PutMapping("/{id}/ship")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('orders.write')")
     @Transactional
     @Operation(summary = "Record tracking details and mark the order shipped in one call — Admin only")
     public ResponseEntity<OrderDTO> ship(@PathVariable UUID id, @RequestBody Map<String, String> body) {
@@ -175,7 +177,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/tracking")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('orders.write')")
     @Transactional
     @Operation(summary = "Update order tracking number — Admin only")
     public ResponseEntity<OrderDTO> updateTracking(@PathVariable UUID id, @RequestBody Map<String, String> body) {
@@ -184,7 +186,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/notes")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('orders.write')")
     @Transactional
     @Operation(summary = "Update internal notes — Admin only")
     public ResponseEntity<OrderDTO> updateNotes(@PathVariable UUID id, @RequestBody Map<String, String> body) {

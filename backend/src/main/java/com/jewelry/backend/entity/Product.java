@@ -95,6 +95,16 @@ public class Product extends BaseEntity {
     // nowhere to record it.
     private String hsnCode;
 
+    // Code of this SKU in the ERP item master (docs/BUSINESS_GAPS.md, roadmap
+    // item 4). Stored trimmed and upper-cased; null when not mapped. The ERP
+    // bridge reads it so web sales relieve ERP stock and post COGS.
+    private String erpMaterialCode;
+
+    public void setErpMaterialCode(String erpMaterialCode) {
+        String cleaned = erpMaterialCode == null ? null : erpMaterialCode.trim().toUpperCase();
+        this.erpMaterialCode = cleaned == null || cleaned.isEmpty() ? null : cleaned;
+    }
+
     private String huid; // HUID (India)
     private Boolean bisHallmark;
     private String hallmarkingDate;

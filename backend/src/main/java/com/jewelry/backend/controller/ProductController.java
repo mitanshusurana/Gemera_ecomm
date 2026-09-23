@@ -148,7 +148,7 @@ public class ProductController {
     // Helper to seed data
     @PostMapping
     @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('products.write')")
     @Operation(summary = "Create product (Admin)")
     public ResponseEntity<ProductDTO> createProduct(@RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
@@ -158,7 +158,7 @@ public class ProductController {
 
     @PutMapping("/{id}")
     @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('products.write')")
     @Operation(summary = "Update product (Admin)")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
@@ -168,7 +168,7 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('products.write')")
     @Operation(summary = "Delete product (Admin)")
     public ResponseEntity<Void> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
@@ -176,7 +176,7 @@ public class ProductController {
     }
 
     @PostMapping("/upload-image")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('products.write')")
     @Operation(summary = "Upload image to Cloudflare R2")
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         Path tempInputFile = null;
@@ -253,7 +253,7 @@ public class ProductController {
     }
 
     @PostMapping("/upload-video")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@access.has('products.write')")
     @Operation(summary = "Upload video and strip audio asynchronously")
     public ResponseEntity<Map<String, String>> uploadVideo(@RequestParam("file") MultipartFile file) {
         Path tempInputFile = null;

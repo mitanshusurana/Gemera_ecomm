@@ -278,6 +278,7 @@ public class InvoiceService {
             line.setLineNo(++lineNo);
             line.setDescription(describe(item));
             line.setSku(product == null ? null : blankToNull(product.getSku()));
+            line.setErpMaterialCode(product == null ? null : blankToNull(product.getErpMaterialCode()));
             line.setHsnCode(hsnFor(product));
             line.setQuantity(item.getQuantity());
             line.setUnitPrice(money(item.getPrice() != null ? item.getPrice()
