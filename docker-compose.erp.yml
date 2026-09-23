@@ -75,6 +75,11 @@ services:
       # GSTIN lookup used by the party form to auto-fill a ledger from a GST number.
       GSTIN_API_KEY: ${GSTIN_API_KEY:-}
       SUREPASS_TOKEN: ${SUREPASS_TOKEN:-}
+      # Storefront -> ERP bridge (POST /api/v1/integrations/ecommerce/*).
+      # Must equal ERP_API_KEY in the store API's .env.backend. Empty = off.
+      ECOMMERCE_API_KEY: ${ECOMMERCE_API_KEY:-}
+      ECOMMERCE_SETTLEMENT_ACCOUNT_CODE: ${ECOMMERCE_SETTLEMENT_ACCOUNT_CODE:-BNK-001}
+      ECOMMERCE_COMPANY_ID: ${ECOMMERCE_COMPANY_ID:-}
       COMPANY_STATE_CODE: ${COMPANY_STATE_CODE:-08}
       COMPANY_STATE_NAME: ${COMPANY_STATE_NAME:-Rajasthan}
       ENVIRONMENT: ${ENVIRONMENT:-production}

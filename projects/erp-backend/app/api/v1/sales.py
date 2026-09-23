@@ -73,6 +73,11 @@ class InvoiceLineRequest(BaseModel):
     other_charges: Decimal = Field(default=Decimal("0"), ge=0)
     # Above 100 produced a negative taxable value and negative tax.
     discount_pct: Decimal = Field(default=Decimal("0"), ge=0, le=100)
+    # Explicit material GST rate for this line. When absent the item master's
+    # gst_tax_rate applies, else 3%. The storefront bridge sets it because a
+    # web order line carries its own rate (0.25% loose stones, 3% jewellery)
+    # and has no material row here to read one from.
+    material_gst_rate: Optional[Decimal] = Field(default=None, ge=0, le=100)
 
     @model_validator(mode="after")
     def _net_not_more_than_gross(self):
@@ -96,6 +101,10 @@ class CreateSalesInvoiceRequest(BaseModel):
     payment_terms: Optional[str] = "Immediate"
     narration: Optional[str] = None
     reason: str = "Sales invoice creation"
+    # Set only by the e-commerce bridge: the storefront has already issued the
+    # customer a tax invoice in its own series (WEB/...), and one supply must
+    # carry one invoice number in the books. Refused if already recorded.
+    external_invoice_no: Optional[str] = Field(default=None, max_length=30)
 
 
 @router.post("/invoices", dependencies=[Depends(require(*CAN_POST))])
@@ -194,6 +203,8 @@ async def create_sales_invoice(
                     else Decimal("3.0")
                 )
                 mat_hsn = m_row["hsn_code"] or mat_hsn
+        if line.material_gst_rate is not None:
+            mat_gst_rate = line.material_gst_rate
 
         # Rule 46(g): every line on a tax invoice carries its HSN. Refuse now
         # rather than write a line the document cannot lawfully print.
@@ -252,14 +263,23 @@ async def create_sales_invoice(
         # ─── Generate invoice number ──────────────────────────────────────────
         fy = await resolve_fiscal_year(db, company_id)
 
-        # Atomic allocation. COUNT(*)+1 raced across workers and minted
-        # duplicate invoice numbers.
-        inv_count_result = await db.execute(
-            text("SELECT caratloop.next_document_number(:cid, :fyid, 'SalesInvoice')"),
-            {"cid": company_id, "fyid": str(fy["id"])},
-        )
-        inv_count = inv_count_result.scalar()
-        invoice_no = f"CL/{fy['year_label']}/{inv_count:05d}"
+        if payload.external_invoice_no:
+            invoice_no = payload.external_invoice_no.strip()
+            dup = await db.execute(
+                text("SELECT id FROM caratloop.sales_invoices WHERE company_id = :cid AND invoice_no = :no"),
+                {"cid": company_id, "no": invoice_no},
+            )
+            if dup.scalar():
+                raise HTTPException(status_code=409, detail=f"Invoice {invoice_no} is already recorded.")
+        else:
+            # Atomic allocation. COUNT(*)+1 raced across workers and minted
+            # duplicate invoice numbers.
+            inv_count_result = await db.execute(
+                text("SELECT caratloop.next_document_number(:cid, :fyid, 'SalesInvoice')"),
+                {"cid": company_id, "fyid": str(fy["id"])},
+            )
+            inv_count = inv_count_result.scalar()
+            invoice_no = f"CL/{fy['year_label']}/{inv_count:05d}"
 
         inv_date_obj = date.fromisoformat(str(payload.invoice_date)) if isinstance(payload.invoice_date, str) else payload.invoice_date
         is_inter_state = buyer_state != seller_state

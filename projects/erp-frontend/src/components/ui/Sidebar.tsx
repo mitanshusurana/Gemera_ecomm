@@ -20,10 +20,13 @@ import {
   Landmark,
   Plus,
   Minus,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardList,
+  Receipt
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { financialYearLabel } from '@/lib/fiscal';
+import { useCompany } from '@/lib/company';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, group: 'Main' },
@@ -32,6 +35,7 @@ const navigation = [
   { name: 'Manufacturing', href: '/manufacturing', icon: Factory, group: 'Operations' },
   { name: 'Sales', href: '/sales', icon: ShoppingCart, group: 'Operations' },
   { name: 'Purchases', href: '/purchases', icon: ShoppingBag, group: 'Operations' },
+  { name: 'Memos (Jangad)', href: '/memos', icon: ClipboardList, group: 'Operations' },
   { name: 'Receipt', href: '/vouchers/receipt', icon: ArrowDownLeft, group: 'Vouchers' },
   { name: 'Payment', href: '/vouchers/payment', icon: ArrowUpRight, group: 'Vouchers' },
   { name: 'Journal', href: '/vouchers/journal', icon: BookOpen, group: 'Vouchers' },
@@ -42,14 +46,18 @@ const navigation = [
   { name: 'Ledger', href: '/ledger', icon: FileText, group: 'Books' },
   { name: 'Outstanding', href: '/outstanding', icon: AlertTriangle, group: 'Books' },
   { name: 'Accounting', href: '/accounting', icon: BookOpen, group: 'Finance' },
+  { name: 'GST', href: '/gst', icon: Receipt, group: 'Finance' },
   { name: 'GST & Compliance', href: '/gst/exports', icon: FileText, group: 'Finance' },
   { name: 'Reconciliation', href: '/banking', icon: Landmark, group: 'Banking' },
   { name: 'Reports', href: '/reports', icon: BarChart3, group: 'Admin' },
-  { name: 'Audit Trail', href: '#', icon: ShieldCheck, group: 'Admin' },
+  // The reports page picks its tab by component state, not by URL, so the
+  // nearest reachable target for the audit trail is the reports page itself.
+  { name: 'Audit Trail', href: '/reports', icon: ShieldCheck, group: 'Admin' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { company } = useCompany();
 
   const groupedNav = navigation.reduce((acc, item) => {
     if (!acc[item.group]) {
@@ -125,7 +133,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-border mt-auto">
         <div className="text-xs text-textSecondary text-center">
-          <p className="font-semibold text-white">Caratloop Pvt Ltd</p>
+          <p className="font-semibold text-white">{company?.legal_name || company?.name || company?.trade_name || '—'}</p>
           <p>FY {financialYearLabel()}</p>
         </div>
       </div>

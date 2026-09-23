@@ -46,6 +46,19 @@ class Settings(BaseSettings):
     GST_RATE_MAKING: float = 5.00     # 5% on making charges / job work (SAC 9988)
     GST_RATE_RCM: float = 3.00        # 3% RCM on old gold (Notif 13/2017-CT(Rate))
 
+    # ─── E-commerce bridge ──────────────────────────────────────
+    # The storefront API (Spring Boot, ../../backend) posts every paid web
+    # order here as a sales invoice and every refund as a credit note,
+    # authenticated by this shared key in the X-Api-Key header. Empty
+    # disables the endpoints (503).
+    ECOMMERCE_API_KEY: str = ""
+    # Ledger account credited with online settlements (the receipt voucher's
+    # bank side). Razorpay pays out to the current account, so the bank code.
+    ECOMMERCE_SETTLEMENT_ACCOUNT_CODE: str = "BNK-001"
+    # Company the bridge posts into. Empty = the single active company; the
+    # bridge refuses to guess when there is more than one.
+    ECOMMERCE_COMPANY_ID: str = ""
+
     # ─── CORS ───────────────────────────────────────────────────
     # Never include "*" here: the API is served with allow_credentials=True,
     # and a wildcard makes the browser reflect any origin back.

@@ -536,3 +536,239 @@ export const generatePartyLedgerPDF = (party: any, entries: any[], fromDate: str
     window.open(doc.output('bloburl'), '_blank');
   }
 };
+
+
+// ─── 4. APPROVAL MEMO / JANGAD ───────────────────────────────────────────────
+// Goods sent on approval. Not a tax invoice and not a supply: no GST is
+// charged and title stays with the sender until a tax invoice is raised for
+// whatever the party keeps. The memo is the record of what went out, to whom,
+// at what value, and by when it is due back.
+export const generateApprovalMemoPDF = (memo: any, action: 'download' | 'print' = 'download', companyArg?: any) => {
+  const company = companyArg || memo.company || {};
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const width = doc.internal.pageSize.getWidth();
+  let y = 10;
+
+  const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString('en-IN') : MISSING);
+  const fmtQty = (q: any) => {
+    const n = typeof q === 'number' ? q : parseFloat(q || '0');
+    return n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+  };
+  const fmtWt = (w: any) => (w === null || w === undefined || w === '' ? '—' : `${parseFloat(w).toFixed(3)} g`);
+
+  // Gold top accent
+  doc.setFillColor(212, 168, 67);
+  doc.rect(10, y, width - 20, 2.5, 'F');
+  y += 12;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(30, 30, 30);
+  doc.text('APPROVAL MEMO (JANGAD)', width / 2, y, { align: 'center' });
+  y += 5.5;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Goods sent on approval — not a tax invoice, not a supply. No GST charged.', width / 2, y, { align: 'center' });
+  y += 7.5;
+
+  // Sender (left) & memo meta (right)
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(210, 200, 180);
+  doc.setFillColor(253, 251, 247);
+  doc.rect(10, y, (width - 24) / 2, 28, 'FD');
+  doc.rect(10 + (width - 24) / 2 + 4, y, (width - 24) / 2, 28, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(170, 120, 10);
+  doc.text((company.legal_name || company.trade_name || company.name || '— COMPANY NOT CONFIGURED —').toUpperCase(), 13, y + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(50, 50, 50);
+  doc.text(company.address_line1 || '', 13, y + 11);
+  doc.text([company.city, company.state_name, company.pincode].filter(Boolean).join(', '), 13, y + 15);
+  doc.setFont('helvetica', 'bold');
+  doc.text(company.gstin ? `GSTIN: ${company.gstin}` : 'GSTIN: — not configured —', 13, y + 20);
+  doc.setFont('helvetica', 'normal');
+  doc.text(company.phone ? `Phone: ${company.phone}` : '', 13, y + 24);
+
+  const rightX = 10 + (width - 24) / 2 + 7;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(30, 30, 30);
+  doc.text(`Memo No: ${memo.memo_no || MISSING}`, rightX, y + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(50, 50, 50);
+  doc.text(`Memo Date: ${fmtDate(memo.memo_date)}`, rightX, y + 11);
+  doc.text(`Due Back By: ${fmtDate(memo.due_date)}`, rightX, y + 15);
+  doc.text(`Status: ${String(memo.status || 'Open').replace('_', ' ')}`, rightX, y + 20);
+  doc.text(`Financial Year: ${memo.fiscal_year || '—'}`, rightX, y + 24);
+
+  y += 32;
+
+  // Party box
+  doc.setFillColor(253, 251, 247);
+  doc.rect(10, y, width - 20, 22, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(110, 110, 110);
+  doc.text('SENT ON APPROVAL TO:', 13, y + 5);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  doc.text(memo.party_name || MISSING, 13, y + 10);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(60, 60, 60);
+  const partyAddr = [memo.party_address1, memo.party_address2, memo.party_city, memo.party_state_name, memo.party_pincode]
+    .filter(Boolean)
+    .join(', ') || MISSING;
+  doc.text(partyAddr, 13, y + 15);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`GSTIN: ${memo.party_gstin || 'Unregistered'}`, width - 75, y + 10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(memo.party_phone ? `Phone: ${memo.party_phone}` : '', width - 75, y + 15);
+
+  y += 26;
+
+  // Lines: the stored memo lines, never derived client-side.
+  const lines: any[] = Array.isArray(memo.lines) && memo.lines.length ? memo.lines : [];
+  const tableBody = lines.length === 0
+    ? [[{ content: 'LINE ITEMS NOT AVAILABLE — reopen the memo and export again.', colSpan: 9, styles: { halign: 'center', fontStyle: 'italic' } }]]
+    : lines.map((l: any, i: number) => {
+        const qty = parseFloat(l.quantity || 0);
+        const rate = parseFloat(l.rate || 0);
+        const value = l.value !== undefined && l.value !== null ? parseFloat(l.value) : qty * rate;
+        const outstanding = l.outstanding_quantity !== undefined && l.outstanding_quantity !== null
+          ? parseFloat(l.outstanding_quantity)
+          : qty - parseFloat(l.quantity_returned || 0) - parseFloat(l.quantity_invoiced || 0);
+        return [
+          (i + 1).toString(),
+          [l.material_code, l.description || l.material_name].filter(Boolean).join(' — ') || MISSING,
+          l.hsn_code || '—',
+          `${fmtQty(qty)}${l.uom ? ' ' + l.uom : ''}`,
+          fmtWt(l.gross_weight),
+          fmtWt(l.net_weight),
+          formatPdfMoney(rate),
+          formatPdfMoney(value),
+          fmtQty(outstanding),
+        ];
+      });
+
+  autoTable(doc, {
+    startY: y,
+    head: [['#', 'Item / Description', 'HSN', 'Qty', 'Gross Wt', 'Net Wt', 'Rate', 'Approval Value', 'Still Out']],
+    body: tableBody,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [245, 238, 222],
+      textColor: [40, 40, 40],
+      fontSize: 8,
+      fontStyle: 'bold',
+      halign: 'center',
+      lineWidth: 0.2,
+      lineColor: [210, 200, 180],
+    },
+    bodyStyles: { fontSize: 8, textColor: [40, 40, 40], lineWidth: 0.2, lineColor: [230, 225, 215] },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 8 },
+      1: { cellWidth: 52 },
+      2: { halign: 'center', cellWidth: 16 },
+      3: { halign: 'right', cellWidth: 18 },
+      4: { halign: 'right', cellWidth: 18 },
+      5: { halign: 'right', cellWidth: 18 },
+      6: { halign: 'right', cellWidth: 22 },
+      7: { halign: 'right', cellWidth: 24 },
+      8: { halign: 'right', cellWidth: 14 },
+    },
+    margin: { left: 10, right: 10 },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 6;
+
+  // Terms (left) & totals (right)
+  const totalQty = lines.reduce((s: number, l: any) => s + parseFloat(l.quantity || 0), 0);
+  const totalValue = memo.total_value !== undefined && memo.total_value !== null
+    ? parseFloat(memo.total_value)
+    : lines.reduce((s: number, l: any) => s + parseFloat(l.value || 0), 0);
+  const outstandingValue = memo.outstanding_value !== undefined && memo.outstanding_value !== null
+    ? parseFloat(memo.outstanding_value)
+    : lines.reduce((s: number, l: any) => s + parseFloat(l.outstanding_value || 0), 0);
+
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(210, 200, 180);
+  doc.setFillColor(253, 251, 247);
+  doc.rect(10, y, 95, 34, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(110, 110, 110);
+  doc.text('TERMS OF APPROVAL:', 13, y + 5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(40, 40, 40);
+  doc.setFontSize(7.5);
+  doc.text('Goods sent on approval only. Title does not pass until invoiced.', 13, y + 11);
+  doc.text(`Goods to be returned or approved on or before ${fmtDate(memo.due_date)}.`, 13, y + 16);
+  doc.text("Goods remain at the receiver's risk while in their custody.", 13, y + 21);
+  doc.text('Values are for identification and insurance; GST applies on the tax invoice only.', 13, y + 26);
+  if (memo.narration) {
+    doc.text(String(memo.narration).slice(0, 90), 13, y + 31);
+  }
+
+  doc.setFillColor(253, 251, 247);
+  doc.rect(110, y, width - 120, 34, 'FD');
+  let ty = y + 6;
+  doc.setFontSize(8);
+  doc.text('Total Quantity:', 113, ty);
+  doc.text(fmtQty(memo.total_quantity ?? totalQty), width - 13, ty, { align: 'right' });
+  ty += 5;
+  doc.text('Total Approval Value:', 113, ty);
+  doc.text(formatPdfMoney(totalValue), width - 13, ty, { align: 'right' });
+  ty += 5;
+  doc.text('Value Still Out:', 113, ty);
+  doc.text(formatPdfMoney(outstandingValue), width - 13, ty, { align: 'right' });
+  ty += 5;
+  doc.setLineWidth(0.4);
+  doc.line(113, ty - 1, width - 13, ty - 1);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(170, 120, 10);
+  doc.text('Memo Value (no GST):', 113, ty + 3);
+  doc.text(formatPdfMoney(totalValue), width - 13, ty + 3, { align: 'right' });
+
+  y += 40;
+
+  // Signature boxes
+  doc.setLineWidth(0.2);
+  doc.setDrawColor(210, 200, 180);
+  const boxW = (width - 20 - 8) / 3;
+  const labels = ['Prepared By', "Receiver's Signature & Stamp", `For ${company.legal_name || company.trade_name || company.name || '—'}`];
+  const subs = ['', 'Received the above goods on approval', 'Authorised Signatory'];
+  labels.forEach((label, i) => {
+    const bx = 10 + i * (boxW + 4);
+    doc.rect(bx, y, boxW, 24);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(30, 30, 30);
+    doc.text(label, bx + boxW / 2, y + 5, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    if (subs[i]) doc.text(subs[i], bx + boxW / 2, y + 21, { align: 'center' });
+  });
+
+  y += 30;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Goods sent on approval only. Title does not pass until invoiced.', width / 2, y, { align: 'center' });
+
+  const filename = `Approval_Memo_${(memo.memo_no || 'APM').replace(/\//g, '-')}.pdf`;
+  if (action === 'download') {
+    doc.save(filename);
+  } else {
+    window.open(doc.output('bloburl'), '_blank');
+  }
+};

@@ -103,4 +103,16 @@ export const itemsApi = {
   create: (data: any) => apiClient.post('/inventory/items', data),
 };
 
+// Approval memos (jangad): goods out on approval, returned or invoiced later
+export const approvalMemosApi = {
+  list: (params?: { status?: string; party_id?: string; overdue?: boolean; limit?: number; offset?: number }) =>
+    apiClient.get('/approval-memos', { params }),
+  aging: (params?: { as_of?: string }) => apiClient.get('/approval-memos/aging', { params }),
+  getById: (id: string) => apiClient.get(`/approval-memos/${id}`),
+  create: (data: any) => apiClient.post('/approval-memos', data),
+  returnGoods: (id: string, data: any) => apiClient.post(`/approval-memos/${id}/return`, data),
+  convert: (id: string, data: any) => apiClient.post(`/approval-memos/${id}/convert`, data),
+  cancel: (id: string, data: any) => apiClient.post(`/approval-memos/${id}/cancel`, data),
+};
+
 export default api;

@@ -5,6 +5,8 @@ from fastapi import APIRouter
 from app.api.v1 import auth, inventory, production, sales, gst, accounting, reports
 from app.api.v1 import parties, ledger, vouchers, banking, books, purchases
 from app.api.v1 import job_work
+from app.api.v1 import approval_memos
+from app.api.v1 import integrations
 
 api_router = APIRouter()
 
@@ -22,3 +24,5 @@ api_router.include_router(banking.router,     prefix="/banking",   tags=["Bankin
 api_router.include_router(books.router,       prefix="/books",     tags=["Books of Accounts"])
 api_router.include_router(purchases.router,   prefix="/purchases", tags=["Purchases"])
 api_router.include_router(job_work.router,    prefix="",           tags=["Job Work [CGST s.143]"])
+api_router.include_router(integrations.router, prefix="/integrations", tags=["Integrations"])
+api_router.include_router(approval_memos.router, prefix="", tags=["Approval Memos (Jangad)"])
