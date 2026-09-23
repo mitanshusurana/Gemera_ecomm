@@ -1,0 +1,137 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <div class="sm:flex sm:items-center py-6">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Stock</h1>
+      <p class="mt-2 text-sm text-ink/70">
+        Pieces at the warehouse (what the storefront sells from) and at each store counter. Move pieces with a transfer; correct them with a stock take.
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex flex-wrap items-center gap-2">
+      <a routerLink="/stock/transfers" class="inline-flex items-center gap-2 rounded-md border border-ink/30 bg-surface px-4 py-2 text-sm font-medium text-ink shadow-sm hover:bg-gray-50">
+        <span class="material-symbols-outlined text-[18px]">local_shipping</span>
+        Transfers
+        <span *ngIf="summary && (summary.draftTransfers + summary.inTransitTransfers) > 0" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{{ summary.draftTransfers + summary.inTransitTransfers }} open</span>
+      </a>
+      <a routerLink="/stock/takes" class="inline-flex items-center gap-2 rounded-md border border-ink/30 bg-surface px-4 py-2 text-sm font-medium text-ink shadow-sm hover:bg-gray-50">
+        <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+        Stock takes
+        <span *ngIf="summary && summary.openTakes > 0" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{{ summary.openTakes }} open</span>
+      </a>
+      <a routerLink="/stock/transfers/new" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-surface shadow-sm hover:bg-primary/90">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        New transfer
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="summaryError" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ summaryError }}</div>
+
+  <!-- Summary cards: one per location, click to select -->
+  <div *ngIf="summary" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+    <button *ngFor="let loc of summary.locations" type="button" (click)="selectLocation(loc.storeId)"
+            class="text-left rounded-xl border bg-surface p-4 shadow-sm transition-colors hover:border-primary/60"
+            [class.border-primary]="(loc.storeId ?? '') === selectedStoreId"
+            [class.ring-2]="(loc.storeId ?? '') === selectedStoreId"
+            [class.ring-primary/30]="(loc.storeId ?? '') === selectedStoreId"
+            [class.border-ink/15]="(loc.storeId ?? '') !== selectedStoreId">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-semibold text-ink truncate">{{ loc.name }}</span>
+        <span class="material-symbols-outlined text-[18px] text-ink/50">{{ loc.storeId ? 'storefront' : 'warehouse' }}</span>
+      </div>
+      <div class="mt-3 flex items-baseline gap-1">
+        <span class="text-2xl font-bold text-ink">{{ loc.pieces | number }}</span>
+        <span class="text-xs text-ink/60">pieces</span>
+      </div>
+      <div class="mt-1 text-xs text-ink/60">{{ loc.skus | number }} SKU{{ loc.skus === 1 ? '' : 's' }} · {{ loc.value | currency:'INR':'symbol':'1.0-0' }}</div>
+    </button>
+    <div class="rounded-xl border border-dashed border-ink/20 bg-surface p-4">
+      <div class="text-sm font-semibold text-ink">All locations</div>
+      <div class="mt-3 flex items-baseline gap-1">
+        <span class="text-2xl font-bold text-ink">{{ summary.totalPieces | number }}</span>
+        <span class="text-xs text-ink/60">pieces</span>
+      </div>
+      <div class="mt-1 text-xs text-ink/60">{{ summary.totalSkus | number }} SKU rows · {{ summary.totalValue | currency:'INR':'symbol':'1.0-0' }} at price</div>
+    </div>
+  </div>
+
+  <!-- Location selector + search -->
+  <div class="flex flex-wrap items-end gap-3 mb-4">
+    <div>
+      <label class="block text-xs font-medium text-ink/70">Location</label>
+      <select [(ngModel)]="selectedStoreId" (ngModelChange)="onLocationChange()" class="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm min-w-[14rem]">
+        <option value="">Warehouse (online stock)</option>
+        <option *ngFor="let s of stores" [value]="s.id">{{ s.name }}</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[14rem]">
+      <label class="block text-xs font-medium text-ink/70">Search</label>
+      <div class="relative mt-1">
+        <input type="text" [(ngModel)]="search" (ngModelChange)="onSearchInput()" placeholder="Name or SKU"
+               class="block w-full rounded-md border-gray-300 pr-9 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+        <button *ngIf="search" type="button" (click)="clearSearch()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-ink/60 hover:text-ink" aria-label="Clear search">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+    </div>
+    <div *ngIf="selectedSummary" class="text-sm text-ink/70 pb-2">
+      <span class="font-semibold text-ink">{{ selectedLocationName }}</span>: {{ selectedSummary.pieces | number }} pieces across {{ selectedSummary.skus | number }} SKUs
+    </div>
+  </div>
+
+  <div *ngIf="rowsError" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ rowsError }}</div>
+
+  <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+    <table class="min-w-full divide-y divide-gray-300">
+      <thead class="bg-surface">
+        <tr>
+          <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Product</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">SKU</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Category</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Price</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Quantity</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Value</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Updated</th>
+          <th class="py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let row of rows">
+          <td class="py-3 pl-4 pr-3 text-sm sm:pl-6">
+            <div class="flex items-center gap-2">
+              <img *ngIf="row.image" [src]="row.image" class="w-9 h-9 object-cover rounded-lg border border-gray-200" alt="">
+              <div>
+                <span class="block font-semibold text-ink">{{ row.name }}</span>
+                <span *ngIf="row.erpMaterialCode" class="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 font-mono" title="ERP material code">ERP {{ row.erpMaterialCode }}</span>
+              </div>
+            </div>
+          </td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-ink">{{ row.sku || '—' }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-ink/80">{{ row.category || '—' }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right text-ink">{{ row.price != null ? (row.price | currency:'INR':'symbol':'1.0-0') : '—' }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right font-semibold" [ngClass]="quantityClass(row.quantity)">{{ row.quantity ?? 0 }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right text-ink">{{ row.value | currency:'INR':'symbol':'1.0-0' }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-xs text-ink/60">{{ row.updatedAt ? (row.updatedAt | date:'d MMM y, HH:mm') : '—' }}</td>
+          <td class="whitespace-nowrap py-3 pl-3 pr-4 text-right text-sm sm:pr-6">
+            <a [routerLink]="['/products/edit', row.productId]" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Edit product</a>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && rows.length === 0">
+          <td colspan="8" class="px-6 py-8 text-center text-sm text-ink/70">
+            {{ search ? 'No products match “' + search + '” at ' + selectedLocationName + '.' : 'Nothing is recorded at ' + selectedLocationName + ' yet.' }}
+            <span *ngIf="!search && selectedStoreId"> Send pieces here with a <a routerLink="/stock/transfers/new" class="text-primary underline">transfer</a> or record them with a <a routerLink="/stock/takes" class="text-primary underline">stock take</a>.</span>
+          </td>
+        </tr>
+        <tr *ngIf="loading">
+          <td colspan="8" class="px-6 py-8 text-center text-sm text-ink/60">Loading…</td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="totalPages > 1" class="flex items-center justify-between border-t border-gray-200 px-4 py-3 text-sm text-ink">
+      <span>Page {{ page + 1 }} of {{ totalPages }} · {{ totalElements }} rows</span>
+      <div class="flex gap-2">
+        <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 0 || loading" class="rounded-md border border-ink/30 px-3 py-1 font-medium disabled:opacity-40 hover:bg-gray-50">Previous</button>
+        <button type="button" (click)="goToPage(page + 1)" [disabled]="page + 1 >= totalPages || loading" class="rounded-md border border-ink/30 px-3 py-1 font-medium disabled:opacity-40 hover:bg-gray-50">Next</button>
+      </div>
+    </div>
+  </div>
+</div>

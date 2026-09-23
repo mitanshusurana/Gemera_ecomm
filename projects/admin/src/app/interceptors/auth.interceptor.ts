@@ -19,7 +19,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 || error.status === 403) {
+      // 401: the session is gone (expired token, deactivated account).
+      // 403: the session is fine but this role lacks the endpoint's
+      // permission; the page reports it, the user stays signed in.
+      if (error.status === 401) {
         authService.logout();
       }
       return throwError(() => error);

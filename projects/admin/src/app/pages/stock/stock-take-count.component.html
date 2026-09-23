@@ -1,0 +1,292 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <nav class="pt-6 text-xs text-ink/60"><a routerLink="/stock" class="hover:text-ink">Stock</a> / <a routerLink="/stock/takes" class="hover:text-ink">Stock takes</a> / <span class="text-ink">{{ take?.takeNumber || '…' }}</span></nav>
+
+  <div *ngIf="error" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+  <div *ngIf="loading" class="py-12 text-center text-sm text-ink/60">Loading…</div>
+
+  <ng-container *ngIf="take as t">
+    <!-- Header -->
+    <div class="sm:flex sm:items-start py-4 gap-4">
+      <div class="sm:flex-auto">
+        <div class="flex items-center gap-3">
+          <h1 class="text-xl font-semibold font-mono text-ink">{{ t.takeNumber }}</h1>
+          <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [ngClass]="{'bg-amber-100 text-amber-800': t.status === 'OPEN', 'bg-emerald-100 text-emerald-800': t.status === 'CLOSED', 'bg-red-100 text-red-700': t.status === 'CANCELLED'}">
+            {{ t.status === 'OPEN' ? 'Open' : (t.status === 'CLOSED' ? 'Closed' : 'Cancelled') }}
+          </span>
+        </div>
+        <p class="mt-2 text-sm text-ink">
+          <span class="font-semibold">{{ t.storeName }}</span>
+          · {{ t.lineCount }} line{{ t.lineCount === 1 ? '' : 's' }} · {{ t.countedLines }} counted · <span [class.text-amber-700]="t.varianceLines > 0">{{ t.varianceLines }} with variance</span>
+        </p>
+        <p class="mt-1 text-xs text-ink/60">
+          Opened {{ t.createdAt | date:'d MMM y, HH:mm' }}<span *ngIf="t.startedBy"> by {{ t.startedBy }}</span>
+          <span *ngIf="t.closedAt"> · {{ t.status === 'CLOSED' ? 'Closed' : 'Cancelled' }} {{ t.closedAt | date:'d MMM y, HH:mm' }}<span *ngIf="t.closedBy"> by {{ t.closedBy }}</span></span>
+          <span *ngIf="t.note"> · {{ t.note }}</span>
+        </p>
+      </div>
+      <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-2" *ngIf="isOpen">
+        <button type="button" (click)="openClose()" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-surface hover:bg-primary/90">
+          <span class="material-symbols-outlined text-[18px]">task_alt</span> Close and apply
+        </button>
+        <button type="button" (click)="cancelTake()" class="inline-flex items-center gap-2 rounded-md border border-red-300 bg-surface px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Cancel take</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-4">
+      <nav class="-mb-px flex gap-6 text-sm">
+        <button type="button" (click)="showCount()" class="border-b-2 px-1 py-2 font-medium" [class.border-primary]="tab === 'count'" [class.text-ink]="tab === 'count'" [class.border-transparent]="tab !== 'count'" [class.text-ink/60]="tab !== 'count'">
+          {{ isOpen ? 'Count' : 'Lines' }}
+        </button>
+        <button type="button" (click)="showVariance()" class="border-b-2 px-1 py-2 font-medium" [class.border-primary]="tab === 'variance'" [class.text-ink]="tab === 'variance'" [class.border-transparent]="tab !== 'variance'" [class.text-ink/60]="tab !== 'variance'">
+          Variance <span *ngIf="t.varianceLines > 0" class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">{{ t.varianceLines }}</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- ================= COUNT TAB ================= -->
+    <ng-container *ngIf="tab === 'count'">
+      <div *ngIf="isOpen" class="grid grid-cols-1 gap-4 lg:grid-cols-3 mb-6">
+        <!-- Scan box -->
+        <div class="lg:col-span-2 rounded-xl border border-ink/15 bg-surface p-5">
+          <label for="skuInput" class="block text-sm font-medium text-ink">Scan or type a SKU, then press Enter</label>
+          <div class="mt-2 flex flex-wrap items-stretch gap-2">
+            <input #skuInput id="skuInput" type="text" [(ngModel)]="skuText" (keydown.enter)="onSkuEnter()" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                   placeholder="SKU or label QR"
+                   class="flex-1 min-w-[12rem] rounded-lg border-2 border-primary/60 px-4 py-3 text-2xl font-mono tracking-wide text-ink shadow-sm focus:border-primary focus:ring-primary">
+            <div class="flex items-center gap-1 rounded-lg border border-gray-300 px-2">
+              <span class="text-xs text-ink/60">per scan</span>
+              <input type="number" step="1" [(ngModel)]="step" class="w-16 border-0 text-center text-lg font-semibold focus:ring-0" aria-label="Pieces per scan">
+            </div>
+            <button type="button" (click)="toggleScanner()" class="inline-flex items-center gap-2 rounded-lg border border-ink/30 bg-surface px-4 text-sm font-medium text-ink hover:bg-gray-50" [class.bg-amber-50]="isScannerOpen" title="Scan with the camera">
+              <span class="material-symbols-outlined">{{ isScannerOpen ? 'videocam_off' : 'photo_camera' }}</span>
+              {{ isScannerOpen ? 'Stop camera' : 'Camera' }}
+            </button>
+          </div>
+          <p class="mt-2 text-xs text-ink/60">A wedge scanner types into the box and presses Enter for you. Each scan adds {{ step || 1 }} to that SKU's count; use "Set count" on a line to override.</p>
+          <p *ngIf="scanError" class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ scanError }}</p>
+
+          <div *ngIf="isScannerOpen" class="mt-4 flex flex-col items-center rounded-lg border-2 border-dashed border-ink/40 p-3">
+            <span class="mb-2 text-xs text-ink/70">Hold each label in view; the same code counts again after a two-second pause.</span>
+            <video #scannerVideo class="w-full max-w-sm rounded bg-black"></video>
+          </div>
+        </div>
+
+        <!-- Last scan / running total -->
+        <div class="rounded-xl border border-ink/15 bg-surface p-5">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-ink">Last scan</span>
+            <span class="text-xs text-ink/60">{{ scansThisSession }} scan{{ scansThisSession === 1 ? '' : 's' }} this session</span>
+          </div>
+          <ng-container *ngIf="lastLine as l; else noScan">
+            <div class="mt-3 flex items-center gap-3">
+              <img *ngIf="l.image" [src]="l.image" class="h-14 w-14 rounded-lg object-cover border border-gray-200" alt="">
+              <div class="min-w-0">
+                <span class="block truncate font-semibold text-ink">{{ l.name }}</span>
+                <span class="block text-xs font-mono text-ink/60">{{ l.sku }}</span>
+                <span *ngIf="lastCreated" class="mt-1 inline-flex rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">not in snapshot · expected 0</span>
+              </div>
+            </div>
+            <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div class="rounded-lg bg-gray-50 p-2">
+                <div class="text-[10px] uppercase tracking-wide text-ink/60">Expected</div>
+                <div class="text-xl font-bold text-ink">{{ l.expectedQuantity }}</div>
+              </div>
+              <div class="rounded-lg bg-primary/10 p-2">
+                <div class="text-[10px] uppercase tracking-wide text-ink/60">Counted</div>
+                <div class="text-3xl font-bold text-ink">{{ l.countedQuantity ?? 0 }}</div>
+              </div>
+              <div class="rounded-lg bg-gray-50 p-2">
+                <div class="text-[10px] uppercase tracking-wide text-ink/60">Variance</div>
+                <div class="text-xl font-bold" [ngClass]="varianceClass(l.variance)">{{ signed(l.variance) }}</div>
+              </div>
+            </div>
+            <div class="mt-3 flex justify-center gap-2">
+              <button type="button" (click)="bump(l, -1)" [disabled]="counting || (l.countedQuantity ?? 0) <= 0" class="rounded-md border border-ink/30 px-4 py-1.5 text-lg font-bold text-ink hover:bg-gray-50 disabled:opacity-40" aria-label="Remove one">−1</button>
+              <button type="button" (click)="bump(l, 1)" [disabled]="counting" class="rounded-md border border-ink/30 px-4 py-1.5 text-lg font-bold text-ink hover:bg-gray-50 disabled:opacity-40" aria-label="Add one">+1</button>
+              <button type="button" (click)="startEdit(l)" class="rounded-md border border-ink/30 px-3 py-1.5 text-sm font-medium text-ink hover:bg-gray-50">Set count</button>
+            </div>
+          </ng-container>
+          <ng-template #noScan>
+            <p class="mt-6 text-center text-sm text-ink/60">Nothing scanned yet. The first scan shows here with its running total.</p>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Totals strip -->
+      <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 text-sm">
+        <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Expected pieces</div><div class="text-lg font-bold text-ink">{{ expectedPieces | number }}</div></div>
+        <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Counted pieces</div><div class="text-lg font-bold text-ink">{{ countedPieces | number }}</div></div>
+        <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Lines counted</div><div class="text-lg font-bold text-ink">{{ t.countedLines }} / {{ t.lineCount }}</div></div>
+        <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Lines not yet counted</div><div class="text-lg font-bold" [class.text-amber-700]="uncountedCount > 0" [class.text-ink]="uncountedCount === 0">{{ uncountedCount }}</div></div>
+      </div>
+
+      <!-- Lines -->
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <div class="inline-flex rounded-md border border-ink/20 bg-surface text-xs font-medium overflow-hidden">
+          <button type="button" (click)="filter = 'all'" class="px-3 py-1.5" [class.bg-primary]="filter === 'all'" [class.text-surface]="filter === 'all'" [class.text-ink]="filter !== 'all'">All</button>
+          <button type="button" (click)="filter = 'uncounted'" class="px-3 py-1.5 border-l border-ink/20" [class.bg-primary]="filter === 'uncounted'" [class.text-surface]="filter === 'uncounted'" [class.text-ink]="filter !== 'uncounted'">Not counted</button>
+          <button type="button" (click)="filter = 'counted'" class="px-3 py-1.5 border-l border-ink/20" [class.bg-primary]="filter === 'counted'" [class.text-surface]="filter === 'counted'" [class.text-ink]="filter !== 'counted'">Counted</button>
+          <button type="button" (click)="filter = 'variance'" class="px-3 py-1.5 border-l border-ink/20" [class.bg-primary]="filter === 'variance'" [class.text-surface]="filter === 'variance'" [class.text-ink]="filter !== 'variance'">With variance</button>
+        </div>
+        <input type="text" [(ngModel)]="lineSearch" placeholder="Filter by name or SKU" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm min-w-[14rem]">
+        <span class="text-xs text-ink/60">{{ visibleLines.length }} of {{ t.lines.length }} lines</span>
+      </div>
+
+      <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead>
+            <tr>
+              <th class="py-3 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Product</th>
+              <th class="px-3 py-3 text-left text-sm font-semibold text-ink">SKU</th>
+              <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Expected</th>
+              <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Counted</th>
+              <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Variance</th>
+              <th class="px-3 py-3 text-left text-sm font-semibold text-ink">Last count</th>
+              <th *ngIf="isOpen" class="py-3 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr *ngFor="let l of visibleLines" [class.bg-amber-50]="l.countedQuantity != null && l.variance" [class.bg-primary/5]="lastLine?.id === l.id">
+              <td class="py-2.5 pl-4 pr-3 text-sm sm:pl-6">
+                <div class="flex items-center gap-2">
+                  <img *ngIf="l.image" [src]="l.image" class="h-8 w-8 rounded object-cover border border-gray-200" alt="">
+                  <a [routerLink]="['/products/edit', l.productId]" class="font-semibold text-ink hover:text-primary">{{ l.name }}</a>
+                </div>
+              </td>
+              <td class="whitespace-nowrap px-3 py-2.5 text-sm font-mono text-ink/80">{{ l.sku }}</td>
+              <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right text-ink">{{ l.expectedQuantity }}</td>
+              <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right">
+                <ng-container *ngIf="editingLineId === l.id; else showCount">
+                  <span class="inline-flex items-center gap-1">
+                    <input type="number" min="0" step="1" [(ngModel)]="editValue" (keydown.enter)="saveEdit(l)" (keydown.escape)="cancelEdit()" class="w-20 rounded-md border-gray-300 text-right shadow-sm focus:border-primary focus:ring-primary sm:text-sm" autofocus>
+                    <button type="button" (click)="saveEdit(l)" class="rounded bg-primary px-2 py-1 text-xs font-bold text-surface">Save</button>
+                    <button type="button" (click)="cancelEdit()" class="rounded border border-ink/30 px-2 py-1 text-xs text-ink">Esc</button>
+                  </span>
+                </ng-container>
+                <ng-template #showCount>
+                  <span *ngIf="l.countedQuantity == null" class="text-ink/40">not counted</span>
+                  <span *ngIf="l.countedQuantity != null" class="font-semibold text-ink">{{ l.countedQuantity }}</span>
+                </ng-template>
+              </td>
+              <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right font-semibold" [ngClass]="varianceClass(l.countedQuantity == null ? null : l.variance)">
+                {{ l.countedQuantity == null ? '—' : signed(l.variance) }}
+              </td>
+              <td class="whitespace-nowrap px-3 py-2.5 text-xs text-ink/60">{{ l.lastCountedAt ? (l.lastCountedAt | date:'HH:mm:ss') : '—' }}</td>
+              <td *ngIf="isOpen" class="whitespace-nowrap py-2.5 pl-3 pr-4 text-right text-xs sm:pr-6">
+                <span class="inline-flex items-center gap-2">
+                  <button type="button" (click)="bump(l, 1)" [disabled]="counting" class="rounded border border-ink/30 px-2 py-0.5 font-bold text-ink hover:bg-gray-50 disabled:opacity-40">+1</button>
+                  <button type="button" (click)="startEdit(l)" class="text-indigo-600 hover:text-indigo-900 font-medium">Set count</button>
+                  <button *ngIf="l.countedQuantity == null" type="button" (click)="markZero(l)" [disabled]="counting" class="text-red-600 hover:text-red-900 font-medium" title="Record that none were found">None found</button>
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="visibleLines.length === 0">
+              <td [attr.colspan]="isOpen ? 7 : 6" class="px-6 py-8 text-center text-sm text-ink/60">
+                {{ t.lines.length === 0 ? 'The snapshot is empty: nothing was recorded at ' + t.storeName + ' when the take opened. Scanned products are added with expected 0.' : 'No lines match this filter.' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <!-- ================= VARIANCE TAB ================= -->
+    <ng-container *ngIf="tab === 'variance'">
+      <div *ngIf="varianceLoading" class="py-8 text-center text-sm text-ink/60">Loading…</div>
+      <ng-container *ngIf="variance as v">
+        <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5 text-sm">
+          <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Lines with variance</div><div class="text-lg font-bold text-ink">{{ v.lines.length }}</div></div>
+          <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Surplus pieces</div><div class="text-lg font-bold text-emerald-700">+{{ v.surplusPieces }}</div></div>
+          <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Missing pieces</div><div class="text-lg font-bold text-red-600">−{{ v.shortagePieces }}</div></div>
+          <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Net value at price</div><div class="text-lg font-bold" [ngClass]="varianceClass(v.netValue)">{{ v.netValue | currency:'INR':'symbol':'1.0-0' }}</div></div>
+          <div class="rounded-lg border border-ink/10 bg-surface p-3"><div class="text-xs text-ink/60">Not counted</div><div class="text-lg font-bold" [class.text-amber-700]="v.uncountedLines > 0" [class.text-ink]="v.uncountedLines === 0">{{ v.uncountedLines }} of {{ v.lineCount }}</div></div>
+        </div>
+        <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead>
+              <tr>
+                <th class="py-3 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Product</th>
+                <th class="px-3 py-3 text-left text-sm font-semibold text-ink">SKU</th>
+                <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Expected</th>
+                <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Counted</th>
+                <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Variance</th>
+                <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Price</th>
+                <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Value</th>
+                <th class="px-3 py-3 text-left text-sm font-semibold text-ink">Note</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr *ngFor="let l of v.lines">
+                <td class="py-2.5 pl-4 pr-3 text-sm font-semibold text-ink sm:pl-6"><a [routerLink]="['/products/edit', l.productId]" class="hover:text-primary">{{ l.name }}</a></td>
+                <td class="whitespace-nowrap px-3 py-2.5 text-sm font-mono text-ink/80">{{ l.sku }}</td>
+                <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right text-ink">{{ l.expectedQuantity }}</td>
+                <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right font-semibold text-ink">{{ l.countedQuantity }}</td>
+                <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right font-bold" [ngClass]="varianceClass(l.variance)">{{ signed(l.variance) }}</td>
+                <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right text-ink">{{ l.price != null ? (l.price | currency:'INR':'symbol':'1.0-0') : '—' }}</td>
+                <td class="whitespace-nowrap px-3 py-2.5 text-sm text-right font-semibold" [ngClass]="varianceClass(l.varianceValue)">{{ l.varianceValue != null ? (l.varianceValue | currency:'INR':'symbol':'1.0-0') : '—' }}</td>
+                <td class="px-3 py-2.5 text-xs text-ink/70">{{ l.note || '' }}</td>
+              </tr>
+              <tr *ngIf="v.lines.length === 0">
+                <td colspan="8" class="px-6 py-8 text-center text-sm text-ink/60">
+                  <span class="inline-flex items-center gap-1 text-emerald-700 font-medium"><span class="material-symbols-outlined text-base">check_circle</span> Every counted line matches its expected quantity.</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- ================= CLOSE CONFIRMATION ================= -->
+    <div *ngIf="closeOpen" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" (click)="cancelClose()">
+      <div class="w-full max-w-3xl rounded-xl bg-surface p-6 shadow-xl max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
+        <h2 class="text-lg font-bold text-ink">Close {{ t.takeNumber }} and apply the adjustments?</h2>
+        <p class="mt-1 text-sm text-ink/70">
+          Each line below changes the live quantity at <span class="font-semibold">{{ t.storeName }}</span>{{ t.storeId ? '' : ' (the sellable online stock)' }} by its variance, and one audit-log entry is written per line under your login. Lines that were never counted are left as they are.
+        </p>
+        <div *ngIf="varianceLoading" class="py-6 text-center text-sm text-ink/60">Preparing the list…</div>
+        <ng-container *ngIf="variance as v">
+          <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
+            <div class="rounded-lg bg-gray-50 p-3"><div class="text-xs text-ink/60">Adjustments</div><div class="text-lg font-bold text-ink">{{ v.lines.length }}</div></div>
+            <div class="rounded-lg bg-gray-50 p-3"><div class="text-xs text-ink/60">Pieces</div><div class="text-lg font-bold"><span class="text-emerald-700">+{{ v.surplusPieces }}</span> / <span class="text-red-600">−{{ v.shortagePieces }}</span></div></div>
+            <div class="rounded-lg bg-gray-50 p-3"><div class="text-xs text-ink/60">Net value at price</div><div class="text-lg font-bold" [ngClass]="varianceClass(v.netValue)">{{ v.netValue | currency:'INR':'symbol':'1.0-0' }}</div></div>
+          </div>
+          <div *ngIf="v.uncountedLines > 0" class="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {{ v.uncountedLines }} line{{ v.uncountedLines === 1 ? ' was' : 's were' }} not counted and will keep {{ v.uncountedLines === 1 ? 'its' : 'their' }} current quantity. Use "None found" on a line if the piece is missing.
+          </div>
+          <div class="mt-4 max-h-72 overflow-y-auto rounded-md border border-ink/10">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gray-50 sticky top-0">
+                <tr>
+                  <th class="px-3 py-2 text-left font-semibold text-ink">SKU</th>
+                  <th class="px-3 py-2 text-left font-semibold text-ink">Product</th>
+                  <th class="px-3 py-2 text-right font-semibold text-ink">Expected</th>
+                  <th class="px-3 py-2 text-right font-semibold text-ink">Counted</th>
+                  <th class="px-3 py-2 text-right font-semibold text-ink">Change</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr *ngFor="let l of v.lines">
+                  <td class="px-3 py-1.5 font-mono text-ink/80">{{ l.sku }}</td>
+                  <td class="px-3 py-1.5 text-ink">{{ l.name }}</td>
+                  <td class="px-3 py-1.5 text-right text-ink">{{ l.expectedQuantity }}</td>
+                  <td class="px-3 py-1.5 text-right text-ink">{{ l.countedQuantity }}</td>
+                  <td class="px-3 py-1.5 text-right font-bold" [ngClass]="varianceClass(l.variance)">{{ signed(l.variance) }}</td>
+                </tr>
+                <tr *ngIf="v.lines.length === 0"><td colspan="5" class="px-3 py-4 text-center text-ink/60">No quantity changes; closing only records the count.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+        <div class="mt-5 flex justify-end gap-3">
+          <button type="button" (click)="cancelClose()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Keep counting</button>
+          <button type="button" (click)="confirmClose()" [disabled]="closing || varianceLoading || !variance" class="rounded-md bg-primary px-4 py-2 text-sm font-bold text-surface hover:bg-primary/90 disabled:opacity-50">
+            {{ closing ? 'Applying…' : 'Close and apply ' + (variance ? variance.lines.length : 0) + ' adjustment(s)' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

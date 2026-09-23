@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, FormArray, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { StockService, ProductStockLocations } from '../../services/stock.service';
 import {
   ALLOWED_SALE_MODES,
   CRAFTS,
@@ -39,7 +40,7 @@ import {
 @Component({
   selector: 'app-product-add',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './product-add.component.html'
 })
 export class ProductAddComponent implements OnInit {
@@ -51,8 +52,13 @@ export class ProductAddComponent implements OnInit {
     private productService: ProductService,
     private router: Router,
     private route: ActivatedRoute,
-    private http: HttpClient
+    private http: HttpClient,
+    private stockService: StockService
   ) {}
+
+  /** Edit mode: read-only quantities per location from GET /admin/stock/products/{id}. */
+  stockByLocation: ProductStockLocations | null = null;
+  stockByLocationError: string | null = null;
 
   /** Root categories as returned by the backend (kept for compatibility). */
   categoriesList: any[] = [];
@@ -255,6 +261,7 @@ export class ProductAddComponent implements OnInit {
       category: ['', Validators.required],
       subCategory: [''],
       sku: [''], // Auto-generated if empty
+      erpMaterialCode: [''], // Code in the ERP item master; stored trimmed upper-case
       isVerified: [false], // Admin verification step
       featured: [false], // Shown in the storefront home page "featured" section
       videoUrl: [''],
@@ -460,6 +467,7 @@ export class ProductAddComponent implements OnInit {
         next: (product) => {
           this.patchProductForm(product);
           this.loading = false;
+          this.loadStockByLocation();
         },
         error: (err) => {
           console.error('Error fetching product for edit', err);
@@ -477,7 +485,8 @@ export class ProductAddComponent implements OnInit {
           // Modify name slightly to indicate it's a copy
           this.productForm.patchValue({
              name: product.name ? product.name + ' (Copy)' : '',
-             sku: '' // Clear SKU so a new one is generated
+             sku: '', // Clear SKU so a new one is generated
+             erpMaterialCode: '' // An ERP code identifies one item; the copy gets its own
           }, { emitEvent: false });
           this.loading = false;
         },
@@ -696,6 +705,7 @@ export class ProductAddComponent implements OnInit {
       category: product.category || '',
       subCategory: product.subCategory || '',
       sku: product.sku || '',
+      erpMaterialCode: product.erpMaterialCode || '',
       isVerified: product.isVerified || false,
       featured: product.featured === true,
       videoUrl: product.videoUrl || '',
@@ -1061,6 +1071,19 @@ export class ProductAddComponent implements OnInit {
     this.errorMessage = '';
 
     this.createProductRecord();
+  }
+
+  /** Stock by location block (edit mode only). Never blocks the form. */
+  loadStockByLocation() {
+    if (!this.productId) return;
+    this.stockByLocationError = null;
+    this.stockService.getProductStock(this.productId).subscribe({
+      next: (loc) => this.stockByLocation = loc,
+      error: (err) => {
+        this.stockByLocation = null;
+        this.stockByLocationError = err?.status === 404 ? null : 'Stock by location is unavailable right now.';
+      }
+    });
   }
 
   private createProductRecord() {

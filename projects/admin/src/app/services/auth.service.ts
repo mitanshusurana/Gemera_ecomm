@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, firstValueFrom, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
+import { MyPermissions, Permission, isStaffRole } from '../core/permissions';
 
 @Injectable({
   providedIn: 'root'
@@ -10,25 +11,38 @@ import { Router } from '@angular/router';
 export class AuthService {
   private apiUrl = environment.apiUrl + '/auth';
 
+  /**
+   * Role and permission keys from GET /auth/me/permissions, cached for the
+   * session. `null` until loaded; the permission guard awaits the load.
+   */
+  readonly permissions = signal<MyPermissions | null>(null);
+  readonly permissionKeys = computed(() => new Set(this.permissions()?.permissions ?? []));
+  /** Role as the API reports it, else the token claim while the fetch is in flight. */
+  readonly role = computed(() => this.permissions()?.role ?? this.currentRole());
+
+  private permissionsRequest: Promise<MyPermissions | null> | null = null;
+
   constructor(private http: HttpClient, private router: Router) {}
 
   login(credentials: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/login`, credentials).pipe(
       tap((response: any) => {
-        if (response.user && response.user.role !== 'ADMIN') {
-          throw new Error('Unauthorized: User is not an admin.');
+        if (response.user && !isStaffRole(response.user.role)) {
+          throw new Error('Unauthorized: this account is not a staff account.');
         }
         if (response.token) {
           localStorage.setItem('admin_token', response.token);
           localStorage.setItem('admin_user', JSON.stringify(response.user));
         }
+        // Fresh session: forget whatever the previous user could do.
+        this.permissions.set(null);
+        this.permissionsRequest = null;
       })
     );
   }
 
   logout() {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
+    this.clearSession();
     this.router.navigate(['/login']);
   }
 
@@ -42,13 +56,9 @@ export class AuthService {
   /**
    * True only for a token that is present, well-formed and unexpired.
    *
-   * This used to return `!!getToken()` -- the presence of any string in
-   * localStorage. An expired or garbage value rendered the entire admin shell,
-   * and every route was guarded by nothing more than that.
-   *
    * This is a usability and exposure control, not authorisation: the token is
    * unverified here, and the backend remains the only authority. Every admin
-   * endpoint must enforce hasRole('ADMIN') independently.
+   * endpoint enforces its own permission key independently.
    */
   isAuthenticated(): boolean {
     const token = this.getToken();
@@ -75,14 +85,14 @@ export class AuthService {
     const token = this.getToken();
     const claims = token ? this.decodeToken(token) : null;
     const role = claims?.['role'] ?? claims?.['roles'] ?? null;
-    if (typeof role === 'string' && role) return role;
+    if (typeof role === 'string' && role) return role.replace(/^ROLE_/, '').toUpperCase();
     // Tokens issued before the API added the role claim carry only the subject;
     // fall back to the user blob stored at login.
     if (typeof localStorage !== 'undefined') {
       try {
         const raw = localStorage.getItem('admin_user');
         const user = raw ? JSON.parse(raw) : null;
-        if (user && typeof user.role === 'string') return user.role;
+        if (user && typeof user.role === 'string') return user.role.toUpperCase();
       } catch {
         // Corrupt blob: treat as no role.
       }
@@ -90,12 +100,61 @@ export class AuthService {
     return null;
   }
 
+  /** Any back-office role (not a customer). */
+  isStaff(): boolean {
+    return isStaffRole(this.role());
+  }
+
+  /** Kept for callers that only care about the owner role. */
   isAdmin(): boolean {
-    return (this.currentRole() || '').toUpperCase().includes('ADMIN');
+    return (this.role() || '').toUpperCase() === 'ADMIN';
   }
 
   /**
-   * Email of the signed-in admin, for display only. Prefers the token's
+   * Whether the signed-in user holds `key`. False until the permissions have
+   * loaded, so templates never flash a control the user cannot use.
+   */
+  can(key: Permission | string): boolean {
+    return this.permissionKeys().has(key);
+  }
+
+  /**
+   * Loads /auth/me/permissions once per session (or once per `force`).
+   * Resolves to null when there is no token or the call fails; the guard
+   * then treats the user as having no permissions.
+   */
+  ensurePermissions(force = false): Promise<MyPermissions | null> {
+    if (!this.getToken()) {
+      this.permissions.set(null);
+      return Promise.resolve(null);
+    }
+    if (!force && this.permissions()) {
+      return Promise.resolve(this.permissions());
+    }
+    if (!force && this.permissionsRequest) {
+      return this.permissionsRequest;
+    }
+    this.permissionsRequest = firstValueFrom(
+      this.http.get<MyPermissions>(`${this.apiUrl}/me/permissions`)
+    )
+      .then(p => {
+        const normalised: MyPermissions = {
+          role: String(p?.role ?? '').toUpperCase(),
+          staff: !!p?.staff,
+          permissions: Array.isArray(p?.permissions) ? p.permissions : [],
+        };
+        this.permissions.set(normalised);
+        return normalised;
+      })
+      .catch(() => {
+        this.permissionsRequest = null;
+        return null;
+      });
+    return this.permissionsRequest;
+  }
+
+  /**
+   * Email of the signed-in user, for display only. Prefers the token's
    * subject (the backend uses the email as the JWT subject) and falls back to
    * the user blob stored at login.
    */
@@ -122,6 +181,8 @@ export class AuthService {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
     }
+    this.permissions.set(null);
+    this.permissionsRequest = null;
   }
 
   /** Read JWT claims without verifying. Never used to grant access. */

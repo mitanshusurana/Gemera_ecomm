@@ -1,0 +1,75 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <nav class="pt-6 text-xs text-ink/60"><a routerLink="/stock" class="hover:text-ink">Stock</a> / <span class="text-ink">Transfers</span></nav>
+  <div class="sm:flex sm:items-center py-4">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Stock transfers</h1>
+      <p class="mt-2 text-sm text-ink/70">Pieces moving between the warehouse and the stores. Dispatch takes them off the source; receive puts them on the destination.</p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center gap-2">
+      <select [(ngModel)]="status" (ngModelChange)="onStatusChange()" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+        <option value="">All statuses</option>
+        <option value="DRAFT">Draft</option>
+        <option value="IN_TRANSIT">In transit</option>
+        <option value="RECEIVED">Received</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+      <a routerLink="/stock/transfers/new" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-surface shadow-sm hover:bg-primary/90">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        New transfer
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+
+  <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+    <table class="min-w-full divide-y divide-gray-300">
+      <thead>
+        <tr>
+          <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Number</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">From</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">To</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Lines</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Pieces</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Created</th>
+          <th class="py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Open</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let t of transfers" class="hover:bg-gray-50">
+          <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm sm:pl-6">
+            <a [routerLink]="['/stock/transfers', t.id]" class="font-mono font-semibold text-ink hover:text-primary">{{ t.transferNumber }}</a>
+            <p *ngIf="t.note" class="text-xs text-ink/60 truncate max-w-[16rem]">{{ t.note }}</p>
+          </td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-ink">{{ t.fromStoreName }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-ink">{{ t.toStoreName }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right text-ink">{{ t.lineCount }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right text-ink">
+            {{ t.totalQuantity }}<span *ngIf="t.totalReceived != null && t.totalReceived !== t.totalQuantity" class="text-xs text-amber-700"> ({{ t.totalReceived }} received)</span>
+          </td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm">
+            <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold" [ngClass]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
+          </td>
+          <td class="whitespace-nowrap px-3 py-3 text-xs text-ink/70">
+            {{ t.createdAt | date:'d MMM y, HH:mm' }}<span *ngIf="t.createdBy"> · {{ t.createdBy }}</span>
+          </td>
+          <td class="whitespace-nowrap py-3 pl-3 pr-4 text-right text-sm sm:pr-6">
+            <a [routerLink]="['/stock/transfers', t.id]" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Open</a>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && transfers.length === 0">
+          <td colspan="8" class="px-6 py-8 text-center text-sm text-ink/70">No transfers{{ status ? ' with this status' : ' yet' }}.</td>
+        </tr>
+        <tr *ngIf="loading"><td colspan="8" class="px-6 py-8 text-center text-sm text-ink/60">Loading…</td></tr>
+      </tbody>
+    </table>
+    <div *ngIf="totalPages > 1" class="flex items-center justify-between border-t border-gray-200 px-4 py-3 text-sm text-ink">
+      <span>Page {{ page + 1 }} of {{ totalPages }} · {{ totalElements }} transfers</span>
+      <div class="flex gap-2">
+        <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 0 || loading" class="rounded-md border border-ink/30 px-3 py-1 font-medium disabled:opacity-40 hover:bg-gray-50">Previous</button>
+        <button type="button" (click)="goToPage(page + 1)" [disabled]="page + 1 >= totalPages || loading" class="rounded-md border border-ink/30 px-3 py-1 font-medium disabled:opacity-40 hover:bg-gray-50">Next</button>
+      </div>
+    </div>
+  </div>
+</div>

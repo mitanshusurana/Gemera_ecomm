@@ -8,6 +8,7 @@ import { BrowserMultiFormatReader } from '@zxing/library';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ToastrService } from 'ngx-toastr';
 import { extractSku, isLowStock, productQrUrl } from '../../core/labels';
+import { StockService, ErpCodeMapping, ErpCodeMappingResult, apiErrorMessage } from '../../services/stock.service';
 
 @Component({
   selector: 'app-product-list',
@@ -24,6 +25,7 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private toastr = inject(ToastrService);
+  private stockService = inject(StockService);
 
   @ViewChild('searchInput') searchInput!: ElementRef;
 
@@ -337,5 +339,92 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   clearPrintQueue() {
     this.productService.clearPrintQueue();
+  }
+
+  // ---------------------------------------------------------------------
+  // ERP material codes: paste `sku,code` lines -> preview -> PUT /admin/inventory/erp-codes
+  // ---------------------------------------------------------------------
+
+  erpImportOpen = false;
+  erpImportText = '';
+  erpImportRows: ErpCodeMapping[] = [];
+  erpImportSkipped: string[] = [];
+  erpImportResult: ErpCodeMappingResult | null = null;
+  erpImportError: string | null = null;
+  erpImporting = false;
+
+  openErpImport() {
+    this.erpImportOpen = true;
+    this.erpImportResult = null;
+    this.erpImportError = null;
+  }
+
+  closeErpImport() {
+    this.erpImportOpen = false;
+  }
+
+  /**
+   * Parse the pasted CSV: one `sku,code` per line; tabs and semicolons work as
+   * separators too, quotes are stripped, a header row (first cell "sku") and
+   * blank lines are skipped. A line with only a SKU clears that SKU's code.
+   */
+  parseErpImport() {
+    const rows: ErpCodeMapping[] = [];
+    const skipped: string[] = [];
+    const seen = new Map<string, number>();
+    const lines = this.erpImportText.split(/\r?\n/);
+    lines.forEach((raw, i) => {
+      const line = raw.trim();
+      if (!line) return;
+      const cells = line.split(/[,;\t]/).map(c => c.trim().replace(/^["']|["']$/g, ''));
+      const sku = cells[0] ?? '';
+      const code = (cells[1] ?? '').toUpperCase();
+      if (!sku) { skipped.push(`Line ${i + 1}: no SKU`); return; }
+      if (i === 0 && sku.toLowerCase() === 'sku') return; // header row
+      const key = sku.toLowerCase();
+      if (seen.has(key)) {
+        rows[seen.get(key)!] = { sku, erpMaterialCode: code }; // last mention wins
+        skipped.push(`Line ${i + 1}: ${sku} repeated, later value kept`);
+        return;
+      }
+      seen.set(key, rows.length);
+      rows.push({ sku, erpMaterialCode: code });
+    });
+    this.erpImportRows = rows;
+    this.erpImportSkipped = skipped;
+    this.erpImportResult = null;
+    this.erpImportError = null;
+  }
+
+  get erpImportClears(): number {
+    return this.erpImportRows.filter(r => !r.erpMaterialCode).length;
+  }
+
+  applyErpImport() {
+    if (this.erpImportRows.length === 0 || this.erpImporting) return;
+    this.erpImporting = true;
+    this.erpImportError = null;
+    this.stockService.mapErpCodes(this.erpImportRows).subscribe({
+      next: (result) => {
+        this.erpImportResult = result;
+        this.erpImporting = false;
+        this.toastr.success(`ERP codes: ${result.updated} set, ${result.cleared} cleared, ${result.notFound} unknown SKU(s)`);
+        this.loadProducts(this.searchQuery);
+      },
+      error: (err) => {
+        this.erpImporting = false;
+        this.erpImportError = apiErrorMessage(err, 'Could not apply the ERP codes.');
+      }
+    });
+  }
+
+  erpStatusClass(status: string): string {
+    switch (status) {
+      case 'UPDATED': return 'bg-emerald-100 text-emerald-800';
+      case 'CLEARED': return 'bg-slate-100 text-slate-700';
+      case 'UNCHANGED': return 'bg-gray-100 text-gray-600';
+      case 'NOT_FOUND': return 'bg-red-100 text-red-700';
+      default: return 'bg-amber-100 text-amber-800';
+    }
   }
 }

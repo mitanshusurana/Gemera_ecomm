@@ -1,0 +1,101 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <nav class="pt-6 text-xs text-ink/60"><a routerLink="/stock" class="hover:text-ink">Stock</a> / <a routerLink="/stock/transfers" class="hover:text-ink">Transfers</a> / <span class="text-ink">{{ transfer?.transferNumber || '…' }}</span></nav>
+
+  <div *ngIf="error" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+  <div *ngIf="loading" class="py-12 text-center text-sm text-ink/60">Loading…</div>
+
+  <ng-container *ngIf="transfer as t">
+    <div class="sm:flex sm:items-start py-4 gap-4">
+      <div class="sm:flex-auto">
+        <div class="flex items-center gap-3">
+          <h1 class="text-xl font-semibold font-mono text-ink">{{ t.transferNumber }}</h1>
+          <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" [ngClass]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
+        </div>
+        <p class="mt-2 text-sm text-ink">
+          <span class="font-semibold">{{ t.fromStoreName }}</span>
+          <span class="material-symbols-outlined align-middle text-[16px] text-ink/50 mx-1">arrow_forward</span>
+          <span class="font-semibold">{{ t.toStoreName }}</span>
+          · {{ t.lineCount }} line{{ t.lineCount === 1 ? '' : 's' }} · {{ t.totalQuantity }} piece{{ t.totalQuantity === 1 ? '' : 's' }} · {{ totalValue | currency:'INR':'symbol':'1.0-0' }} at price
+        </p>
+        <p *ngIf="t.note" class="mt-1 text-sm text-ink/70">{{ t.note }}</p>
+      </div>
+      <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-2">
+        <button *ngIf="t.status === 'DRAFT'" type="button" (click)="dispatch()" [disabled]="acting"
+                class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-surface hover:bg-primary/90 disabled:opacity-50">
+          <span class="material-symbols-outlined text-[18px]">local_shipping</span> Dispatch
+        </button>
+        <button *ngIf="t.status === 'IN_TRANSIT' && !receiving" type="button" (click)="startReceive()" [disabled]="acting"
+                class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+          <span class="material-symbols-outlined text-[18px]">inventory</span> Receive
+        </button>
+        <button *ngIf="t.status === 'DRAFT' || t.status === 'IN_TRANSIT'" type="button" (click)="cancel()" [disabled]="acting"
+                class="inline-flex items-center gap-2 rounded-md border border-red-300 bg-surface px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">
+          Cancel transfer
+        </button>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <dl class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-4 text-sm">
+      <div class="rounded-lg border border-ink/10 bg-surface p-3">
+        <dt class="text-xs text-ink/60">Created</dt>
+        <dd class="text-ink">{{ t.createdAt | date:'d MMM y, HH:mm' }}<span *ngIf="t.createdBy" class="block text-xs text-ink/60">{{ t.createdBy }}</span></dd>
+      </div>
+      <div class="rounded-lg border border-ink/10 bg-surface p-3">
+        <dt class="text-xs text-ink/60">Dispatched</dt>
+        <dd class="text-ink">{{ t.dispatchedAt ? (t.dispatchedAt | date:'d MMM y, HH:mm') : '—' }}<span *ngIf="t.dispatchedBy" class="block text-xs text-ink/60">{{ t.dispatchedBy }}</span></dd>
+      </div>
+      <div class="rounded-lg border border-ink/10 bg-surface p-3">
+        <dt class="text-xs text-ink/60">Received</dt>
+        <dd class="text-ink">{{ t.receivedAt ? (t.receivedAt | date:'d MMM y, HH:mm') : '—' }}<span *ngIf="t.receivedBy" class="block text-xs text-ink/60">{{ t.receivedBy }}</span></dd>
+      </div>
+      <div class="rounded-lg border border-ink/10 bg-surface p-3">
+        <dt class="text-xs text-ink/60">Cancelled</dt>
+        <dd class="text-ink">{{ t.cancelledAt ? (t.cancelledAt | date:'d MMM y, HH:mm') : '—' }}<span *ngIf="t.cancelledBy" class="block text-xs text-ink/60">{{ t.cancelledBy }}</span></dd>
+      </div>
+    </dl>
+
+    <!-- Receive panel -->
+    <div *ngIf="receiving" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 flex flex-wrap items-center justify-between gap-3">
+      <span>Enter what arrived at <span class="font-semibold">{{ t.toStoreName }}</span> for each line. Lines default to the full quantity.<span *ngIf="shortLines > 0" class="block text-amber-800 font-medium">{{ shortLines }} line(s) short.</span></span>
+      <span class="flex gap-2">
+        <button type="button" (click)="cancelReceive()" class="rounded-md border border-ink/30 bg-surface px-3 py-1.5 font-medium text-ink hover:bg-gray-50">Back</button>
+        <button type="button" (click)="confirmReceive()" [disabled]="!receiveValid || acting" class="rounded-md bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-700 disabled:opacity-50">Confirm receipt</button>
+      </span>
+    </div>
+
+    <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+      <table class="min-w-full divide-y divide-gray-300">
+        <thead>
+          <tr>
+            <th class="py-3 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Product</th>
+            <th class="px-3 py-3 text-left text-sm font-semibold text-ink">SKU</th>
+            <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Price</th>
+            <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Sent</th>
+            <th class="px-3 py-3 text-right text-sm font-semibold text-ink">Received</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr *ngFor="let line of t.lines" [class.bg-amber-50]="line.receivedQuantity != null && line.receivedQuantity < line.quantity">
+            <td class="py-3 pl-4 pr-3 text-sm font-semibold text-ink sm:pl-6">
+              <a [routerLink]="['/products/edit', line.productId]" class="hover:text-primary">{{ line.name }}</a>
+            </td>
+            <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-ink/80">{{ line.sku }}</td>
+            <td class="whitespace-nowrap px-3 py-3 text-sm text-right text-ink">{{ line.price != null ? (line.price | currency:'INR':'symbol':'1.0-0') : '—' }}</td>
+            <td class="whitespace-nowrap px-3 py-3 text-sm text-right font-semibold text-ink">{{ line.quantity }}</td>
+            <td class="whitespace-nowrap px-3 py-3 text-sm text-right">
+              <ng-container *ngIf="receiving">
+                <input type="number" min="0" [max]="line.quantity" step="1" [(ngModel)]="received[line.id]"
+                       class="w-24 rounded-md border-gray-300 text-right shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
+              </ng-container>
+              <ng-container *ngIf="!receiving">
+                <span *ngIf="line.receivedQuantity == null" class="text-ink/40">—</span>
+                <span *ngIf="line.receivedQuantity != null" class="font-semibold" [class.text-amber-700]="line.receivedQuantity < line.quantity" [class.text-emerald-700]="line.receivedQuantity === line.quantity">{{ line.receivedQuantity }}</span>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</div>

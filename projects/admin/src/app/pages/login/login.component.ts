@@ -37,7 +37,13 @@ export class LoginComponent {
       },
       error: (err) => {
         console.error('Login error', err);
-        this.errorMessage = 'Invalid email or password';
+        if (err?.status === 401 && /deactivated/i.test(err?.error?.message ?? '')) {
+          this.errorMessage = 'This account has been deactivated. Ask the owner to reactivate it.';
+        } else if (err instanceof Error && /not a staff account/i.test(err.message)) {
+          this.errorMessage = 'This is a customer account. Staff sign in with the account the owner created for them.';
+        } else {
+          this.errorMessage = 'Invalid email or password';
+        }
         this.loading = false;
       }
     });

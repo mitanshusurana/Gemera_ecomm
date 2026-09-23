@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { AdminOrder, ErpSyncStatus, OrderService, saveBlobAs } from '../../services/order.service';
+import { AuthService } from '../../services/auth.service';
 
 /** A status-change button on the order detail page (OPERATIONS-CONTRACT §3). */
 interface OrderAction {
@@ -25,6 +26,20 @@ export class OrderDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
   private toastr = inject(ToastrService);
+  private auth = inject(AuthService);
+
+  /** REFUNDED and CANCELLED buttons need orders.refund; the API enforces the refund half itself. */
+  canRefund(): boolean {
+    return this.auth.can('orders.refund');
+  }
+
+  canErpSync(): boolean {
+    return this.auth.can('erp.sync');
+  }
+
+  canWriteOrders(): boolean {
+    return this.auth.can('orders.write');
+  }
 
   order: AdminOrder | null = null;
   loading = true;
@@ -161,7 +176,10 @@ export class OrderDetailComponent implements OnInit {
   }
 
   actions(): OrderAction[] {
-    return this.allowedNextStatuses().map(status => {
+    return this.allowedNextStatuses()
+      .filter(() => this.canWriteOrders())
+      .filter(status => (status !== 'REFUNDED' && status !== 'CANCELLED') || this.canRefund())
+      .map(status => {
       const meta = OrderDetailComponent.ACTION_META[status] ?? { label: `Move to ${status}`, tone: 'neutral' as const, flow: 'status' as const };
       return { status, ...meta };
     });

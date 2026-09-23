@@ -49,6 +49,11 @@ export class SettingsComponent implements OnInit {
   /** Shown in place of the old hardcoded profile card. */
   readonly adminEmail = this.authService.currentUserEmail();
 
+  /** Only settings.write may save; everyone with settings.read may look. */
+  get canWrite(): boolean {
+    return this.authService.can('settings.write');
+  }
+
   settingsForm = this.fb.group({
     companyAddress: ['', Validators.required],
     companyPhone: ['', Validators.required],
@@ -75,7 +80,33 @@ export class SettingsComponent implements OnInit {
     companyPan: ['', [Validators.pattern(PAN_PATTERN)]],
     companyStateCode: [DEFAULT_GST_STATE_CODE, [Validators.required, Validators.pattern(/^\d{2}$/)]],
     invoiceSeriesPrefix: [DEFAULT_INVOICE_SERIES_PREFIX, [Validators.required, Validators.pattern(/^[A-Z0-9-]{1,10}$/)]],
+    // Repairs & services: whole-rupee "from" prices shown on the storefront
+    // /repairs catalogue. Empty means "Quote on assessment".
+    repairPriceResize: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    repairPricePolish: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    repairPriceStoneReset: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    repairPriceRhodium: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    repairPriceChainRepair: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    repairPriceEngraving: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    repairPriceCleaning: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    repairPriceOther: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    // Old gold exchange quotes on /exchange: deduction off the fine-metal value
+    // and the silver rate (silver has no live feed).
+    oldGoldDeductionPct: ['2', [Validators.min(0), Validators.max(50)]],
+    silverRatePerGram: ['', [Validators.pattern(/^\d{0,7}(\.\d{0,2})?$/)]],
   });
+
+  /** Storefront service catalogue order; label shown next to each "from" price field. */
+  readonly repairPriceFields: Array<{ control: string; label: string }> = [
+    { control: 'repairPriceResize', label: 'Resizing' },
+    { control: 'repairPricePolish', label: 'Polishing' },
+    { control: 'repairPriceStoneReset', label: 'Stone resetting' },
+    { control: 'repairPriceRhodium', label: 'Rhodium plating' },
+    { control: 'repairPriceChainRepair', label: 'Chain repair' },
+    { control: 'repairPriceEngraving', label: 'Engraving' },
+    { control: 'repairPriceCleaning', label: 'Professional cleaning' },
+    { control: 'repairPriceOther', label: 'Something else' },
+  ];
 
   readonly gstStateCodes = GST_STATE_CODES;
 

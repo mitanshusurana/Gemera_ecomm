@@ -1,0 +1,98 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <nav class="pt-6 text-xs text-ink/60"><a routerLink="/stock" class="hover:text-ink">Stock</a> / <span class="text-ink">Stock takes</span></nav>
+  <div class="sm:flex sm:items-center py-4">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Stock takes</h1>
+      <p class="mt-2 text-sm text-ink/70">Count a location with the scanner. Opening a take snapshots what the system expects; closing it corrects the quantities and writes each change to the audit log.</p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center gap-2">
+      <select [(ngModel)]="status" (ngModelChange)="onStatusChange()" class="rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+        <option value="">All statuses</option>
+        <option value="OPEN">Open</option>
+        <option value="CLOSED">Closed</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+      <button type="button" (click)="openForm()" [disabled]="formOpen" class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-surface shadow-sm hover:bg-primary/90 disabled:opacity-50">
+        <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+        New stock take
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+
+  <!-- Open a new take -->
+  <div *ngIf="formOpen" class="mb-6 rounded-xl border border-ink/20 bg-surface p-6 shadow-sm">
+    <h2 class="text-lg font-bold text-ink">Open a stock take</h2>
+    <p class="mt-1 text-sm text-ink/70">Every product with pieces at the location is listed with its expected quantity. Only one take can be open per location.</p>
+    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-6">
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-ink">Location</label>
+        <select [(ngModel)]="newStoreId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+          <option value="">Warehouse (online stock)</option>
+          <option *ngFor="let s of stores" [value]="s.id">{{ s.name }}</option>
+        </select>
+      </div>
+      <div class="sm:col-span-4">
+        <label class="block text-sm font-medium text-ink">Note</label>
+        <input type="text" [(ngModel)]="newNote" placeholder="e.g. Month-end count, counter 2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+      </div>
+    </div>
+    <p *ngIf="formError" class="mt-3 text-sm text-red-600">{{ formError }}</p>
+    <div class="mt-4 flex justify-end gap-3">
+      <button type="button" (click)="closeForm()" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+      <button type="button" (click)="openTake()" [disabled]="opening" class="rounded-md bg-primary px-4 py-2 text-sm font-bold text-surface hover:bg-primary/90 disabled:opacity-50">
+        {{ opening ? 'Opening…' : 'Open and start counting ' + locationName(newStoreId) }}
+      </button>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+    <table class="min-w-full divide-y divide-gray-300">
+      <thead>
+        <tr>
+          <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Number</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Location</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Lines</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Counted</th>
+          <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Variances</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Started</th>
+          <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Closed</th>
+          <th class="py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Open</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let t of takes" class="hover:bg-gray-50">
+          <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm sm:pl-6">
+            <a [routerLink]="['/stock/takes', t.id]" class="font-mono font-semibold text-ink hover:text-primary">{{ t.takeNumber }}</a>
+            <p *ngIf="t.note" class="text-xs text-ink/60 truncate max-w-[16rem]">{{ t.note }}</p>
+          </td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-ink">{{ t.storeName }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm">
+            <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold" [ngClass]="statusClass(t.status)">{{ statusLabel(t.status) }}</span>
+          </td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right text-ink">{{ t.lineCount }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right text-ink">{{ t.countedLines }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-sm text-right" [class.text-amber-700]="t.varianceLines > 0" [class.font-semibold]="t.varianceLines > 0">{{ t.varianceLines }}</td>
+          <td class="whitespace-nowrap px-3 py-3 text-xs text-ink/70">{{ t.createdAt | date:'d MMM y, HH:mm' }}<span *ngIf="t.startedBy" class="block">{{ t.startedBy }}</span></td>
+          <td class="whitespace-nowrap px-3 py-3 text-xs text-ink/70">{{ t.closedAt ? (t.closedAt | date:'d MMM y, HH:mm') : '—' }}<span *ngIf="t.closedBy" class="block">{{ t.closedBy }}</span></td>
+          <td class="whitespace-nowrap py-3 pl-3 pr-4 text-right text-sm sm:pr-6">
+            <a [routerLink]="['/stock/takes', t.id]" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">{{ t.status === 'OPEN' ? 'Count' : 'Open' }}</a>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && takes.length === 0">
+          <td colspan="9" class="px-6 py-8 text-center text-sm text-ink/70">No stock takes{{ status ? ' with this status' : ' yet' }}.</td>
+        </tr>
+        <tr *ngIf="loading"><td colspan="9" class="px-6 py-8 text-center text-sm text-ink/60">Loading…</td></tr>
+      </tbody>
+    </table>
+    <div *ngIf="totalPages > 1" class="flex items-center justify-between border-t border-gray-200 px-4 py-3 text-sm text-ink">
+      <span>Page {{ page + 1 }} of {{ totalPages }} · {{ totalElements }} takes</span>
+      <div class="flex gap-2">
+        <button type="button" (click)="goToPage(page - 1)" [disabled]="page === 0 || loading" class="rounded-md border border-ink/30 px-3 py-1 font-medium disabled:opacity-40 hover:bg-gray-50">Previous</button>
+        <button type="button" (click)="goToPage(page + 1)" [disabled]="page + 1 >= totalPages || loading" class="rounded-md border border-ink/30 px-3 py-1 font-medium disabled:opacity-40 hover:bg-gray-50">Next</button>
+      </div>
+    </div>
+  </div>
+</div>

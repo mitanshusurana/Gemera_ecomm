@@ -1,0 +1,305 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <div class="sm:flex sm:items-center py-6">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Old gold exchange</h1>
+      <p class="mt-2 text-sm text-ink/70">Customers' old gold and silver handed in for store credit. Receive, assay, credit or reject; the credit is a gift card and the purchase is posted to the ERP.</p>
+    </div>
+  </div>
+
+  <!-- Status chips -->
+  <div class="flex flex-wrap gap-2 mb-4">
+    <button *ngFor="let s of statuses" type="button" (click)="setFilter(s)"
+            class="px-3 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wide transition-colors"
+            [ngClass]="chipClass(s)">
+      {{ s === 'ALL' ? 'All' : s.toLowerCase() }}
+    </button>
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <!-- Table -->
+    <div [class.xl:col-span-3]="selected" [class.xl:col-span-5]="!selected">
+      <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-surface">
+            <tr>
+              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Request</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Customer</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Item</th>
+              <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Value</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Placed</th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Open</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr *ngFor="let r of requests" class="cursor-pointer hover:bg-primary/5" [ngClass]="{'bg-primary/10': selected?.id === r.id}" (click)="open(r)">
+              <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-mono font-semibold text-ink sm:pl-6">
+                {{ r.requestNumber }}
+                <span *ngIf="r.panRequired && !r.pan" class="ml-2 inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-800" title="PAN required (Rule 114B)">PAN</span>
+              </td>
+              <td class="px-3 py-4 text-sm text-ink">
+                <span class="block font-medium">{{ r.customerName }}</span>
+                <span class="block text-xs text-ink/70">{{ r.phone }}<ng-container *ngIf="r.email"> &middot; {{ r.email }}</ng-container></span>
+              </td>
+              <td class="px-3 py-4 text-sm text-ink whitespace-nowrap">{{ metalLabel(r) }}</td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
+                <span class="block font-semibold text-ink">{{ (r.finalValue ?? r.quotedValue) | currency:'INR':'symbol':'1.0-0' }}</span>
+                <span class="block text-[11px] text-ink/60">{{ r.finalValue != null ? 'final' : (r.quoteIndicative ? 'estimate (indicative)' : 'estimate') }}</span>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="statusClass(r.status)">{{ r.status }}</span>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ r.createdAt | date:'mediumDate' }}</td>
+              <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                <button type="button" class="text-primary hover:underline text-xs font-semibold">Open</button>
+              </td>
+            </tr>
+            <tr *ngIf="loading">
+              <td colspan="7" class="px-6 py-6 text-center text-sm text-ink">Loading exchange requests...</td>
+            </tr>
+            <tr *ngIf="!loading && requests.length === 0">
+              <td colspan="7" class="px-6 py-6 text-center text-sm text-ink">No exchange requests<ng-container *ngIf="statusFilter !== 'ALL'"> with status {{ statusFilter.toLowerCase() }}</ng-container>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between">
+        <p class="text-sm text-ink">
+          Page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
+          (<span class="font-semibold">{{ totalElements }}</span> requests)
+        </p>
+        <div class="flex gap-2">
+          <button type="button" (click)="prevPage()" [disabled]="currentPage === 0 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Previous</button>
+          <button type="button" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail panel -->
+    <aside *ngIf="selected" class="xl:col-span-2 bg-surface rounded-xl border border-ink/20 shadow-sm p-6 space-y-6 self-start xl:sticky xl:top-20">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="font-mono text-lg font-bold text-ink">{{ selected.requestNumber }}</p>
+          <span class="inline-flex mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span>
+        </div>
+        <button type="button" (click)="close()" class="text-ink/60 hover:text-ink" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <p *ngIf="detailLoading" class="text-sm text-ink/70">Loading...</p>
+      <div *ngIf="actionError" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ actionError }}</div>
+
+      <!-- Credit issued banner -->
+      <div *ngIf="creditedCode" class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <p class="text-sm font-semibold text-emerald-900">Store credit issued and e-mailed to {{ selected.email }}.</p>
+        <p class="text-xs text-emerald-800 mt-1">Gift card code <span class="font-mono font-bold text-sm">{{ creditedCode }}</span> for {{ selected.finalValue | currency:'INR':'symbol':'1.0-0' }}.</p>
+      </div>
+
+      <!-- Customer and item -->
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <dt class="text-ink/60">Customer</dt><dd class="text-ink font-medium">{{ selected.customerName }}</dd>
+        <dt class="text-ink/60">Phone</dt><dd class="text-ink">{{ selected.phone || '—' }}</dd>
+        <dt class="text-ink/60">Email</dt><dd class="text-ink break-all">{{ selected.email || '—' }}</dd>
+        <dt class="text-ink/60">Declared</dt><dd class="text-ink">{{ metalLabel(selected) }} ({{ selected.declaredPurityFraction }})</dd>
+        <dt class="text-ink/60">Quoted</dt>
+        <dd class="text-ink">
+          {{ selected.quotedValue | currency:'INR':'symbol':'1.0-0' }}
+          <span class="text-xs text-ink/60">at {{ selected.quotedRatePerGram | currency:'INR':'symbol':'1.0-0' }}/g fine, {{ selected.quotedDeductionPct }}% off<ng-container *ngIf="selected.quoteIndicative">, indicative rate</ng-container></span>
+        </dd>
+        <dt class="text-ink/60">PAN</dt>
+        <dd>
+          <span *ngIf="selected.pan" class="font-mono text-ink">{{ selected.pan }}</span>
+          <span *ngIf="!selected.pan && selected.panRequired" class="inline-flex px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-red-100 text-red-800">Required (Rule 114B)</span>
+          <span *ngIf="!selected.pan && !selected.panRequired" class="text-ink/50">—</span>
+        </dd>
+        <dt class="text-ink/60">ID proof</dt><dd class="text-ink">{{ selected.idProofType ? (selected.idProofType + ' ' + (selected.idProofNumber || '')) : '—' }}</dd>
+        <dt class="text-ink/60">State code</dt><dd class="text-ink">{{ selected.stateCode || '—' }}</dd>
+        <dt *ngIf="selected.itemDescription" class="text-ink/60">Item</dt><dd *ngIf="selected.itemDescription" class="text-ink">{{ selected.itemDescription }}</dd>
+      </dl>
+
+      <!-- Assay result -->
+      <div *ngIf="selected.finalValue != null" class="rounded-lg border border-ink/10 bg-background-light p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Assay</p>
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+          <dt class="text-ink/60">Purity</dt><dd class="text-ink">{{ selected.assayedPurityFraction }}</dd>
+          <dt class="text-ink/60">Net weight</dt><dd class="text-ink">{{ selected.assayedNetWeightGrams }} g</dd>
+          <dt class="text-ink/60">Rate (fine)</dt><dd class="text-ink">{{ selected.assayedRatePerGram | currency:'INR':'symbol':'1.2-2' }}/g</dd>
+          <dt class="text-ink/60">Deduction</dt><dd class="text-ink">{{ selected.deductionPct }}%</dd>
+          <dt class="text-ink font-semibold">Final value</dt><dd class="text-ink font-bold text-base">{{ selected.finalValue | currency:'INR':'symbol':'1.0-0' }}</dd>
+        </dl>
+      </div>
+
+      <!-- Credit and ERP -->
+      <div *ngIf="selected.status === 'CREDITED'" class="rounded-lg border border-ink/10 p-4 space-y-2 text-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-ink/60">Credit and books</p>
+        <p class="text-ink">Gift card <span class="font-mono font-semibold">{{ selected.creditGiftCardCode }}</span> (source EXCHANGE)</p>
+        <p class="text-ink flex items-center gap-2 flex-wrap">
+          ERP purchase
+          <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase" [ngClass]="syncClass(selected.erpSyncStatus)">{{ selected.erpSyncStatus || 'not queued' }}</span>
+          <span *ngIf="selected.erpPurchaseRef" class="font-mono">{{ selected.erpPurchaseRef }}</span>
+        </p>
+        <p *ngIf="selected.erpSyncError" class="text-xs text-red-700 break-words">{{ selected.erpSyncError }}</p>
+        <button *ngIf="selected.erpSyncStatus !== 'SENT'" type="button" (click)="erpSync()" [disabled]="acting"
+                class="text-xs font-semibold text-primary hover:underline disabled:opacity-50">Sync to ERP now</button>
+      </div>
+
+      <div *ngIf="selected.status === 'REJECTED'" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+        <p class="text-xs font-semibold uppercase tracking-wide mb-1">Rejected</p>
+        {{ selected.rejectionReason }}
+      </div>
+
+      <!-- Actions -->
+      <div *ngIf="isOpen(selected)" class="space-y-4 border-t border-ink/10 pt-4">
+
+        <!-- Receive -->
+        <div *ngIf="selected.status === 'REQUESTED'" class="space-y-2">
+          <label class="block text-sm font-medium text-ink">Mark as received</label>
+          <input [(ngModel)]="receiveNote" [ngModelOptions]="{standalone: true}" type="text" placeholder="Note (store, courier AWB, gross weight on receipt)"
+                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+          <button type="button" (click)="receive()" [disabled]="acting"
+                  class="w-full px-4 py-2 bg-primary text-surface rounded-md text-sm font-bold hover:bg-primary/90 disabled:opacity-50">
+            {{ acting ? 'Saving...' : 'Item received' }}
+          </button>
+        </div>
+
+        <!-- Assay -->
+        <div *ngIf="selected.status === 'RECEIVED' || selected.status === 'ASSAYED'">
+          <button type="button" (click)="assayOpen = !assayOpen" class="flex w-full items-center justify-between text-sm font-semibold text-ink">
+            <span>{{ selected.status === 'ASSAYED' ? 'Re-assay' : 'Record assay' }}</span>
+            <span class="material-symbols-outlined text-[20px]">{{ assayOpen ? 'expand_less' : 'expand_more' }}</span>
+          </button>
+
+          <form *ngIf="assayOpen" [formGroup]="assayForm" (ngSubmit)="submitAssay()" class="mt-3 space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div [class.col-span-2]="!isCustomPurity()">
+                <label class="block text-xs font-medium text-ink">Purity</label>
+                <select formControlName="purityChoice" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+                  <option *ngFor="let o of purityOptions(selected.metal)" [value]="o.value">{{ o.label }}</option>
+                </select>
+              </div>
+              <div *ngIf="isCustomPurity()">
+                <label class="block text-xs font-medium text-ink">Fraction (0-1)</label>
+                <input formControlName="customPurity" type="number" min="0.01" max="1" step="0.001" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-ink">Net weight (g)</label>
+                <input formControlName="netWeight" type="number" min="0.001" step="0.001" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+                <p *ngIf="invalid('netWeight')" class="mt-1 text-xs text-red-600">Net weight above 0 is required.</p>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-ink">Deduction (%)</label>
+                <input formControlName="deductionPct" type="number" min="0" max="100" step="0.5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+              </div>
+              <div class="col-span-2">
+                <label class="flex items-center justify-between text-xs font-medium text-ink">
+                  <span>Rate, INR per gram of fine metal</span>
+                  <button type="button" (click)="refreshRate(selected.metal)" [disabled]="rateLoading" class="text-primary hover:underline disabled:opacity-50">
+                    {{ rateLoading ? 'Fetching...' : 'Use live rate' }}
+                  </button>
+                </label>
+                <input formControlName="rate" type="number" min="0.01" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+                <p *ngIf="rateIndicative" class="mt-1 text-xs text-amber-700">Live feed unavailable; the prefilled rate is the reference figure. Enter the rate of the day.</p>
+                <p *ngIf="invalid('rate')" class="mt-1 text-xs text-red-600">A positive rate is required.</p>
+              </div>
+              <div class="col-span-2" *ngIf="assayPanRequired() || (computedFinalValue() >= panThreshold && !selected.pan)">
+                <label class="block text-xs font-medium text-ink">PAN <span class="text-red-600">*</span></label>
+                <input formControlName="pan" type="text" maxlength="10" placeholder="ABCDE1234F" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm font-mono uppercase" />
+                <p class="mt-1 text-xs text-ink/70">Value is Rs 2,00,000 or more: Rule 114B requires the seller's PAN before credit can be issued.</p>
+                <p *ngIf="invalid('pan')" class="mt-1 text-xs text-red-600">PAN must look like ABCDE1234F.</p>
+              </div>
+              <div class="col-span-2">
+                <label class="block text-xs font-medium text-ink">Note</label>
+                <input formControlName="note" type="text" placeholder="e.g. XRF 91.4%, stones removed 0.6 g" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between rounded-lg bg-background-light border border-ink/10 px-4 py-3">
+              <span class="text-sm text-ink/70">Final value</span>
+              <span class="text-lg font-bold text-ink">{{ computedFinalValue() | currency:'INR':'symbol':'1.0-0' }}</span>
+            </div>
+
+            <button type="submit" [disabled]="acting" class="w-full px-4 py-2 bg-primary text-surface rounded-md text-sm font-bold hover:bg-primary/90 disabled:opacity-50">
+              {{ acting ? 'Saving...' : 'Save assay' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Credit -->
+        <div *ngIf="selected.status === 'ASSAYED'">
+          <button type="button" (click)="askCredit()" [disabled]="acting || (selected.panRequired && !selected.pan)"
+                  class="w-full px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-bold hover:bg-emerald-700 disabled:opacity-50">
+            Issue store credit of {{ selected.finalValue | currency:'INR':'symbol':'1.0-0' }}
+          </button>
+          <p *ngIf="selected.panRequired && !selected.pan" class="mt-1 text-xs text-red-700">Record the PAN in the assay first (Rule 114B).</p>
+        </div>
+
+        <!-- Reject / cancel -->
+        <div class="flex flex-col sm:flex-row gap-2">
+          <div class="flex-1">
+            <button *ngIf="!rejectOpen" type="button" (click)="rejectOpen = true; cancelOpen = false" [disabled]="acting"
+                    class="w-full px-4 py-2 border border-red-300 text-red-700 rounded-md text-sm font-medium hover:bg-red-50 disabled:opacity-50">Reject</button>
+            <div *ngIf="rejectOpen" class="space-y-2">
+              <textarea [(ngModel)]="rejectReason" [ngModelOptions]="{standalone: true}" rows="2" placeholder="Reason shown to the customer (e.g. gold-plated base metal; below 9K)"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"></textarea>
+              <div class="flex gap-2">
+                <button type="button" (click)="reject()" [disabled]="acting" class="flex-1 px-3 py-2 bg-red-600 text-white rounded-md text-xs font-bold hover:bg-red-700 disabled:opacity-50">{{ acting ? 'Rejecting...' : 'Confirm reject' }}</button>
+                <button type="button" (click)="rejectOpen = false" class="px-3 py-2 border border-gray-300 rounded-md text-xs font-medium text-gray-700">Back</button>
+              </div>
+            </div>
+          </div>
+          <div class="flex-1">
+            <button *ngIf="!cancelOpen" type="button" (click)="cancelOpen = true; rejectOpen = false" [disabled]="acting"
+                    class="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 disabled:opacity-50">Cancel request</button>
+            <div *ngIf="cancelOpen" class="space-y-2">
+              <input [(ngModel)]="cancelReason" [ngModelOptions]="{standalone: true}" type="text" placeholder="Note (customer withdrew, duplicate)"
+                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+              <div class="flex gap-2">
+                <button type="button" (click)="cancel()" [disabled]="acting" class="flex-1 px-3 py-2 bg-gray-800 text-white rounded-md text-xs font-bold hover:bg-gray-900 disabled:opacity-50">{{ acting ? 'Cancelling...' : 'Confirm cancel' }}</button>
+                <button type="button" (click)="cancelOpen = false" class="px-3 py-2 border border-gray-300 rounded-md text-xs font-medium text-gray-700">Back</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="border-t border-ink/10 pt-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Timeline</p>
+        <ol class="space-y-3">
+          <li *ngFor="let e of selected.events" class="flex gap-3 text-sm">
+            <span class="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0"></span>
+            <div class="min-w-0">
+              <p class="text-ink"><span class="font-semibold">{{ e.status }}</span> <span class="text-ink/60">&middot; {{ e.at | date:'medium' }} &middot; {{ e.actor }}</span></p>
+              <p *ngIf="e.note" class="text-ink/70 break-words">{{ e.note }}</p>
+            </div>
+          </li>
+          <li *ngIf="!selected.events?.length" class="text-sm text-ink/60">No events yet.</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Credit confirm dialog -->
+  <div *ngIf="creditConfirmOpen && selected" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" (click)="creditConfirmOpen = false">
+    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl space-y-4" (click)="$event.stopPropagation()">
+      <h3 class="text-lg font-bold text-ink">Issue store credit?</h3>
+      <p class="text-sm text-ink/80">
+        This creates an active gift card for <strong>{{ selected.finalValue | currency:'INR':'symbol':'1.0-0' }}</strong>,
+        e-mails the code to <strong>{{ selected.email }}</strong>, and queues an old-gold purchase of
+        {{ selected.assayedNetWeightGrams }} g at purity {{ selected.assayedPurityFraction }} for the ERP under {{ selected.requestNumber }}.
+        The customer's metal is now the shop's stock; this cannot be undone from here.
+      </p>
+      <div class="flex justify-end gap-3">
+        <button type="button" (click)="creditConfirmOpen = false" [disabled]="acting" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">Not yet</button>
+        <button type="button" (click)="confirmCredit()" [disabled]="acting" class="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-bold hover:bg-emerald-700 disabled:opacity-50">
+          {{ acting ? 'Issuing...' : 'Issue credit' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
