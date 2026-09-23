@@ -198,3 +198,73 @@ async def test_a_reference_number_matching_nothing_is_on_account():
 
     db = _Session(None)
     assert await settle_invoice(db, "sales_invoices", "c1", 100, reference_no="ADV-001") is None
+
+
+# ---------------------------------------------------------------- review follow-ups
+
+
+@pytest.mark.asyncio
+async def test_a_zero_or_negative_amount_is_refused_before_anything_is_read():
+    """A negative "receipt" reduced amount_paid and regressed a Paid bill."""
+    from app.api.v1.vouchers import settle_invoice
+
+    for bad in (0, -1, -0.01):
+        db = _Session(invoice("1000.00"))
+        with pytest.raises(HTTPException) as exc:
+            await settle_invoice(db, "sales_invoices", "c1", bad, invoice_id=uuid4())
+        assert exc.value.status_code == 422
+        assert db.updates == []
+
+
+@pytest.mark.asyncio
+async def test_a_fraction_over_the_balance_is_refused_not_passed_to_the_column_check():
+    """0.005 over used to pass Python and then fail chk_*_amount_paid as a 500."""
+    from app.api.v1.vouchers import settle_invoice
+
+    inv = invoice("1000.00", amount_paid="400.00")
+    with pytest.raises(HTTPException) as exc:
+        await settle_invoice(_Session(inv), "sales_invoices", "c1", 600.005, invoice_id=inv["id"])
+    assert exc.value.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_the_invoice_must_belong_to_the_party_being_credited():
+    """Receipt from customer A must not settle customer B's invoice."""
+    from app.api.v1.vouchers import settle_invoice
+
+    class _Recording(_Session):
+        def __init__(self, inv):
+            super().__init__(inv)
+            self.selects = []
+
+        async def execute(self, stmt, params=None):
+            if str(stmt).lstrip().upper().startswith("SELECT"):
+                self.selects.append((str(stmt), params))
+            return await super().execute(stmt, params)
+
+    inv = invoice("1000.00")
+    party = uuid4()
+    db = _Recording(inv)
+    await settle_invoice(db, "sales_invoices", "c1", 100, invoice_id=inv["id"], party_id=party)
+    sql, params = db.selects[0]
+    assert "customer_id = CAST(:party AS UUID)" in sql
+    assert params["party"] == str(party)
+
+    db = _Recording(inv)
+    await settle_invoice(db, "purchase_invoices", "c1", 100, invoice_id=inv["id"], party_id=party)
+    sql, _ = db.selects[0]
+    assert "vendor_id = CAST(:party AS UUID)" in sql
+
+
+def test_excel_cells_are_the_row_values_not_its_column_names():
+    """tuple(RowMapping) iterates keys; the first export wrote headers on every row."""
+    from datetime import date
+    from app.api.v1.gst import _cell_values
+
+    class _RowMapping(dict):
+        pass  # dict already iterates keys, which is exactly the trap
+
+    row = _RowMapping(invoice_no="CL/2026-27/00001", invoice_date=date(2026, 9, 6),
+                      total_tax=Decimal("9678.00"), remarks=None)
+    assert _cell_values(row) == ["CL/2026-27/00001", "2026-09-06", 9678.0, ""]
+    assert list(row) == ["invoice_no", "invoice_date", "total_tax", "remarks"], "the trap still exists"

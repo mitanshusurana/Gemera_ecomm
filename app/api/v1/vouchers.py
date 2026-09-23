@@ -7,9 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from pydantic import BaseModel
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from app.core.money import to_decimal
+from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
+from app.tax.job_work import JOB_WORK_SAC
+from app.core.config import settings
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.roles import CAN_AMEND, CAN_POST, require
@@ -125,7 +128,7 @@ async def post_journal(db, cid, fy_id, je_no, entry_date, entry_type, narration,
     return je_id
 
 
-async def settle_invoice(db, table, company_id, amount, invoice_id=None, reference_no=None):
+async def settle_invoice(db, table, company_id, amount, invoice_id=None, reference_no=None, party_id=None):
     """Apply a receipt or payment to an invoice and derive its status.
 
     Any voucher of any amount used to set payment_status = 'Paid' outright. A
@@ -140,8 +143,24 @@ async def settle_invoice(db, table, company_id, amount, invoice_id=None, referen
     exceeding what is outstanding: an over-payment is real, but it belongs in
     an advance or a refund, not silently inside the bill's own paid figure.
     """
+    # Positive, to the paisa. A zero or negative "receipt" would have reduced
+    # amount_paid and regressed a Paid bill to Partial without anyone
+    # reversing anything; an amount a fraction over the balance passed the
+    # Python check and then failed the column CHECK as a 500.
+    # Half-up, the accounting convention: Decimal's default is banker's
+    # rounding, under which 600.005 becomes 600.00 and slips past.
+    amt = to_decimal(amount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if amt <= 0:
+        raise HTTPException(status_code=422, detail="Amount must be greater than zero.")
+
     if not invoice_id and not (reference_no and reference_no.strip()):
         return None
+
+    # The invoice must belong to the party whose ledger this voucher credits or
+    # debits. Matching on company alone let a receipt from customer A settle
+    # customer B's bill while crediting A's account.
+    party_col = "customer_id" if table == "sales_invoices" else "vendor_id"
+    party_sql = f" AND {party_col} = CAST(:party AS UUID)" if party_id else ""
 
     if invoice_id:
         match_sql = "id = CAST(:invid AS UUID)"
@@ -152,19 +171,22 @@ async def settle_invoice(db, table, company_id, amount, invoice_id=None, referen
     else:
         match_sql = "(vendor_inv_no = :invno OR bill_no = :invno)"
         params = {"cid": company_id, "invno": reference_no.strip()}
+    if party_id:
+        params["party"] = str(party_id)
 
     # Table name is one of two literals chosen above; never caller-supplied.
     res = await db.execute(
         text(
             "SELECT id, grand_total, amount_paid, status FROM caratloop." + table + " "
-            "WHERE " + match_sql + " AND company_id = :cid FOR UPDATE"
+            "WHERE " + match_sql + " AND company_id = :cid" + party_sql + " "
+            "ORDER BY " + ("invoice_date" if table == "sales_invoices" else "bill_date") + " DESC LIMIT 1 FOR UPDATE"
         ),
         params,
     )
     inv = res.mappings().first()
     if inv is None:
         if invoice_id:
-            raise HTTPException(status_code=404, detail="Invoice not found for this company.")
+            raise HTTPException(status_code=404, detail="Invoice not found for this company and party.")
         # A reference that matches no invoice is an on-account entry.
         return None
     if inv["status"] == "Cancelled":
@@ -173,9 +195,8 @@ async def settle_invoice(db, table, company_id, amount, invoice_id=None, referen
             detail="That invoice is cancelled; post the amount on account instead.",
         )
 
-    outstanding = to_decimal(inv["grand_total"]) - to_decimal(inv["amount_paid"])
-    amt = to_decimal(amount)
-    if amt > outstanding + Decimal("0.005"):
+    outstanding = (to_decimal(inv["grand_total"]) - to_decimal(inv["amount_paid"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if amt > outstanding:
         raise HTTPException(
             status_code=409,
             detail=(
@@ -223,6 +244,7 @@ async def create_receipt(payload: ReceiptPaymentPayload, request: Request, db: A
         inv_id = await settle_invoice(
             db, "sales_invoices", company_id, payload.amount,
             invoice_id=payload.invoice_id, reference_no=payload.reference_no,
+            party_id=payload.party_id,
         )
 
         lines = [
@@ -232,7 +254,7 @@ async def create_receipt(payload: ReceiptPaymentPayload, request: Request, db: A
         je_id = await post_journal(
             db, company_id, str(fy['id']), vno, payload.date, 'Receipt', payload.narration,
             payload.reference_no, payload.amount, user_id, ip_address, session_id, lines,
-            ref_type='SalesInvoice' if inv_id else None, ref_id=inv_id,
+            ref_type='ReceiptVoucher' if inv_id else None, ref_id=inv_id,
         )
 
         await db.commit()
@@ -271,6 +293,7 @@ async def create_payment(payload: ReceiptPaymentPayload, request: Request, db: A
         inv_id = await settle_invoice(
             db, "purchase_invoices", company_id, payload.amount,
             invoice_id=payload.invoice_id, reference_no=payload.reference_no,
+            party_id=payload.party_id,
         )
 
         lines = [
@@ -280,7 +303,7 @@ async def create_payment(payload: ReceiptPaymentPayload, request: Request, db: A
         je_id = await post_journal(
             db, company_id, str(fy['id']), vno, payload.date, 'Payment', payload.narration,
             payload.reference_no, payload.amount, user_id, ip_address, session_id, lines,
-            ref_type='PurchaseInvoice' if inv_id else None, ref_id=inv_id,
+            ref_type='PaymentVoucher' if inv_id else None, ref_id=inv_id,
         )
 
         await db.commit()
@@ -411,21 +434,134 @@ async def create_credit_note(payload: CreditNotePayload, request: Request, db: A
         no_res = await db.execute(text("SELECT 'CDN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
 
-        p_res = await db.execute(text("SELECT account_id FROM caratloop.parties WHERE id = :pid"), {"pid": str(payload.party_id)})
+        # Company-scoped: unscoped, a caller could credit another company's
+        # customer ledger.
+        p_res = await db.execute(
+            text("SELECT account_id FROM caratloop.parties WHERE id = :pid AND company_id = :cid"),
+            {"pid": str(payload.party_id), "cid": company_id},
+        )
         party_acc = p_res.scalar()
 
-        # Sales return: Dr. Sales A/c, Cr. Customer A/c
-        tot_val = payload.material_value + payload.making_charges
-        acc_sales = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'SAL-001' AND company_id = :cid"), {"cid": company_id})
-        sales_acc_id = acc_sales.scalar()
+        # The invoice this note is against: its GST treatment is the note's.
+        inv_res = await db.execute(
+            text(
+                "SELECT si.id, si.invoice_no, si.fiscal_year_id, si.is_inter_state, "
+                "       si.place_of_supply, si.customer_gstin, si.status, "
+                "       COALESCE((SELECT MAX(l.material_gst_rate) FROM caratloop.sales_invoice_lines l "
+                "                 WHERE l.invoice_id = si.id), 3.00) AS material_gst_rate, "
+                "       COALESCE((SELECT MAX(l.hsn_sac_code) FROM caratloop.sales_invoice_lines l "
+                "                 WHERE l.invoice_id = si.id), '') AS hsn_material "
+                "FROM caratloop.sales_invoices si "
+                "WHERE si.id = CAST(:iid AS UUID) AND si.company_id = :cid AND si.customer_id = CAST(:pid AS UUID)"
+            ),
+            {"iid": str(payload.original_invoice_id), "cid": company_id, "pid": str(payload.party_id)},
+        )
+        orig = inv_res.mappings().first()
+        if orig is None:
+            raise HTTPException(status_code=404, detail="Original invoice not found for this company and customer.")
+        if orig["status"] == "Cancelled":
+            raise HTTPException(status_code=409, detail="That invoice is already cancelled; a further credit note has nothing to reduce.")
 
+        mat_val = to_decimal(payload.material_value)
+        mak_val = to_decimal(payload.making_charges)
+        if mat_val < 0 or mak_val < 0 or (mat_val + mak_val) <= 0:
+            raise HTTPException(status_code=422, detail="Credit note values must be positive.")
+
+        # GST on the note follows the invoice: same rates, same inter-state
+        # treatment. A note that only reduced the sales account left the
+        # output tax on the register overstated by the tax on the returned
+        # value; it now reverses the tax and files itself in Table 9B.
+        gst = calculate_jewelry_gst(
+            material_value=mat_val,
+            making_charges=mak_val,
+            seller_state_code=settings.COMPANY_STATE_CODE,
+            buyer_state_code=orig["place_of_supply"],
+            material_gst_rate=to_decimal(orig["material_gst_rate"]),
+        )
+        tot_val = mat_val + mak_val + gst.total_gst
+
+        # The receivable comes down by the full note (value + tax); the note
+        # counts as settlement of that much of the invoice.
+        await settle_invoice(
+            db, "sales_invoices", company_id, tot_val,
+            invoice_id=orig["id"], party_id=payload.party_id,
+        )
+
+        async def acc(code):
+            r = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = :c AND company_id = :cid"), {"c": code, "cid": company_id})
+            return r.scalar()
+
+        narr = f"Credit Note against {orig['invoice_no']} — {payload.reason}"
         lines = [
-            {'acc': sales_acc_id, 'dr': tot_val, 'cr': 0.0, 'narr': f'Credit Note — {payload.reason}'},
-            {'acc': party_acc, 'dr': 0.0, 'cr': tot_val, 'narr': f'Credit Note — {payload.reason}'}
+            # Sales come down by what was returned, under the head it was booked to.
+            {'acc': await acc('SAL-001'), 'dr': mat_val, 'cr': 0.0, 'narr': narr} if mat_val > 0 else None,
+            {'acc': await acc('SAL-003'), 'dr': mak_val, 'cr': 0.0, 'narr': narr} if mak_val > 0 else None,
         ]
-        je_id = await post_journal(db, company_id, str(fy['id']), vno, payload.date, 'Credit Note', payload.reason, str(payload.original_invoice_id), tot_val, user_id, ip_address, session_id, lines)
+        if orig["is_inter_state"]:
+            lines += [
+                {'acc': await acc('GST-005'), 'dr': gst.igst_material, 'cr': 0.0, 'narr': narr} if gst.igst_material > 0 else None,
+                {'acc': await acc('GST-006'), 'dr': gst.igst_making, 'cr': 0.0, 'narr': narr} if gst.igst_making > 0 else None,
+            ]
+        else:
+            lines += [
+                {'acc': await acc('GST-001'), 'dr': gst.cgst_material, 'cr': 0.0, 'narr': narr} if gst.cgst_material > 0 else None,
+                {'acc': await acc('GST-002'), 'dr': gst.sgst_material, 'cr': 0.0, 'narr': narr} if gst.sgst_material > 0 else None,
+                {'acc': await acc('GST-003'), 'dr': gst.cgst_making, 'cr': 0.0, 'narr': narr} if gst.cgst_making > 0 else None,
+                {'acc': await acc('GST-004'), 'dr': gst.sgst_making, 'cr': 0.0, 'narr': narr} if gst.sgst_making > 0 else None,
+            ]
+        lines.append({'acc': party_acc, 'dr': 0.0, 'cr': tot_val, 'narr': narr})
+        lines = [l for l in lines if l]
+
+        je_id = await post_journal(
+            db, company_id, str(fy['id']), vno, payload.date, 'Credit_Note', narr,
+            orig['invoice_no'], tot_val, user_id, ip_address, session_id, lines,
+            ref_type='CreditNote', ref_id=orig['id'],
+        )
+
+        # GSTR-1 Table 9B. Dated the note's own date, in the note's own period.
+        await db.execute(
+            text("""
+                INSERT INTO caratloop.gst_output_tax_register (
+                    company_id, fiscal_year_id, return_period,
+                    invoice_id, invoice_no, invoice_date,
+                    party_id, party_gstin, place_of_supply, is_inter_state,
+                    supply_type, hsn_material, hsn_making,
+                    taxable_material_value, material_gst_rate,
+                    taxable_making_value, making_gst_rate,
+                    igst_amount, cgst_amount, sgst_amount, total_tax,
+                    is_credit_note, remarks, created_by
+                ) VALUES (
+                    :cid, :fyid, :period,
+                    :inv_id, :note_no, :note_date,
+                    CAST(:pid AS UUID), :pgstin, :pos, :inter,
+                    :supply_type, :hsn_mat, :hsn_mak,
+                    :mat_val, :mat_rate,
+                    :mak_val, 5.00,
+                    :igst, :cgst, :sgst, :total_tax,
+                    TRUE, :remarks, CAST(:cb AS UUID)
+                )
+            """),
+            {
+                "cid": company_id, "fyid": str(fy["id"]),
+                "period": get_return_period(payload.date),
+                "inv_id": str(orig["id"]), "note_no": vno, "note_date": payload.date,
+                "pid": str(payload.party_id), "pgstin": orig["customer_gstin"],
+                "pos": orig["place_of_supply"], "inter": bool(orig["is_inter_state"]),
+                "supply_type": "B2B" if orig["customer_gstin"] else "B2C_Large",
+                "hsn_mat": orig["hsn_material"], "hsn_mak": JOB_WORK_SAC,
+                "mat_val": mat_val, "mat_rate": to_decimal(orig["material_gst_rate"]),
+                "mak_val": mak_val,
+                "igst": gst.igst_material + gst.igst_making,
+                "cgst": gst.cgst_material + gst.cgst_making,
+                "sgst": gst.sgst_material + gst.sgst_making,
+                "total_tax": gst.total_gst,
+                "remarks": narr, "cb": user_id,
+            },
+        )
+
+        await assert_journal_balanced(db, je_id, context="credit note")
         await db.commit()
-        return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+        return {"status": "success", "voucher_no": vno, "id": str(je_id), "against": orig["invoice_no"], "total": str(tot_val)}
     except HTTPException:
         # Authorisation, unbalanced-entry and missing-account errors are
         # deliberate 4xx responses and must not become 500s.
@@ -450,19 +586,50 @@ async def create_debit_note(payload: DebitNotePayload, request: Request, db: Asy
         no_res = await db.execute(text("SELECT 'DDN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
 
-        p_res = await db.execute(text("SELECT account_id FROM caratloop.parties WHERE id = :pid"), {"pid": str(payload.party_id)})
+        p_res = await db.execute(
+            text("SELECT account_id FROM caratloop.parties WHERE id = :pid AND company_id = :cid"),
+            {"pid": str(payload.party_id), "cid": company_id},
+        )
         party_acc = p_res.scalar()
+
+        amt = to_decimal(payload.amount)
+        if amt <= 0:
+            raise HTTPException(status_code=422, detail="Debit note amount must be positive.")
+
+        # The payable comes down by the note; it counts as settlement of that
+        # much of the bill. settle_invoice checks the bill is this company's,
+        # this vendor's, not cancelled, and not being reduced below zero.
+        pur_res = await db.execute(
+            text("SELECT id, bill_no FROM caratloop.purchase_invoices WHERE id = CAST(:iid AS UUID) AND company_id = :cid AND vendor_id = CAST(:pid AS UUID)"),
+            {"iid": str(payload.original_purchase_id), "cid": company_id, "pid": str(payload.party_id)},
+        )
+        orig = pur_res.mappings().first()
+        if orig is None:
+            raise HTTPException(status_code=404, detail="Original bill not found for this company and vendor.")
+        await settle_invoice(
+            db, "purchase_invoices", company_id, amt,
+            invoice_id=orig["id"], party_id=payload.party_id,
+        )
 
         acc_pur = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'PUR-001' AND company_id = :cid"), {"cid": company_id})
         pur_acc_id = acc_pur.scalar()
 
+        # The payload carries one amount with no material/making or tax split,
+        # so the ITC side cannot be reversed here without guessing the rate.
+        # The value adjustment is posted; the ITC register is NOT touched.
+        # Reversing input credit on a debit note needs the split -- follow-up.
+        narr = f"Debit Note against {orig['bill_no']} — {payload.reason}"
         lines = [
-            {'acc': party_acc, 'dr': payload.amount, 'cr': 0.0, 'narr': f'Debit Note — {payload.reason}'},
-            {'acc': pur_acc_id, 'dr': 0.0, 'cr': payload.amount, 'narr': f'Debit Note — {payload.reason}'}
+            {'acc': party_acc, 'dr': amt, 'cr': 0.0, 'narr': narr},
+            {'acc': pur_acc_id, 'dr': 0.0, 'cr': amt, 'narr': narr}
         ]
-        je_id = await post_journal(db, company_id, str(fy['id']), vno, payload.date, 'Debit Note', payload.reason, str(payload.original_purchase_id), payload.amount, user_id, ip_address, session_id, lines)
+        je_id = await post_journal(
+            db, company_id, str(fy['id']), vno, payload.date, 'Debit_Note', narr,
+            orig['bill_no'], amt, user_id, ip_address, session_id, lines,
+            ref_type='DebitNote', ref_id=orig['id'],
+        )
         await db.commit()
-        return {"status": "success", "voucher_no": vno, "id": str(je_id)}
+        return {"status": "success", "voucher_no": vno, "id": str(je_id), "against": orig["bill_no"]}
     except HTTPException:
         # Authorisation, unbalanced-entry and missing-account errors are
         # deliberate 4xx responses and must not become 500s.

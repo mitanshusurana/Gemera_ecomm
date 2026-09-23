@@ -50,6 +50,11 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
     # 1. Primary Official GSTIN API (www.gstinapi.in)
     # No default: a hardcoded key here was billable, shared and public.
     api_key = os.environ.get('GSTIN_API_KEY', '')
+    # Set when the provider answered with something definite that is not a
+    # record: "no such GSTIN" or "your key is rejected". Both are facts worth
+    # more than a blank form, and both used to fall through to "the provider
+    # did not answer".
+    provider_verdict: dict | None = None
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
@@ -57,6 +62,32 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
                 headers={'x-api-key': api_key},
                 timeout=6.0
             )
+            if resp.status_code == 404:
+                # The provider checked GSTN and found no registration. That is
+                # the answer a buyer most needs before claiming ITC against it.
+                provider_verdict = {
+                    'source': 'gstinapi.in',
+                    'status': 'Not_Found',
+                    'reason': (
+                        'GSTN has no record of this GSTIN. The format is valid; check for a '
+                        'typo. A registration issued in the last day may not have appeared yet.'
+                    ),
+                }
+            elif resp.status_code in (401, 403):
+                logger.error("GSTIN API rejected the key (HTTP %s): %s", resp.status_code, resp.text[:200])
+                provider_verdict = {
+                    'source': None,
+                    'status': None,
+                    'reason': 'The GSTIN lookup provider rejected the API key. Check GSTIN_API_KEY.',
+                }
+            elif resp.status_code == 429:
+                logger.warning("GSTIN API rate-limited the lookup: %s", resp.text[:200])
+                provider_verdict = {
+                    'source': None, 'status': None,
+                    'reason': 'The GSTIN lookup provider is rate-limiting requests. Try again shortly.',
+                }
+            elif resp.status_code != 200:
+                logger.warning("GSTIN API answered HTTP %s: %s", resp.status_code, resp.text[:200])
             if resp.status_code == 200:
                 body = resp.json()
                 if body.get('success') and body.get('data'):
@@ -88,8 +119,9 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
     except Exception as err:
         logger.warning("GSTIN API lookup failed: %s", err)
 
-    # 2. Try Surepass token if configured
-    if token:
+    # 2. Try Surepass token if configured -- but not to second-guess a
+    #    definite "not found": one authoritative miss is an answer.
+    if token and not (provider_verdict and provider_verdict.get('status') == 'Not_Found'):
         try:
             async with httpx.AsyncClient() as client:
                 resp = await client.get(
@@ -140,20 +172,27 @@ async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
     # state_code, state_name and pan are still returned: they are decoded from
     # the GSTIN string itself, not looked up, so they are true without any
     # provider. The caller is told which is which by 'verified'.
+    if provider_verdict:
+        reason = provider_verdict['reason']
+        source = provider_verdict['source']
+        status = provider_verdict['status']
+    elif not api_key and not token:
+        reason = ('GSTIN lookup is not configured: set GSTIN_API_KEY (or SUREPASS_TOKEN) '
+                  'in .env and restart the backend.')
+        source = status = None
+    else:
+        reason = 'The GSTIN lookup provider did not answer. Enter the details manually.'
+        source = status = None
+
     return {
         'gstin': gstin,
         'verified': False,
-        'source': None,
-        'reason': (
-            'GSTIN lookup is not configured: set GSTIN_API_KEY (or SUREPASS_TOKEN) '
-            'in .env and restart the backend.'
-            if not api_key and not token
-            else 'The GSTIN lookup provider did not answer. Enter the details manually.'
-        ),
+        'source': source,
+        'reason': reason,
         'checksum_valid': gstin_checksum_ok(gstin),
         'legal_name': '',
         'trade_name': '',
-        'status': None,
+        'status': status,
         'registration_type': None,
         'business_type': None,
         'registration_date': '',
@@ -364,7 +403,7 @@ async def create_party(
             {
                 "cid": company_id, "acc_id": account_id, "ptype": party_type,
                 "pcode": party_code, "name": payload.name, "tname": payload.trade_name,
-                "gstin": payload.gstin, "pan": payload.pan or (payload.gstin[2:12] if payload.gstin and len(payload.gstin)>=12 else None),
+                "gstin": payload.gstin, "pan": payload.pan or (decoded.pan if decoded else None),
                 "aadhaar": payload.aadhaar_no, "kyc_docs": kyc_json,
                 "gst_reg": gst_reg_type,
                 "addr1": payload.address_line1, "addr2": payload.address_line2, "city": payload.city,

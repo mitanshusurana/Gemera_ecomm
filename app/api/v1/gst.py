@@ -179,6 +179,28 @@ async def get_rcm_register(
 
 
 
+def _cell_values(row) -> list:
+    """A database row as a list of spreadsheet cells, in column order.
+
+    tuple(row) on a SQLAlchemy RowMapping iterates its KEYS, like a dict, so
+    the first cut of the Excel export wrote the column names on every data
+    row. Values are taken explicitly; dates become ISO strings and Decimals
+    become floats so openpyxl can write them.
+    """
+    values = row.values() if hasattr(row, "values") else row
+    out = []
+    for v in values:
+        if v is None:
+            out.append("")
+        elif hasattr(v, "isoformat"):
+            out.append(v.isoformat())
+        elif isinstance(v, Decimal):
+            out.append(float(v))
+        else:
+            out.append(v)
+    return out
+
+
 async def _hsn_summary_rows(db, period: str, company_id) -> list[dict]:
     """GSTR-1 Table 12: taxable value and tax by HSN/SAC for the period.
 
@@ -193,12 +215,23 @@ async def _hsn_summary_rows(db, period: str, company_id) -> list[dict]:
                 COALESCE(NULLIF(hsn_material, ''), 'UNSPECIFIED') AS hsn_code,
                 'Goods - material' AS description,
                 'GMS' AS uqc,
-                SUM(taxable_material_value) AS taxable_value,
-                SUM(CASE WHEN is_inter_state THEN igst_amount ELSE 0 END) AS igst,
-                SUM(CASE WHEN is_inter_state THEN 0 ELSE cgst_amount END) AS cgst,
-                SUM(CASE WHEN is_inter_state THEN 0 ELSE sgst_amount END) AS sgst
-            FROM caratloop.gst_output_tax_register
-            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
+                -- Signed: a credit note reduces the HSN's taxable value and
+                -- tax. Excluding notes left Table 12 gross while Tables 4, 7
+                -- and 9B are net, so the two halves of the return disagreed
+                -- by every cancelled sale.
+                SUM(sgn * taxable_material_value) AS taxable_value,
+                -- The register's igst/cgst/sgst columns are invoice totals
+                -- (material + making). Each component's own tax is its
+                -- taxable value at its own rate.
+                SUM(CASE WHEN is_inter_state
+                         THEN sgn * ROUND(taxable_material_value * material_gst_rate / 100, 2) ELSE 0 END) AS igst,
+                SUM(CASE WHEN is_inter_state THEN 0
+                         ELSE sgn * ROUND(taxable_material_value * material_gst_rate / 200, 2) END) AS cgst,
+                SUM(CASE WHEN is_inter_state THEN 0
+                         ELSE sgn * ROUND(taxable_material_value * material_gst_rate / 200, 2) END) AS sgst
+            FROM caratloop.gst_output_tax_register,
+                 LATERAL (SELECT CASE WHEN is_credit_note THEN -1 ELSE 1 END AS sgn) sg
+            WHERE return_period = :period AND company_id = :cid
               AND taxable_material_value > 0
             GROUP BY COALESCE(NULLIF(hsn_material, ''), 'UNSPECIFIED')
 
@@ -208,10 +241,16 @@ async def _hsn_summary_rows(db, period: str, company_id) -> list[dict]:
                 COALESCE(NULLIF(hsn_making, ''), '998892') AS hsn_code,
                 'Services - making charges' AS description,
                 'OTH' AS uqc,
-                SUM(taxable_making_value) AS taxable_value,
-                0 AS igst, 0 AS cgst, 0 AS sgst
-            FROM caratloop.gst_output_tax_register
-            WHERE return_period = :period AND company_id = :cid AND NOT is_credit_note
+                SUM(sgn * taxable_making_value) AS taxable_value,
+                SUM(CASE WHEN is_inter_state
+                         THEN sgn * ROUND(taxable_making_value * making_gst_rate / 100, 2) ELSE 0 END) AS igst,
+                SUM(CASE WHEN is_inter_state THEN 0
+                         ELSE sgn * ROUND(taxable_making_value * making_gst_rate / 200, 2) END) AS cgst,
+                SUM(CASE WHEN is_inter_state THEN 0
+                         ELSE sgn * ROUND(taxable_making_value * making_gst_rate / 200, 2) END) AS sgst
+            FROM caratloop.gst_output_tax_register,
+                 LATERAL (SELECT CASE WHEN is_credit_note THEN -1 ELSE 1 END AS sgn) sg
+            WHERE return_period = :period AND company_id = :cid
               AND taxable_making_value > 0
             GROUP BY COALESCE(NULLIF(hsn_making, ''), '998892')
             ORDER BY 1
@@ -652,6 +691,9 @@ async def export_gstr1_excel(period: str, db: AsyncSession = Depends(get_db), cu
                ON orig.invoice_id = r.invoice_id AND orig.company_id = r.company_id
               AND NOT orig.is_credit_note
         WHERE r.return_period = :period AND r.company_id = :cid AND r.is_credit_note
+          -- Table 9B is notes to REGISTERED recipients. A note against a B2C
+          -- sale belongs in CDNUR, not here.
+          AND r.party_gstin IS NOT NULL AND r.party_gstin <> ''
         ORDER BY r.invoice_date, r.invoice_no
     """), {"period": period, "cid": cid})
     hsn = await _hsn_summary_rows(db, period, cid)
@@ -665,7 +707,7 @@ async def export_gstr1_excel(period: str, db: AsyncSession = Depends(get_db), cu
         for c in ws[1]:
             c.font = bold
         for row in rows:
-            ws.append([("" if v is None else (str(v) if hasattr(v, "isoformat") else (float(v) if isinstance(v, Decimal) else v))) for v in row])
+            ws.append(_cell_values(row))
         for col in ws.columns:
             width = max(len(str(c.value)) if c.value is not None else 0 for c in col)
             ws.column_dimensions[col[0].column_letter].width = min(max(10, width + 2), 40)
@@ -676,15 +718,15 @@ async def export_gstr1_excel(period: str, db: AsyncSession = Depends(get_db), cu
           ["Invoice No", "Date", "Recipient GSTIN", "Recipient", "Place of Supply", "Inter-state",
            "Taxable Material", "Material Rate %", "Taxable Making", "Making Rate %",
            "IGST", "CGST", "SGST", "Total Tax"],
-          [tuple(r) for r in b2b.mappings().all()])
+          [r for r in b2b.mappings().all()])
     sheet("B2C (Tables 5 & 7)",
           ["Invoice No", "Date", "Place of Supply", "Inter-state", "Taxable Value",
            "IGST", "CGST", "SGST", "Total Tax"],
-          [tuple(r) for r in b2c.mappings().all()])
+          [r for r in b2c.mappings().all()])
     sheet("CDNR (Table 9B)",
           ["Note No", "Note Date", "Recipient GSTIN", "Original Invoice", "Original Date",
            "Place of Supply", "Taxable Value", "IGST", "CGST", "SGST", "Total Tax"],
-          [tuple(r) for r in cdnr.mappings().all()])
+          [r for r in cdnr.mappings().all()])
     sheet("HSN (Table 12)",
           ["HSN/SAC", "Description", "UQC", "Taxable Value", "IGST", "CGST", "SGST"],
           [(r["hsn_code"], r["description"], r["uqc"], r["taxable_value"], r["igst"], r["cgst"], r["sgst"]) for r in hsn])

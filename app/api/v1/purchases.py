@@ -45,7 +45,10 @@ class CreatePurchaseInvoiceRequest(BaseModel):
     invoice_date: date
     supplier_invoice_no: Optional[str] = "URD-BILL"
     vendor_invoice_date: Optional[date] = None
-    place_of_supply: Optional[str] = "08"
+    # No default. "08" here meant a supplier with no state on record was
+    # booked as a Rajasthan supply -- CGST+SGST, and an ITC claim under the
+    # wrong head -- before any check could notice the field was missing.
+    place_of_supply: Optional[str] = None
     attachment_url: Optional[str] = None
     items: List[PurchaseLineRequest]
     is_rcm: bool = False
@@ -132,7 +135,15 @@ async def create_purchase_invoice(
         # row, forward-charge GST and a GSTR-1 B2B line.
         is_unregistered = not is_gstin_shaped(supp_gstin)
 
-        pos = payload.place_of_supply or supplier.get("state_code") or "08"
+        pos = payload.place_of_supply or supplier.get("state_code")
+        if not pos:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Place of supply is required: the supplier has no state on record and none "
+                    "was given. It decides whether IGST or CGST+SGST applies."
+                ),
+            )
         is_inter_state = pos.strip().zfill(2) != settings.COMPANY_STATE_CODE.strip().zfill(2)
 
         # One tested Decimal implementation, shared with the update path.
@@ -538,7 +549,7 @@ async def update_purchase_invoice(
         rcm_applicable = totals.rcm_applicable
         grand_total = totals.grand_total
 
-        await db.execute(
+        upd_res = await db.execute(
             text("""
                 UPDATE caratloop.purchase_invoices
                 SET vendor_id = :vid,
@@ -552,8 +563,19 @@ async def update_purchase_invoice(
                     sgst_amount = :sgst,
                     igst_amount = :igst,
                     total_gst = :tot_gst,
-                    grand_total = :grand
+                    grand_total = :grand,
+                    -- The status is derived from what has been paid against
+                    -- the NEW total; re-deriving here keeps it coherent after
+                    -- an amendment instead of letting it go stale.
+                    payment_status = CASE
+                        WHEN amount_paid >= :grand - 0.005 THEN 'Paid'
+                        WHEN amount_paid > 0 THEN 'Partial'
+                        ELSE 'Unpaid' END
                 WHERE id = :id AND company_id = :cid
+                  -- Refuse, via zero rows, to shrink a bill below what has
+                  -- already been paid against it; the caller turns that into
+                  -- a 409 with the figures.
+                  AND amount_paid <= :grand
             """),
             {
                 "id": str(id),
@@ -572,6 +594,19 @@ async def update_purchase_invoice(
                 "grand": grand_total
             }
         )
+        if upd_res.rowcount == 0:
+            paid_res = await db.execute(
+                text("SELECT amount_paid, grand_total FROM caratloop.purchase_invoices WHERE id = :id AND company_id = :cid"),
+                {"id": str(id), "cid": company_id},
+            )
+            paid = paid_res.mappings().first()
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Cannot amend the bill to {grand_total}: {paid['amount_paid'] if paid else '?'} has already "
+                    "been paid against it. Reverse or refund the payment first. No data was saved."
+                ),
+            )
 
         # ─── REVERSAL / CLEANUP PREVIOUS ENTRIES FOR THIS INVOICE ───────────────────
         await db.execute(text("DELETE FROM caratloop.purchase_invoice_lines WHERE invoice_id::text = :pid"), {"pid": str(id)})
