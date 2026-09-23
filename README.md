@@ -47,7 +47,9 @@ service refuses to start without `JWT_SECRET`, admin credentials and Razorpay ke
 
 ## ERP
 
-The ERP is a separate service with its own PostgreSQL database and its own login; it is not wired to the store API yet.
+The ERP is a separate service with its own PostgreSQL database and its own login. The store API posts every
+invoiced web order and every refund to it through `POST /api/v1/integrations/ecommerce/*` (see
+`DEPLOYMENT_GUIDE.md` section 3b). `docs/BUSINESS_GAPS.md` records what the business still needs from the software.
 
 ```bash
 cd projects/erp-backend && pip install -r requirements.txt && python -m pytest -q   # 500 tests, no database needed

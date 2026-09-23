@@ -95,6 +95,29 @@ entry point: it proxies `/api/` to the ERP API, everything else to the ERP UI, r
 blocks the OpenAPI docs. It serves plain HTTP on 80 until you follow `nginx/TLS.md` to issue a certificate and
 enable the 443 listener. Set `CORS_ORIGINS` to the JSON list of origins the UI is served from.
 
+## 3b. Storefront to ERP bridge
+
+Every paid web order (or dispatched cash-on-delivery order) is invoiced by the store API in its own
+`WEB/{FY}/{n}` series and posted to the ERP as a sales invoice under that same number; refunds post a
+credit note and the refund payment. Configuration:
+
+| Where | Variable | Value |
+|---|---|---|
+| `.env.backend` | `ERP_BASE_URL` | The ERP API origin as seen from the Core VM, e.g. `http://127.0.0.1:8010` or the ERP nginx URL |
+| `.env.backend` | `ERP_API_KEY` | A long random secret |
+| `.env.erp` | `ECOMMERCE_API_KEY` | The same secret |
+| `.env.erp` | `ECOMMERCE_SETTLEMENT_ACCOUNT_CODE` | Ledger code of the bank account Razorpay settles into (default `BNK-001`) |
+| `.env.erp` | `ECOMMERCE_COMPANY_ID` | Only when the ERP holds more than one company |
+
+Both sides may be left empty: orders then queue in the store API (`erp_sync_events`, status PENDING)
+and are posted once the bridge is configured, from the admin order page ("Sync to ERP now") or by the
+five-minute retry job. A 409 from the ERP means the two systems disagree on GST for that order; fix the
+rate settings (admin Settings, tax rates; ERP item master or `GST_RATE_*`) and retry from the admin.
+The ERP records these postings under a service user `ecommerce-bridge@caratloop.local` that cannot sign in.
+
+Seller details printed on web invoices come from admin Settings (legal name, GSTIN, PAN, address,
+state code, invoice series prefix).
+
 ## 4. Updating
 
 ```bash

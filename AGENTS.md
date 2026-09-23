@@ -30,6 +30,8 @@ Read `README.md` first for the layout. This file records the conventions an agen
 - Ledger postings must balance; `tests/test_ledger_invariant.py` and `tests/test_check_constraint_vocabularies.py`
   guard this. Run `python -m pytest -q` in `projects/erp-backend` (no database needed except
   `test_migrations_integration.py`).
+- The storefront bridge (`app/api/v1/integrations.py`) records web invoices under the shop's own number via
+  `CreateSalesInvoiceRequest.external_invoice_no`; keep that path idempotent and never let it allocate a `CL/` number.
 - Frontend: Next.js app router, relative API URLs only (no `NEXT_PUBLIC_API_URL`), company data from `/auth/me`.
   Printed documents use the invoice's stored lines; never derive lines client-side.
 
