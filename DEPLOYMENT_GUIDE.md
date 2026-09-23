@@ -108,12 +108,17 @@ credit note and the refund payment. Configuration:
 | `.env.erp` | `ECOMMERCE_API_KEY` | The same secret |
 | `.env.erp` | `ECOMMERCE_SETTLEMENT_ACCOUNT_CODE` | Ledger code of the bank account Razorpay settles into (default `BNK-001`) |
 | `.env.erp` | `ECOMMERCE_COMPANY_ID` | Only when the ERP holds more than one company |
+| `.env.erp` | `ECOMMERCE_OLD_GOLD_MATERIAL_CODE`, `ECOMMERCE_OLD_SILVER_MATERIAL_CODE` | Item-master codes old metal bought through the storefront exchange programme is booked into (defaults `OLD-GOLD`, `OLD-SILVER`; created on first use, set their stock account in the ERP item master) |
 
 Both sides may be left empty: orders then queue in the store API (`erp_sync_events`, status PENDING)
 and are posted once the bridge is configured, from the admin order page ("Sync to ERP now") or by the
 five-minute retry job. A 409 from the ERP means the two systems disagree on GST for that order; fix the
 rate settings (admin Settings, tax rates; ERP item master or `GST_RATE_*`) and retry from the admin.
 The ERP records these postings under a service user `ecommerce-bridge@caratloop.local` that cannot sign in.
+
+Old gold exchange: when the admin credits an exchange request, the store API posts an RCM purchase from the
+customer to `POST /api/v1/integrations/ecommerce/old-gold-purchases`; the customer's credit is a store gift card, and
+the web sale that redeems it carries an `exchange_credit` block so the ERP sets the purchase off against the sale.
 
 Seller details printed on web invoices come from admin Settings (legal name, GSTIN, PAN, address,
 state code, invoice series prefix).
