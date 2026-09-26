@@ -54,6 +54,17 @@
               <span *ngIf="rfq.expiresAt">Expires {{ rfq.expiresAt | date:'mediumDate' }}</span>
             </dd>
           </div>
+          <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6" *ngIf="rfq.orderId">
+            <dt class="text-sm font-medium text-ink">Order</dt>
+            <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2">
+              <a [routerLink]="['/orders', rfq.orderId]" class="font-mono font-semibold text-emerald-700 hover:underline">#{{ rfq.orderNumber }}</a>
+              <span class="ml-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"
+                    [ngClass]="rfq.orderStatus === 'PENDING_PAYMENT' ? 'bg-yellow-100 text-yellow-800' : 'bg-emerald-100 text-emerald-800'">
+                {{ rfq.orderStatus === 'PENDING_PAYMENT' ? 'awaiting payment' : rfq.orderStatus }}
+              </span>
+              <p class="text-xs text-ink/60 mt-1">Created from the accepted quote; the customer pays it online from their account.</p>
+            </dd>
+          </div>
           <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
             <dt class="text-sm font-medium text-ink">Notes &amp; history</dt>
             <dd class="mt-1 text-sm text-ink sm:mt-0 sm:col-span-2 whitespace-pre-line">{{ rfq.additionalNotes || '—' }}</dd>
@@ -146,7 +157,7 @@
           </button>
           <button *ngIf="canAccept" type="button" (click)="accept()" [disabled]="busy"
                   class="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-600 bg-white px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">
-            <span class="material-symbols-outlined text-[18px]">check_circle</span> Mark accepted
+            <span class="material-symbols-outlined text-[18px]">check_circle</span> Accept and create order
           </button>
           <button *ngIf="canNegotiate" type="button" (click)="toggle('negotiate')" [disabled]="busy"
                   class="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"

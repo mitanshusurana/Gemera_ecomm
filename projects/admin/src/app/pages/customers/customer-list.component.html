@@ -1,110 +1,153 @@
-<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark overflow-x-hidden pb-24">
-  <header class="flex items-center bg-surface dark:bg-surface border-b border-ink dark:border-ink p-4 sticky top-0 z-10 justify-between">
-    <div class="flex items-center gap-3">
-      <div class="text-primary flex size-10 items-center justify-center rounded-lg bg-primary/10">
-        <span class="material-symbols-outlined">group</span>
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <div class="sm:flex sm:items-center py-6">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Customers</h1>
+      <p class="mt-2 text-sm text-ink/70">Every storefront account with its spend, loyalty points and tier. Open a customer to see the points ledger and adjust it.</p>
+    </div>
+  </div>
+
+  <!-- Search and tier chips -->
+  <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+    <div class="flex flex-wrap gap-2">
+      <button *ngFor="let t of tiers" type="button" (click)="tierFilter = t"
+              class="px-3 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wide transition-colors"
+              [ngClass]="chipClass(t)">
+        {{ t === 'ALL' ? 'All' : t.toLowerCase() }}
+      </button>
+    </div>
+    <input type="search" [(ngModel)]="search" name="search" placeholder="Search name, email, phone or referral code"
+           class="sm:ml-auto h-9 w-full sm:w-80 rounded-md border border-gray-300 px-3 text-sm focus:border-primary focus:ring-primary" />
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <!-- Table -->
+    <div [class.xl:col-span-3]="selected" [class.xl:col-span-5]="!selected">
+      <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-surface">
+            <tr>
+              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Customer</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Tier</th>
+              <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Points</th>
+              <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Total spend</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Referral code</th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr *ngFor="let c of visible; trackBy: trackById" class="cursor-pointer hover:bg-primary/5" [ngClass]="{'bg-primary/10': selected?.id === c.id}" (click)="open(c)">
+              <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
+                <div class="flex items-center gap-3">
+                  <div class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold flex-shrink-0">{{ initial(c) }}</div>
+                  <div class="min-w-0">
+                    <span class="block font-medium text-ink truncate">{{ c.firstName }} {{ c.lastName }}</span>
+                    <span class="block text-xs text-ink/70 truncate">{{ c.email }}<ng-container *ngIf="c.phone"> &middot; {{ c.phone }}</ng-container></span>
+                  </div>
+                </div>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="tierClass(c.tier)">{{ tierLabel(c.tier) }}</span>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-semibold text-ink">{{ (c.loyaltyPoints || 0) | number }}</td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-ink">{{ (c.totalSpend || 0) | currency:'INR':'symbol':'1.0-0' }}</td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-ink">{{ c.referralCode || '—' }}</td>
+              <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                <a *ngIf="whatsappLink(c) as wa" [href]="wa" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="text-[#25D366] hover:underline text-xs font-semibold mr-3">WhatsApp</a>
+                <button type="button" class="text-primary hover:underline text-xs font-semibold">Rewards</button>
+              </td>
+            </tr>
+            <tr *ngIf="loading">
+              <td colspan="6" class="px-6 py-6 text-center text-sm text-ink">Loading customers...</td>
+            </tr>
+            <tr *ngIf="!loading && visible.length === 0">
+              <td colspan="6" class="px-6 py-6 text-center text-sm text-ink">No customers on this page<ng-container *ngIf="search || tierFilter !== 'ALL'"> match the filter</ng-container>.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <h2 class="text-ink dark:text-ink text-xl font-bold leading-tight tracking-tight">Customers</h2>
-    </div>
-    <div class="flex items-center gap-2">
-      <button class="flex size-10 items-center justify-center rounded-full bg-primary text-surface">
-        <span class="material-symbols-outlined">person_add</span>
-      </button>
-    </div>
-  </header>
 
-  <main class="flex-1 max-w-3xl mx-auto w-full">
-    <div class="px-4 py-4">
-      <label class="flex flex-col min-w-40 h-12 w-full">
-        <div class="flex w-full flex-1 items-stretch rounded-xl h-full shadow-sm border border-ink dark:border-ink bg-surface dark:bg-surface focus-within:ring-2 focus-within:ring-primary/20">
-          <div class="text-ink flex items-center justify-center pl-4">
-            <span class="material-symbols-outlined">search</span>
-          </div>
-          <input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-ink dark:text-ink focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-ink px-4 pl-2 text-base font-normal leading-normal" placeholder="Search by name, tier, or status..."/>
+      <div class="mt-4 flex items-center justify-between">
+        <p class="text-sm text-ink">
+          Page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
+          (<span class="font-semibold">{{ totalElements }}</span> customers)
+        </p>
+        <div class="flex gap-2">
+          <button type="button" (click)="prevPage()" [disabled]="currentPage === 0 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Previous</button>
+          <button type="button" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Next</button>
         </div>
-      </label>
+      </div>
     </div>
 
-    <div class="flex gap-3 px-4 pb-4 overflow-x-auto no-scrollbar">
-      <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary text-surface px-4 text-sm font-semibold">
-        All Customers
-      </button>
-      <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-surface dark:bg-surface border border-ink dark:border-ink px-4 text-sm font-medium text-ink dark:text-ink hover:bg-surface transition-colors">
-        VIP
-      </button>
-      <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-surface dark:bg-surface border border-ink dark:border-ink px-4 text-sm font-medium text-ink dark:text-ink hover:bg-surface transition-colors">
-        Gold
-      </button>
-      <button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-surface dark:bg-surface border border-ink dark:border-ink px-4 text-sm font-medium text-ink dark:text-ink hover:bg-surface transition-colors">
-        Silver
-      </button>
-    </div>
+    <!-- Loyalty drawer -->
+    <div *ngIf="selected as c" class="xl:col-span-2">
+      <div class="bg-surface rounded-xl border border-ink/20 shadow-sm p-6 space-y-6 xl:sticky xl:top-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-ink">{{ c.firstName }} {{ c.lastName }}</h2>
+            <p class="text-sm text-ink/70">{{ c.email }}</p>
+          </div>
+          <button type="button" (click)="close()" class="p-1 rounded-full hover:bg-gray-100 text-ink/70" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+        </div>
 
-    <div class="flex flex-col gap-4 px-4">
-      <!-- Customer Cards -->
-      <div *ngFor="let customer of customers" class="flex flex-col gap-4 bg-surface dark:bg-surface p-5 rounded-xl shadow-sm border border-ink dark:border-ink hover:shadow-md transition-shadow">
-        <div class="flex justify-between items-start">
-          <div class="flex items-start gap-4">
-            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-14 border-2 border-primary/20 flex items-center justify-center bg-gray-200">
-               <span class="text-xl font-bold text-gray-600">{{ customer.firstName ? customer.firstName.charAt(0) : 'U' }}</span>
+        <p *ngIf="loyaltyLoading" class="text-sm text-ink/70">Loading the points ledger...</p>
+        <p *ngIf="loyaltyError" class="text-sm text-red-600">{{ loyaltyError }}</p>
+
+        <ng-container *ngIf="loyalty as r">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-lg border border-ink/10 p-4">
+              <p class="text-xs uppercase tracking-wider text-ink/60">Balance</p>
+              <p class="text-2xl font-bold text-ink">{{ r.balance | number }} <span class="text-sm font-normal text-ink/60">pts</span></p>
+              <p class="text-[11px] text-ink/60">worth {{ r.balanceValue | currency:'INR':'symbol':'1.2-2' }}</p>
             </div>
-            <div class="flex flex-col">
-              <div class="flex items-center gap-2">
-                <p class="text-ink dark:text-ink text-lg font-bold">{{ customer.firstName }} {{ customer.lastName }}</p>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                      [ngClass]="{
-                        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': customer.tier === 'VIP' || customer.tier === 'Gold',
-                        'bg-surface text-ink dark:bg-surface dark:text-ink': customer.tier !== 'VIP' && customer.tier !== 'Gold'
-                      }">
-                  {{ customer.tier || 'Standard' }}
-                </span>
-              </div>
-              <p class="text-ink dark:text-ink text-sm">{{ customer.email }}</p>
-              <p class="text-ink dark:text-ink text-xs">{{ customer.phoneNumber || 'No phone' }}</p>
+            <div class="rounded-lg border border-ink/10 p-4">
+              <p class="text-xs uppercase tracking-wider text-ink/60">Tier</p>
+              <p class="text-lg font-bold text-ink"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="tierClass(r.tier)">{{ tierLabel(r.tier) }}</span></p>
+              <p class="text-[11px] text-ink/60">{{ r.lifetimeEarned | number }} earned lifetime<ng-container *ngIf="r.nextTier">; {{ r.pointsToNextTier | number }} to {{ tierLabel(r.nextTier) }}</ng-container></p>
+              <div class="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden mt-2"><div class="h-full bg-primary rounded-full" [style.width.%]="tierProgress(r)"></div></div>
             </div>
           </div>
-          <div class="text-right">
-            <p class="text-ink text-xs font-medium uppercase">Total Spend</p>
-            <p class="text-primary text-lg font-bold">{{ customer.totalSpend | currency }}</p>
+          <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div><dt class="text-xs uppercase tracking-wider text-ink/60">Expiring within 30 days</dt><dd class="font-semibold" [class.text-amber-700]="r.expiringSoon > 0" [class.text-ink]="r.expiringSoon === 0">{{ r.expiringSoon | number }}<span *ngIf="r.expiringSoonAt" class="block text-[11px] font-normal text-ink/60">from {{ r.expiringSoonAt | date:'mediumDate' }}</span></dd></div>
+            <div><dt class="text-xs uppercase tracking-wider text-ink/60">Referral code</dt><dd class="font-mono font-semibold text-ink">{{ r.referralCode }}<span *ngIf="r.referredByName" class="block text-[11px] font-normal text-ink/60">referred by {{ r.referredByName }}</span></dd></div>
+          </dl>
+
+          <!-- Adjust -->
+          <form *ngIf="canAdjust" (ngSubmit)="submitAdjust()" class="border-t border-ink/10 pt-4 space-y-3">
+            <h3 class="text-sm font-semibold text-ink">Adjust points</h3>
+            <div class="grid grid-cols-3 gap-3">
+              <input type="number" [(ngModel)]="adjustPoints" name="adjustPoints" step="1" placeholder="+100 / -50"
+                     class="col-span-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+              <input type="text" [(ngModel)]="adjustNote" name="adjustNote" maxlength="500" placeholder="Reason (required, kept on the ledger)"
+                     class="col-span-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+            </div>
+            <p *ngIf="adjustError" class="text-sm text-red-600">{{ adjustError }}</p>
+            <p *ngIf="adjustDone" class="text-sm text-emerald-700">{{ adjustDone }}</p>
+            <button type="submit" [disabled]="adjusting" class="px-4 py-2 bg-primary text-surface rounded-md text-sm font-bold hover:bg-primary/90 disabled:opacity-50">{{ adjusting ? 'Saving...' : 'Record adjustment' }}</button>
+          </form>
+
+          <!-- Ledger -->
+          <div class="border-t border-ink/10 pt-4">
+            <h3 class="text-sm font-semibold text-ink mb-2">Ledger <span class="font-normal text-ink/60">({{ r.history.totalElements }} movements)</span></h3>
+            <p *ngIf="r.history.content.length === 0" class="text-sm text-ink/70">No movements yet. Points are earned when an order is paid.</p>
+            <ul class="divide-y divide-gray-200 max-h-[420px] overflow-y-auto">
+              <li *ngFor="let t of r.history.content" class="py-3 flex items-start justify-between gap-3 text-sm">
+                <div class="min-w-0">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide mr-2" [ngClass]="typeClass(t.type)">{{ typeLabel(t.type) }}</span>
+                  <span class="text-ink">{{ t.note || t.reference }}</span>
+                  <p class="text-[11px] text-ink/60 mt-0.5">
+                    {{ t.createdAt | date:'medium' }}
+                    <ng-container *ngIf="t.orderId"> &middot; <a [routerLink]="['/orders', t.orderId]" class="underline">order</a></ng-container>
+                    <ng-container *ngIf="t.expiresAt && t.points > 0"> &middot; expires {{ t.expiresAt | date:'mediumDate' }}</ng-container>
+                    &middot; balance {{ t.balanceAfter | number }}
+                  </p>
+                </div>
+                <span class="font-semibold whitespace-nowrap" [class.text-emerald-700]="t.points > 0" [class.text-red-700]="t.points < 0">{{ t.points > 0 ? '+' : '' }}{{ t.points | number }}</span>
+              </li>
+            </ul>
           </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <div class="flex justify-between items-end">
-            <p class="text-ink dark:text-ink text-sm font-semibold">CRM Status</p>
-            <p class="text-ink dark:text-ink text-xs">{{ customer.role || 'USER' }}</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <button class="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-surface py-2.5 rounded-lg font-semibold text-sm transition-colors">
-            <span class="material-symbols-outlined text-lg">chat</span>
-            WhatsApp
-          </button>
-          <button class="flex-1 flex items-center justify-center gap-2 bg-surface dark:bg-surface hover:bg-surface dark:hover:bg-surface text-ink dark:text-ink py-2.5 rounded-lg font-semibold text-sm transition-colors">
-            <span class="material-symbols-outlined text-lg">visibility</span>
-            Profile
-          </button>
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div class="mt-4 flex items-center justify-between pb-8">
-        <div class="hidden sm:block">
-          <p class="text-sm text-ink">
-            Showing page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
-            (<span class="font-semibold">{{ totalElements }}</span> total customers)
-          </p>
-        </div>
-        <div class="flex flex-1 justify-between sm:justify-end gap-2">
-          <button (click)="prevPage()" [disabled]="currentPage === 0" [class.opacity-50]="currentPage === 0" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Previous
-          </button>
-          <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1" [class.opacity-50]="currentPage >= totalPages - 1" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Next
-          </button>
-        </div>
+        </ng-container>
       </div>
     </div>
-  </main>
+  </div>
 </div>

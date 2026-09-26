@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { AuthService } from '../../services/auth.service';
 import { saveBlobAs } from '../../services/order.service';
 import {
   EstimateRequest, PaymentRequest, REPAIR_SERVICE_LABELS, REPAIR_STATUS_LABELS, REPAIR_STATUSES,
@@ -22,6 +23,12 @@ import {
 export class RepairListComponent implements OnInit {
   private repairService = inject(RepairService);
   private toastr = inject(ToastrService);
+  private auth = inject(AuthService);
+
+  /** The invoice download needs invoices.read, as on orders. */
+  canReadInvoices(): boolean {
+    return this.auth.can('invoices.read');
+  }
 
   readonly statuses = REPAIR_STATUSES;
   readonly statusLabels = REPAIR_STATUS_LABELS;
@@ -45,6 +52,7 @@ export class RepairListComponent implements OnInit {
   detailLoading = false;
   saving = false;
   printing = false;
+  downloadingInvoice = false;
 
   // Status action form
   statusForm: { status: RepairStatus | ''; note: string; visibleToCustomer: boolean; promisedDate: string } =
@@ -281,6 +289,36 @@ export class RepairListComponent implements OnInit {
         this.toastr.error('The job card could not be generated. Please try again.');
       },
     });
+  }
+
+  downloadInvoice(): void {
+    if (!this.selected || this.downloadingInvoice) return;
+    const { id, jobNumber, invoiceNumber } = this.selected;
+    this.downloadingInvoice = true;
+    this.repairService.invoice(id).subscribe({
+      next: (blob) => {
+        this.downloadingInvoice = false;
+        saveBlobAs(blob, `${invoiceNumber || `${jobNumber}-invoice`}.pdf`);
+        if (!invoiceNumber) this.open(this.selected!);
+      },
+      error: (err) => {
+        this.downloadingInvoice = false;
+        console.error('Failed to download invoice', err);
+        const e = err as { status?: number };
+        this.toastr.error(e?.status === 404
+          ? 'The tax invoice is issued once the job is delivered or fully paid.'
+          : 'The invoice could not be generated. Please try again.');
+      },
+    });
+  }
+
+  /** Invoice may already exist, or can be issued now (delivered, or fully paid). */
+  invoiceAvailable(job: RepairJob): boolean {
+    if (job.invoiceNumber) return true;
+    if (job.status === 'CANCELLED') return false;
+    const billable = job.finalAmount ?? job.estimateAmount;
+    if (billable == null || Number(billable) <= 0) return false;
+    return job.status === 'DELIVERED' || Number(job.paidAmount || 0) >= Number(billable);
   }
 
   // -------------------------------------------------------------------

@@ -83,6 +83,43 @@ export interface CustomerStats {
   segments?: Partial<Record<CustomerSegment, number>>;
 }
 
+export type LoyaltyTier = 'SILVER' | 'GOLD' | 'PLATINUM';
+
+/** One ledger row (LoyaltyTransactionDTO). `points` is signed. */
+export interface LoyaltyTransaction {
+  id: string;
+  type: 'EARN' | 'REDEEM' | 'EXPIRE' | 'ADJUST' | 'REFERRAL';
+  points: number;
+  balanceAfter: number;
+  orderId?: string | null;
+  reference?: string | null;
+  expiresAt?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+/** GET /admin/customers/{id}/loyalty (LoyaltySummaryDTO). */
+export interface LoyaltySummary {
+  balance: number;
+  balanceValue: number;
+  lifetimeEarned: number;
+  tier: LoyaltyTier;
+  tierFloor: number;
+  nextTier: LoyaltyTier | null;
+  nextTierAt: number | null;
+  pointsToNextTier: number;
+  expiringSoon: number;
+  expiringSoonAt?: string | null;
+  pointValue: number;
+  pointsPer100: number;
+  maxRedeemPct: number;
+  expiryMonths: number;
+  referralBonus: number;
+  referralCode: string;
+  referredByName?: string | null;
+  history: { content: LoyaltyTransaction[]; totalElements: number; totalPages: number; number: number; size: number };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -114,6 +151,17 @@ export class CustomerService {
 
   saveNotes(id: string, body: { tags?: string; adminNotes?: string }): Observable<any> {
     return this.http.put(`${this.apiUrl}/${encodeURIComponent(id)}/notes`, body);
+  }
+
+  /** Loyalty balance, tier and ledger page for one customer (customers.read). */
+  loyalty(id: string, page = 0, size = 50): Observable<LoyaltySummary> {
+    const params = new HttpParams().set('page', String(page)).set('size', String(size));
+    return this.http.get<LoyaltySummary>(`${this.apiUrl}/${encodeURIComponent(id)}/loyalty`, { params });
+  }
+
+  /** Adds (positive) or removes (negative) points with a note (customers.write). */
+  adjustLoyalty(id: string, points: number, note: string): Observable<LoyaltyTransaction> {
+    return this.http.post<LoyaltyTransaction>(`${this.apiUrl}/${encodeURIComponent(id)}/loyalty/adjust`, { points, note });
   }
 
   stats(): Observable<CustomerStats> {

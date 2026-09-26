@@ -1,0 +1,283 @@
+<main class="p-4 space-y-6">
+  <section class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-ink text-xl font-bold leading-tight">Analytics</h2>
+      <p class="text-xs text-ink/60" *ngIf="overview() as o">
+        {{ o.period.from | date:'d MMM y' }} – {{ o.period.to | date:'d MMM y' }} ({{ o.period.days }} days)
+        <span *ngIf="compare()"> · compared with {{ o.comparePeriod.from | date:'d MMM' }} – {{ o.comparePeriod.to | date:'d MMM y' }}</span>
+      </p>
+      <p class="text-xs text-ink/60">Sales count orders that are paid, processing, shipped, delivered or completed, dated by order creation.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <app-period-picker (rangeChange)="onRange($event)" (compareChange)="onCompare($event)"></app-period-picker>
+      <button type="button" (click)="exportCsv('orders')" [disabled]="exporting() !== null" class="inline-flex items-center gap-1 rounded-md border border-ink/30 bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-gray-50 disabled:opacity-50">
+        <span class="material-symbols-outlined text-base">download</span>{{ exporting() === 'orders' ? 'Exporting…' : 'Orders CSV' }}
+      </button>
+      <button type="button" (click)="exportCsv('products')" [disabled]="exporting() !== null" class="inline-flex items-center gap-1 rounded-md border border-ink/30 bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-gray-50 disabled:opacity-50">
+        <span class="material-symbols-outlined text-base">download</span>{{ exporting() === 'products' ? 'Exporting…' : 'Products CSV' }}
+      </button>
+    </div>
+  </section>
+
+  <p *ngIf="error() as e" class="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">{{ e }}</p>
+
+  <!-- KPIs -->
+  <section *ngIf="overview() as o" class="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Revenue</p>
+      <p class="text-ink text-xl font-bold tabular-nums" [title]="inr(o.revenue.current, true)">{{ inr(o.revenue.current) }}</p>
+      <p *ngIf="compare()" class="text-xs font-semibold flex items-center gap-0.5" [ngClass]="deltaClass(o.revenue.deltaPercent)" [title]="'Previous: ' + inr(o.revenue.previous)"><span class="material-symbols-outlined text-sm">{{ deltaIcon(o.revenue.deltaPercent) }}</span>{{ pct(o.revenue.deltaPercent) }}</p>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Orders</p>
+      <p class="text-ink text-xl font-bold tabular-nums">{{ num(o.orders.current) }}</p>
+      <p *ngIf="compare()" class="text-xs font-semibold flex items-center gap-0.5" [ngClass]="deltaClass(o.orders.deltaPercent)" [title]="'Previous: ' + num(o.orders.previous)"><span class="material-symbols-outlined text-sm">{{ deltaIcon(o.orders.deltaPercent) }}</span>{{ pct(o.orders.deltaPercent) }}</p>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Units</p>
+      <p class="text-ink text-xl font-bold tabular-nums">{{ num(o.unitsSold.current) }}</p>
+      <p *ngIf="compare()" class="text-xs font-semibold flex items-center gap-0.5" [ngClass]="deltaClass(o.unitsSold.deltaPercent)"><span class="material-symbols-outlined text-sm">{{ deltaIcon(o.unitsSold.deltaPercent) }}</span>{{ pct(o.unitsSold.deltaPercent) }}</p>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Avg order</p>
+      <p class="text-ink text-xl font-bold tabular-nums">{{ inr(o.averageOrderValue.current) }}</p>
+      <p *ngIf="compare()" class="text-xs font-semibold flex items-center gap-0.5" [ngClass]="deltaClass(o.averageOrderValue.deltaPercent)"><span class="material-symbols-outlined text-sm">{{ deltaIcon(o.averageOrderValue.deltaPercent) }}</span>{{ pct(o.averageOrderValue.deltaPercent) }}</p>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15" title="Σ (selling price − cost at order time) over items with a known cost">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Gross margin</p>
+      <p class="text-ink text-xl font-bold tabular-nums">{{ inr(o.grossMargin.current) }}</p>
+      <p class="text-xs text-ink/70"><span *ngIf="o.grossMarginPercent !== null" class="font-semibold text-ink">{{ pct(o.grossMarginPercent, false) }}</span><span *ngIf="o.grossMarginPercent === null">no cost prices</span></p>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15" title="Revenue of items whose cost was unknown when ordered; not counted in margin">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Unknown cost</p>
+      <p class="text-ink text-xl font-bold tabular-nums">{{ inrCompact(o.revenueWithUnknownCost) }}</p>
+      <p class="text-xs" [ngClass]="(o.unknownCostSharePercent ?? 0) > 0 ? 'text-amber-700' : 'text-ink/70'">{{ o.unknownCostSharePercent !== null ? pct(o.unknownCostSharePercent, false) + ' of revenue' : '—' }}</p>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Customers</p>
+      <p class="text-ink text-xl font-bold tabular-nums">{{ num(o.newCustomers + o.returningCustomers) }}</p>
+      <p class="text-xs text-ink/70"><span class="font-semibold text-emerald-600">{{ num(o.newCustomers) }} new</span> · {{ num(o.returningCustomers) }} returning</p>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Refunds</p>
+      <p class="text-ink text-xl font-bold tabular-nums">{{ inr(o.refundAmount) }}</p>
+      <p class="text-xs text-ink/70">{{ num(o.refundCount) }} order{{ o.refundCount === 1 ? '' : 's' }}</p>
+    </div>
+  </section>
+
+  <!-- Series -->
+  <section class="rounded-xl p-4 bg-surface border border-ink/15">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <h3 class="text-ink text-base font-bold">Revenue, margin and orders</h3>
+      <div class="inline-flex rounded-lg border border-ink/20 p-0.5" role="group" aria-label="Granularity">
+        <button *ngFor="let g of ['day', 'week', 'month']" type="button" (click)="setGranularity($any(g))"
+                class="px-3 py-1 text-xs font-semibold rounded-md capitalize" [class.bg-primary]="granularity() === g" [class.text-white]="granularity() === g" [class.text-ink]="granularity() !== g">{{ g }}</button>
+      </div>
+    </div>
+    <app-line-chart *ngIf="series(); else seriesEmpty" [labels]="chartLabels()" [tickLabels]="chartTicks()" [series]="chartSeries()" ariaLabel="Revenue, margin and orders over the period"></app-line-chart>
+    <ng-template #seriesEmpty><div class="h-48 flex items-center justify-center text-sm text-ink/50">Loading…</div></ng-template>
+  </section>
+
+  <!-- Breakdown -->
+  <section class="rounded-xl p-4 bg-surface border border-ink/15" id="breakdown">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h3 class="text-ink text-base font-bold">Sales by
+        <select [ngModel]="dimension()" (ngModelChange)="setDimension($event)" class="ml-1 rounded-md border-gray-300 text-sm py-1 pl-2 pr-8 text-ink bg-surface font-semibold" aria-label="Breakdown dimension">
+          <option *ngFor="let d of dimensions" [value]="d.key">{{ d.label }}</option>
+        </select>
+      </h3>
+      <span class="text-xs text-ink/60" *ngIf="breakdown() as b">Total {{ inr(b.total) }}</span>
+    </div>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <app-bar-chart [data]="breakdownBars()" [max]="10" [ariaLabel]="'Revenue by ' + dimension()"></app-bar-chart>
+      <div class="max-h-96 overflow-y-auto rounded-md border border-ink/10">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-50 sticky top-0 text-xs text-ink/60 uppercase tracking-wide">
+            <tr>
+              <th class="text-left px-3 py-2 font-medium">{{ dimension() === 'state' ? 'State' : dimension() === 'paymentMethod' ? 'Method' : 'Group' }}</th>
+              <th class="text-right px-3 py-2 font-medium">Revenue</th>
+              <th class="text-right px-3 py-2 font-medium">Share</th>
+              <th class="text-right px-3 py-2 font-medium" *ngIf="dimension() !== 'state' && dimension() !== 'paymentMethod'">Units</th>
+              <th class="text-right px-3 py-2 font-medium">Orders</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-ink/10">
+            <tr *ngFor="let r of breakdown()?.rows ?? []">
+              <td class="px-3 py-1.5 text-ink">{{ r.label }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums font-semibold text-ink">{{ inr(r.revenue) }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums text-ink/70">{{ pct(r.share, false) }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums text-ink" *ngIf="dimension() !== 'state' && dimension() !== 'paymentMethod'">{{ num(r.units) }}</td>
+              <td class="px-3 py-1.5 text-right tabular-nums text-ink">{{ num(r.orders) }}</td>
+            </tr>
+            <tr *ngIf="breakdown() && breakdown()!.rows.length === 0"><td colspan="5" class="px-3 py-6 text-center text-ink/50">No sales in this period.</td></tr>
+            <tr *ngIf="!breakdown()"><td colspan="5" class="px-3 py-6 text-center text-ink/50">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Top products -->
+  <section class="rounded-xl bg-surface border border-ink/15 overflow-hidden" id="products">
+    <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-ink/10">
+      <h3 class="text-ink text-base font-bold">Top 20 products</h3>
+      <div class="inline-flex rounded-lg border border-ink/20 p-0.5" role="group" aria-label="Rank by">
+        <button type="button" (click)="setTopBy('revenue')" class="px-3 py-1 text-xs font-semibold rounded-md" [class.bg-primary]="topBy() === 'revenue'" [class.text-white]="topBy() === 'revenue'" [class.text-ink]="topBy() !== 'revenue'">By revenue</button>
+        <button type="button" (click)="setTopBy('units')" class="px-3 py-1 text-xs font-semibold rounded-md" [class.bg-primary]="topBy() === 'units'" [class.text-white]="topBy() === 'units'" [class.text-ink]="topBy() !== 'units'">By units</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="text-xs text-ink/60 uppercase tracking-wide">
+          <tr>
+            <th class="text-left px-4 py-2 font-medium w-8">#</th>
+            <th class="text-left px-2 py-2 font-medium">Product</th>
+            <th class="text-left px-2 py-2 font-medium">Category</th>
+            <th class="text-right px-2 py-2 font-medium">Units</th>
+            <th class="text-right px-2 py-2 font-medium">Revenue</th>
+            <th class="text-right px-2 py-2 font-medium">Margin</th>
+            <th class="text-right px-4 py-2 font-medium">Stock left</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-ink/10">
+          <tr *ngFor="let p of top()?.rows ?? []; let i = index">
+            <td class="px-4 py-2 text-ink/50 tabular-nums">{{ i + 1 }}</td>
+            <td class="px-2 py-2 max-w-[280px]">
+              <a [routerLink]="['/products/edit', p.id]" class="block truncate font-medium text-ink hover:text-primary" [title]="p.name">{{ p.name }}</a>
+              <span class="block text-[11px] font-mono text-ink/50">{{ p.sku }}</span>
+            </td>
+            <td class="px-2 py-2 text-ink/80">{{ p.category }}</td>
+            <td class="px-2 py-2 text-right tabular-nums text-ink">{{ num(p.units) }}</td>
+            <td class="px-2 py-2 text-right tabular-nums font-semibold text-ink">{{ inr(p.revenue) }}</td>
+            <td class="px-2 py-2 text-right tabular-nums text-ink" [title]="p.margin !== null ? marginPct(p.revenue, p.margin) : 'Cost unknown at order time'">{{ p.margin !== null ? inr(p.margin) : '—' }}</td>
+            <td class="px-4 py-2 text-right tabular-nums" [ngClass]="(p.stock ?? 0) <= 0 ? 'text-red-600 font-semibold' : 'text-ink'">{{ p.stock ?? '—' }}</td>
+          </tr>
+          <tr *ngIf="top() && top()!.rows.length === 0"><td colspan="7" class="px-4 py-6 text-center text-ink/50">No sales in this period.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Payment methods, discounts, repairs, exchange -->
+  <section class="grid grid-cols-1 gap-4 lg:grid-cols-3" *ngIf="overview() as o">
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <h3 class="text-ink text-base font-bold mb-2">Payment methods</h3>
+      <app-bar-chart [data]="paymentBars()" [max]="6" ariaLabel="Revenue by payment method"></app-bar-chart>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <h3 class="text-ink text-base font-bold mb-2">Discounts and redemptions</h3>
+      <dl class="text-sm divide-y divide-ink/10">
+        <div class="flex justify-between py-1.5"><dt class="text-ink/70">Coupon discounts</dt><dd class="tabular-nums font-semibold text-ink">{{ inr(o.couponDiscount) }}</dd></div>
+        <div class="flex justify-between py-1.5"><dt class="text-ink/70">Loyalty points burned</dt><dd class="tabular-nums font-semibold text-ink">{{ inr(o.loyaltyDiscount) }}</dd></div>
+        <div class="flex justify-between py-1.5" *ngIf="o.otherDiscount > 0"><dt class="text-ink/70">Other discounts</dt><dd class="tabular-nums font-semibold text-ink">{{ inr(o.otherDiscount) }}</dd></div>
+        <div class="flex justify-between py-1.5"><dt class="text-ink/70">Gift cards redeemed</dt><dd class="tabular-nums font-semibold text-ink">{{ inr(o.giftCardRedeemed) }}</dd></div>
+        <div class="flex justify-between py-1.5"><dt class="text-ink/70">Treasure plan redeemed</dt><dd class="tabular-nums font-semibold text-ink">{{ inr(o.treasureRedeemed) }}</dd></div>
+        <div class="flex justify-between py-1.5"><dt class="text-ink/70">GST collected</dt><dd class="tabular-nums font-semibold text-ink">{{ inr(o.tax) }}</dd></div>
+        <div class="flex justify-between py-1.5"><dt class="text-ink/70">Shipping charged</dt><dd class="tabular-nums font-semibold text-ink">{{ inr(o.shipping) }}</dd></div>
+      </dl>
+    </div>
+    <div class="rounded-xl p-4 bg-surface border border-ink/15">
+      <h3 class="text-ink text-base font-bold mb-2">Repairs and old gold <span class="text-xs font-normal text-ink/60">requested in the period</span></h3>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-1">Repairs · {{ num(repairTotal()) }}</p>
+          <ul class="divide-y divide-ink/10">
+            <li *ngFor="let r of repairRows()" class="flex justify-between py-1"><span class="text-ink/80 capitalize">{{ r.status.toLowerCase() }}</span><span class="tabular-nums font-semibold text-ink">{{ num(r.count) }}</span></li>
+            <li *ngIf="repairRows().length === 0" class="py-1 text-ink/50">None</li>
+          </ul>
+          <a routerLink="/repairs" class="mt-1 inline-block text-xs text-primary font-semibold hover:underline">Repairs →</a>
+        </div>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-1">Old gold · {{ num(exchangeTotal()) }}</p>
+          <ul class="divide-y divide-ink/10">
+            <li *ngFor="let r of exchangeRows()" class="flex justify-between py-1"><span class="text-ink/80 capitalize">{{ r.status.toLowerCase() }}</span><span class="tabular-nums font-semibold text-ink">{{ num(r.count) }}</span></li>
+            <li *ngIf="exchangeRows().length === 0" class="py-1 text-ink/50">None</li>
+          </ul>
+          <a routerLink="/exchange" class="mt-1 inline-block text-xs text-primary font-semibold hover:underline">Old gold →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stock -->
+  <section class="space-y-4" id="stock">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h3 class="text-ink text-lg font-bold">Stock</h3>
+      <label class="inline-flex items-center gap-2 text-xs text-ink">Dead after
+        <input type="number" min="1" max="3650" [ngModel]="deadAfterDays()" (ngModelChange)="setDeadAfter($event)" class="w-20 rounded-md border-gray-300 text-xs py-1 px-2 text-ink bg-surface"> days without a sale
+      </label>
+    </div>
+    <div *ngIf="stock() as s" class="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div class="rounded-xl p-4 bg-surface border border-ink/15">
+        <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Warehouse at price</p>
+        <p class="text-ink text-xl font-bold tabular-nums">{{ inr(s.valueAtPrice) }}</p>
+        <p class="text-xs text-ink/70">{{ num(s.skusInStock) }} SKUs · {{ num(s.piecesInStock) }} pieces</p>
+      </div>
+      <div class="rounded-xl p-4 bg-surface border border-ink/15">
+        <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Warehouse at cost</p>
+        <p class="text-ink text-xl font-bold tabular-nums">{{ inr(s.valueAtCost) }}</p>
+        <p class="text-xs" [ngClass]="s.piecesWithoutCost > 0 ? 'text-amber-700' : 'text-ink/70'">{{ s.piecesWithoutCost > 0 ? num(s.piecesWithoutCost) + ' pieces without a cost price' : 'Every piece has a cost price' }}</p>
+      </div>
+      <div class="rounded-xl p-4 bg-surface border border-ink/15">
+        <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Dead stock at price</p>
+        <p class="text-xl font-bold tabular-nums" [ngClass]="s.deadSkus > 0 ? 'text-amber-700' : 'text-ink'">{{ inr(s.deadValueAtPrice) }}</p>
+        <p class="text-xs text-ink/70">{{ num(s.deadSkus) }} SKUs · {{ num(s.deadPieces) }} pieces · at cost {{ inrCompact(s.deadValueAtCost) }}</p>
+      </div>
+      <div class="rounded-xl p-4 bg-surface border border-ink/15">
+        <p class="text-ink/70 text-xs font-medium uppercase tracking-wide">Store counters</p>
+        <p class="text-ink text-xl font-bold tabular-nums">{{ num(s.stores.length) }}</p>
+        <p class="text-xs text-ink/70">with pieces on the counter</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <div class="rounded-xl bg-surface border border-ink/15 overflow-hidden xl:col-span-2">
+        <div class="px-4 py-3 border-b border-ink/10"><h4 class="text-ink text-sm font-bold">Dead stock <span class="text-xs font-normal text-ink/60">highest value first, up to 50</span></h4></div>
+        <div class="overflow-x-auto max-h-[28rem] overflow-y-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 sticky top-0 text-xs text-ink/60 uppercase tracking-wide">
+              <tr><th class="text-left px-4 py-2 font-medium">Product</th><th class="text-left px-2 py-2 font-medium">Category</th><th class="text-right px-2 py-2 font-medium">Pieces</th><th class="text-right px-2 py-2 font-medium">At price</th><th class="text-right px-2 py-2 font-medium">At cost</th><th class="text-left px-4 py-2 font-medium">Last sold</th></tr>
+            </thead>
+            <tbody class="divide-y divide-ink/10">
+              <tr *ngFor="let r of stock()?.deadStock ?? []">
+                <td class="px-4 py-1.5 max-w-[260px]"><a [routerLink]="['/products/edit', r.id]" class="block truncate font-medium text-ink hover:text-primary" [title]="r.name">{{ r.name }}</a><span class="block text-[11px] font-mono text-ink/50">{{ r.sku }}</span></td>
+                <td class="px-2 py-1.5 text-ink/80">{{ r.category }}</td>
+                <td class="px-2 py-1.5 text-right tabular-nums text-ink">{{ r.stock }}</td>
+                <td class="px-2 py-1.5 text-right tabular-nums font-semibold text-ink">{{ inr(r.valueAtPrice) }}</td>
+                <td class="px-2 py-1.5 text-right tabular-nums text-ink">{{ r.valueAtCost !== null ? inr(r.valueAtCost) : '—' }}</td>
+                <td class="px-4 py-1.5 text-ink/70 whitespace-nowrap">{{ r.lastSoldAt ? (r.lastSoldAt | date:'d MMM y') : (r.createdAt ? 'never · added ' + (r.createdAt | date:'d MMM y') : 'never') }}</td>
+              </tr>
+              <tr *ngIf="stock() && stock()!.deadStock.length === 0"><td colspan="6" class="px-4 py-6 text-center text-ink/50">Nothing has sat unsold that long.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="rounded-xl bg-surface border border-ink/15 overflow-hidden">
+          <div class="px-4 py-3 border-b border-ink/10"><h4 class="text-ink text-sm font-bold">Per store</h4></div>
+          <table class="min-w-full text-sm">
+            <thead class="text-xs text-ink/60 uppercase tracking-wide"><tr><th class="text-left px-4 py-2 font-medium">Store</th><th class="text-right px-2 py-2 font-medium">Pieces</th><th class="text-right px-4 py-2 font-medium">At price / cost</th></tr></thead>
+            <tbody class="divide-y divide-ink/10">
+              <tr *ngFor="let st of stock()?.stores ?? []">
+                <td class="px-4 py-1.5 text-ink font-medium">{{ st.storeName }}<span class="block text-[11px] text-ink/50">{{ num(st.skus) }} SKUs</span></td>
+                <td class="px-2 py-1.5 text-right tabular-nums text-ink">{{ num(st.pieces) }}</td>
+                <td class="px-4 py-1.5 text-right tabular-nums text-ink"><span class="font-semibold">{{ inrCompact(st.valueAtPrice) }}</span><span class="block text-[11px] text-ink/50">{{ inrCompact(st.valueAtCost) }}</span></td>
+              </tr>
+              <tr *ngIf="stock() && stock()!.stores.length === 0"><td colspan="3" class="px-4 py-4 text-center text-ink/50">No store counter holds stock.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="rounded-xl bg-surface border border-ink/15 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-ink/10"><h4 class="text-ink text-sm font-bold">Low stock</h4><a routerLink="/products" [queryParams]="{ lowStock: 'true' }" class="text-xs text-primary font-semibold hover:underline">All →</a></div>
+          <ul class="divide-y divide-ink/10 max-h-72 overflow-y-auto">
+            <li *ngFor="let r of stock()?.lowStock ?? []" class="flex items-center gap-3 px-4 py-1.5 text-sm">
+              <div class="flex-1 min-w-0"><a [routerLink]="['/products/edit', r.id]" class="block truncate font-medium text-ink hover:text-primary" [title]="r.name">{{ r.name }}</a><span class="block text-[11px] font-mono text-ink/50">{{ r.sku }}</span></div>
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide" [ngClass]="(r.stock ?? 0) <= 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'">{{ (r.stock ?? 0) <= 0 ? 'Sold out' : r.stock + ' left' }}</span>
+            </li>
+            <li *ngIf="stock() && stock()!.lowStock.length === 0" class="px-4 py-4 text-center text-sm text-ink/50">All stocked.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>

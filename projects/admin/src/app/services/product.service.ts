@@ -17,6 +17,21 @@ export interface QuickCaptureRequest {
   notes?: string;
 }
 
+/** One row of the cost-price import (PUT /admin/inventory/cost-prices). */
+export interface CostPriceRow {
+  sku: string;
+  costPrice: number | null;
+}
+
+export interface CostPriceImportResult {
+  updated: number;
+  cleared: number;
+  unchanged: number;
+  notFound: number;
+  invalid: number;
+  rows: { sku: string; costPrice: number | null; status: 'UPDATED' | 'CLEARED' | 'UNCHANGED' | 'NOT_FOUND' | 'INVALID'; productName: string | null }[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -95,6 +110,14 @@ export class ProductService {
   getIncomplete(page = 0, size = 50): Observable<any> {
     const params = new HttpParams().set('page', String(page)).set('size', String(size));
     return this.http.get(`${environment.apiUrl}/admin/inventory/incomplete`, { params });
+  }
+
+  /**
+   * PUT /admin/inventory/cost-prices with `[{sku, costPrice}]` (products.write);
+   * a null cost clears the product's landed cost. Twin of StockService.mapErpCodes.
+   */
+  importCostPrices(rows: CostPriceRow[]): Observable<CostPriceImportResult> {
+    return this.http.put<CostPriceImportResult>(`${environment.apiUrl}/admin/inventory/cost-prices`, rows);
   }
 
   createProduct(product: any): Observable<any> {

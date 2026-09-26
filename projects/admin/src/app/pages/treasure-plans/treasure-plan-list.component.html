@@ -1,191 +1,168 @@
-<div class="relative flex min-h-screen flex-col bg-surface dark:bg-background-dark max-w-5xl mx-auto shadow-sm pb-24">
-  <!-- Header -->
-  <header class="sticky top-0 z-10 bg-surface/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-ink dark:border-ink">
-    <div class="flex items-center p-4 justify-between">
-      <div class="flex items-center gap-4">
-        <h1 class="text-xl font-bold tracking-tight">Treasure Plan Management</h1>
-      </div>
-      <div class="flex gap-2">
-        <button class="p-2 hover:bg-surface dark:hover:bg-surface rounded-lg">
-          <span class="material-symbols-outlined">search</span>
-        </button>
-      </div>
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <div class="sm:flex sm:items-center py-6">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Treasure plans</h1>
+      <p class="mt-2 text-sm text-ink/70">Gold savings plans: every paid installment buys 24K grams at the day's rate, and a matured plan is redeemed at the storefront checkout for the higher of the rupee balance and the grams at that day's rate.</p>
     </div>
-    <!-- Tabs -->
-    <div class="px-4">
-      <div class="flex gap-8 overflow-x-auto no-scrollbar">
-        <a class="flex flex-col items-center justify-center border-b-2 border-primary text-primary pb-3 pt-4 font-semibold cursor-pointer">
-          <span class="text-sm whitespace-nowrap">Active Plans</span>
-        </a>
-        <a class="flex flex-col items-center justify-center border-b-2 border-transparent text-ink hover:text-ink pb-3 pt-4 font-medium cursor-pointer">
-          <span class="text-sm whitespace-nowrap">Completed</span>
-        </a>
-        <a class="flex flex-col items-center justify-center border-b-2 border-transparent text-ink hover:text-ink pb-3 pt-4 font-medium cursor-pointer">
-          <span class="text-sm whitespace-nowrap">Pending Approval</span>
-        </a>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="flex-1 p-4 space-y-6">
-    <!-- Statistics Quick View -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-primary/5 p-4 rounded-xl border border-primary/10">
-        <p class="text-xs font-medium text-primary uppercase tracking-wider">Active Users</p>
-        <p class="text-2xl font-bold mt-1">1,284</p>
-      </div>
-      <div class="bg-green-500/5 p-4 rounded-xl border border-green-500/10">
-        <p class="text-xs font-medium text-green-600 uppercase tracking-wider">Collections</p>
-        <p class="text-2xl font-bold mt-1">$42.5k</p>
-      </div>
-      <div class="bg-surface dark:bg-surface p-4 rounded-xl">
-        <p class="text-xs font-medium text-ink uppercase tracking-wider">New Today</p>
-        <p class="text-2xl font-bold mt-1">12</p>
-      </div>
-      <div class="bg-surface dark:bg-surface p-4 rounded-xl">
-        <p class="text-xs font-medium text-ink uppercase tracking-wider">Due Today</p>
-        <p class="text-2xl font-bold mt-1">45</p>
-      </div>
-    </div>
-
-    <div class="flex items-center justify-between">
-      <h2 class="text-lg font-bold text-ink dark:text-ink">Active Customer Plans</h2>
-    </div>
-
-    <!-- Plan Cards List -->
-    <div class="space-y-4">
-      <!-- Plan Card 1 -->
-      <div class="bg-surface dark:bg-surface border border-ink dark:border-ink rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-        <div class="p-4 md:flex gap-6 items-start">
-          <div class="w-full md:w-32 h-32 mb-4 md:mb-0 bg-cover bg-center rounded-lg border border-ink" style="background-image: url('https://images.pexels.com/photos/265906/pexels-photo-265906.jpeg')"></div>
-          <div class="flex-1 space-y-3">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="text-lg font-bold text-ink dark:text-ink">11+1 Monthly Gold Savings</h3>
-                <p class="text-sm text-ink">Customer: <span class="font-medium text-ink dark:text-ink">Sarah Jenkins</span> • ID: <span class="font-mono">TP-8821</span></p>
-              </div>
-              <span class="px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full">ON TRACK</span>
-            </div>
-            <div class="space-y-1">
-              <div class="flex justify-between text-xs font-medium">
-                <span class="text-ink">Progress (7 of 12 months)</span>
-                <span class="text-primary">$3,500 / $6,000</span>
-              </div>
-              <div class="w-full bg-surface dark:bg-surface h-2 rounded-full overflow-hidden">
-                <div class="bg-primary h-full rounded-full" style="width: 58%"></div>
-              </div>
-            </div>
-            <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
-              <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-ink text-lg">calendar_month</span>
-                  <div class="text-xs">
-                    <p class="text-ink">Next Payment</p>
-                    <p class="font-semibold text-ink dark:text-ink">Oct 24, 2023</p>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-ink text-lg">payments</span>
-                  <div class="text-xs">
-                    <p class="text-ink">Monthly Installment</p>
-                    <p class="font-semibold text-ink dark:text-ink">$500.00</p>
-                  </div>
-                </div>
-              </div>
-              <button (click)="openModal()" class="bg-primary text-surface px-6 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
-                Manage Plan
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Modal Overlay -->
-  <div *ngIf="isModalOpen" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-surface/60 backdrop-blur-sm">
-    <div class="relative w-full max-w-2xl bg-surface dark:bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-      <!-- BottomSheetHandle (for mobile) -->
-      <div class="flex h-5 w-full items-center justify-center sm:hidden">
-        <div class="h-1.5 w-12 rounded-full bg-surface dark:bg-surface mt-2"></div>
-      </div>
-
-      <!-- Header Section -->
-      <div class="px-6 pt-6 pb-2">
-        <div class="flex justify-between items-start">
-          <div>
-            <h3 class="text-ink dark:text-surface text-2xl font-bold tracking-tight">Treasure Plan Details</h3>
-            <p class="text-ink dark:text-ink text-sm">Review and manage the active investment plan.</p>
-          </div>
-          <button (click)="closeModal()" class="p-2 hover:bg-surface dark:hover:bg-surface rounded-full transition-colors text-ink">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="flex-1 overflow-y-auto px-6 py-4">
-        <!-- Profile Section -->
-        <div class="flex items-center gap-5 mb-8 bg-primary/5 p-4 rounded-2xl border border-primary/10">
-          <div class="h-20 w-20 rounded-2xl bg-primary/20 bg-center bg-cover border-2 border-white dark:border-ink" style="background-image: url('https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg');"></div>
-          <div class="flex flex-col">
-            <p class="text-ink dark:text-surface text-xl font-bold leading-none">Sarah Jenkins</p>
-            <p class="text-primary text-sm font-semibold mt-1">Plan ID: <span class="uppercase">tp-882910</span></p>
-            <div class="flex items-center gap-2 mt-2">
-              <span class="px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-full uppercase tracking-wider">Premium Investment</span>
-              <span class="px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase tracking-wider">Active</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Financial Stats -->
-        <div class="grid grid-cols-2 gap-4 mb-8">
-          <div class="flex flex-col gap-1 rounded-2xl p-5 border border-primary/10 bg-surface dark:bg-surface shadow-sm">
-            <p class="text-ink dark:text-ink text-sm font-medium">Total Maturity Value</p>
-            <p class="text-ink dark:text-surface text-3xl font-bold leading-tight">$6,000.00</p>
-          </div>
-          <div class="flex flex-col gap-1 rounded-2xl p-5 border border-primary/10 bg-surface dark:bg-surface shadow-sm">
-            <p class="text-ink dark:text-ink text-sm font-medium">Total Amount Paid</p>
-            <p class="text-primary text-3xl font-bold leading-tight">$3,500.00</p>
-          </div>
-        </div>
-
-        <!-- Progress Section -->
-        <div class="flex flex-col gap-3 mb-8 bg-surface dark:bg-surface/50 p-5 rounded-2xl border border-ink dark:border-ink">
-          <div class="flex justify-between items-end">
-            <p class="text-ink dark:text-ink text-sm font-semibold uppercase tracking-wide">Investment Progress</p>
-            <p class="text-primary text-2xl font-black">58%</p>
-          </div>
-          <div class="h-3 w-full rounded-full bg-surface dark:bg-surface overflow-hidden">
-            <div class="h-full bg-primary" style="width: 58%;"></div>
-          </div>
-          <div class="flex justify-between text-xs font-medium">
-            <p class="text-ink">$2,500.00 remaining</p>
-            <p class="text-ink">14 of 24 months</p>
-          </div>
-        </div>
-
-        <!-- Action Buttons Grid -->
-        <div class="grid grid-cols-2 gap-3 mb-8">
-          <button class="flex items-center justify-center gap-2 bg-primary text-surface py-3.5 px-4 rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-lg shadow-primary/20">
-            <span class="material-symbols-outlined text-[20px]">add_card</span>
-            Record Payment
-          </button>
-          <button class="flex items-center justify-center gap-2 bg-surface dark:bg-surface border-2 border-ink dark:border-ink text-ink dark:text-ink py-3.5 px-4 rounded-xl font-bold text-sm transition-all hover:border-primary/30 hover:bg-surface dark:hover:bg-surface/50">
-            <span class="material-symbols-outlined text-[20px]">event_busy</span>
-            Skip Month
-          </button>
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="px-6 py-4 bg-surface dark:bg-surface/80 border-t border-ink dark:border-ink flex justify-between items-center">
-        <p class="text-xs text-ink font-medium italic">Last updated: 5 minutes ago by Admin</p>
-        <button (click)="closeModal()" class="px-6 py-2 bg-surface dark:bg-surface text-ink dark:text-ink rounded-lg font-bold text-sm hover:bg-surface dark:hover:bg-surface transition-colors">
-          Done
-        </button>
-      </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+      <button type="button" (click)="load()" [disabled]="loading" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+        <span class="material-symbols-outlined text-[18px]">refresh</span> Refresh
+      </button>
     </div>
   </div>
 
+  <!-- Quick figures -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-surface rounded-xl border border-ink/20 p-4">
+      <p class="text-xs font-medium text-ink/70 uppercase tracking-wider">Active plans</p>
+      <p class="text-2xl font-bold mt-1 text-ink">{{ count('ACTIVE') }}</p>
+    </div>
+    <div class="bg-surface rounded-xl border border-ink/20 p-4">
+      <p class="text-xs font-medium text-ink/70 uppercase tracking-wider">Installments collected</p>
+      <p class="text-2xl font-bold mt-1 text-ink">{{ collected | currency:'INR':'symbol':'1.0-0' }}</p>
+    </div>
+    <div class="bg-surface rounded-xl border border-ink/20 p-4">
+      <p class="text-xs font-medium text-ink/70 uppercase tracking-wider">Gold accrued</p>
+      <p class="text-2xl font-bold mt-1 text-ink">{{ gramsAccrued | number:'1.3-3' }} g</p>
+      <p *ngIf="todayRate as r" class="text-[11px] text-ink/60 mt-1">24K today {{ r.ratePerGram | currency:'INR':'symbol':'1.0-0' }}/g<span *ngIf="r.rateIndicative"> (indicative)</span></p>
+    </div>
+    <div class="bg-surface rounded-xl border border-ink/20 p-4">
+      <p class="text-xs font-medium text-ink/70 uppercase tracking-wider">Due within 7 days</p>
+      <p class="text-2xl font-bold mt-1 text-ink">{{ dueThisWeek }}</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+    <div class="flex flex-wrap gap-2">
+      <button *ngFor="let s of statuses" type="button" (click)="setFilter(s)"
+              class="px-3 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wide transition-colors"
+              [ngClass]="chipClass(s)">
+        {{ s === 'ALL' ? 'All' : s.toLowerCase() }} <span class="opacity-70">{{ count(s) }}</span>
+      </button>
+    </div>
+    <input type="search" [(ngModel)]="search" name="search" placeholder="Search customer, plan or order"
+           class="sm:ml-auto h-9 w-full sm:w-72 rounded-md border border-gray-300 px-3 text-sm focus:border-primary focus:ring-primary" />
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <!-- Table -->
+    <div [class.xl:col-span-3]="selected" [class.xl:col-span-5]="!selected">
+      <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-surface">
+            <tr>
+              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">Customer</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Progress</th>
+              <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Balance</th>
+              <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Gold</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Next due</th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Open</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr *ngFor="let a of filtered; trackBy: trackById" class="cursor-pointer hover:bg-primary/5" [ngClass]="{'bg-primary/10': selected?.id === a.id}" (click)="open(a)">
+              <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
+                <span class="block font-medium text-ink">{{ a.customerName || 'Customer' }}</span>
+                <span class="block text-xs text-ink/70">{{ a.customerEmail }}</span>
+                <span class="block text-[11px] text-ink/60 mt-0.5">{{ a.planName }} &middot; {{ a.installmentAmount | currency:'INR':'symbol':'1.0-0' }}/mo</span>
+              </td>
+              <td class="px-3 py-4 text-sm text-ink min-w-[140px]">
+                <div class="flex justify-between text-xs mb-1"><span>{{ a.installmentsPaid }} of {{ a.totalInstallments }}</span><span class="text-ink/60">{{ progress(a) }}%</span></div>
+                <div class="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden"><div class="h-full bg-primary rounded-full" [style.width.%]="progress(a)"></div></div>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-semibold text-ink">{{ a.balance | currency:'INR':'symbol':'1.0-0' }}</td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-ink">
+                <span class="block font-semibold">{{ (a.goldGramsAccrued || 0) | number:'1.3-3' }} g</span>
+                <span class="block text-[11px] text-ink/60">{{ (a.goldValue || 0) | currency:'INR':'symbol':'1.0-0' }} today</span>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="statusClass(a.status)">{{ a.status }}</span>
+                <span *ngIf="a.redeemedOrderNumber" class="block text-[11px] text-ink/60 mt-1">order {{ a.redeemedOrderNumber }}</span>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm" [class.text-red-700]="isOverdue(a)" [class.text-ink]="!isOverdue(a)">
+                <ng-container *ngIf="a.status === 'ACTIVE' && a.nextDueDate; else noDue">{{ a.nextDueDate | date:'mediumDate' }}<span *ngIf="isOverdue(a)" class="block text-[11px] font-semibold">overdue</span></ng-container>
+                <ng-template #noDue><span class="text-ink/50">&mdash;</span></ng-template>
+              </td>
+              <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                <button type="button" class="text-primary hover:underline text-xs font-semibold">Open</button>
+              </td>
+            </tr>
+            <tr *ngIf="loading">
+              <td colspan="7" class="px-6 py-6 text-center text-sm text-ink">Loading treasure plans...</td>
+            </tr>
+            <tr *ngIf="!loading && filtered.length === 0">
+              <td colspan="7" class="px-6 py-6 text-center text-sm text-ink">No plans<ng-container *ngIf="statusFilter !== 'ALL'"> with status {{ statusFilter.toLowerCase() }}</ng-container><ng-container *ngIf="search"> matching "{{ search }}"</ng-container>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detail -->
+    <div *ngIf="selected as a" class="xl:col-span-2">
+      <div class="bg-surface rounded-xl border border-ink/20 shadow-sm p-6 space-y-6 xl:sticky xl:top-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-ink">{{ a.customerName || 'Customer' }}</h2>
+            <p class="text-sm text-ink/70">{{ a.customerEmail }}</p>
+            <p class="text-xs text-ink/60 mt-1">{{ a.planName }} &middot; started {{ a.startDate ? (a.startDate | date:'mediumDate') : '—' }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="statusClass(a.status)">{{ a.status }}</span>
+            <button type="button" (click)="close()" class="p-1 rounded-full hover:bg-gray-100 text-ink/70" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+          </div>
+        </div>
+
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+          <div><dt class="text-xs uppercase tracking-wider text-ink/60">Installment</dt><dd class="font-semibold text-ink">{{ a.installmentAmount | currency:'INR':'symbol':'1.0-0' }} / month</dd></div>
+          <div><dt class="text-xs uppercase tracking-wider text-ink/60">Paid</dt><dd class="font-semibold text-ink">{{ a.installmentsPaid }} of {{ a.totalInstallments }}</dd></div>
+          <div><dt class="text-xs uppercase tracking-wider text-ink/60">Balance (incl. bonus)</dt><dd class="font-semibold text-ink">{{ a.balance | currency:'INR':'symbol':'1.0-0' }}</dd></div>
+          <div><dt class="text-xs uppercase tracking-wider text-ink/60">Maturity value</dt><dd class="font-semibold text-ink">{{ a.maturityAmount | currency:'INR':'symbol':'1.0-0' }}<span class="block text-[11px] font-normal text-ink/60">bonus {{ a.bonusAmount | currency:'INR':'symbol':'1.0-0' }}</span></dd></div>
+          <div><dt class="text-xs uppercase tracking-wider text-ink/60">Gold accrued</dt><dd class="font-semibold text-ink">{{ (a.goldGramsAccrued || 0) | number:'1.4-4' }} g</dd></div>
+          <div><dt class="text-xs uppercase tracking-wider text-ink/60">Gold value today</dt><dd class="font-semibold text-ink">{{ (a.goldValue || 0) | currency:'INR':'symbol':'1.0-0' }}<span class="block text-[11px] font-normal text-ink/60">at {{ (a.ratePerGram || 0) | currency:'INR':'symbol':'1.0-0' }}/g<span *ngIf="a.rateIndicative"> (indicative)</span></span></dd></div>
+          <div *ngIf="a.redeemableValue != null"><dt class="text-xs uppercase tracking-wider text-ink/60">Redeemable</dt><dd class="font-semibold text-emerald-700">{{ a.redeemableValue | currency:'INR':'symbol':'1.0-0' }}<span class="block text-[11px] font-normal text-ink/60">{{ a.redeemableBasis === 'GOLD' ? 'gold value wins' : 'rupee balance wins' }}</span></dd></div>
+          <div *ngIf="a.status === 'ACTIVE'"><dt class="text-xs uppercase tracking-wider text-ink/60">Next due</dt><dd class="font-semibold" [class.text-red-700]="isOverdue(a)" [class.text-ink]="!isOverdue(a)">{{ a.nextDueDate ? (a.nextDueDate | date:'mediumDate') : '—' }}</dd></div>
+        </dl>
+
+        <div *ngIf="a.redeemedAmount" class="rounded-lg border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900">
+          <p class="font-semibold">{{ a.redeemedAmount | currency:'INR':'symbol':'1.0-0' }} redeemed at checkout</p>
+          <p *ngIf="a.redeemedOrderId" class="text-xs mt-1">
+            Applied to order
+            <a [routerLink]="['/orders', a.redeemedOrderId]" class="font-mono font-semibold underline">{{ a.redeemedOrderNumber || a.redeemedOrderId }}</a>.
+            Cancelling or refunding that order puts the balance back on the plan.
+          </p>
+        </div>
+
+        <p *ngIf="actionError" class="text-sm text-red-600">{{ actionError }}</p>
+
+        <div *ngIf="canPay(a)" class="space-y-3 border-t border-ink/10 pt-4">
+          <h3 class="text-sm font-semibold text-ink">Record an in-store installment</h3>
+          <p class="text-xs text-ink/70">Installment {{ a.installmentsPaid + 1 }} of {{ a.totalInstallments }}, {{ a.installmentAmount | currency:'INR':'symbol':'1.0-0' }} cash. Books the grams at today's rate and queues an advance receipt for the ERP.</p>
+          <input type="text" [(ngModel)]="paymentNote" name="paymentNote" maxlength="2000" placeholder="Receipt number or note (optional)"
+                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm" />
+          <div class="flex flex-wrap gap-2">
+            <button type="button" (click)="recordPayment()" [disabled]="acting" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-surface rounded-md text-sm font-bold hover:bg-primary/90 disabled:opacity-50">
+              <span class="material-symbols-outlined text-[18px]">add_card</span> {{ acting ? 'Saving...' : 'Record payment' }}
+            </button>
+            <button type="button" (click)="skipMonth()" [disabled]="acting" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
+              <span class="material-symbols-outlined text-[18px]">event_busy</span> Skip a month
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="a.status !== 'CLOSED'" class="border-t border-ink/10 pt-4">
+          <button type="button" (click)="closePlan()" [disabled]="acting" class="text-sm font-medium text-red-700 hover:underline disabled:opacity-50">
+            {{ confirmClose ? 'Confirm: close this plan' : 'Close plan' }}
+          </button>
+          <button *ngIf="confirmClose" type="button" (click)="confirmClose = false" class="ml-3 text-sm text-ink/70 hover:underline">Cancel</button>
+          <p class="text-xs text-ink/60 mt-1">A closed plan refuses further payments; settle the balance with the customer outside the site.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

@@ -5,10 +5,13 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SettingService } from '../../services/setting.service';
 import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
+import { EventTemplate, NotificationService } from '../../services/notification.service';
 import { DEFAULT_GST_STATE_CODE, GST_STATE_CODES, GSTIN_PATTERN, PAN_PATTERN } from '../../core/gst-state-codes';
 
 /** Default series prefix for web invoices: WEB/2026-27/000001. */
 const DEFAULT_INVOICE_SERIES_PREFIX = 'WEB';
+const DEFAULT_SERVICE_INVOICE_SERIES_PREFIX = 'SRV';
+const DEFAULT_REPAIR_SERVICE_SAC = '998722';
 
 /**
  * Home-page keys from the API contract (section 1). Every one of these is a
@@ -90,10 +93,28 @@ export class SettingsComponent implements OnInit {
     repairPriceEngraving: ['', [Validators.pattern(/^\d{0,9}$/)]],
     repairPriceCleaning: ['', [Validators.pattern(/^\d{0,9}$/)]],
     repairPriceOther: ['', [Validators.pattern(/^\d{0,9}$/)]],
+    // Service tax invoice for repair jobs: own number series, SAC and the
+    // GST rate applied to the (tax-inclusive) estimate or final bill.
+    serviceInvoiceSeriesPrefix: [DEFAULT_SERVICE_INVOICE_SERIES_PREFIX, [Validators.required, Validators.pattern(/^[A-Z0-9-]{1,10}$/)]],
+    repairServiceSac: [DEFAULT_REPAIR_SERVICE_SAC, [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
+    taxRateRepairService: ['0.18', [Validators.required, Validators.min(0), Validators.max(1)]],
     // Old gold exchange quotes on /exchange: deduction off the fine-metal value
     // and the silver rate (silver has no live feed).
     oldGoldDeductionPct: ['2', [Validators.min(0), Validators.max(50)]],
     silverRatePerGram: ['', [Validators.pattern(/^\d{0,7}(\.\d{0,2})?$/)]],
+    // Rewards (LoyaltyService on the API reads these with the same defaults).
+    loyaltyPointsPer100: ['1', [Validators.required, Validators.min(0), Validators.pattern(/^\d{1,4}$/)]],
+    loyaltyPointValue: ['0.25', [Validators.required, Validators.min(0.01), Validators.pattern(/^\d{0,4}(\.\d{0,2})?$/)]],
+    loyaltyMaxRedeemPct: ['10', [Validators.required, Validators.min(0), Validators.max(100)]],
+    loyaltyExpiryMonths: ['12', [Validators.required, Validators.min(1), Validators.pattern(/^\d{1,3}$/)]],
+    loyaltyReferralBonus: ['200', [Validators.required, Validators.min(0), Validators.pattern(/^\d{1,6}$/)]],
+    // Appointments (AppointmentService slot rules) and returns (ReturnService window).
+    appointmentSlotMinutes: ['60', [Validators.required, Validators.min(5), Validators.max(1440), Validators.pattern(/^\d{1,4}$/)]],
+    appointmentOpenHour: ['11', [Validators.required, Validators.min(0), Validators.max(23), Validators.pattern(/^\d{1,2}$/)]],
+    appointmentCloseHour: ['19', [Validators.required, Validators.min(1), Validators.max(24), Validators.pattern(/^\d{1,2}$/)]],
+    appointmentMaxPerSlot: ['2', [Validators.required, Validators.min(1), Validators.pattern(/^\d{1,3}$/)]],
+    appointmentLeadHours: ['4', [Validators.required, Validators.min(0), Validators.pattern(/^\d{1,3}$/)]],
+    returnWindowDays: ['7', [Validators.required, Validators.min(0), Validators.pattern(/^\d{1,3}$/)]],
   });
 
   /** Storefront service catalogue order; label shown next to each "from" price field. */
@@ -123,7 +144,7 @@ export class SettingsComponent implements OnInit {
   }
 
   /** Identifiers are stored the way they print: upper case, no spaces. */
-  normaliseTaxField(control: 'companyGstin' | 'companyPan' | 'invoiceSeriesPrefix') {
+  normaliseTaxField(control: 'companyGstin' | 'companyPan' | 'invoiceSeriesPrefix' | 'serviceInvoiceSeriesPrefix') {
     const c = this.settingsForm.get(control);
     if (!c) return;
     const next = String(c.value ?? '').toUpperCase().replace(/\s+/g, '');
@@ -135,6 +156,51 @@ export class SettingsComponent implements OnInit {
    * which reactive forms cannot use as control names; toHomeMap() converts
    * back to the flat home.* keys on save.
    */
+  /**
+   * Messaging: per-event WhatsApp template name and SMS text overrides,
+   * stored as global_settings keys wa.template.<EVENT> / sms.template.<EVENT>
+   * (empty = built-in default, "off" = channel disabled for that event).
+   * Loaded from /admin/notifications/events; saved with the rest of the form.
+   */
+  private notificationService = inject(NotificationService);
+  messagingEvents: EventTemplate[] = [];
+  waOverrides: Record<string, string> = {};
+  smsOverrides: Record<string, string> = {};
+  messagingDirty = false;
+
+  private loadMessaging(settings: Record<string, string>) {
+    this.notificationService.events().subscribe({
+      next: (events) => {
+        this.messagingEvents = events.filter(e => e.event !== 'OTP');
+        for (const e of events) {
+          this.waOverrides[e.event] = settings['wa.template.' + e.event] ?? '';
+          this.smsOverrides[e.event] = settings['sms.template.' + e.event] ?? '';
+        }
+      },
+      error: () => { /* section stays empty; the rest of the page still works */ },
+    });
+  }
+
+  setWaOverride(event: string, value: string) {
+    this.waOverrides[event] = value;
+    this.messagingDirty = true;
+  }
+
+  setSmsOverride(event: string, value: string) {
+    this.smsOverrides[event] = value;
+    this.messagingDirty = true;
+  }
+
+  /** Flat wa.template.* / sms.template.* map for the PUT body; empty strings clear an override. */
+  private toMessagingMap(): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const e of this.messagingEvents) {
+      out['wa.template.' + e.event] = (this.waOverrides[e.event] ?? '').trim();
+      out['sms.template.' + e.event] = (this.smsOverrides[e.event] ?? '').trim();
+    }
+    return out;
+  }
+
   homeForm = this.fb.group({
     heroEyebrow: [''],
     heroTitle: [''],
@@ -187,6 +253,7 @@ export class SettingsComponent implements OnInit {
         if (settings) {
           this.settingsForm.patchValue(settings);
           this.patchHome(settings);
+          this.loadMessaging(settings);
           // Keys the API has not stored yet come back missing or empty; keep the defaults.
           if (!String(this.settingsForm.get('companyStateCode')?.value ?? '').trim()) {
             this.settingsForm.patchValue({ companyStateCode: DEFAULT_GST_STATE_CODE });
@@ -194,6 +261,16 @@ export class SettingsComponent implements OnInit {
           if (!String(this.settingsForm.get('invoiceSeriesPrefix')?.value ?? '').trim()) {
             this.settingsForm.patchValue({ invoiceSeriesPrefix: DEFAULT_INVOICE_SERIES_PREFIX });
           }
+          if (!String(this.settingsForm.get('serviceInvoiceSeriesPrefix')?.value ?? '').trim()) {
+            this.settingsForm.patchValue({ serviceInvoiceSeriesPrefix: DEFAULT_SERVICE_INVOICE_SERIES_PREFIX });
+          }
+          if (!String(this.settingsForm.get('repairServiceSac')?.value ?? '').trim()) {
+            this.settingsForm.patchValue({ repairServiceSac: DEFAULT_REPAIR_SERVICE_SAC });
+          }
+          if (!String(this.settingsForm.get('taxRateRepairService')?.value ?? '').trim()) {
+            this.settingsForm.patchValue({ taxRateRepairService: '0.18' });
+          }
+          this.normaliseTaxField('serviceInvoiceSeriesPrefix');
           this.normaliseTaxField('companyGstin');
           this.normaliseTaxField('companyPan');
           this.normaliseTaxField('invoiceSeriesPrefix');
@@ -296,6 +373,7 @@ export class SettingsComponent implements OnInit {
     const payload = {
       ...this.settingsForm.value,
       ...this.toHomeMap(),
+      ...this.toMessagingMap(),
     };
 
     this.settingService.updateSettings(payload).subscribe({

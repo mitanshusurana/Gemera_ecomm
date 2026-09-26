@@ -28,6 +28,12 @@
             <span class="text-xs text-ink/60" *ngIf="order.updatedAt">Updated {{ order.updatedAt | date:'medium' }}</span>
             <span class="text-xs text-ink/60" *ngIf="!order.updatedAt && order.createdAt">Placed {{ order.createdAt | date:'medium' }}</span>
           </div>
+          <p class="mt-2 text-xs text-ink/70" *ngIf="order['rfqNumber']">
+            Created from quote <a [routerLink]="['/rfqs']" class="font-mono text-emerald-700 hover:underline">{{ order['rfqNumber'] }}</a>
+          </p>
+          <p class="mt-2 text-xs text-ink/70" *ngIf="order['returnNumbers']?.length">
+            Returns: <a *ngFor="let rma of order['returnNumbers']" [routerLink]="['/returns']" [queryParams]="{ q: rma }" class="font-mono text-emerald-700 hover:underline mr-2">{{ rma }}</a>
+          </p>
         </div>
 
         <!-- Action buttons derived from nextStatuses -->

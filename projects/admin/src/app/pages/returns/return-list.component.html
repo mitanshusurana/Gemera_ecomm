@@ -1,0 +1,253 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <div class="sm:flex sm:items-center py-6">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Returns and exchanges</h1>
+      <p class="mt-2 text-sm text-ink/70">Return requests (RMA) raised by customers on delivered orders. Approve or reject, record what came back, then refund, issue store credit or create the replacement order.</p>
+    </div>
+  </div>
+
+  <!-- Status chips and search -->
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <button *ngFor="let s of statuses" type="button" (click)="setFilter(s)"
+            class="px-3 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wide transition-colors"
+            [ngClass]="chipClass(s)">
+      {{ s === 'ALL' ? 'All' : s.toLowerCase() }}
+      <span *ngIf="countFor(s) !== null" class="ml-1 opacity-70">{{ countFor(s) }}</span>
+    </button>
+    <form (ngSubmit)="search()" class="ml-auto flex items-center gap-2">
+      <input type="search" [(ngModel)]="query" name="q" placeholder="RMA, order or e-mail"
+             class="block w-56 py-1.5 px-3 border border-ink/30 bg-white rounded-md shadow-sm sm:text-sm" />
+      <button type="submit" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50">Search</button>
+    </form>
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ error }}</div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <!-- Table -->
+    <div [class.xl:col-span-3]="selected" [class.xl:col-span-5]="!selected">
+      <div class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-surface">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-surface">
+            <tr>
+              <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-ink sm:pl-6">RMA</th>
+              <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Order</th>
+              <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Customer</th>
+              <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Resolution</th>
+              <th class="px-3 py-3.5 text-right text-sm font-semibold text-ink">Value</th>
+              <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Status</th>
+              <th class="px-3 py-3.5 text-left text-sm font-semibold text-ink">Raised</th>
+              <th class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Open</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr *ngFor="let r of returns" class="cursor-pointer hover:bg-primary/5" [ngClass]="{'bg-primary/10': selected?.id === r.id}" (click)="open(r)">
+              <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-mono font-semibold text-ink sm:pl-6">{{ r.rmaNumber }}</td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-ink font-mono">#{{ r.orderNumber }}</td>
+              <td class="px-3 py-4 text-sm text-ink">
+                <span class="block font-medium">{{ r.customerName }}</span>
+                <span class="block text-xs text-ink/70">{{ r.customerEmail }}</span>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ resolutionLabel[r.resolution] }} <span class="text-xs text-ink/60">· {{ reasonLabel[r.reason] || r.reason }}</span></td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-semibold text-ink">{{ r.refundAmount | currency:'INR':'symbol':'1.0-0' }}</td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="statusClass(r.status)">{{ r.status }}</span>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4 text-sm text-ink">{{ r.createdAt | date:'mediumDate' }}</td>
+              <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                <button type="button" class="text-primary hover:underline text-xs font-semibold">Open</button>
+              </td>
+            </tr>
+            <tr *ngIf="loading">
+              <td colspan="8" class="px-6 py-6 text-center text-sm text-ink">Loading return requests...</td>
+            </tr>
+            <tr *ngIf="!loading && returns.length === 0">
+              <td colspan="8" class="px-6 py-6 text-center text-sm text-ink">No return requests<ng-container *ngIf="statusFilter !== 'ALL'"> with status {{ statusFilter.toLowerCase() }}</ng-container>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between">
+        <p class="text-sm text-ink">
+          Page <span class="font-semibold">{{ currentPage + 1 }}</span> of <span class="font-semibold">{{ totalPages || 1 }}</span>
+          (<span class="font-semibold">{{ totalElements }}</span> requests)
+        </p>
+        <div class="flex gap-2">
+          <button type="button" (click)="prevPage()" [disabled]="currentPage === 0 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Previous</button>
+          <button type="button" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1 || loading" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail panel -->
+    <aside *ngIf="selected" class="xl:col-span-2 space-y-4">
+      <div class="bg-surface shadow sm:rounded-lg">
+        <div class="px-4 py-4 sm:px-6 flex items-start justify-between gap-3 border-b border-ink/10">
+          <div>
+            <h2 class="text-lg font-semibold text-ink font-mono">{{ selected.rmaNumber }}</h2>
+            <p class="text-sm text-ink/70">
+              Order <a [routerLink]="['/orders', selected.orderId]" class="font-mono text-emerald-700 hover:underline">#{{ selected.orderNumber }}</a>
+              <span class="text-xs">({{ selected.orderStatus }})</span>
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span>
+            <button type="button" (click)="close()" class="text-ink/50 hover:text-ink" title="Close"><span class="material-symbols-outlined">close</span></button>
+          </div>
+        </div>
+
+        <div *ngIf="detailLoading" class="px-6 py-6 text-center text-sm text-ink/60">Loading…</div>
+
+        <div *ngIf="!detailLoading" class="px-4 py-4 sm:px-6 space-y-4 text-sm">
+          <dl class="grid grid-cols-3 gap-x-4 gap-y-2">
+            <dt class="text-ink/60">Customer</dt>
+            <dd class="col-span-2 text-ink">{{ selected.customerName }}<span class="block text-xs text-ink/70">{{ selected.customerEmail }}<ng-container *ngIf="selected.customerPhone"> · {{ selected.customerPhone }}</ng-container></span></dd>
+            <dt class="text-ink/60">Reason</dt>
+            <dd class="col-span-2 text-ink">{{ reasonLabel[selected.reason] || selected.reason }}<span *ngIf="selected.reasonNote" class="block text-xs text-ink/70 whitespace-pre-line">{{ selected.reasonNote }}</span></dd>
+            <dt class="text-ink/60">Resolution</dt>
+            <dd class="col-span-2 text-ink">{{ resolutionLabel[selected.resolution] }}</dd>
+            <dt class="text-ink/60">Value</dt>
+            <dd class="col-span-2 text-ink">
+              <span class="font-semibold">{{ selected.refundAmount | currency:'INR':'symbol':'1.2-2' }}</span>
+              <span *ngIf="selected.restockingFee" class="text-xs text-ink/70"> after {{ selected.restockingFee | currency:'INR':'symbol':'1.0-0' }} restocking fee</span>
+              <span class="block text-xs text-ink/60">Lines at list: {{ linesValue(selected) | currency:'INR':'symbol':'1.0-0' }}; the value applies the order's discount and tax share, shipping excluded.</span>
+            </dd>
+            <ng-container *ngIf="selected.refundedViaGateway">
+              <dt class="text-ink/60">Refunded</dt>
+              <dd class="col-span-2 text-ink">{{ selected.refundedViaGateway | currency:'INR':'symbol':'1.2-2' }} via Razorpay <span class="font-mono text-xs">{{ selected.razorpayRefundId }}</span></dd>
+            </ng-container>
+            <ng-container *ngIf="selected.storeCreditGiftCardCode">
+              <dt class="text-ink/60">Store credit</dt>
+              <dd class="col-span-2 text-ink font-mono">{{ selected.storeCreditGiftCardCode }}</dd>
+            </ng-container>
+            <ng-container *ngIf="selected.exchangeOrderId">
+              <dt class="text-ink/60">Replacement</dt>
+              <dd class="col-span-2 text-ink">
+                <a [routerLink]="['/orders', selected.exchangeOrderId]" class="font-mono text-emerald-700 hover:underline">#{{ selected.exchangeOrderNumber }}</a>
+                <span class="text-xs text-ink/70"> ({{ selected.exchangeOrderStatus }})</span>
+              </dd>
+            </ng-container>
+            <dt class="text-ink/60">Timeline</dt>
+            <dd class="col-span-2 text-xs text-ink/70">
+              Raised {{ selected.createdAt | date:'medium' }}
+              <span *ngIf="selected.approvedAt"> · approved {{ selected.approvedAt | date:'medium' }}</span>
+              <span *ngIf="selected.receivedAt"> · received {{ selected.receivedAt | date:'medium' }}</span>
+              <span *ngIf="selected.resolvedAt"> · resolved {{ selected.resolvedAt | date:'medium' }}</span>
+            </dd>
+          </dl>
+
+          <!-- Lines -->
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ink/70 mb-2">Items coming back</h3>
+            <ul class="divide-y divide-gray-200 border border-ink/10 rounded-md">
+              <li *ngFor="let l of selected.lines" class="px-3 py-2 flex items-center gap-3">
+                <img *ngIf="l.image" [src]="l.image" alt="" class="h-10 w-10 rounded object-cover border border-ink/10">
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-ink truncate">{{ l.name }}</p>
+                  <p class="text-xs text-ink/60"><span class="font-mono" *ngIf="l.sku">{{ l.sku }} · </span>{{ l.quantity }} × {{ l.unitPrice | currency:'INR':'symbol':'1.0-0' }}</p>
+                </div>
+                <div class="text-right text-xs shrink-0">
+                  <ng-container *ngIf="canReceive; else lineState">
+                    <label class="flex items-center gap-1 justify-end">
+                      <input type="checkbox" [(ngModel)]="receiveLines[l.id].received" [name]="'rcv-' + l.id" class="h-4 w-4 rounded border-gray-300 text-emerald-600"> received
+                    </label>
+                    <select [(ngModel)]="receiveLines[l.id].condition" [name]="'cond-' + l.id" class="mt-1 py-1 px-2 border border-ink/30 bg-white rounded-md text-xs">
+                      <option *ngFor="let c of conditions" [value]="c">{{ c.toLowerCase().replace('_', ' ') }}</option>
+                    </select>
+                  </ng-container>
+                  <ng-template #lineState>
+                    <span *ngIf="l.received === true" class="text-emerald-700 font-semibold">received<span *ngIf="l.condition"> · {{ l.condition.toLowerCase().replace('_', ' ') }}</span></span>
+                    <span *ngIf="l.received !== true" class="text-ink/60">not received</span>
+                  </ng-template>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Exchange wishes -->
+          <div *ngIf="selected.resolution === 'EXCHANGE' && selected.exchangeItems?.length">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-ink/70 mb-2">Wanted in exchange</h3>
+            <ul class="text-sm text-ink space-y-1">
+              <li *ngFor="let e of selected.exchangeItems">
+                {{ e.quantity }} × <a *ngIf="e.productId" [routerLink]="['/products/edit', e.productId]" class="hover:text-emerald-700">{{ e.name || e.productId }}</a>
+                <span class="text-xs text-ink/60" *ngIf="e.price != null"> · {{ e.price | currency:'INR':'symbol':'1.0-0' }} each</span>
+              </li>
+            </ul>
+          </div>
+
+          <p *ngIf="selected.adminNote" class="text-xs text-ink/70 whitespace-pre-line border-l-2 border-ink/20 pl-3">{{ selected.adminNote }}</p>
+
+          <!-- Actions -->
+          <div class="border-t border-ink/10 pt-4 space-y-3">
+            <div class="flex flex-wrap gap-2">
+              <button *ngIf="canApprove" type="button" (click)="approveOpen = !approveOpen; rejectOpen = false" [disabled]="acting"
+                      class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">Approve</button>
+              <button *ngIf="canReceive" type="button" (click)="receive()" [disabled]="acting"
+                      class="rounded-md bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50">
+                {{ selected.status === 'RECEIVED' ? 'Update receipt' : 'Mark received' }}
+              </button>
+              <button *ngIf="canResolve" type="button" (click)="resolveOpen = !resolveOpen; rejectOpen = false" [disabled]="acting || !canRefund"
+                      [title]="canRefund ? '' : 'Needs the orders.refund permission'"
+                      class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">{{ resolveLabel(selected) }}</button>
+              <button *ngIf="canReject" type="button" (click)="rejectOpen = !rejectOpen; approveOpen = false; resolveOpen = false" [disabled]="acting"
+                      class="rounded-md border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">Reject</button>
+              <p *ngIf="!canApprove && !canReceive && !canResolve && !canReject" class="text-xs text-ink/60 self-center">{{ selected.status }} is final.</p>
+            </div>
+
+            <div *ngIf="canReceive" class="text-xs">
+              <label class="block font-medium text-ink">Receipt note</label>
+              <input type="text" [(ngModel)]="receiveNote" name="receiveNote" class="mt-1 block w-full py-1.5 px-2 border border-ink/30 bg-white rounded-md text-sm" placeholder="Condition remarks, courier reference…" />
+            </div>
+
+            <form *ngIf="approveOpen" (ngSubmit)="approve()" class="rounded-md border-l-4 border-emerald-500 bg-white p-3 space-y-2 shadow-sm">
+              <label class="block text-xs">
+                <span class="font-medium text-ink">Restocking fee (₹, optional)</span>
+                <input type="number" min="0" step="1" [(ngModel)]="restockingFee" name="restockingFee" class="mt-1 block w-full py-1.5 px-2 border border-ink/30 bg-white rounded-md text-sm" />
+              </label>
+              <label class="block text-xs">
+                <span class="font-medium text-ink">Note</span>
+                <input type="text" [(ngModel)]="approveNote" name="approveNote" class="mt-1 block w-full py-1.5 px-2 border border-ink/30 bg-white rounded-md text-sm" />
+              </label>
+              <p class="text-xs text-ink/60">The customer receives the return instructions and the value net of the fee.</p>
+              <div class="flex gap-2">
+                <button type="submit" [disabled]="acting" class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">Approve return</button>
+                <button type="button" (click)="approveOpen = false" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm">Cancel</button>
+              </div>
+            </form>
+
+            <form *ngIf="rejectOpen" (ngSubmit)="reject()" class="rounded-md border-l-4 border-red-500 bg-white p-3 space-y-2 shadow-sm">
+              <label class="block text-xs">
+                <span class="font-medium text-ink">Reason (sent to the customer) <span class="text-red-600">*</span></span>
+                <textarea [(ngModel)]="rejectNote" name="rejectNote" rows="2" required class="mt-1 block w-full py-1.5 px-2 border border-red-200 bg-white rounded-md text-sm"></textarea>
+              </label>
+              <div class="flex gap-2">
+                <button type="submit" [disabled]="acting || !rejectNote.trim()" class="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">Reject return</button>
+                <button type="button" (click)="rejectOpen = false" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm">Cancel</button>
+              </div>
+            </form>
+
+            <form *ngIf="resolveOpen" (ngSubmit)="resolve()" class="rounded-md border-l-4 border-emerald-500 bg-white p-3 space-y-2 shadow-sm">
+              <p class="text-xs text-ink">
+                <ng-container [ngSwitch]="selected.resolution">
+                  <span *ngSwitchCase="'REFUND'">Refunds the value of the received lines through Razorpay (or back onto the gift card the order was paid with), restocks them and queues a credit note for the ERP.</span>
+                  <span *ngSwitchCase="'STORE_CREDIT'">Issues a gift card for the value of the received lines, restocks them and queues a credit note for the ERP.</span>
+                  <span *ngSwitchDefault>Issues a gift card for the value and creates the replacement order with it applied; the customer pays any balance online.</span>
+                </ng-container>
+              </p>
+              <label class="block text-xs">
+                <span class="font-medium text-ink">Note</span>
+                <input type="text" [(ngModel)]="resolveNote" name="resolveNote" class="mt-1 block w-full py-1.5 px-2 border border-ink/30 bg-white rounded-md text-sm" />
+              </label>
+              <div class="flex gap-2">
+                <button type="submit" [disabled]="acting" class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">{{ acting ? 'Working…' : 'Confirm' }}</button>
+                <button type="button" (click)="resolveOpen = false" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>

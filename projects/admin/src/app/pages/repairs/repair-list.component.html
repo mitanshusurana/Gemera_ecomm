@@ -251,6 +251,37 @@
       <!-- Payment -->
       <section class="border-t border-ink/10 pt-5">
         <h3 class="text-sm font-bold text-ink mb-3">Bill &amp; payment</h3>
+
+        <!-- Online payment state and the service tax invoice -->
+        <div class="mb-3 rounded-md border border-ink/10 bg-ink/[0.03] p-3 text-xs text-ink space-y-1">
+          <p *ngIf="job.paymentMode === 'RAZORPAY' && job.paymentReference">
+            <span class="font-semibold">Paid online</span> via Razorpay
+            <span class="font-mono">{{ job.paymentReference }}</span>
+            <span *ngIf="job.paidAmount != null"> &middot; {{ job.paidAmount | currency:'INR':'symbol':'1.0-0' }}</span>
+          </p>
+          <p *ngIf="job.razorpayOrderId && job.paymentDueAmount != null">
+            <span class="font-semibold">Awaiting online payment</span> of {{ job.paymentDueAmount | currency:'INR':'symbol':'1.0-0' }}
+            &middot; Razorpay order <span class="font-mono">{{ job.razorpayOrderId }}</span>
+          </p>
+          <p *ngIf="job.amountDue != null">
+            <span class="font-semibold">Amount due</span> {{ job.amountDue | currency:'INR':'symbol':'1.0-0' }}
+            <span *ngIf="job.amountDue === 0" class="text-emerald-700"> &middot; settled</span>
+          </p>
+          <p *ngIf="job.amountDue == null" class="text-ink/60">No bill yet: enter the estimate or a final amount.</p>
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <p>
+              <span class="font-semibold">Tax invoice</span>
+              <span *ngIf="job.invoiceNumber" class="font-mono"> {{ job.invoiceNumber }}</span>
+              <span *ngIf="job.invoiceNumber && job.invoiceDate" class="text-ink/60"> &middot; {{ job.invoiceDate | date:'mediumDate' }}</span>
+              <span *ngIf="!job.invoiceNumber" class="text-ink/60"> issued when delivered or fully paid</span>
+            </p>
+            <button *ngIf="canReadInvoices() && invoiceAvailable(job)" type="button" (click)="downloadInvoice()" [disabled]="downloadingInvoice"
+                    class="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap">
+              <span class="material-symbols-outlined text-[14px]">receipt_long</span>{{ downloadingInvoice ? 'Preparing...' : (job.invoiceNumber ? 'Download invoice' : 'Issue invoice') }}
+            </button>
+          </div>
+        </div>
+
         <form (ngSubmit)="submitPayment()" class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-ink">Final bill (INR)</label>

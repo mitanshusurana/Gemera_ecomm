@@ -22,6 +22,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', canActivate: [permissionGuard('dashboard.read')], loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'analytics', canActivate: [permissionGuard('dashboard.read')], loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.AnalyticsComponent) },
       { path: 'appointments', canActivate: [permissionGuard('appointments.write')], loadComponent: () => import('./pages/appointments/appointment-list.component').then(m => m.AppointmentListComponent) },
       { path: 'repairs', canActivate: [permissionGuard('repairs.write')], loadComponent: () => import('./pages/repairs/repair-list.component').then(m => m.RepairListComponent) },
       { path: 'inquiries', canActivate: [permissionGuard('inquiries.write')], loadComponent: () => import('./pages/inquiries/inquiry-list.component').then(m => m.InquiryListComponent) },
@@ -34,6 +35,7 @@ export const routes: Routes = [
       { path: 'stock', canActivate: [permissionGuard('stock.read')], loadChildren: () => import('./pages/stock/stock.routes').then(m => m.STOCK_ROUTES) },
       { path: 'orders', canActivate: [permissionGuard('orders.read')], loadComponent: () => import('./pages/order-list/order-list.component').then(m => m.OrderListComponent) },
       { path: 'orders/:id', canActivate: [permissionGuard('orders.read')], loadComponent: () => import('./pages/order-detail/order-detail.component').then(m => m.OrderDetailComponent) },
+      { path: 'returns', canActivate: [permissionGuard('orders.write')], loadComponent: () => import('./pages/returns/return-list.component').then(m => m.ReturnListComponent) },
       { path: 'rfqs', canActivate: [permissionGuard('rfq.write')], loadComponent: () => import('./pages/rfq-list/rfq-list.component').then(m => m.RfqListComponent) },
       { path: 'rfqs/:id', canActivate: [permissionGuard('rfq.write')], loadComponent: () => import('./pages/rfq-detail/rfq-detail.component').then(m => m.RfqDetailComponent) },
       { path: 'treasure', canActivate: [permissionGuard('treasure.write')], loadComponent: () => import('./pages/treasure-plans/treasure-plan-list.component').then(m => m.TreasurePlanListComponent) },
@@ -43,6 +45,7 @@ export const routes: Routes = [
       { path: 'coupons', canActivate: [permissionGuard('coupons.write')], loadComponent: () => import('./pages/coupons/coupon-list.component').then(m => m.CouponListComponent) },
       { path: 'settings', canActivate: [permissionGuard('settings.read')], loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
       { path: 'logs', canActivate: [permissionGuard('logs.read')], loadComponent: () => import('./pages/audit-logs/audit-log.component').then(m => m.AuditLogComponent) },
+      { path: 'notifications', canActivate: [permissionGuard('logs.read')], loadComponent: () => import('./pages/notifications/notification-list.component').then(m => m.NotificationListComponent) },
       { path: 'system-maintenance', canActivate: [permissionGuard('maintenance.write')], loadComponent: () => import('./pages/system-maintenance/system-maintenance.component').then(m => m.SystemMaintenanceComponent) },
       { path: 'staff', canActivate: [permissionGuard('staff.manage')], loadComponent: () => import('./pages/staff/staff-list.component').then(m => m.StaffListComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

@@ -118,6 +118,72 @@ export class ProductAddComponent implements OnInit {
   get stoneDetails(): FormArray {
     return this.productForm.get('stoneDetails') as FormArray;
   }
+
+  // ---- Cost price and margin (staff only; the API returns costPrice for products.write) ----
+
+  /** (price - cost) / price x 100, or null until both are entered. */
+  get marginPercent(): number | null {
+    const price = Number(this.productForm?.get('price')?.value);
+    const cost = Number(this.productForm?.get('costPrice')?.value);
+    const costRaw = this.productForm?.get('costPrice')?.value;
+    if (!price || price <= 0 || costRaw === null || costRaw === undefined || costRaw === '' || !isFinite(cost)) return null;
+    return (price - cost) / price * 100;
+  }
+
+  get marginAmount(): number | null {
+    const price = Number(this.productForm?.get('price')?.value);
+    const cost = Number(this.productForm?.get('costPrice')?.value);
+    return this.marginPercent === null ? null : price - cost;
+  }
+
+  // ---- Per-stone grading vocabularies ----
+  readonly stoneClarities = ['FL', 'IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1', 'I2', 'I3', 'Eye clean', 'Included', 'Opaque'];
+  readonly diamondColours = ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'Fancy'];
+  readonly cutGrades = ['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'];
+  readonly stonePositions = ['Centre', 'Halo', 'Side', 'Shank', 'Accent', 'Pave', 'Drop', 'Bezel'];
+  readonly stoneTreatments = ['None', 'Heated', 'Unheated', 'Oiled (minor)', 'Oiled (moderate)', 'Oiled (significant)', 'Fracture filled', 'Irradiated', 'Diffusion', 'Lab grown', 'Other'];
+
+  /** Diamonds get the D-Z colour scale; coloured stones a free-text colour. */
+  isDiamondRow(index: number): boolean {
+    const type = String(this.stoneDetails.at(index)?.get('stoneType')?.value ?? '');
+    return /diamond|cvd|hpht|lab.?grown diamond/i.test(type);
+  }
+
+  /** Row total = caratWeight x pieceCount, falling back to the row's total field. */
+  stoneRowTotal(index: number): number | null {
+    const g = this.stoneDetails.at(index);
+    const per = Number(g?.get('caratWeight')?.value);
+    const pieces = Number(g?.get('pieceCount')?.value) || 1;
+    const total = Number(g?.get('totalCaratWeight')?.value);
+    if (g?.get('caratWeight')?.value !== null && g?.get('caratWeight')?.value !== '' && isFinite(per) && per > 0) return per * pieces;
+    if (g?.get('totalCaratWeight')?.value !== null && g?.get('totalCaratWeight')?.value !== '' && isFinite(total) && total > 0) return total;
+    return null;
+  }
+
+  get stoneRowsTotal(): number | null {
+    let any = false;
+    let sum = 0;
+    for (let i = 0; i < this.stoneDetails.length; i++) {
+      const t = this.stoneRowTotal(i);
+      if (t !== null) { any = true; sum += t; }
+    }
+    return any ? sum : null;
+  }
+
+  /**
+   * Mirrors ProductRulesService.stoneWeightWarning: the product's total carat
+   * weight should match the stone rows within 0.05 ct. Warning only; never
+   * blocks the save.
+   */
+  get stoneWeightWarning(): string | null {
+    const totalRaw = this.productForm?.get('totalCaratWeight')?.value;
+    const rows = this.stoneRowsTotal;
+    if (totalRaw === null || totalRaw === undefined || totalRaw === '' || rows === null) return null;
+    const total = Number(totalRaw);
+    if (!isFinite(total)) return null;
+    if (Math.abs(total - rows) <= 0.05) return null;
+    return `Total stone weight ${total.toFixed(3)} ct differs from the stone rows (${rows.toFixed(3)} ct) by more than 0.05 ct.`;
+  }
   errorMessage = '';
   selectedFiles: File[] = [];
   selectedVideoFile: File | null = null;
@@ -257,6 +323,8 @@ export class ProductAddComponent implements OnInit {
       description: ['', Validators.required],
       price: [null, [Validators.required, Validators.min(0)]],
       originalPrice: [null],
+      // Landed cost per unit including making; margin is shown live beside the price.
+      costPrice: [null, [Validators.min(0)]],
       stockQuantity: [1, [Validators.required, Validators.min(0)]],
       category: ['', Validators.required],
       subCategory: [''],
@@ -264,6 +332,7 @@ export class ProductAddComponent implements OnInit {
       erpMaterialCode: [''], // Code in the ERP item master; stored trimmed upper-case
       isVerified: [false], // Admin verification step
       featured: [false], // Shown in the storefront home page "featured" section
+      returnable: [true], // Off for made-to-order and final-sale pieces (blocks a return request)
       videoUrl: [''],
 
       // Sale & pricing (contract §3)
@@ -701,6 +770,7 @@ export class ProductAddComponent implements OnInit {
       description: product.description || '',
       price: product.price ?? null,
       originalPrice: product.originalPrice ?? null,
+      costPrice: product.costPrice ?? null,
       stockQuantity: product.stockQuantity ?? product.stock ?? 1,
       category: product.category || '',
       subCategory: product.subCategory || '',
@@ -708,6 +778,7 @@ export class ProductAddComponent implements OnInit {
       erpMaterialCode: product.erpMaterialCode || '',
       isVerified: product.isVerified || false,
       featured: product.featured === true,
+      returnable: product.returnable !== false,
       videoUrl: product.videoUrl || '',
       inventoryOwnership: product.inventoryOwnership || 'Owned Stock',
       seoQualifiersStr: product.seoQualifiers ? product.seoQualifiers.join(', ') : '',
@@ -880,11 +951,22 @@ export class ProductAddComponent implements OnInit {
   }
 
   addStoneDetail(stone?: any) {
+    // Control names match StoneDetailDTO (backend dto/StoneDetailDTO.java).
     const stoneGroup = this.fb.group({
       stoneType: [stone ? stone.stoneType : ''],
+      position: [stone?.position ?? ''],
       shape: [stone ? stone.shape : ''],
       pieceCount: [stone ? stone.pieceCount : null],
+      caratWeight: [stone?.caratWeight ?? null, [Validators.min(0)]],
       totalCaratWeight: [stone ? stone.totalCaratWeight : null],
+      colour: [stone?.colour ?? ''],
+      clarity: [stone?.clarity ?? ''],
+      cut: [stone?.cut ?? ''],
+      certificateLab: [stone?.certificateLab ?? ''],
+      certificateNumber: [stone?.certificateNumber ?? ''],
+      ratePerCarat: [stone?.ratePerCarat ?? null, [Validators.min(0)]],
+      origin: [stone?.origin ?? ''],
+      treatment: [stone?.treatment ?? ''],
       settingType: [stone ? stone.settingType : '']
     });
     this.stoneDetails.push(stoneGroup);

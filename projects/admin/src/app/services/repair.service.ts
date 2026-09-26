@@ -66,6 +66,14 @@ export interface RepairJob {
   paidAmount: number | null;
   paymentMode: RepairPaymentMode | null;
   paymentReference: string | null;
+  /** Open Razorpay order for the amount due; null once settled. */
+  razorpayOrderId: string | null;
+  paymentDueAmount: number | null;
+  /** Rupees still owed (bill, else estimate, less paid); null before an estimate exists. */
+  amountDue: number | null;
+  /** Service tax invoice, once issued (delivered or fully paid). */
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
   assignedTo: string | null;
   internalNotes: string | null;
   receivedAt: string | null;
@@ -151,5 +159,10 @@ export class RepairService {
 
   jobCard(id: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/job-card.pdf`, { responseType: 'blob' });
+  }
+
+  /** GET /admin/repairs/{id}/invoice.pdf (permission invoices.read); 404 until the job is delivered or fully paid. */
+  invoice(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/invoice.pdf`, { responseType: 'blob' });
   }
 }

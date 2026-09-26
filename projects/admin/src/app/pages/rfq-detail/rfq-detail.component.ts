@@ -198,7 +198,9 @@ export class RfqDetailComponent implements OnInit {
     if (!this.rfq || !confirm('Accept the latest quote on behalf of the customer? This closes the request.')) return;
     this.busy = true;
     this.rfqService.accept(this.rfq.id).subscribe({
-      next: () => this.done('Quote accepted.'),
+      next: (res: any) => this.done(res?.orderNumber
+        ? `Quote accepted; order ${res.orderNumber} created and awaiting the customer's payment.`
+        : 'Quote accepted.'),
       error: (err) => this.fail(err, 'The quote was not accepted.')
     });
   }

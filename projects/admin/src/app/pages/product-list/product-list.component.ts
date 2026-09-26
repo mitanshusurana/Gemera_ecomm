@@ -3,7 +3,8 @@ import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit, OnDest
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ProductService } from '../../services/product.service';
+import { ProductService, CostPriceRow, CostPriceImportResult } from '../../services/product.service';
+import { AuthService } from '../../services/auth.service';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ToastrService } from 'ngx-toastr';
@@ -26,6 +27,29 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
   private router = inject(Router);
   private toastr = inject(ToastrService);
   private stockService = inject(StockService);
+  private authService = inject(AuthService);
+
+  /** Cost price and margin are shown only to staff who may edit products. */
+  get canWrite(): boolean {
+    return this.authService.can('products.write');
+  }
+
+  /** (price - cost) / price x 100 for the margin column; null when either is missing. */
+  marginPercent(product: any): number | null {
+    const price = Number(product?.price);
+    const cost = product?.costPrice;
+    if (!price || price <= 0 || cost === null || cost === undefined) return null;
+    const c = Number(cost);
+    return isFinite(c) ? (price - c) / price * 100 : null;
+  }
+
+  marginClass(product: any): string {
+    const m = this.marginPercent(product);
+    if (m === null) return 'text-ink/50';
+    if (m < 0) return 'text-red-600';
+    if (m < 10) return 'text-amber-600';
+    return 'text-emerald-700';
+  }
 
   @ViewChild('searchInput') searchInput!: ElementRef;
 
@@ -414,6 +438,85 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => {
         this.erpImporting = false;
         this.erpImportError = apiErrorMessage(err, 'Could not apply the ERP codes.');
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Cost prices: paste `sku,cost` lines -> preview -> PUT /admin/inventory/cost-prices
+  // ---------------------------------------------------------------------
+
+  costImportOpen = false;
+  costImportText = '';
+  costImportRows: CostPriceRow[] = [];
+  costImportSkipped: string[] = [];
+  costImportResult: CostPriceImportResult | null = null;
+  costImportError: string | null = null;
+  costImporting = false;
+
+  openCostImport() {
+    this.costImportOpen = true;
+    this.erpImportOpen = false;
+    this.costImportResult = null;
+    this.costImportError = null;
+  }
+
+  closeCostImport() {
+    this.costImportOpen = false;
+  }
+
+  /** Same parser as the ERP import; the second cell is a rupee amount (commas inside quotes and a leading ₹ are tolerated). */
+  parseCostImport() {
+    const rows: CostPriceRow[] = [];
+    const skipped: string[] = [];
+    const seen = new Map<string, number>();
+    const lines = this.costImportText.split(/\r?\n/);
+    lines.forEach((raw, i) => {
+      const line = raw.trim();
+      if (!line) return;
+      const cells = line.split(/[,;\t]/).map(c => c.trim().replace(/^["']|["']$/g, ''));
+      const sku = cells[0] ?? '';
+      const costText = (cells[1] ?? '').replace(/[₹\s]/g, '');
+      if (!sku) { skipped.push(`Line ${i + 1}: no SKU`); return; }
+      if (i === 0 && sku.toLowerCase() === 'sku') return; // header row
+      let cost: number | null = null;
+      if (costText !== '') {
+        cost = Number(costText);
+        if (!isFinite(cost) || cost < 0) { skipped.push(`Line ${i + 1}: "${cells[1]}" is not a cost`); return; }
+      }
+      const key = sku.toLowerCase();
+      if (seen.has(key)) {
+        rows[seen.get(key)!] = { sku, costPrice: cost };
+        skipped.push(`Line ${i + 1}: ${sku} repeated, later value kept`);
+        return;
+      }
+      seen.set(key, rows.length);
+      rows.push({ sku, costPrice: cost });
+    });
+    this.costImportRows = rows;
+    this.costImportSkipped = skipped;
+    this.costImportResult = null;
+    this.costImportError = null;
+  }
+
+  get costImportClears(): number {
+    return this.costImportRows.filter(r => r.costPrice === null).length;
+  }
+
+  applyCostImport() {
+    if (this.costImportRows.length === 0 || this.costImporting) return;
+    this.costImporting = true;
+    this.costImportError = null;
+    this.productService.importCostPrices(this.costImportRows).subscribe({
+      next: (result) => {
+        this.costImportResult = result;
+        this.costImporting = false;
+        this.toastr.success(`Cost prices: ${result.updated} set, ${result.cleared} cleared, ${result.notFound} unknown SKU(s)`);
+        this.loadProducts(this.searchQuery);
+      },
+      error: (err) => {
+        this.costImporting = false;
+        this.costImportError = apiErrorMessage(err, 'Could not apply the cost prices.');
       }
     });
   }

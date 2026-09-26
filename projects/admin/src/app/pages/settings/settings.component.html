@@ -171,6 +171,31 @@
                     <p *ngIf="fieldInvalid(f.control)" class="text-xs text-red-600">Whole rupees only.</p>
                   </div>
                 </div>
+                <p class="text-xs text-ink/70 mt-6 mb-3">Service tax invoice: issued when a job is delivered or fully paid. Estimates are quoted GST inclusive, so the tax is carved out of the amount.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Service invoice series prefix</label>
+                    <input formControlName="serviceInvoiceSeriesPrefix" (blur)="normaliseTaxField('serviceInvoiceSeriesPrefix')" maxlength="10" placeholder="SRV" autocapitalize="characters" spellcheck="false"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink font-mono uppercase focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <p *ngIf="fieldInvalid('serviceInvoiceSeriesPrefix')" class="text-xs text-red-600">1 to 10 letters, digits or hyphens.</p>
+                    <p *ngIf="!fieldInvalid('serviceInvoiceSeriesPrefix')" class="text-xs text-ink/60">Own series: {{ settingsForm.get('serviceInvoiceSeriesPrefix')?.value || 'SRV' }}/2026-27/00001 and onwards.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">SAC for repair services</label>
+                    <input formControlName="repairServiceSac" maxlength="8" placeholder="998722" inputmode="numeric" spellcheck="false"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="text" />
+                    <p *ngIf="fieldInvalid('repairServiceSac')" class="text-xs text-red-600">4 to 8 digits.</p>
+                    <p *ngIf="!fieldInvalid('repairServiceSac')" class="text-xs text-ink/60">998722: maintenance and repair of jewellery.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">GST rate on repair services</label>
+                    <input formControlName="taxRateRepairService" class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="number" step="0.0001" min="0" max="1" />
+                    <p class="text-xs mt-1" [class.text-red-600]="rateInvalid('taxRateRepairService')">
+                      <span *ngIf="!rateInvalid('taxRateRepairService')">= {{ ratePercent('taxRateRepairService') }}</span>
+                      <span *ngIf="rateInvalid('taxRateRepairService')">Enter a fraction between 0 and 1 (0.18 = 18%).</span>
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <!-- Old gold exchange: quote parameters for the storefront calculator -->
@@ -193,8 +218,155 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Rewards: loyalty points and referrals (LoyaltyService) -->
+              <div class="border-t border-ink dark:border-ink pt-6 mt-6">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined text-primary text-[20px]">loyalty</span>
+                  <h3 class="text-md font-bold text-ink dark:text-ink">Rewards</h3>
+                </div>
+                <p class="text-xs text-ink/70 mb-4">Points are earned when an order is paid (per &#8377;100 of the discounted subtotal), spent at checkout as a discount before tax, and lapse after the expiry period. Tiers: Silver, Gold from 2,000 lifetime points, Platinum from 10,000.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Points per &#8377;100 spent</label>
+                    <input formControlName="loyaltyPointsPer100" type="number" step="1" min="0"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('loyaltyPointsPer100')" class="text-xs text-red-600">Whole number, 0 or more.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Value of one point (INR)</label>
+                    <input formControlName="loyaltyPointValue" type="text" inputmode="decimal" placeholder="0.25"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('loyaltyPointValue')" class="text-xs text-red-600">Rupees with up to two decimals, above zero.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Max share of subtotal paid with points (%)</label>
+                    <input formControlName="loyaltyMaxRedeemPct" type="number" step="1" min="0" max="100"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('loyaltyMaxRedeemPct')" class="text-xs text-red-600">0 to 100.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Points expire after (months)</label>
+                    <input formControlName="loyaltyExpiryMonths" type="number" step="1" min="1"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('loyaltyExpiryMonths')" class="text-xs text-red-600">At least 1 month.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Referral bonus (points to each side)</label>
+                    <input formControlName="loyaltyReferralBonus" type="number" step="1" min="0"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('loyaltyReferralBonus')" class="text-xs text-red-600">Whole number, 0 or more.</p>
+                    <p class="text-xs text-ink/60">Paid to referrer and referee when the referee's first order is paid.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Appointments: slot rules (AppointmentService) -->
+              <div class="border-t border-ink dark:border-ink pt-6 mt-6">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined text-primary text-[20px]">event</span>
+                  <h3 class="text-md font-bold text-ink dark:text-ink">Appointments</h3>
+                </div>
+                <p class="text-xs text-ink/70 mb-4">Slots are offered every N minutes between the opening and closing hour, per store for store visits (one shared calendar for try-at-home and video calls). A slot takes at most the number of bookings below and cannot start inside the lead time.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Slot length (minutes)</label>
+                    <input formControlName="appointmentSlotMinutes" type="number" step="5" min="5" max="1440"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('appointmentSlotMinutes')" class="text-xs text-red-600">5 to 1440 minutes.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">First slot starts at (hour, 0-23)</label>
+                    <input formControlName="appointmentOpenHour" type="number" step="1" min="0" max="23"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('appointmentOpenHour')" class="text-xs text-red-600">0 to 23.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Last slot ends by (hour, 1-24)</label>
+                    <input formControlName="appointmentCloseHour" type="number" step="1" min="1" max="24"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('appointmentCloseHour')" class="text-xs text-red-600">1 to 24, after the opening hour.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Bookings per slot</label>
+                    <input formControlName="appointmentMaxPerSlot" type="number" step="1" min="1"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('appointmentMaxPerSlot')" class="text-xs text-red-600">At least 1.</p>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Lead time (hours)</label>
+                    <input formControlName="appointmentLeadHours" type="number" step="1" min="0"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('appointmentLeadHours')" class="text-xs text-red-600">Whole number, 0 or more.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Returns and exchanges (ReturnService) -->
+              <div class="border-t border-ink dark:border-ink pt-6 mt-6">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined text-primary text-[20px]">assignment_return</span>
+                  <h3 class="text-md font-bold text-ink dark:text-ink">Returns and exchanges</h3>
+                </div>
+                <p class="text-xs text-ink/70 mb-4">Customers may raise a return or exchange on a delivered order for this many days after delivery. Products marked not returnable are excluded regardless.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-sm font-medium text-ink dark:text-ink">Return window (days from delivery)</label>
+                    <input formControlName="returnWindowDays" type="number" step="1" min="0"
+                           class="w-full h-11 px-4 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                    <p *ngIf="fieldInvalid('returnWindowDays')" class="text-xs text-red-600">Whole number, 0 or more.</p>
+                  </div>
+                </div>
+              </div>
             </form>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Messaging: per-event WhatsApp template names and SMS texts (service/notification) -->
+    <section class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">forward_to_inbox</span>
+        <h2 class="text-lg font-bold text-ink dark:text-ink">Messaging</h2>
+      </div>
+      <div class="bg-surface dark:bg-surface rounded-xl border border-ink dark:border-ink p-6 space-y-4">
+        <p class="text-xs text-ink/70">
+          WhatsApp sends Meta-approved templates: enter the template name from your WhatsApp Business account for each event
+          (optionally <code>name|param1,param2</code> to change which values fill its <code>{{ '{{1}}' }}</code>, <code>{{ '{{2}}' }}</code>...).
+          SMS text uses <code>{{ '{{customerName}}' }}</code>-style placeholders. Leave blank for the built-in default, type <code>off</code> to
+          silence a channel for that event. Provider credentials come from the server environment; see
+          <a routerLink="/notifications" class="text-primary underline">Notifications</a> for status and test sends.
+        </p>
+        <div *ngIf="!messagingEvents.length" class="text-xs text-ink/60">Event list not available.</div>
+        <div *ngIf="messagingEvents.length" class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="text-xs uppercase tracking-wide text-ink/70">
+              <tr>
+                <th class="text-left py-2 pr-3">Event</th>
+                <th class="text-left py-2 pr-3">WhatsApp template</th>
+                <th class="text-left py-2">SMS text</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-ink/10">
+              <tr *ngFor="let e of messagingEvents" class="align-top">
+                <td class="py-2 pr-3 whitespace-nowrap">
+                  <span class="font-medium text-ink">{{ e.event }}</span>
+                  <span class="block text-[11px] text-ink/60">params: {{ e.waParams.join(', ') || '-' }}</span>
+                </td>
+                <td class="py-2 pr-3 min-w-[220px]">
+                  <input type="text" [value]="waOverrides[e.event] || ''" (input)="setWaOverride(e.event, $any($event.target).value)"
+                         [placeholder]="e.waTemplateDefault || 'none'" [disabled]="!canWrite"
+                         class="w-full h-9 px-3 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink text-xs font-mono" />
+                </td>
+                <td class="py-2 min-w-[320px]">
+                  <textarea rows="2" [value]="smsOverrides[e.event] || ''" (input)="setSmsOverride(e.event, $any($event.target).value)"
+                            [placeholder]="e.smsTextDefault || 'none'" [disabled]="!canWrite"
+                            class="w-full px-3 py-2 rounded-lg border border-ink dark:border-ink bg-surface dark:bg-slate-950 text-ink dark:text-ink text-xs"></textarea>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
