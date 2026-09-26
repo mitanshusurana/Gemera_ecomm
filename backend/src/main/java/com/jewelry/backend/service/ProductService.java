@@ -65,7 +65,11 @@ public class ProductService {
     @Autowired
     InventoryAlertService inventoryAlertService;
 
+    @Autowired
+    MetalRateBoardService metalRateBoardService;
+
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
+    private static final java.time.ZoneId INDIA = java.time.ZoneId.of("Asia/Kolkata");
 
     /**
      * Legacy signature kept for callers that only know the original filters
@@ -230,8 +234,15 @@ public class ProductService {
     // Admin only - strictly for seeding/testing
     @Transactional(rollbackFor = Exception.class)
     public Product createProduct(Product product) {
+        // METAL_RATE products are priced from today's board before the rules
+        // run (so "price" is present) and again after them (derivePrice must
+        // not win over the rate); FIXED products keep the sent price.
+        com.jewelry.backend.pricing.PriceBreakdown priced = priceFromBoard(product);
         // Item-type rules: sale mode, derived price, required fields (400 on violation)
         String itemType = productRulesService.applyRules(product);
+        if (priced != null) {
+            product.setPrice(priced.price());
+        }
         if (product.getSku() == null || product.getSku().trim().isEmpty()) {
             product.setSku(generateSku(product, itemType));
         }
@@ -333,6 +344,8 @@ public class ProductService {
             ignoredPropertiesList.add("stoneDetails");
             ignoredPropertiesList.add("id");
             ignoredPropertiesList.add("costUpdatedAt"); // server-stamped below
+            ignoredPropertiesList.add("metalRateUsed"); // server-stamped by priceFromBoard
+            ignoredPropertiesList.add("pricedAt");
             java.math.BigDecimal costBefore = existing.getCostPrice();
 
             org.springframework.beans.BeanUtils.copyProperties(updatedProduct, existing, ignoredPropertiesList.toArray(new String[0]));
@@ -351,9 +364,15 @@ public class ProductService {
                 existing.setCostUpdatedAt(java.time.LocalDateTime.now());
             }
 
+            // Metal-rate pricing on the merged record (see createProduct).
+            com.jewelry.backend.pricing.PriceBreakdown priced = priceFromBoard(existing);
+
             // Item-type rules run on the merged record so partial updates are
             // validated against the full product, not just the fields sent.
             productRulesService.applyRules(existing);
+            if (priced != null) {
+                existing.setPrice(priced.price());
+            }
 
             Product saved = productRepository.save(existing);
 
@@ -365,6 +384,47 @@ public class ProductService {
             }
             return saved;
         }).orElseThrow(() -> new RuntimeException("Product not found"));
+    }
+
+    /**
+     * Prices a METAL_RATE product from today's board and stamps price,
+     * metalRateUsed and pricedAt on it; returns null (and normalises the mode
+     * to FIXED) for fixed-price products. Missing inputs are a 400.
+     */
+    private com.jewelry.backend.pricing.PriceBreakdown priceFromBoard(Product product) {
+        if (!com.jewelry.backend.pricing.ProductPricing.isMetalRate(product)) {
+            product.setPricingMode(com.jewelry.backend.pricing.PricingEngine.normalizeMode(product.getPricingMode()));
+            return null;
+        }
+        return com.jewelry.backend.pricing.ProductPricing.apply(
+                product, metalRateBoardService.today(), java.time.LocalDateTime.now(INDIA));
+    }
+
+    /**
+     * Reprices every METAL_RATE product from {@code board} (the day's lock,
+     * or the live board when nothing is locked). A product whose inputs no
+     * longer price (missing weight, purity off the board) is skipped, never
+     * fatal. Orders, carts and invoices snapshot the price, so they are
+     * untouched. The whole product cache is dropped.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "products", allEntries = true)
+    public com.jewelry.backend.dto.RepriceResultDTO repriceMetalRateProducts(com.jewelry.backend.dto.MetalRateBoardDTO board) {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now(INDIA);
+        int repriced = 0;
+        int skipped = 0;
+        for (Product product : productRepository.findByPricingMode(com.jewelry.backend.pricing.PricingEngine.MODE_METAL_RATE)) {
+            try {
+                com.jewelry.backend.pricing.ProductPricing.apply(product, board, now);
+                productRepository.save(product);
+                repriced++;
+            } catch (IllegalArgumentException e) {
+                skipped++;
+                java.util.logging.Logger.getLogger(ProductService.class.getName())
+                        .warning("Reprice skipped " + product.getSku() + ": " + e.getMessage());
+            }
+        }
+        return new com.jewelry.backend.dto.RepriceResultDTO(repriced, skipped, now);
     }
 
     private String[] getNullPropertyNames(Object source) {

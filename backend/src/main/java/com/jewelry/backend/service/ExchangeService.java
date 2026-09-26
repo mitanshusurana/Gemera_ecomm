@@ -48,10 +48,11 @@ import java.util.regex.Pattern;
  * capture, the counter workflow (receive, assay, credit or reject) and the
  * store-credit gift card plus ERP purchase that a credit produces.
  *
- * Rates: gold comes from MetalRateService (GoldAPI USD per gram converted
- * with the {@code usdRate} setting; see that class for the convention).
- * Silver has no feed: {@code silverRatePerGram} (INR per gram fine) is read
- * from settings and is always marked indicative.
+ * Rates: gold and silver come from MetalRateService, which answers today's
+ * locked board when the shop has locked one and the live feed otherwise
+ * (see that class). When the silver figure is only indicative, the
+ * {@code silverRatePerGram} setting (INR per gram fine), if set, is used
+ * instead, still marked indicative.
  */
 @Service
 public class ExchangeService {
@@ -158,11 +159,19 @@ public class ExchangeService {
 
     FineRate fineRate(String metal) {
         if (ExchangeRequest.METAL_SILVER.equals(metal)) {
+            MetalRateService.FineRate live = metalRateService.fineRate(ExchangeRequest.METAL_SILVER);
+            if (live != null && live.inrPerGram() != null && live.inrPerGram().signum() > 0 && !live.indicative()) {
+                return new FineRate(live.inrPerGram(), false);
+            }
             BigDecimal silver = setting(SETTING_SILVER_RATE).map(ExchangeService::parseDecimal).orElse(null);
-            return new FineRate(silver == null || silver.signum() <= 0 ? FALLBACK_SILVER_INR_PER_GRAM : silver, true);
+            if (silver != null && silver.signum() > 0) {
+                return new FineRate(silver, true);
+            }
+            return new FineRate(live != null && live.inrPerGram() != null && live.inrPerGram().signum() > 0
+                    ? live.inrPerGram() : FALLBACK_SILVER_INR_PER_GRAM, true);
         }
-        // Gold: GoldAPI USD/gram converted with the usdRate setting, shared
-        // with the Treasure plan's gram accrual so both quote the same rupee.
+        // Gold: today's locked board (else the live feed), shared with the
+        // Treasure plan's gram accrual and product pricing so all quote the same rupee.
         MetalRateService.FineRate gold = metalRateService.gold24kInrPerGram();
         return new FineRate(gold.inrPerGram(), gold.indicative());
     }

@@ -222,6 +222,17 @@ public class EntityMapper {
         product.setPlainOrStudded(dto.getPlainOrStudded());
         product.setGemGrade(dto.getGemGrade());
 
+        // Metal-rate pricing inputs; metalRateUsed and pricedAt are stamped by ProductService.
+        product.setPricingMode(dto.getPricingMode());
+        product.setPricingMetal(dto.getPricingMetal());
+        product.setPricingPurity(dto.getPricingPurity());
+        product.setPricingNetWeightGrams(dto.getPricingNetWeightGrams());
+        product.setMakingChargeType(dto.getMakingChargeType());
+        product.setMakingChargeValue(dto.getMakingChargeValue());
+        product.setWastagePct(dto.getWastagePct());
+        product.setStoneValue(dto.getStoneValue());
+        product.setOtherCharges(dto.getOtherCharges());
+
         if (dto.getPriceBreakup() != null) {
             com.jewelry.backend.entity.Product.PriceBreakup pb = new com.jewelry.backend.entity.Product.PriceBreakup();
             pb.setMetal(dto.getPriceBreakup().getMetal());
@@ -448,6 +459,19 @@ public class EntityMapper {
         dto.setCraft(product.getCraft());
         dto.setPlainOrStudded(product.getPlainOrStudded());
         dto.setGemGrade(product.getGemGrade());
+
+        dto.setPricingMode(product.getPricingMode() == null ? "FIXED" : product.getPricingMode());
+        dto.setPricingMetal(product.getPricingMetal());
+        dto.setPricingPurity(product.getPricingPurity());
+        dto.setPricingNetWeightGrams(product.getPricingNetWeightGrams());
+        dto.setMakingChargeType(product.getMakingChargeType());
+        dto.setMakingChargeValue(product.getMakingChargeValue());
+        dto.setWastagePct(product.getWastagePct());
+        dto.setStoneValue(product.getStoneValue());
+        dto.setOtherCharges(product.getOtherCharges());
+        dto.setMetalRateUsed(product.getMetalRateUsed());
+        dto.setPricedAt(product.getPricedAt());
+        dto.setPriceBreakdown(com.jewelry.backend.pricing.ProductPricing.stored(product));
 
         if (product.getPriceBreakup() != null) {
             com.jewelry.backend.dto.ProductDTO.PriceBreakupDTO pb = new com.jewelry.backend.dto.ProductDTO.PriceBreakupDTO();

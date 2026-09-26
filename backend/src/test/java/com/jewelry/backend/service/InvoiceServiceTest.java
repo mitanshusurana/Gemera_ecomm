@@ -8,6 +8,7 @@ import com.jewelry.backend.entity.InvoiceSequence;
 import com.jewelry.backend.entity.Order;
 import com.jewelry.backend.entity.OrderItem;
 import com.jewelry.backend.entity.Product;
+import com.jewelry.backend.entity.RepairJob;
 import com.jewelry.backend.repository.GlobalSettingRepository;
 import com.jewelry.backend.repository.InvoiceRepository;
 import com.jewelry.backend.repository.InvoiceSequenceRepository;
@@ -395,5 +396,52 @@ class InvoiceServiceTest {
         Order order = paidOrder(RAJASTHAN_ADDRESS);
         order.setStatus(null);
         assertThat(service.isEligible(order)).isFalse();
+    }
+
+    // ---- repair service invoices -----------------------------------------
+
+    private static RepairJob paidRepairJob() {
+        RepairJob job = new RepairJob();
+        job.setId(UUID.randomUUID());
+        job.setJobNumber("RJ-2026-00007");
+        job.setCustomerName("Meera Shah");
+        job.setPhone("9876543210");
+        job.setStatus(RepairJob.Status.READY);
+        job.setFinalAmount(new BigDecimal("1180"));
+        job.setPaidAmount(new BigDecimal("1180"));
+        job.setPaymentMode(RepairJob.PaymentMode.RAZORPAY);
+        job.setPaymentReference("pay_rep");
+        return job;
+    }
+
+    @Test
+    void serviceInvoiceIsTaxInclusiveAndQueuedForTheErp() {
+        RepairJob job = paidRepairJob();
+        Invoice invoice = service.ensureServiceInvoice(job);
+
+        assertThat(invoice.kind()).isEqualTo(Invoice.Kind.SERVICE);
+        assertThat(invoice.getInvoiceNumber()).startsWith("SRV/");
+        assertThat(invoice.getTaxableValue()).isEqualByComparingTo("1000.00");
+        assertThat(invoice.getCgst()).isEqualByComparingTo("90.00");
+        assertThat(invoice.getSgst()).isEqualByComparingTo("90.00");
+        assertThat(invoice.getGrandTotal()).isEqualByComparingTo("1180.00");
+        assertThat(invoice.getLines()).hasSize(1);
+        assertThat(invoice.getLines().get(0).getHsnCode()).isEqualTo(InvoiceService.DEFAULT_REPAIR_SAC);
+        assertThat(invoice.getPlaceOfSupply()).as("no address: seller state").isEqualTo("08");
+
+        verify(erpSyncService).enqueueServiceInvoice(invoice);
+        verify(erpSyncService, never()).enqueueSale(any(), any());
+    }
+
+    @Test
+    void unpaidUndeliveredJobIsNotInvoicedAndNothingIsQueued() {
+        RepairJob job = paidRepairJob();
+        job.setPaidAmount(new BigDecimal("500"));
+        assertThat(service.isServiceEligible(job)).isFalse();
+        assertThatThrownBy(() -> service.ensureServiceInvoice(job)).isInstanceOf(EntityNotFoundException.class);
+        verify(erpSyncService, never()).enqueueServiceInvoice(any());
+
+        job.setStatus(RepairJob.Status.DELIVERED);
+        assertThat(service.isServiceEligible(job)).as("delivered: invoiced even if still owed").isTrue();
     }
 }

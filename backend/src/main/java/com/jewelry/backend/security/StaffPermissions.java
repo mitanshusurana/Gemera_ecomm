@@ -50,6 +50,7 @@ public final class StaffPermissions {
     public static final String CATEGORIES_WRITE = "categories.write";
     public static final String STOCK_READ = "stock.read";
     public static final String STOCK_WRITE = "stock.write";
+    public static final String RATES_WRITE = "rates.write";
     public static final String LABELS_PRINT = "labels.print";
     public static final String CUSTOMERS_READ = "customers.read";
     public static final String CUSTOMERS_WRITE = "customers.write";
@@ -77,7 +78,7 @@ public final class StaffPermissions {
             ORDERS_READ, ORDERS_WRITE, ORDERS_REFUND,
             INVOICES_READ,
             PRODUCTS_READ, PRODUCTS_WRITE, CATEGORIES_WRITE,
-            STOCK_READ, STOCK_WRITE, LABELS_PRINT,
+            STOCK_READ, STOCK_WRITE, LABELS_PRINT, RATES_WRITE,
             CUSTOMERS_READ, CUSTOMERS_WRITE,
             RFQ_WRITE, APPOINTMENTS_WRITE, INQUIRIES_WRITE, REPAIRS_WRITE,
             EXCHANGE_WRITE, TREASURE_WRITE, GIFTCARDS_WRITE, COUPONS_WRITE, REVIEWS_WRITE,
@@ -110,12 +111,12 @@ public final class StaffPermissions {
 
         m.put(ROLE_INVENTORY, new LinkedHashSet<>(List.of(
                 DASHBOARD_READ, PRODUCTS_READ, PRODUCTS_WRITE, CATEGORIES_WRITE,
-                STOCK_READ, STOCK_WRITE, LABELS_PRINT, ORDERS_READ)));
+                STOCK_READ, STOCK_WRITE, LABELS_PRINT, ORDERS_READ, RATES_WRITE)));
 
         m.put(ROLE_ACCOUNTS, new LinkedHashSet<>(List.of(
                 DASHBOARD_READ, ORDERS_READ, ORDERS_REFUND, INVOICES_READ,
                 CUSTOMERS_READ, COUPONS_WRITE, GIFTCARDS_WRITE, TREASURE_WRITE, EXCHANGE_WRITE,
-                SETTINGS_READ, ERP_SYNC, LOGS_READ)));
+                SETTINGS_READ, ERP_SYNC, LOGS_READ, RATES_WRITE)));
 
         m.put(ROLE_SUPPORT, new LinkedHashSet<>(List.of(
                 DASHBOARD_READ, ORDERS_READ, CUSTOMERS_READ,
@@ -166,8 +167,8 @@ public final class StaffPermissions {
             case ROLE_ADMIN -> "Owner: everything, including settings and staff accounts.";
             case ROLE_MANAGER -> "Everything except changing settings and managing staff.";
             case ROLE_SALES -> "Orders, customers, quotes, appointments, repairs, old gold, gift cards and labels.";
-            case ROLE_INVENTORY -> "Products, categories, stock, transfers, stock takes and labels; orders read-only.";
-            case ROLE_ACCOUNTS -> "Refunds, invoices, coupons, gift cards, ERP sync and audit logs; settings read-only.";
+            case ROLE_INVENTORY -> "Products, categories, stock, transfers, stock takes, labels and the daily metal rate; orders read-only.";
+            case ROLE_ACCOUNTS -> "Refunds, invoices, coupons, gift cards, the daily metal rate, ERP sync and audit logs; settings read-only.";
             case ROLE_SUPPORT -> "Appointments, inquiries, repairs and reviews; orders and customers read-only.";
             default -> "";
         };

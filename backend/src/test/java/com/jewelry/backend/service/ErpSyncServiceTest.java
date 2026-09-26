@@ -8,6 +8,7 @@ import com.jewelry.backend.entity.GiftCard;
 import com.jewelry.backend.entity.Invoice;
 import com.jewelry.backend.entity.InvoiceLine;
 import com.jewelry.backend.entity.Order;
+import com.jewelry.backend.entity.RepairJob;
 import com.jewelry.backend.entity.User;
 import com.jewelry.backend.repository.ErpSyncEventRepository;
 import com.jewelry.backend.repository.ExchangeRequestRepository;
@@ -56,6 +57,7 @@ class ErpSyncServiceTest {
         invoiceRepository = mock(InvoiceRepository.class);
         when(eventRepository.findByOrderIdAndEventType(any(), anyString())).thenReturn(Optional.empty());
         when(eventRepository.findByExchangeRequestIdAndEventType(any(), anyString())).thenReturn(Optional.empty());
+        when(eventRepository.findByInvoiceIdAndEventType(any(), anyString())).thenReturn(Optional.empty());
         when(eventRepository.save(any(ErpSyncEvent.class))).thenAnswer(inv -> inv.getArgument(0));
         when(giftCardRepository.findByCodeIgnoreCase(anyString())).thenReturn(Optional.empty());
 
@@ -385,5 +387,161 @@ class ErpSyncServiceTest {
                 .hasMessageContaining(ErpSyncService.NOT_CONFIGURED);
         assertThatThrownBy(() -> service.syncExchangeNow(UUID.randomUUID()))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    // ---- repair service invoices ------------------------------------------
+
+    private static RepairJob repairJob(BigDecimal paid, RepairJob.PaymentMode mode, String reference) {
+        RepairJob job = new RepairJob();
+        job.setId(UUID.randomUUID());
+        job.setJobNumber("RJ-2026-00042");
+        job.setCustomerName("Meera Shah");
+        job.setPhone("9876543210");
+        job.setEmail("meera@example.com");
+        job.setStatus(RepairJob.Status.DELIVERED);
+        job.setFinalAmount(new BigDecimal("1180"));
+        job.setPaidAmount(paid);
+        job.setPaymentMode(mode);
+        job.setPaymentReference(reference);
+        return job;
+    }
+
+    /** Tax-inclusive 1,180 repair bill: 1,000 taxable, 90 + 90 GST at 18%, SAC 998722. */
+    private static Invoice serviceInvoice(RepairJob job) {
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+        invoice.setRepairJob(job);
+        invoice.setInvoiceKind(Invoice.Kind.SERVICE);
+        invoice.setInvoiceNumber("SRV/2026-27/00003");
+        invoice.setInvoiceDate(LocalDate.of(2026, 9, 20));
+        invoice.setBuyerName("Meera Shah");
+        invoice.setSellerStateCode("08");
+        invoice.setBuyerStateCode("08");
+        invoice.setPlaceOfSupply("08");
+        invoice.setTaxableValue(new BigDecimal("1000.00"));
+        invoice.setCgst(new BigDecimal("90.00"));
+        invoice.setSgst(new BigDecimal("90.00"));
+        invoice.setIgst(BigDecimal.ZERO);
+        invoice.setShipping(BigDecimal.ZERO);
+        invoice.setRoundOff(BigDecimal.ZERO);
+        invoice.setGrandTotal(new BigDecimal("1180.00"));
+        InvoiceLine line = line(invoice, 1, null, null, "1000", "18");
+        line.setDescription("Resizing - Ring: 22K band (job RJ-2026-00042)");
+        line.setHsnCode("998722");
+        invoice.getLines().add(line);
+        return invoice;
+    }
+
+    @Test
+    void serviceInvoicePostsAsAServiceSaleUnderTheJobNumber() throws Exception {
+        RepairJob job = repairJob(new BigDecimal("1180"), RepairJob.PaymentMode.RAZORPAY, "pay_rep_1");
+        Invoice invoice = serviceInvoice(job);
+
+        ErpSyncEvent event = service.enqueueServiceInvoice(invoice).orElseThrow();
+        assertThat(event.getEventType()).isEqualTo(ErpSyncEvent.TYPE_SALE);
+        assertThat(event.getStatus()).isEqualTo(ErpSyncEvent.STATUS_PENDING);
+        assertThat(event.getOrder()).isNull();
+        assertThat(event.getInvoice()).isSameAs(invoice);
+
+        JsonNode body = json.readTree(event.getPayload());
+        assertThat(body.get("external_ref").asText()).isEqualTo("RJ-2026-00042");
+        assertThat(body.get("invoice_no").asText()).isEqualTo("SRV/2026-27/00003");
+        assertThat(body.get("invoice_date").asText()).isEqualTo("2026-09-20");
+        assertThat(body.get("place_of_supply").asText()).as("repairs collect no address: seller state").isEqualTo("08");
+
+        JsonNode customer = body.get("customer");
+        assertThat(customer.get("name").asText()).isEqualTo("Meera Shah");
+        assertThat(customer.get("email").asText()).isEqualTo("meera@example.com");
+        assertThat(customer.get("phone").asText()).isEqualTo("9876543210");
+        assertThat(customer.get("state_code").asText()).isEqualTo("08");
+        assertThat(customer.get("gstin").isNull()).isTrue();
+        assertThat(customer.get("address_line1").isNull()).isTrue();
+
+        assertThat(body.get("lines")).hasSize(1);
+        JsonNode line = body.get("lines").get(0);
+        assertThat(line.get("description").asText()).isEqualTo("Service - Resizing - Ring: 22K band (job RJ-2026-00042)");
+        assertThat(line.get("sku").isNull()).isTrue();
+        assertThat(line.get("material_code").isNull()).isTrue();
+        assertThat(line.get("hsn_sac_code").asText()).isEqualTo("998722");
+        assertThat(line.get("quantity").asInt()).isEqualTo(1);
+        assertThat(line.get("taxable_value").decimalValue()).isEqualByComparingTo("1000.00");
+        assertThat(line.get("gst_rate").decimalValue()).isEqualByComparingTo("18.00");
+        assertThat(line.get("is_service").asBoolean()).isTrue();
+
+        JsonNode totals = body.get("totals");
+        assertThat(totals.get("taxable").decimalValue()).isEqualByComparingTo("1000.00");
+        assertThat(totals.get("cgst").decimalValue()).isEqualByComparingTo("90.00");
+        assertThat(totals.get("sgst").decimalValue()).isEqualByComparingTo("90.00");
+        assertThat(totals.get("igst").decimalValue()).isEqualByComparingTo("0.00");
+        assertThat(totals.get("grand_total").decimalValue()).isEqualByComparingTo("1180.00");
+        assertThat(body.get("other_charges").decimalValue()).isEqualByComparingTo("0.00");
+
+        JsonNode payment = body.get("payment");
+        assertThat(payment.get("mode").asText()).isEqualTo("Razorpay");
+        assertThat(payment.get("reference").asText()).isEqualTo("pay_rep_1");
+        assertThat(payment.get("amount").decimalValue()).isEqualByComparingTo("1180.00");
+        assertThat(payment.get("date").asText()).isEqualTo("2026-09-20");
+    }
+
+    @Test
+    void unpaidServiceInvoiceCarriesNoPaymentAndCashIsLabelledAsRecorded() throws Exception {
+        RepairJob unpaid = repairJob(BigDecimal.ZERO, null, null);
+        JsonNode body = json.readTree(service.enqueueServiceInvoice(serviceInvoice(unpaid)).orElseThrow().getPayload());
+        assertThat(body.has("payment")).as("partly or unpaid: no payment block").isFalse();
+
+        RepairJob partly = repairJob(new BigDecimal("500"), RepairJob.PaymentMode.UPI, "upi-1");
+        body = json.readTree(service.enqueueServiceInvoice(serviceInvoice(partly)).orElseThrow().getPayload());
+        assertThat(body.has("payment")).isFalse();
+
+        RepairJob cash = repairJob(new BigDecimal("1180"), RepairJob.PaymentMode.CASH, null);
+        body = json.readTree(service.enqueueServiceInvoice(serviceInvoice(cash)).orElseThrow().getPayload());
+        assertThat(body.get("payment").get("mode").asText()).isEqualTo("Cash");
+        assertThat(body.get("payment").get("reference").isNull()).isTrue();
+
+        assertThat(ErpSyncService.paymentModeLabel(RepairJob.PaymentMode.CARD)).isEqualTo("Card");
+        assertThat(ErpSyncService.paymentModeLabel(RepairJob.PaymentMode.OTHER)).isEqualTo("Other");
+        assertThat(ErpSyncService.paymentModeLabel(null)).isEqualTo("Cash");
+    }
+
+    @Test
+    void serviceInvoiceEventIsRefreshedWithThePaymentUntilSent() throws Exception {
+        RepairJob job = repairJob(BigDecimal.ZERO, null, null);
+        Invoice invoice = serviceInvoice(job);
+        ErpSyncEvent pending = service.enqueueServiceInvoice(invoice).orElseThrow();
+        assertThat(json.readTree(pending.getPayload()).has("payment")).isFalse();
+        when(eventRepository.findByInvoiceIdAndEventType(invoice.getId(), ErpSyncEvent.TYPE_SALE)).thenReturn(Optional.of(pending));
+
+        // The job is paid after delivery: the pending row now carries the payment.
+        job.setPaidAmount(new BigDecimal("1180"));
+        job.setPaymentMode(RepairJob.PaymentMode.RAZORPAY);
+        job.setPaymentReference("pay_late");
+        ErpSyncEvent refreshed = service.enqueueServiceInvoice(invoice).orElseThrow();
+        assertThat(refreshed).isSameAs(pending);
+        assertThat(json.readTree(refreshed.getPayload()).get("payment").get("reference").asText()).isEqualTo("pay_late");
+
+        // Once sent, the ERP has the invoice; the snapshot is left alone.
+        pending.setStatus(ErpSyncEvent.STATUS_SENT);
+        String sentPayload = pending.getPayload();
+        job.setPaymentReference("pay_changed");
+        assertThat(service.enqueueServiceInvoice(invoice).orElseThrow().getPayload()).isEqualTo(sentPayload);
+    }
+
+    @Test
+    void onlyServiceInvoicesWithAJobAreEnqueuedThisWay() {
+        Order order = order();
+        assertThat(service.enqueueServiceInvoice(invoice(order, "0", "10350"))).isEmpty();
+
+        Invoice orphan = serviceInvoice(repairJob(BigDecimal.ZERO, null, null));
+        orphan.setRepairJob(null);
+        assertThat(service.enqueueServiceInvoice(orphan)).isEmpty();
+        assertThat(service.enqueueServiceInvoice(null)).isEmpty();
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void syncServiceInvoiceNowRefusesWhenTheIntegrationIsOff() {
+        assertThatThrownBy(() -> service.syncServiceInvoiceNow(UUID.randomUUID()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(ErpSyncService.NOT_CONFIGURED);
     }
 }

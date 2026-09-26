@@ -20,6 +20,9 @@ public interface ErpSyncEventRepository extends JpaRepository<ErpSyncEvent, UUID
 
     Optional<ErpSyncEvent> findByTreasureInstallmentIdAndEventType(UUID treasureInstallmentId, String eventType);
 
+    /** Repair service invoices: keyed on the invoice because the job has no order. */
+    Optional<ErpSyncEvent> findByInvoiceIdAndEventType(UUID invoiceId, String eventType);
+
     /** Per-RMA credit notes: keyed on the RMA number instead of the order. */
     Optional<ErpSyncEvent> findByReferenceAndEventType(String reference, String eventType);
 

@@ -250,7 +250,7 @@ public class InvoiceService {
         }
         Invoice invoice = invoiceRepository.save(buildService(job));
         LOGGER.info("Issued service invoice " + invoice.getInvoiceNumber() + " for repair job " + job.getJobNumber());
-        // Not enqueued to the ERP: the bridge posts order invoices only.
+        erpSyncService.enqueueServiceInvoice(invoice);
         return invoice;
     }
 
@@ -281,7 +281,12 @@ public class InvoiceService {
                 if (reloaded == null || !isServiceEligible(reloaded)) {
                     return null;
                 }
-                return ensureServiceInvoice(reloaded);
+                Invoice invoice = ensureServiceInvoice(reloaded);
+                // Called again on payment completion: a job delivered before it
+                // was paid already has its invoice, and the outbox row (if not
+                // yet sent) picks up the payment that has just been recorded.
+                erpSyncService.enqueueServiceInvoice(invoice);
+                return invoice;
             });
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Service invoice could not be issued for repair job " + jobId

@@ -18,8 +18,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Old gold quote arithmetic with the gold rate and settings mocked. The
- * USD-to-INR conversion itself is covered by {@link MetalRateServiceTest}.
+ * Old gold quote arithmetic with the metal rates and settings mocked. The
+ * feed, FX and locked-board precedence are covered by {@link MetalRateServiceTest}.
  */
 class ExchangeServiceTest {
 
@@ -146,15 +146,33 @@ class ExchangeServiceTest {
     }
 
     @Test
-    void silverRateComesFromSettingsAndIsAlwaysIndicative() {
-        ExchangeService.FineRate fallback = service.fineRate("SILVER");
-        assertThat(fallback.inrPerGram()).isEqualByComparingTo("95.00");
-        assertThat(fallback.indicative()).isTrue();
+    void silverRateComesFromTheBoardOrFeedWhenItIsLive() {
+        when(metalRateService.fineRate("SILVER"))
+                .thenReturn(new MetalRateService.FineRate(new BigDecimal("163.28"), false));
+        setting(ExchangeService.SETTING_SILVER_RATE, "101.25"); // ignored while the feed is live
+        ExchangeService.FineRate rate = service.fineRate("SILVER");
+        assertThat(rate.inrPerGram()).isEqualByComparingTo("163.28");
+        assertThat(rate.indicative()).isFalse();
+    }
+
+    @Test
+    void indicativeSilverPrefersTheSettingThenTheFeedFigureThenTheConstant() {
+        when(metalRateService.fineRate("SILVER"))
+                .thenReturn(new MetalRateService.FineRate(new BigDecimal("160.00"), true));
+        ExchangeService.FineRate fromFeed = service.fineRate("SILVER");
+        assertThat(fromFeed.inrPerGram()).isEqualByComparingTo("160.00");
+        assertThat(fromFeed.indicative()).isTrue();
 
         setting(ExchangeService.SETTING_SILVER_RATE, "101.25");
         ExchangeService.FineRate configured = service.fineRate("SILVER");
         assertThat(configured.inrPerGram()).isEqualByComparingTo("101.25");
         assertThat(configured.indicative()).isTrue();
+
+        when(metalRateService.fineRate("SILVER")).thenReturn(null);
+        when(settings.findBySettingKey(ExchangeService.SETTING_SILVER_RATE)).thenReturn(Optional.empty());
+        ExchangeService.FineRate constant = service.fineRate("SILVER");
+        assertThat(constant.inrPerGram()).isEqualByComparingTo("95.00");
+        assertThat(constant.indicative()).isTrue();
     }
 
     // ---- quote ---------------------------------------------------------------

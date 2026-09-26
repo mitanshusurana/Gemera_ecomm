@@ -9,6 +9,7 @@ import com.jewelry.backend.entity.GiftCard;
 import com.jewelry.backend.entity.Invoice;
 import com.jewelry.backend.entity.InvoiceLine;
 import com.jewelry.backend.entity.Order;
+import com.jewelry.backend.entity.RepairJob;
 import com.jewelry.backend.entity.TreasureChestAccount;
 import com.jewelry.backend.entity.TreasureInstallment;
 import com.jewelry.backend.entity.User;
@@ -45,9 +46,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Outbox that pushes store invoices (sales), refunds (credit notes), old
- * gold purchases and Treasure plan installments (advances) to the ERP's
- * e-commerce integration endpoints.
+ * Outbox that pushes store invoices (sales, including repair service
+ * invoices), refunds (credit notes), old gold purchases and Treasure plan
+ * installments (advances) to the ERP's e-commerce integration endpoints.
  *
  * Writing the event is part of the order flow; delivering it is not. The
  * scheduler retries failed deliveries every five minutes, except after a
@@ -205,6 +206,58 @@ public class ErpSyncService {
         return eventRepository.save(event);
     }
 
+    /**
+     * Records a repair job's service invoice (kind SERVICE) as a sale for
+     * the ERP: the same endpoint as an order's invoice, keyed on the invoice
+     * because the job has no order. Idempotent per invoice; while the row
+     * has not been sent, the payload is refreshed on every call so a payment
+     * that completes after the invoice was issued (a job delivered before
+     * it was paid) still travels with it. Empty for any other invoice.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Optional<ErpSyncEvent> enqueueServiceInvoice(Invoice invoice) {
+        if (invoice == null || invoice.getId() == null || invoice.kind() != Invoice.Kind.SERVICE
+                || invoice.getRepairJob() == null) {
+            return Optional.empty();
+        }
+        Optional<ErpSyncEvent> existing = eventRepository.findByInvoiceIdAndEventType(invoice.getId(), ErpSyncEvent.TYPE_SALE);
+        if (existing.isPresent()) {
+            ErpSyncEvent event = existing.get();
+            if (!ErpSyncEvent.STATUS_SENT.equals(event.getStatus())) {
+                String payload = serviceInvoicePayload(invoice);
+                if (!payload.equals(event.getPayload())) {
+                    event.setPayload(payload);
+                    return Optional.of(eventRepository.save(event));
+                }
+            }
+            return existing;
+        }
+        ErpSyncEvent event = newEvent(null, ErpSyncEvent.TYPE_SALE, serviceInvoicePayload(invoice));
+        event.setInvoice(invoice);
+        return Optional.of(eventRepository.save(event));
+    }
+
+    /** Admin action for one service invoice: send its SALE now, ignoring the attempt cap and the 409 hold. */
+    public void syncServiceInvoiceNow(UUID invoiceId) {
+        if (!isConfigured()) {
+            throw new IllegalStateException(NOT_CONFIGURED + ". Set ERP_BASE_URL and ERP_API_KEY on the API.");
+        }
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new EntityNotFoundException("Invoice not found"));
+        ErpSyncEvent event = enqueueServiceInvoice(invoice)
+                .orElseThrow(() -> new IllegalArgumentException("Only a repair service invoice is posted this way."));
+        if (!ErpSyncEvent.STATUS_SENT.equals(event.getStatus())) {
+            deliver(event);
+        }
+    }
+
+    /** The outbox row for a service invoice, if any (admin repair detail). */
+    @Transactional(readOnly = true)
+    public Optional<ErpSyncEvent> findServiceInvoiceEvent(UUID invoiceId) {
+        return invoiceId == null ? Optional.empty()
+                : eventRepository.findByInvoiceIdAndEventType(invoiceId, ErpSyncEvent.TYPE_SALE);
+    }
+
     /** Admin action for one exchange request: send its OLD_GOLD_PURCHASE now, ignoring the attempt cap. */
     public void syncExchangeNow(UUID exchangeRequestId) {
         if (!isConfigured()) {
@@ -360,6 +413,9 @@ public class ErpSyncService {
         if (event.getTreasureInstallment() != null) {
             return "treasure installment " + event.getTreasureInstallment().getId();
         }
+        if (event.getInvoice() != null) {
+            return "service invoice " + event.getInvoice().getInvoiceNumber();
+        }
         return "?";
     }
 
@@ -512,6 +568,94 @@ public class ErpSyncService {
             body.put("payment", payment);
         }
         return toJson(body);
+    }
+
+    /**
+     * Body for POST /api/v1/integrations/ecommerce/sales for a repair
+     * service invoice. A repair collects no address, so the customer's state
+     * is the seller's (supply at the counter, CGST + SGST). Each line is a
+     * service (SAC, no material code) that the ERP books as service income
+     * rather than material sales. The payment block is present only once the
+     * job is fully paid: the mode and reference are what the job recorded
+     * (Razorpay online, or cash / UPI / card entered by staff).
+     */
+    private String serviceInvoicePayload(Invoice invoice) {
+        RepairJob job = invoice.getRepairJob();
+
+        Map<String, Object> customer = new LinkedHashMap<>();
+        customer.put("name", notBlank(invoice.getBuyerName()) ? invoice.getBuyerName()
+                : (notBlank(job.getCustomerName()) ? job.getCustomerName().trim() : "Customer"));
+        customer.put("email", notBlank(job.getEmail()) ? job.getEmail().trim() : null);
+        customer.put("phone", notBlank(job.getPhone()) ? job.getPhone().trim() : null);
+        customer.put("gstin", null);
+        customer.put("pan", null);
+        String state = invoice.getPlaceOfSupply() != null ? invoice.getPlaceOfSupply()
+                : (invoice.getBuyerStateCode() != null ? invoice.getBuyerStateCode() : invoice.getSellerStateCode());
+        customer.put("state_code", state);
+        customer.put("address_line1", null);
+        customer.put("city", null);
+        customer.put("pincode", null);
+
+        List<Map<String, Object>> lines = new ArrayList<>();
+        for (InvoiceLine line : invoice.getLines()) {
+            Map<String, Object> l = new LinkedHashMap<>();
+            String description = line.getDescription() == null ? "" : line.getDescription().trim();
+            l.put("description", description.startsWith("Service - ") ? description : "Service - " + description);
+            l.put("sku", null);
+            l.put("material_code", null);
+            l.put("hsn_sac_code", line.getHsnCode());
+            l.put("quantity", line.getQuantity() <= 0 ? 1 : line.getQuantity());
+            l.put("taxable_value", money(line.getTaxableValue()));
+            l.put("gst_rate", money(line.getGstRate()));
+            l.put("is_service", Boolean.TRUE);
+            lines.add(l);
+        }
+
+        Map<String, Object> totals = new LinkedHashMap<>();
+        totals.put("taxable", money(invoice.getTaxableValue()));
+        totals.put("cgst", money(invoice.getCgst()));
+        totals.put("sgst", money(invoice.getSgst()));
+        totals.put("igst", money(invoice.getIgst()));
+        totals.put("grand_total", money(invoice.getGrandTotal()));
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("external_ref", job.getJobNumber());
+        body.put("invoice_no", invoice.getInvoiceNumber());
+        body.put("invoice_date", invoice.getInvoiceDate() == null ? null : invoice.getInvoiceDate().toString());
+        body.put("customer", customer);
+        body.put("place_of_supply", state);
+        body.put("lines", lines);
+        body.put("other_charges", BigDecimal.ZERO.setScale(2));
+        body.put("totals", totals);
+        if (InvoiceService.isFullyPaid(job) && money(invoice.getGrandTotal()).signum() > 0) {
+            Map<String, Object> payment = new LinkedHashMap<>();
+            payment.put("mode", paymentModeLabel(job.getPaymentMode()));
+            payment.put("reference", notBlank(job.getPaymentReference()) ? job.getPaymentReference().trim() : null);
+            payment.put("amount", money(invoice.getGrandTotal()));
+            payment.put("date", invoice.getInvoiceDate() == null ? LocalDate.now(InvoiceService.INDIA).toString()
+                    : invoice.getInvoiceDate().toString());
+            body.put("payment", payment);
+        }
+        return toJson(body);
+    }
+
+    /** The ERP's payment mode label for what the repair job recorded; a missing mode is a counter (cash) payment. */
+    static String paymentModeLabel(RepairJob.PaymentMode mode) {
+        if (mode == null) {
+            return "Cash";
+        }
+        switch (mode) {
+            case RAZORPAY:
+                return "Razorpay";
+            case CASH:
+                return "Cash";
+            case UPI:
+                return "UPI";
+            case CARD:
+                return "Card";
+            default:
+                return "Other";
+        }
     }
 
     /**

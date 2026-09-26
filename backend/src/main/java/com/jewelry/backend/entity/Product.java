@@ -221,6 +221,25 @@ public class Product extends BaseEntity {
     private String plainOrStudded; // PLAIN, STUDDED (JEWELLERY only)
     private String gemGrade; // PRECIOUS, SEMI_PRECIOUS, ORGANIC, LAB_GROWN
 
+    // 7. Pricing from the metal rate (pricing/PricingEngine). pricingMode is
+    // FIXED (default; null on rows that pre-date the column) or METAL_RATE.
+    // For METAL_RATE, pricingMetal/pricingPurity/pricingNetWeightGrams fall
+    // back to metalDetails, price is recomputed from the day's board on save,
+    // on every lock and by the reprice endpoint; metalRateUsed and pricedAt
+    // are server-stamped. Order, cart and invoice paths keep snapshotting
+    // price, so a reprice never touches past documents.
+    private String pricingMode; // FIXED | METAL_RATE
+    private String pricingMetal; // GOLD | SILVER | PLATINUM
+    private String pricingPurity; // 24K, 22K, 18K, 14K, 999, 925, 950
+    private BigDecimal pricingNetWeightGrams;
+    private String makingChargeType; // PER_GRAM | PERCENT | FIXED
+    private BigDecimal makingChargeValue;
+    private BigDecimal wastagePct;
+    private BigDecimal stoneValue;
+    private BigDecimal otherCharges;
+    private BigDecimal metalRateUsed;
+    private java.time.LocalDateTime pricedAt;
+
     @Embeddable
     @Data
     public static class CustomizationOption {

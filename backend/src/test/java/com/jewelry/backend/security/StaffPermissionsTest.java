@@ -73,6 +73,17 @@ class StaffPermissionsTest {
     }
 
     @Test
+    void ratesAreWrittenByInventoryAndAccountsButNotSalesOrSupport() {
+        assertThat(StaffPermissions.ALL).contains(StaffPermissions.RATES_WRITE);
+        assertThat(StaffPermissions.roleHas(StaffPermissions.ROLE_ADMIN, StaffPermissions.RATES_WRITE)).isTrue();
+        assertThat(StaffPermissions.roleHas(StaffPermissions.ROLE_MANAGER, StaffPermissions.RATES_WRITE)).isTrue();
+        assertThat(StaffPermissions.roleHas(StaffPermissions.ROLE_INVENTORY, StaffPermissions.RATES_WRITE)).isTrue();
+        assertThat(StaffPermissions.roleHas(StaffPermissions.ROLE_ACCOUNTS, StaffPermissions.RATES_WRITE)).isTrue();
+        assertThat(StaffPermissions.roleHas(StaffPermissions.ROLE_SALES, StaffPermissions.RATES_WRITE)).isFalse();
+        assertThat(StaffPermissions.roleHas(StaffPermissions.ROLE_SUPPORT, StaffPermissions.RATES_WRITE)).isFalse();
+    }
+
+    @Test
     void permissionKeysAreUniqueAndDotSeparated() {
         assertThat(StaffPermissions.ALL).doesNotHaveDuplicates();
         assertThat(StaffPermissions.ALL).allMatch(key -> key.matches("[a-z]+\\.[a-z]+"));

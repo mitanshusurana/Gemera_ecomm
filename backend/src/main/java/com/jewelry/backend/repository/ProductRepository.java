@@ -26,6 +26,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     // Label QR codes and the admin scanner resolve a product by SKU.
     Optional<Product> findFirstBySkuIgnoreCase(String sku);
 
+    // Products priced from the metal rate (repriced on every board lock).
+    List<Product> findByPricingMode(String pricingMode);
+
     // Certificate verification falls back to the product's own lab report
     // number when no Certificate row exists (OPERATIONS-CONTRACT.md section 2).
     @Query("SELECT p FROM Product p WHERE p.labReportNumber IS NOT NULL AND UPPER(TRIM(p.labReportNumber)) = UPPER(:reportNumber)")

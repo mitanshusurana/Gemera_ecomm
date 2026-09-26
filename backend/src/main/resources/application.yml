@@ -98,8 +98,20 @@ management:
       exposure:
         include: health,info
 
+# Metal rates (MetalRateService). The default provider (global setting
+# metalRateProvider=GOLD_API_FREE) needs no key; GOLDAPI_IO uses goldapi.key.
+# FX: Frankfurter (ECB), then open.er-api.com, then the usdRate setting.
+# Loadings come from the metalRateDutyPct / metalRatePremiumPct settings;
+# the daily auto-lock hour (IST) from metalRateAutoLockHour.
+metal-rates:
+  gold-api-url: ${METAL_RATES_GOLD_API_URL:https://api.gold-api.com/price}
+  fx-url: ${METAL_RATES_FX_URL:https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR}
+  fx-fallback-url: ${METAL_RATES_FX_FALLBACK_URL:https://open.er-api.com/v6/latest/USD}
+  cache-minutes: ${METAL_RATES_CACHE_MINUTES:10}
+
+# Optional keyed provider (metalRateProvider=GOLDAPI_IO); blank disables it.
 goldapi:
-  key: ${GOLDAPI_KEY}
+  key: ${GOLDAPI_KEY:}
   base-url: https://www.goldapi.io/api
   cache-minutes: 15
 

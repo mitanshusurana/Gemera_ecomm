@@ -169,6 +169,21 @@ public class ProductDTO {
     private String plainOrStudded;
     private String gemGrade;
 
+    // Pricing from the metal rate (Product section 7). priceBreakdown is
+    // computed by the mapper from the stored fields; null for FIXED products.
+    private String pricingMode;
+    private String pricingMetal;
+    private String pricingPurity;
+    private BigDecimal pricingNetWeightGrams;
+    private String makingChargeType;
+    private BigDecimal makingChargeValue;
+    private BigDecimal wastagePct;
+    private BigDecimal stoneValue;
+    private BigDecimal otherCharges;
+    private BigDecimal metalRateUsed;
+    private java.time.LocalDateTime pricedAt;
+    private com.jewelry.backend.pricing.PriceBreakdown priceBreakdown;
+
     @Data
     public static class CustomizationOptionDTO {
         private String type;

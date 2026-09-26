@@ -18,14 +18,15 @@ import java.time.LocalDateTime;
  * order flow only writes a row here (with the JSON snapshot it will send)
  * and ErpSyncService.flush() delivers it later. One row per (order, event
  * type): a sale is posted once, and a credit note once. Old-gold purchases
- * are keyed on the exchange request and advances (Treasure installments) on
- * the installment instead of an order, so the uniqueness covers (order,
- * exchange request, installment, event type); in PostgreSQL the NULL side
+ * are keyed on the exchange request, advances (Treasure installments) on
+ * the installment and repair service invoices (which have no order) on the
+ * invoice instead of an order, so the uniqueness covers (order, exchange
+ * request, installment, invoice, event type); in PostgreSQL the NULL side
  * never collides.
  */
 @Entity
 @Table(name = "erp_sync_events",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"order_id", "exchange_request_id", "treasure_installment_id", "event_type"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"order_id", "exchange_request_id", "treasure_installment_id", "invoice_id", "event_type"}))
 @Getter
 @Setter
 public class ErpSyncEvent extends BaseEntity {
@@ -53,6 +54,12 @@ public class ErpSyncEvent extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "treasure_installment_id")
     private TreasureInstallment treasureInstallment;
+
+    // Set instead of order for the SALE of a repair service invoice (kind
+    // SERVICE): the invoice belongs to a repair job, not an order.
+    @ManyToOne
+    @JoinColumn(name = "invoice_id")
+    private Invoice invoice;
 
     // Business key for events that may repeat per order: the RMA number of a
     // return's credit note. Null on the one-per-order rows.
