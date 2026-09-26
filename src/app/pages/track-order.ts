@@ -54,11 +54,11 @@ import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
            <div class="space-y-4">
               <div *ngFor="let item of order()?.items" class="flex items-center gap-4 bg-[#f5f5f7] p-3 rounded-[12px]">
                  <div class="w-16 h-16 bg-white rounded-[12px] border border-[#e0e0e0] flex items-center justify-center overflow-hidden">
-                    <img *ngIf="item.product.imageUrl || item.product.images?.[0]" [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''" width="64" height="64" class="w-full h-full object-cover" [alt]="item.product.name">
-                    <span *ngIf="!item.product.imageUrl && !item.product.images?.[0]" class="text-xl">💎</span>
+                    <img *ngIf="item.product?.imageUrl || item.product?.images?.[0]" [ngSrc]="item.product?.imageUrl || item.product?.images?.[0] || ''" width="64" height="64" class="w-full h-full object-cover" [alt]="item.product?.name || item.description || 'Item'">
+                    <span *ngIf="!item.product?.imageUrl && !item.product?.images?.[0]" class="text-xl">💎</span>
                  </div>
                  <div class="flex-1">
-                    <h4 class="font-sans font-semibold text-sm text-[#1d1d1f]">{{ item.product.name }}</h4>
+                    <h4 class="font-sans font-semibold text-sm text-[#1d1d1f]">{{ item.product?.name || item.description || 'Custom piece' }}</h4>
                     <p class="text-xs text-[#6e6e73]">{{ item.selectedMetal?.name }} {{ item.selectedDiamond?.name }}</p>
                  </div>
                  <div class="text-right">

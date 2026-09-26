@@ -166,19 +166,19 @@ import { environment } from "../../environments/environment";
                         class="flex gap-4 pb-4 border-b border-[#f0f0f0] last:border-b-0"
                       >
                         <img
-                          [ngSrc]="item.product.imageUrl || item.product.images?.[0] || ''"
-                          [alt]="item.product.name"
+                          [ngSrc]="item.product?.imageUrl || item.product?.images?.[0] || ''"
+                          [alt]="item.product?.name || item.description || 'Item'"
                           width="80"
                           height="80"
                           class="rounded-[12px] object-cover"
-                          *ngIf="item.product.imageUrl || item.product.images?.[0]"
+                          *ngIf="item.product?.imageUrl || item.product?.images?.[0]"
                         />
                         <div class="flex-1">
                           <p class="font-semibold text-[#1d1d1f]">
-                            {{ item.product.name }}
+                            {{ item.product?.name || item.description || 'Custom piece' }}
                           </p>
                           <p class="text-sm text-[#6e6e73]">
-                            SKU: {{ item.product.sku || 'N/A' }}
+                            SKU: {{ item.product?.sku || 'N/A' }}
                           </p>
                           <p class="text-sm text-[#6e6e73]">
                             Qty: {{ item.quantity }}

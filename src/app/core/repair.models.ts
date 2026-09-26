@@ -43,6 +43,11 @@ export interface RepairJob {
   finalAmount: number | null;
   paidAmount: number | null;
   paymentMode: string | null;
+  /** Rupees still owed (bill, else estimate, less paid); null before an estimate exists. */
+  amountDue: number | null;
+  /** Service tax invoice, once issued. */
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
   createdAt: string;
   updatedAt: string;
   events: RepairJobEvent[];
@@ -63,8 +68,33 @@ export interface RepairTracking {
   promisedDate: string | null;
   finalAmount: number | null;
   paidAmount: number | null;
+  /** Rupees still owed; null before an estimate exists. */
+  amountDue: number | null;
+  /** True when the amount due can be settled online right now (approved, in progress, ready). */
+  canPayOnline: boolean;
+  /** Service tax invoice number once issued (delivered or fully paid); null before. */
+  invoiceNumber: string | null;
   createdAt: string;
   events: RepairJobEvent[];
+}
+
+/** POST /repairs/{jobNumber}/payments/order: the Razorpay order to open checkout with (amount in paise). */
+export interface RepairPaymentOrder {
+  jobNumber: string;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+  amountInr: number;
+  customerName: string;
+  email: string | null;
+  phone: string;
+}
+
+/** POST /repairs/{jobNumber}/payments/verify: what Razorpay's checkout handler returns. */
+export interface RepairPaymentVerification {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
 }
 
 export interface RepairRequest {

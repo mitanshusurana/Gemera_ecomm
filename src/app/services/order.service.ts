@@ -6,6 +6,18 @@ import { Order } from '../core/models';
 import { CreateOrderRequest } from '../core/dtos';
 import { ApiConfigService } from './api-config.service';
 
+/** Mirrors ManualOrderService.PaymentOrder on the API. */
+export interface PendingPaymentOrder {
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  razorpayOrderId: string;
+  /** Paise. */
+  amount: number;
+  currency: string;
+  amountInr: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -25,6 +37,15 @@ export class OrderService {
 
   trackOrder(orderId: string): Observable<Order> {
     return this.http.get<Order>(`${this.baseUrl}/track/${orderId}`);
+  }
+
+  /**
+   * POST /orders/{id}/payment-order: the Razorpay order for one of my orders
+   * that is still PENDING_PAYMENT (an accepted quote, an exchange balance).
+   * `amount` is in paise.
+   */
+  paymentOrder(orderId: string): Observable<PendingPaymentOrder> {
+    return this.http.post<PendingPaymentOrder>(`${this.baseUrl}/${orderId}/payment-order`, {});
   }
 
   getUserOrders(page: number = 0, size: number = 10, status: string = 'ALL'): Observable<any> {

@@ -200,6 +200,12 @@ import { ToastService } from "../services/toast.service";
                 </span>
               </label>
 
+              <div>
+                <label class="block text-sm font-medium text-[#1d1d1f] mb-2">Referral code <span class="text-[#6e6e73] font-normal">(optional)</span></label>
+                <input type="text" [(ngModel)]="referralCode" name="referralCode" autocomplete="off" autocapitalize="characters" spellcheck="false" class="input-field uppercase tracking-[0.08em]" placeholder="e.g. PRIYA-7K2Q" />
+                <p class="text-xs text-[#6e6e73] mt-1">Joining on a friend's recommendation? Enter their code and you both earn bonus points on your first order.</p>
+              </div>
+
               <label class="flex items-start gap-2">
                 <input
                   type="checkbox"
@@ -264,11 +270,21 @@ export class LoginComponent {
   rememberMe = false;
   /** Registration only; default unchecked (growth contract, section 3). */
   marketingOptIn = false;
+  /** Optional referral code; prefilled from ?ref= (the share link) and shown in register mode. */
+  referralCode = "";
 
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private toastService = inject(ToastService);
+
+  constructor() {
+    const ref = this.route.snapshot.queryParams["ref"];
+    if (typeof ref === "string" && ref.trim()) {
+      this.referralCode = ref.trim().toUpperCase();
+      this.isLogin.set(false);
+    }
+  }
 
   toggleMode(): void {
     this.isLogin.update((val) => !val);
@@ -310,6 +326,7 @@ export class LoginComponent {
         lastName: this.lastName,
         phone: this.phone,
         marketingOptIn: this.marketingOptIn,
+        referralCode: this.referralCode.trim() ? this.referralCode.trim().toUpperCase() : undefined,
       })
       .subscribe({
         next: () => {

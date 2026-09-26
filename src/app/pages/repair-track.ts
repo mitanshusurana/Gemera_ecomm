@@ -1,17 +1,20 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RepairService } from '../services/repair.service';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
+import { RazorpayCheckoutService } from '../services/razorpay-checkout.service';
 import {
-  REPAIR_PROGRESS, RepairStatus, RepairTracking, repairItemLabel, repairServiceLabel, repairStatusLabel,
+  REPAIR_PROGRESS, RepairPaymentOrder, RepairStatus, RepairTracking, repairItemLabel, repairServiceLabel, repairStatusLabel,
 } from '../core/repair.models';
 
 /**
  * Public repair tracking: job number + phone, timeline of customer-visible
- * events, the estimate with an approve button while ASSESSED, promised date.
+ * events, the estimate with an approve button while ASSESSED, promised date,
+ * a "Pay now" button (Razorpay checkout, as checkout.ts does) while an
+ * amount is due, and the service tax invoice download once issued.
  * Route: repairs/track and repairs/track/:jobNumber (from the e-mails).
  */
 @Component({
@@ -99,19 +102,47 @@ import {
             </div>
           </div>
 
+          <!-- Pay online -->
+          <div *ngIf="j.canPayOnline && j.amountDue" class="bg-white border border-[#D4AF37] rounded-[18px] p-6 md:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">{{ j.status === 'READY' ? 'Balance to collect your piece' : 'Amount due' }}</p>
+                <p class="font-display font-semibold text-3xl tracking-tight mt-1">₹{{ j.amountDue | number:'1.0-0' }}</p>
+                <p class="text-sm text-[#6e6e73] mt-2">Pay securely by UPI, card or net banking. You can also pay at the counter.</p>
+              </div>
+              <div class="sm:text-right">
+                <button type="button" (click)="payNow()" [disabled]="paying()" class="btn-apple-pill whitespace-nowrap">
+                  {{ paying() ? 'Opening payment...' : 'Pay ₹' + (j.amountDue | number:'1.0-0') + ' now' }}
+                </button>
+                <p class="text-xs text-[#7a7a7a] mt-2">Secure payment via Razorpay</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Bill -->
-          <div *ngIf="j.finalAmount !== null" class="bg-white border border-[#e0e0e0] rounded-[18px] p-6 md:p-8 grid grid-cols-3 gap-4">
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">Bill</p>
-              <p class="font-semibold text-lg mt-1">₹{{ j.finalAmount | number:'1.0-0' }}</p>
+          <div *ngIf="j.finalAmount !== null" class="bg-white border border-[#e0e0e0] rounded-[18px] p-6 md:p-8">
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">Bill</p>
+                <p class="font-semibold text-lg mt-1">₹{{ j.finalAmount | number:'1.0-0' }}</p>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">Paid</p>
+                <p class="font-semibold text-lg mt-1">₹{{ (j.paidAmount || 0) | number:'1.0-0' }}</p>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">Balance</p>
+                <p class="font-semibold text-lg mt-1">₹{{ balance(j) | number:'1.0-0' }}</p>
+              </div>
             </div>
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">Paid</p>
-              <p class="font-semibold text-lg mt-1">₹{{ (j.paidAmount || 0) | number:'1.0-0' }}</p>
-            </div>
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">Balance</p>
-              <p class="font-semibold text-lg mt-1">₹{{ balance(j) | number:'1.0-0' }}</p>
+            <div *ngIf="j.invoiceNumber" class="border-t border-[#f0f0f0] pt-4 mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.12em] text-[#7a7a7a]">Tax invoice</p>
+                <p class="text-sm font-semibold font-mono mt-1">{{ j.invoiceNumber }}</p>
+              </div>
+              <button type="button" (click)="downloadInvoice()" [disabled]="downloading()" class="btn-outline text-sm !py-2.5 !px-5 whitespace-nowrap">
+                {{ downloading() ? 'Preparing...' : 'Download invoice' }}
+              </button>
             </div>
           </div>
 
@@ -144,16 +175,21 @@ export class RepairTrackComponent implements OnInit {
   private repairService = inject(RepairService);
   private authService = inject(AuthService);
   private toast = inject(ToastService);
+  private platformId = inject(PLATFORM_ID);
+  private razorpay = inject(RazorpayCheckoutService);
 
   jobNumber = '';
   phone = '';
   loading = signal(false);
   approving = signal(false);
+  paying = signal(false);
+  downloading = signal(false);
   job = signal<RepairTracking | null>(null);
   signedIn = computed(() => !!this.authService.currentUser());
   readonly progress = REPAIR_PROGRESS;
 
   ngOnInit(): void {
+    this.loadRazorpayScript();
     this.route.paramMap.subscribe(params => {
       const jn = params.get('jobNumber');
       if (jn) {
@@ -204,6 +240,87 @@ export class RepairTrackComponent implements OnInit {
         this.approving.set(false);
         this.toast.show(err?.error?.message || 'The estimate could not be approved. Please try again.', 'error');
       },
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Online payment through the shared RazorpayCheckoutService (the key
+  // comes from environment.razorpayKey, substituted by env-subst.sh)
+  // ------------------------------------------------------------------
+
+  private loadRazorpayScript(): void {
+    this.razorpay.load();
+  }
+
+  payNow(): void {
+    const j = this.job();
+    if (!j || this.paying() || !isPlatformBrowser(this.platformId)) return;
+    if (!this.razorpay.isReady()) {
+      this.toast.show(RazorpayCheckoutService.LOAD_ERROR, 'error');
+      return;
+    }
+    this.paying.set(true);
+    this.repairService.createPaymentOrder(j.jobNumber, this.phone.trim()).subscribe({
+      next: (order) => this.openRazorpay(order),
+      error: (err) => {
+        this.paying.set(false);
+        this.toast.show(err?.error?.message || 'The payment could not be started. Please try again.', 'error');
+      },
+    });
+  }
+
+  private openRazorpay(order: RepairPaymentOrder): void {
+    const opened = this.razorpay.open({
+      orderId: order.razorpayOrderId,
+      amount: order.amount,
+      currency: order.currency,
+      description: `Repair job ${order.jobNumber}`,
+      prefill: {
+        name: order.customerName,
+        email: order.email || undefined,
+        contact: order.phone,
+      },
+      onSuccess: (response) => {
+        this.repairService.verifyPayment(order.jobNumber, this.phone.trim(), {
+          razorpayOrderId: response.razorpay_order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature,
+        }).subscribe({
+          next: (res) => {
+            this.paying.set(false);
+            this.job.set(res);
+            this.toast.show('Payment received. Thank you!', 'success');
+          },
+          error: (err) => {
+            this.paying.set(false);
+            this.toast.show(err?.error?.message || `Your payment ${response.razorpay_payment_id} could not be verified; please contact the store.`, 'error');
+            this.lookup(true);
+          },
+        });
+      },
+      onDismiss: () => this.paying.set(false),
+      onFailure: (response) => {
+        this.paying.set(false);
+        this.toast.show('Payment failed: ' + response.error.description, 'error');
+      },
+    });
+    if (!opened) {
+      this.paying.set(false);
+      this.toast.show(RazorpayCheckoutService.LOAD_ERROR, 'error');
+    }
+  }
+
+  downloadInvoice(): void {
+    const j = this.job();
+    if (!j || this.downloading()) return;
+    this.downloading.set(true);
+    this.repairService.downloadInvoice(j.jobNumber, this.phone.trim(), j.invoiceNumber).subscribe({
+      next: () => this.downloading.set(false),
+      error: (err) => {
+        this.downloading.set(false);
+        this.toast.show(err?.error?.message || 'The invoice could not be downloaded. Please try again.', 'error');
+      },
+      complete: () => this.downloading.set(false),
     });
   }
 

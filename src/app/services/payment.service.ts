@@ -19,6 +19,19 @@ export class PaymentService {
     );
   }
 
+  /**
+   * Signature check after the Razorpay modal succeeds. The API also
+   * completes a PENDING_PAYMENT order that carries this Razorpay order id
+   * (accepted quotes, exchange balances), interchangeably with the webhook.
+   */
+  verifyPayment(response: Razorpay.PaymentSuccessResponse): Observable<unknown> {
+    return this.http.post(this.apiConfig.getEndpoint('payments/verify'), {
+      orderId: response.razorpay_order_id,
+      paymentId: response.razorpay_payment_id,
+      paymentToken: response.razorpay_signature,
+    });
+  }
+
   logFailedTransaction(details: TransactionFailureRequest): Observable<any> {
     return this.http.post(
       this.apiConfig.getEndpoint('transactions/failure'),

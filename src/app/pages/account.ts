@@ -1,22 +1,31 @@
-import { Component, OnInit, signal, inject, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, inject, effect, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { User, Order, Address, OrderItem, isPaidOrder } from '../core/models';
+import { isPlatformBrowser } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
 import { OrderService } from '../services/order.service';
 import { WishlistService } from '../services/wishlist.service';
 import { ToastService } from '../services/toast.service';
 import { CategoryLabelService } from '../services/category-label.service';
+import { LoyaltyService, LOYALTY_TIER_LABEL } from '../services/loyalty.service';
+import { LoyaltySummary, LoyaltyTransaction } from '../core/models';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { COUNTRIES } from '../core/countries';
 import { AccountRepairsComponent } from '../components/account-repairs';
 import { AccountExchangeComponent } from '../components/account-exchange';
+import { AccountNotificationsComponent } from '../components/account-notifications';
+import { AccountAppointmentsComponent } from '../components/account-appointments';
+import { AccountReturnsComponent } from '../components/account-returns';
+import { RazorpayCheckoutService } from '../services/razorpay-checkout.service';
+import { PaymentService } from '../services/payment.service';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink, CurrencyConvertPipe, AccountRepairsComponent, AccountExchangeComponent],
+  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterLink, CurrencyConvertPipe, AccountRepairsComponent, AccountExchangeComponent, AccountNotificationsComponent, AccountAppointmentsComponent, AccountReturnsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-white font-sans text-[#1d1d1f]">
@@ -113,14 +122,76 @@ import { AccountExchangeComponent } from '../components/account-exchange';
             <!-- Profile Tab -->
             <div *ngIf="activeTab() === 'profile'" class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 animate-fadeIn">
 
-              <!-- Loyalty Points Summary -->
-              <div class="bg-[#1c1c1e] text-white rounded-[18px] p-6 mb-8">
-                <p class="text-[#a1a1a6] text-xs font-semibold uppercase tracking-[0.15em] mb-1">Caratloop Loyalty Points</p>
-                <h3 class="font-display font-semibold text-3xl text-white flex items-center gap-2">
-                  <span class="text-4xl">💎</span> {{ loyalty().points | number }}
-                </h3>
-                <p class="text-[#a1a1a6] text-xs mt-2">Current Tier: {{ loyalty().tier }}</p>
-              </div>
+              <!-- Rewards: balance, tier, referral code, history -->
+              <section class="bg-[#1c1c1e] text-white rounded-[18px] p-6 md:p-8 mb-8" aria-labelledby="rewards-heading">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                  <div>
+                    <p class="text-[#a1a1a6] text-xs font-semibold uppercase tracking-[0.15em] mb-1">Caratloop Rewards</p>
+                    <h3 id="rewards-heading" class="font-display font-semibold text-3xl text-white flex items-center gap-2">
+                      <span class="text-4xl" aria-hidden="true">💎</span> {{ loyaltyBalance() | number }} <span class="text-base font-normal text-[#a1a1a6]">points</span>
+                    </h3>
+                    <p class="text-[#a1a1a6] text-sm mt-1">
+                      Worth {{ (rewards()?.balanceValue || 0) | currencyConvert }} at checkout
+                      <ng-container *ngIf="rewards() as r"> &middot; {{ r.pointsPer100 }} point{{ r.pointsPer100 === 1 ? '' : 's' }} per &#8377;100 spent</ng-container>
+                    </p>
+                    <p *ngIf="rewards()?.expiringSoon" class="text-amber-300 text-xs mt-2">
+                      {{ rewards()!.expiringSoon | number }} points expire on {{ rewards()!.expiringSoonAt | date:'d MMM y' }}. Use them on your next order.
+                    </p>
+                  </div>
+                  <div class="md:text-right">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+                      {{ tierLabel(loyaltyTier()) }} member
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Tier progress -->
+                <div *ngIf="rewards() as r" class="mt-6">
+                  <div class="flex justify-between text-xs text-[#a1a1a6] mb-2">
+                    <span>{{ tierLabel(r.tier) }}</span>
+                    <span *ngIf="r.nextTier; else topTier">{{ r.pointsToNextTier | number }} points to {{ tierLabel(r.nextTier) }}</span>
+                    <ng-template #topTier><span>Highest tier reached</span></ng-template>
+                  </div>
+                  <div class="h-2 w-full rounded-full bg-white/10 overflow-hidden" role="progressbar" [attr.aria-valuenow]="tierProgress(r)" aria-valuemin="0" aria-valuemax="100" aria-label="Progress to the next tier">
+                    <div class="h-full bg-[#D4AF37] rounded-full transition-all duration-500" [style.width.%]="tierProgress(r)"></div>
+                  </div>
+                  <p class="text-[11px] text-[#a1a1a6] mt-2">Tiers come from the points you have earned over time ({{ r.lifetimeEarned | number }} so far): Gold from 2,000, Platinum from 10,000.</p>
+                </div>
+
+                <!-- Referral -->
+                <div *ngIf="rewards() as r" class="mt-6 rounded-[12px] border border-white/10 bg-white/5 p-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.15em] text-[#a1a1a6] mb-2">Refer a friend</p>
+                  <p class="text-sm text-white/90">
+                    Share your code. When a friend joins with it and places their first order, you both get {{ r.referralBonus | number }} points.
+                  </p>
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 mt-3">
+                    <code class="font-mono text-lg tracking-[0.15em] bg-black/40 rounded-[8px] px-4 py-2 select-all">{{ r.referralCode }}</code>
+                    <button type="button" (click)="copyReferral(r)" class="btn-apple-pill-secondary !bg-white !text-[#1d1d1f] text-sm !py-2 !px-5">{{ copied() ? 'Copied' : 'Copy code' }}</button>
+                    <button type="button" (click)="shareReferral(r)" class="btn-ghost !text-white text-sm">Share</button>
+                  </div>
+                  <p *ngIf="r.referredByName" class="text-[11px] text-[#a1a1a6] mt-2">You joined on {{ r.referredByName }}'s recommendation.</p>
+                </div>
+
+                <!-- History -->
+                <div class="mt-6">
+                  <button type="button" (click)="showRewardHistory.set(!showRewardHistory())" class="text-sm text-[#D4AF37] hover:underline">
+                    {{ showRewardHistory() ? 'Hide' : 'Show' }} points history
+                  </button>
+                  <ul *ngIf="showRewardHistory()" class="mt-3 divide-y divide-white/10 text-sm">
+                    <li *ngIf="!(rewards()?.history?.content?.length)" class="py-3 text-[#a1a1a6]">No points movements yet. Points are earned when an order is paid.</li>
+                    <li *ngFor="let t of rewards()?.history?.content" class="py-3 flex items-start justify-between gap-4">
+                      <div class="min-w-0">
+                        <p class="text-white/90">{{ t.note || rewardTypeLabel(t.type) }}</p>
+                        <p class="text-[11px] text-[#a1a1a6] mt-0.5">
+                          {{ t.createdAt | date:'d MMM y' }} &middot; {{ rewardTypeLabel(t.type) }}
+                          <ng-container *ngIf="t.expiresAt && t.points > 0"> &middot; expires {{ t.expiresAt | date:'d MMM y' }}</ng-container>
+                        </p>
+                      </div>
+                      <span class="font-semibold whitespace-nowrap" [class.text-emerald-300]="t.points > 0" [class.text-red-300]="t.points < 0">{{ t.points > 0 ? '+' : '' }}{{ t.points | number }}</span>
+                    </li>
+                  </ul>
+                </div>
+              </section>
 
               <h2 class="font-display font-semibold text-2xl md:text-3xl tracking-tight text-[#1d1d1f] mb-8">Profile Information</h2>
 
@@ -232,10 +303,27 @@ import { AccountExchangeComponent } from '../components/account-exchange';
                       </ng-template>
                     </div>
 
-                    <div class="border-t border-[#f0f0f0] pt-4 flex justify-between items-center">
-                      <p class="text-[#6e6e73] text-sm" *ngIf="order.items && order.items.length > 0">{{ getItemName(order.items[0]) }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
-                      <p class="text-[#6e6e73] text-sm" *ngIf="!order.items || order.items.length === 0">No items</p>
-                      <a [routerLink]="['/track-order']" [queryParams]="{id: order.orderNumber}" class="text-[#D4AF37] hover:underline text-sm font-medium">Track Detail →</a>
+                    <!-- Awaiting payment: an accepted quote or an exchange balance -->
+                    <div *ngIf="order.status === 'PENDING_PAYMENT'" class="border-t border-[#f0f0f0] pt-4 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <p class="text-sm text-[#6e6e73]">
+                        <span *ngIf="order.rfqNumber">Created from quote {{ order.rfqNumber }}. </span>Payment of {{ order.total | currencyConvert }} is pending.
+                      </p>
+                      <button type="button" (click)="payPending(order)" [disabled]="payingOrderId() === order.id"
+                              class="btn-apple-pill !py-2 !px-5 text-sm whitespace-nowrap self-start sm:self-auto">
+                        {{ payingOrderId() === order.id ? 'Opening…' : 'Pay now' }}
+                      </button>
+                    </div>
+
+                    <div class="border-t border-[#f0f0f0] pt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                      <div>
+                        <p class="text-[#6e6e73] text-sm" *ngIf="order.items && order.items.length > 0">{{ getItemName(order.items[0]) }} <span *ngIf="order.items.length > 1">and {{ order.items.length - 1 }} more</span></p>
+                        <p class="text-[#6e6e73] text-sm" *ngIf="!order.items || order.items.length === 0">No items</p>
+                        <p *ngIf="order.returnNumbers?.length" class="text-xs text-[#7a7a7a] mt-1">Return {{ order.returnNumbers!.join(', ') }}</p>
+                      </div>
+                      <div class="flex items-center gap-4">
+                        <a *ngIf="canReturn(order)" [routerLink]="['/returns/new', order.id]" class="text-[#1d1d1f] hover:text-[#D4AF37] hover:underline text-sm font-medium">Return or exchange</a>
+                        <a [routerLink]="['/track-order']" [queryParams]="{id: order.orderNumber}" class="text-[#D4AF37] hover:underline text-sm font-medium">Track Detail →</a>
+                      </div>
                     </div>
                   </div>
 
@@ -247,7 +335,9 @@ import { AccountExchangeComponent } from '../components/account-exchange';
               </div>
             </div>
 
-            <!-- Repairs & services (shown with the orders) -->
+            <!-- Returns, appointments, repairs and old gold (shown with the orders) -->
+            <app-account-returns *ngIf="activeTab() === 'orders'" class="block animate-fadeIn" />
+            <app-account-appointments *ngIf="activeTab() === 'orders'" class="block animate-fadeIn" />
             <app-account-repairs *ngIf="activeTab() === 'orders'" class="block animate-fadeIn" />
             <app-account-exchange *ngIf="activeTab() === 'orders'" class="block animate-fadeIn" />
 
@@ -401,6 +491,9 @@ import { AccountExchangeComponent } from '../components/account-exchange';
                   </form>
                 </div>
 
+                <!-- Notification channels (e-mail, WhatsApp, SMS) and the mobile number they go to -->
+                <app-account-notifications *ngIf="user()" />
+
                 <div>
                   <h3 class="font-sans font-semibold text-lg text-[#1d1d1f] mb-4">Privacy & Security</h3>
                   <button *ngIf="!showChangePassword()" type="button" (click)="openChangePassword()"
@@ -484,8 +577,18 @@ export class AccountComponent implements OnInit {
   user = signal<User | null>(null);
   orders = signal<{ content: Order[] }>({ content: [] });
   loyalty = signal<{ points: number, tier: string }>({ points: 0, tier: 'Silver' });
+  /** GET loyalty/me: balance, tier, referral code and history. Null until loaded (the legacy call fills the basics). */
+  rewards = signal<LoyaltySummary | null>(null);
+  showRewardHistory = signal(false);
+  copied = signal(false);
+  loyaltyBalance = computed(() => this.rewards()?.balance ?? this.loyalty().points);
+  loyaltyTier = computed(() => this.rewards()?.tier ?? this.loyalty().tier);
   /** Order whose invoice PDF is being fetched, so only that button shows progress. */
   downloadingInvoiceId = signal<string | null>(null);
+  /** PENDING_PAYMENT order whose Razorpay checkout is being opened. */
+  payingOrderId = signal<string | null>(null);
+  private razorpay = inject(RazorpayCheckoutService);
+  private paymentService = inject(PaymentService);
 
   // Address State
   isAddressModalOpen = signal(false);
@@ -512,6 +615,8 @@ export class AccountComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
   private toastService = inject(ToastService);
+  private loyaltyService = inject(LoyaltyService);
+  private platformId = inject(PLATFORM_ID);
   wishlistService = inject(WishlistService);
   categoryLabels = inject(CategoryLabelService);
 
@@ -527,6 +632,7 @@ export class AccountComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUserProfile();
+    this.razorpay.load();
     // this.loadOrders(); // Handled by effect
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
@@ -539,6 +645,72 @@ export class AccountComponent implements OnInit {
         next: (data) => this.loyalty.set(data),
         error: () => this.loyalty.set({ points: 0, tier: 'Silver' }) // Graceful degradation
     });
+    this.loyaltyService.me(0, 25).subscribe({
+      next: (summary) => this.rewards.set(summary),
+      error: () => this.rewards.set(null), // the legacy points call above still fills the card
+    });
+  }
+
+  // ---- rewards -----------------------------------------------------------
+
+  tierLabel(tier: string | null | undefined): string {
+    if (!tier) return 'Silver';
+    return LOYALTY_TIER_LABEL[tier.toUpperCase()] ?? tier;
+  }
+
+  /** Lifetime points within the current tier band, as a percentage of the band. */
+  tierProgress(r: LoyaltySummary): number {
+    if (!r.nextTierAt) return 100;
+    const span = r.nextTierAt - r.tierFloor;
+    if (span <= 0) return 100;
+    return Math.max(0, Math.min(100, Math.round(((r.lifetimeEarned - r.tierFloor) / span) * 100)));
+  }
+
+  rewardTypeLabel(type: LoyaltyTransaction['type']): string {
+    switch (type) {
+      case 'EARN': return 'Earned';
+      case 'REDEEM': return 'Redeemed';
+      case 'EXPIRE': return 'Expired';
+      case 'REFERRAL': return 'Referral bonus';
+      case 'ADJUST': return 'Adjustment';
+      default: return type;
+    }
+  }
+
+  private referralShareText(r: LoyaltySummary): string {
+    const origin = isPlatformBrowser(this.platformId) ? window.location.origin : '';
+    return `Join me on Caratloop and we both earn ${r.referralBonus} reward points on your first order. Use my code ${r.referralCode} at sign-up: ${origin}/login?ref=${encodeURIComponent(r.referralCode)}`;
+  }
+
+  copyReferral(r: LoyaltySummary): void {
+    if (!isPlatformBrowser(this.platformId) || !navigator.clipboard) {
+      this.toastService.show('Your code is ' + r.referralCode, 'info');
+      return;
+    }
+    navigator.clipboard.writeText(r.referralCode).then(
+      () => {
+        this.copied.set(true);
+        this.toastService.show('Referral code copied', 'success');
+        setTimeout(() => this.copied.set(false), 2500);
+      },
+      () => this.toastService.show('Could not copy; your code is ' + r.referralCode, 'error'),
+    );
+  }
+
+  shareReferral(r: LoyaltySummary): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const text = this.referralShareText(r);
+    const nav = navigator as Navigator & { share?: (data: { title?: string; text?: string }) => Promise<void> };
+    if (typeof nav.share === 'function') {
+      nav.share({ title: 'Caratloop Rewards', text }).catch(() => { /* dismissed */ });
+      return;
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(
+        () => this.toastService.show('Share message copied', 'success'),
+        () => this.toastService.show('Could not copy the share message', 'error'),
+      );
+    }
   }
 
   private loadOrders(): void {
@@ -691,12 +863,71 @@ export class AccountComponent implements OnInit {
     if (item?.product?.name) {
       return item.product.name;
     }
-    return 'Unknown Item';
+    // Custom lines (accepted quotes) carry their text on the item.
+    return item?.description || 'Unknown Item';
   }
 
   /** Paid orders receive a tax invoice; the list says so until it is issued. */
   isPaid(order: Order): boolean {
     return isPaidOrder(order);
+  }
+
+  /** Delivered orders may still be returned; the API decides the window and the lines. */
+  canReturn(order: Order): boolean {
+    return ['DELIVERED', 'COMPLETED', 'RETURNED'].includes(String(order.status || '').toUpperCase());
+  }
+
+  /** Opens Razorpay for an order awaiting payment (accepted quote, exchange balance). */
+  payPending(order: Order): void {
+    if (!order?.id || this.payingOrderId() || !isPlatformBrowser(this.platformId)) return;
+    if (!this.razorpay.isReady()) {
+      this.toastService.show(RazorpayCheckoutService.LOAD_ERROR, 'error');
+      return;
+    }
+    this.payingOrderId.set(order.id);
+    this.orderService.paymentOrder(order.id).subscribe({
+      next: (po) => {
+        const user = this.user();
+        const opened = this.razorpay.open({
+          orderId: po.razorpayOrderId,
+          amount: po.amount,
+          currency: po.currency,
+          description: `Order ${po.orderNumber}`,
+          prefill: {
+            name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : undefined,
+            email: user?.email,
+            contact: user?.phone,
+          },
+          onSuccess: (response) => {
+            this.paymentService.verifyPayment(response).subscribe({
+              next: () => {
+                this.payingOrderId.set(null);
+                this.toastService.show('Payment received. Thank you!', 'success');
+                this.loadOrders();
+              },
+              error: (err) => {
+                this.payingOrderId.set(null);
+                this.toastService.show(err?.error?.message || `Your payment ${response.razorpay_payment_id} could not be verified; please contact us.`, 'error');
+                this.loadOrders();
+              },
+            });
+          },
+          onDismiss: () => this.payingOrderId.set(null),
+          onFailure: (response) => {
+            this.payingOrderId.set(null);
+            this.toastService.show('Payment failed: ' + response.error.description, 'error');
+          },
+        });
+        if (!opened) {
+          this.payingOrderId.set(null);
+          this.toastService.show(RazorpayCheckoutService.LOAD_ERROR, 'error');
+        }
+      },
+      error: (err) => {
+        this.payingOrderId.set(null);
+        this.toastService.show(err?.error?.message || 'The payment could not be started. Please try again.', 'error');
+      },
+    });
   }
 
   downloadInvoice(order: Order): void {

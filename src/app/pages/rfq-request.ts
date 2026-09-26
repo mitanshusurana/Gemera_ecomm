@@ -1,9 +1,12 @@
-import { Component, signal, inject } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { Component, signal, inject, computed, effect, OnInit, PLATFORM_ID } from "@angular/core";
+import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { RouterLink } from "@angular/router";
-import { RFQService, RFQRequest, RFQItem } from "../services/rfq.service";
+import { RouterLink, Router } from "@angular/router";
+import { RFQService, RFQRequest, RFQItem, RFQQuote, AcceptQuoteResponse } from "../services/rfq.service";
 import { ToastService } from "../services/toast.service";
+import { AuthService } from "../services/auth.service";
+import { PaymentService } from "../services/payment.service";
+import { RazorpayCheckoutService } from "../services/razorpay-checkout.service";
 import { environment } from "../../environments/environment";
 
 @Component({
@@ -370,6 +373,49 @@ import { environment } from "../../environments/environment";
                 Return to Home
               </button>
             </div>
+
+            <!-- Your quote requests: latest quote, accept and pay -->
+            <div *ngIf="signedIn()" class="bg-white border border-[#e0e0e0] rounded-[18px] p-8 mt-8">
+              <div class="flex items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 class="font-display font-semibold text-2xl text-[#1d1d1f]">Your quote requests</h2>
+                  <p class="text-sm text-[#6e6e73] mt-1">Accepting a quote creates your order; pay it online to confirm.</p>
+                </div>
+              </div>
+              <div *ngIf="myRequestsLoading()" class="space-y-3">
+                <div class="skeleton h-16 rounded-[12px]"></div>
+              </div>
+              <p *ngIf="!myRequestsLoading() && !myRequests().length" class="text-sm text-[#6e6e73]">No quote requests yet.</p>
+              <ul *ngIf="!myRequestsLoading() && myRequests().length" class="divide-y divide-[#f0f0f0]">
+                <li *ngFor="let r of myRequests()" class="py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-[#1d1d1f]">
+                      <span class="font-mono text-[#D4AF37]">{{ r.rfqNumber }}</span>
+                      <span class="text-[#6e6e73] font-normal"> &middot; {{ r.items.length || 0 }} line{{ r.items.length === 1 ? '' : 's' }}</span>
+                    </p>
+                    <p class="text-sm text-[#6e6e73]">
+                      <ng-container *ngIf="latestQuote(r) as q">
+                        Quoted <strong class="text-[#1d1d1f]">₹{{ q.price | number:'1.0-0' }}</strong>
+                        <span *ngIf="q.validUntil"> &middot; valid until {{ q.validUntil | date:'mediumDate' }}</span>
+                        <span *ngIf="q.notes" class="block text-xs text-[#7a7a7a] mt-1">{{ q.notes }}</span>
+                      </ng-container>
+                      <ng-container *ngIf="!latestQuote(r)">Awaiting our quote</ng-container>
+                    </p>
+                    <p *ngIf="r.orderNumber" class="text-xs text-[#7a7a7a] mt-1">
+                      Order #{{ r.orderNumber }} &middot; {{ r.orderStatus === 'PENDING_PAYMENT' ? 'awaiting payment' : (r.orderStatus || '') | lowercase }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span class="badge" [ngClass]="rfqBadgeClass(r.status)">{{ r.status }}</span>
+                    <button *ngIf="canAccept(r)" type="button" (click)="acceptAndPay(r)" [disabled]="accepting() === r.id"
+                            class="btn-apple-pill !py-2 !px-5 text-sm whitespace-nowrap">
+                      {{ accepting() === r.id ? 'Opening…' : (r.orderStatus === 'PENDING_PAYMENT' ? 'Pay now' : 'Accept and pay') }}
+                    </button>
+                    <a *ngIf="r.orderId && r.orderStatus !== 'PENDING_PAYMENT'" routerLink="/account" [queryParams]="{ tab: 'orders' }" class="text-[#D4AF37] hover:underline text-sm font-medium whitespace-nowrap">View order →</a>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <!-- Sidebar -->
@@ -450,8 +496,128 @@ import { environment } from "../../environments/environment";
     </div>
   `,
 })
-export class RFQRequestComponent {
+export class RFQRequestComponent implements OnInit {
   env = environment;
+
+  private authService = inject(AuthService);
+  private paymentService = inject(PaymentService);
+  private razorpay = inject(RazorpayCheckoutService);
+  private router = inject(Router);
+  private platformId = inject(PLATFORM_ID);
+
+  signedIn = computed(() => !!this.authService.currentUser());
+  myRequests = signal<RFQRequest[]>([]);
+  myRequestsLoading = signal(false);
+  accepting = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.razorpay.load();
+  }
+
+  private readonly loadMine = effect(() => {
+    const user = this.authService.currentUser();
+    if (!user?.id) {
+      this.myRequests.set([]);
+      return;
+    }
+    this.refreshMine(user.id);
+  });
+
+  private refreshMine(userId: string): void {
+    this.myRequestsLoading.set(true);
+    this.rfqService.myRequests(userId).subscribe({
+      next: (page) => {
+        this.myRequests.set(page?.content ?? []);
+        this.myRequestsLoading.set(false);
+      },
+      error: () => this.myRequestsLoading.set(false),
+    });
+  }
+
+  latestQuote(r: RFQRequest): RFQQuote | null {
+    const q = r.quotes ?? [];
+    return q.length ? q[q.length - 1] : null;
+  }
+
+  canAccept(r: RFQRequest): boolean {
+    if (r.orderStatus === 'PENDING_PAYMENT') return true;
+    if (r.orderId) return false;
+    return (r.status === 'QUOTED' || r.status === 'NEGOTIATING') && !!this.latestQuote(r);
+  }
+
+  rfqBadgeClass(status: string | undefined): string {
+    switch (status) {
+      case 'QUOTED': return '!bg-[#fbf8ef] !border-[#D4AF37]/40 !text-[#8a6d1f]';
+      case 'ACCEPTED': return '!bg-green-50 !border-green-200 !text-green-600';
+      case 'REJECTED':
+      case 'CANCELLED': return '!bg-red-50 !border-red-200 !text-red-600';
+      default: return '';
+    }
+  }
+
+  /** Accepts the latest quote (the API creates the order) and opens Razorpay for it. */
+  acceptAndPay(r: RFQRequest): void {
+    if (!r.id || this.accepting() || !isPlatformBrowser(this.platformId)) return;
+    this.accepting.set(r.id);
+    this.rfqService.accept(r.id).subscribe({
+      next: (res) => this.openPayment(r, res),
+      error: (err) => {
+        this.accepting.set(null);
+        this.toastService.show(err?.error?.message || 'The quote could not be accepted. Please try again.', 'error');
+      },
+    });
+  }
+
+  private openPayment(r: RFQRequest, res: AcceptQuoteResponse): void {
+    const user = this.authService.currentUser();
+    if (!res.razorpayOrderId || !res.amount) {
+      this.accepting.set(null);
+      this.toastService.show(res.orderStatus === 'PENDING_PAYMENT'
+        ? `Order ${res.orderNumber} is ready; pay it from your account when the gateway is available.`
+        : `Order ${res.orderNumber} is ${String(res.orderStatus || '').toLowerCase()}.`, 'info');
+      if (user?.id) this.refreshMine(user.id);
+      return;
+    }
+    const opened = this.razorpay.open({
+      orderId: res.razorpayOrderId,
+      amount: res.amount,
+      currency: res.currency || 'INR',
+      description: `Quote ${r.rfqNumber} · order ${res.orderNumber}`,
+      prefill: {
+        name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : undefined,
+        email: user?.email,
+        contact: user?.phone,
+      },
+      onSuccess: (response) => {
+        this.paymentService.verifyPayment(response).subscribe({
+          next: () => {
+            this.accepting.set(null);
+            this.toastService.show('Payment received. Thank you!', 'success');
+            sessionStorage.setItem('lastOrderId', res.orderId);
+            this.router.navigate(['/order-confirmation']);
+          },
+          error: (err) => {
+            this.accepting.set(null);
+            this.toastService.show(err?.error?.message || `Your payment ${response.razorpay_payment_id} could not be verified; please contact us.`, 'error');
+            if (user?.id) this.refreshMine(user.id);
+          },
+        });
+      },
+      onDismiss: () => {
+        this.accepting.set(null);
+        if (user?.id) this.refreshMine(user.id);
+      },
+      onFailure: (response) => {
+        this.accepting.set(null);
+        this.toastService.show('Payment failed: ' + response.error.description, 'error');
+      },
+    });
+    if (!opened) {
+      this.accepting.set(null);
+      this.toastService.show(RazorpayCheckoutService.LOAD_ERROR + ` Order ${res.orderNumber} is waiting in your account.`, 'error');
+      if (user?.id) this.refreshMine(user.id);
+    }
+  }
   rfqData = {
     firstName: "",
     lastName: "",

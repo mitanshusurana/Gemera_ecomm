@@ -43,7 +43,8 @@ import {
   plainOrStuddedLabel,
 } from '../core/product-display';
 import { environment } from '../../environments/environment';
-import { AppointmentService } from '../services/appointment.service';
+import { AppointmentService, AppointmentType } from '../services/appointment.service';
+import { AppointmentSlotPickerComponent, SlotSelection } from '../components/appointment-slot-picker';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { SeoService } from '../services/seo.service';
 import { VirtualTryOnComponent } from '../components/virtual-try-on';
@@ -127,7 +128,8 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
     ReactiveFormsModule,
     SizeGuideModalComponent,
     CurrencyConvertPipe,
-    VirtualTryOnComponent
+    VirtualTryOnComponent,
+    AppointmentSlotPickerComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -775,30 +777,49 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
                   </div>
                 </div>
 
-                <!-- Stone Details Breakdown (if multi-stone) -->
+                <!-- Stone details: one row per stone (position, stone, shape, carat, colour, clarity, cut, lab, certificate) -->
                 <div *ngIf="product()?.stoneDetails?.length" class="mb-8">
                   <h4 class="font-semibold text-sm text-[#1d1d1f] uppercase tracking-wider mb-4 pb-2 border-b border-[#e0e0e0]">
-                    Setting Stone Inventory
+                    Stone details
                   </h4>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div *ngFor="let s of product()?.stoneDetails" class="bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-[12px] text-xs space-y-1">
-                      <div class="flex justify-between">
-                        <span class="text-[#7a7a7a]">Stone Type</span>
-                        <span class="font-semibold text-[#1d1d1f]">{{ s.stoneType || 'Diamond' }}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span class="text-[#7a7a7a]">Shape</span>
-                        <span class="font-semibold text-[#1d1d1f]">{{ s.shape || 'Round Brilliant' }}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span class="text-[#7a7a7a]">Piece Count</span>
-                        <span class="font-semibold text-[#1d1d1f]">{{ s.pieceCount || 1 }}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span class="text-[#7a7a7a]">Total Weight</span>
-                        <span class="font-semibold text-[#1d1d1f]">{{ s.totalCaratWeight || '0' }} ct</span>
-                      </div>
-                    </div>
+                  <div class="overflow-x-auto border border-[#e0e0e0] rounded-[12px]">
+                    <table class="min-w-full text-xs">
+                      <thead class="bg-[#f5f5f7] text-[#7a7a7a]">
+                        <tr>
+                          <th class="px-3 py-2 text-left font-medium">Position</th>
+                          <th class="px-3 py-2 text-left font-medium">Stone</th>
+                          <th class="px-3 py-2 text-left font-medium">Shape</th>
+                          <th class="px-3 py-2 text-right font-medium">Pcs</th>
+                          <th class="px-3 py-2 text-right font-medium">Carat</th>
+                          <th class="px-3 py-2 text-left font-medium">Colour</th>
+                          <th class="px-3 py-2 text-left font-medium">Clarity</th>
+                          <th class="px-3 py-2 text-left font-medium">Cut</th>
+                          <th class="px-3 py-2 text-left font-medium">Certificate</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-[#f0f0f0]">
+                        <tr *ngFor="let s of product()?.stoneDetails" class="text-[#1d1d1f]">
+                          <td class="px-3 py-2 whitespace-nowrap">{{ s.position || '—' }}</td>
+                          <td class="px-3 py-2 font-semibold whitespace-nowrap">{{ s.stoneType || 'Stone' }}<span *ngIf="s.origin" class="block font-normal text-[#7a7a7a]">{{ s.origin }}</span><span *ngIf="s.treatment" class="block font-normal text-[#7a7a7a]">{{ s.treatment }}</span></td>
+                          <td class="px-3 py-2 whitespace-nowrap">{{ s.shape || '—' }}</td>
+                          <td class="px-3 py-2 text-right tabular-nums">{{ s.pieceCount || 1 }}</td>
+                          <td class="px-3 py-2 text-right tabular-nums whitespace-nowrap">
+                            <ng-container *ngIf="s.caratWeight">{{ s.caratWeight | number:'1.2-3' }} ct<span *ngIf="(s.pieceCount || 1) > 1" class="block text-[#7a7a7a]">each</span></ng-container>
+                            <ng-container *ngIf="!s.caratWeight && s.totalCaratWeight">{{ s.totalCaratWeight | number:'1.2-3' }} ct<span *ngIf="(s.pieceCount || 1) > 1" class="block text-[#7a7a7a]">total</span></ng-container>
+                            <ng-container *ngIf="!s.caratWeight && !s.totalCaratWeight">—</ng-container>
+                          </td>
+                          <td class="px-3 py-2 whitespace-nowrap">{{ s.colour || '—' }}</td>
+                          <td class="px-3 py-2 whitespace-nowrap">{{ s.clarity || '—' }}</td>
+                          <td class="px-3 py-2 whitespace-nowrap">{{ s.cut || '—' }}</td>
+                          <td class="px-3 py-2 whitespace-nowrap">
+                            <ng-container *ngIf="s.certificateNumber; else labOnly">
+                              <a routerLink="/verify-certificate" [queryParams]="{ report: s.certificateNumber }" class="font-semibold text-[#D4AF37] hover:underline" [attr.aria-label]="'Verify certificate ' + s.certificateNumber">{{ s.certificateLab || 'Certificate' }} <span class="font-mono font-normal">{{ s.certificateNumber }}</span></a>
+                            </ng-container>
+                            <ng-template #labOnly>{{ s.certificateLab || '—' }}</ng-template>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
@@ -1116,7 +1137,10 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
                 </form>
 
                 <!-- Concierge Appointment Strip -->
-                <div class="grid grid-cols-2 gap-2 pt-2">
+                <div class="grid grid-cols-3 gap-2 pt-2">
+                  <button (click)="openStoreVisit()" class="btn-apple-pill-secondary text-xs !py-2 !px-3">
+                    💎 In store
+                  </button>
                   <button (click)="openTryAtHome()" class="btn-apple-pill-secondary text-xs !py-2 !px-3">
                     🏡 Try at Home
                   </button>
@@ -1254,25 +1278,39 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
           >
             <h3 class="font-display font-semibold text-xl text-[#1d1d1f]">Book {{ appointmentType() === 'TRY_AT_HOME' ? 'Try at Home' : (appointmentType() === 'STORE_VISIT' ? 'Store Visit' : 'Video Consult') }}</h3>
           </div>
-          <form [formGroup]="appointmentForm" (ngSubmit)="confirmTryAtHome()" class="p-6 space-y-4">
-            <p class="text-sm text-[#6e6e73] text-center mb-4">
-              {{ appointmentType() === 'TRY_AT_HOME' ? 'Our consultant will bring this jewellery to your doorstep.' : (appointmentType() === 'STORE_VISIT' ? 'Book a VIP consultation at our store.' : 'Our expert will guide you via WhatsApp Video call.') }}
+          <form [formGroup]="appointmentForm" (ngSubmit)="confirmTryAtHome()" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <p class="text-sm text-[#6e6e73] text-center mb-2">
+              {{ appointmentType() === 'TRY_AT_HOME' ? 'Our consultant will bring this jewellery to your doorstep.' : (appointmentType() === 'STORE_VISIT' ? 'A private viewing of this piece at the store of your choice.' : 'Our expert will guide you via WhatsApp Video call.') }}
             </p>
 
-            <div class="space-y-3">
+            <div class="flex justify-center gap-2">
+              <button *ngFor="let t of appointmentTypes" type="button" (click)="appointmentType.set(t)"
+                      class="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+                      [ngClass]="appointmentType() === t ? 'bg-[#1d1d1f] text-white border-[#1d1d1f]' : 'bg-white text-[#1d1d1f] border-[#e0e0e0]'">
+                {{ t === 'STORE_VISIT' ? 'In store' : (t === 'TRY_AT_HOME' ? 'At home' : 'Video') }}
+              </button>
+            </div>
+
+            <app-appointment-slot-picker [type]="appointmentType()" (selected)="appointmentSlot.set($event)" />
+
+            <div class="space-y-3 border-t border-[#f0f0f0] pt-4">
               <input type="text" formControlName="name" placeholder="Your Name" aria-label="Your name" class="input-field" required />
               <input type="email" formControlName="email" placeholder="Email Address" aria-label="Email address" class="input-field" required />
               <input type="tel" formControlName="phone" placeholder="Phone Number" aria-label="Phone number" class="input-field" required />
-              <input type="date" formControlName="requestedDate" aria-label="Requested date" class="input-field" required />
             </div>
+
+            <p *ngIf="appointmentError()" class="text-sm text-red-600">{{ appointmentError() }}</p>
 
             <button
               type="submit"
-              [disabled]="appointmentForm.invalid || submittingAppointment()"
+              [disabled]="appointmentForm.invalid || !appointmentSlot().slotStart || submittingAppointment()"
               class="btn-apple-pill w-full"
             >
-              {{ submittingAppointment() ? 'Booking...' : 'Confirm' }}
+              {{ submittingAppointment() ? 'Booking...' : (appointmentSlot().slotStart ? 'Request appointment' : 'Choose a time slot') }}
             </button>
+            <p class="text-[11px] text-[#7a7a7a] text-center">
+              Prefer the full form? <a routerLink="/appointments" class="text-[#D4AF37] hover:underline">Book on the appointments page</a>.
+            </p>
           </form>
         </div>
       </div>
@@ -1385,8 +1423,11 @@ export class ProductDetailComponent
     name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', Validators.required],
-    requestedDate: ['', Validators.required],
   });
+  readonly appointmentTypes: AppointmentType[] = ['STORE_VISIT', 'TRY_AT_HOME', 'VIDEO_CONSULT'];
+  /** Slot and store chosen in the modal's picker. */
+  appointmentSlot = signal<SlotSelection>({ slotStart: null, storeId: null, storeName: null });
+  appointmentError = signal<string | null>(null);
 
   loading = signal(true);
   productNotFound = signal(false);
@@ -2086,42 +2127,60 @@ export class ProductDetailComponent
       }
     });
   }
+  openStoreVisit() {
+    this.openAppointment('STORE_VISIT');
+  }
+
   openTryAtHome() {
-    this.appointmentType.set('TRY_AT_HOME');
-    this.tryAtHomeOpen.set(true);
-    this.appointmentForm.reset();
+    this.openAppointment('TRY_AT_HOME');
   }
 
   openVideoConsult() {
-    this.appointmentType.set('VIDEO_CONSULT');
+    this.openAppointment('VIDEO_CONSULT');
+  }
+
+  private openAppointment(type: AppointmentType) {
+    this.appointmentType.set(type);
+    this.appointmentSlot.set({ slotStart: null, storeId: null, storeName: null });
+    this.appointmentError.set(null);
     this.tryAtHomeOpen.set(true);
-    this.appointmentForm.reset();
+    const user = this.authService.currentUser();
+    this.appointmentForm.reset({
+      name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+    });
   }
 
   confirmTryAtHome() {
-    if (this.appointmentForm.invalid) return;
+    const slot = this.appointmentSlot();
+    if (this.appointmentForm.invalid || !slot.slotStart) return;
 
     this.submittingAppointment.set(true);
+    this.appointmentError.set(null);
 
     const productId = this.product()?.id;
     const formData = this.appointmentForm.value;
+    const productName = this.product()?.name;
 
     this.appointmentService.createAppointment({
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
       appointmentType: this.appointmentType(),
-      requestedDate: new Date(formData.requestedDate).toISOString(),
-      productId: productId
+      slotStart: slot.slotStart,
+      storeId: slot.storeId,
+      productId: productId,
+      notes: productName ? `Interested in: ${productName}` : undefined,
     }).subscribe({
       next: () => {
         this.submittingAppointment.set(false);
         this.tryAtHomeOpen.set(false);
-        this.toastService.show('Booking Confirmed! Our team will contact you shortly.', 'success');
+        this.toastService.show('Appointment requested. We will confirm the slot shortly.', 'success');
       },
-      error: () => {
+      error: (err) => {
         this.submittingAppointment.set(false);
-        this.toastService.show('Failed to book appointment. Please try again.', 'error');
+        this.appointmentError.set(err?.error?.message || 'Failed to book the appointment. Please try again.');
       }
     });
   }

@@ -34,6 +34,8 @@ export const CART_PRICING = {
 
 /** Shown when a signed-out visitor tries to redeem a gift card. */
 export const GUEST_GIFT_CARD_MESSAGE = 'Sign in to redeem a gift card';
+/** Treasure balances and loyalty points belong to an account; guests have neither. */
+export const GUEST_REWARDS_MESSAGE = 'Sign in to use your Treasure balance or points';
 
 @Injectable({
   providedIn: 'root',
@@ -259,6 +261,56 @@ export class CartService {
     );
   }
 
+  /** Applies the caller's matured Treasure plan as a payment (server-side cart only). */
+  applyTreasure(accountId: string): Observable<Cart> {
+    if (!this.authService.isAuthenticated()) {
+      return throwError(() => new Error(GUEST_REWARDS_MESSAGE));
+    }
+    return this.http.post<Cart>(`${this.baseUrl}/apply-treasure`, { accountId }).pipe(
+      tap((cart) => {
+        this.normalizeCart(cart);
+        this.cart$.next(cart);
+      }),
+    );
+  }
+
+  removeTreasure(): Observable<Cart> {
+    if (!this.authService.isAuthenticated()) {
+      return throwError(() => new Error(GUEST_REWARDS_MESSAGE));
+    }
+    return this.http.delete<Cart>(`${this.baseUrl}/treasure`).pipe(
+      tap((cart) => {
+        this.normalizeCart(cart);
+        this.cart$.next(cart);
+      }),
+    );
+  }
+
+  /** Burns loyalty points as a discount; the server caps at the balance and the max-redeem share. */
+  applyPoints(points: number): Observable<Cart> {
+    if (!this.authService.isAuthenticated()) {
+      return throwError(() => new Error(GUEST_REWARDS_MESSAGE));
+    }
+    return this.http.post<Cart>(`${this.baseUrl}/apply-points`, { points }).pipe(
+      tap((cart) => {
+        this.normalizeCart(cart);
+        this.cart$.next(cart);
+      }),
+    );
+  }
+
+  removePoints(): Observable<Cart> {
+    if (!this.authService.isAuthenticated()) {
+      return throwError(() => new Error(GUEST_REWARDS_MESSAGE));
+    }
+    return this.http.delete<Cart>(`${this.baseUrl}/points`).pipe(
+      tap((cart) => {
+        this.normalizeCart(cart);
+        this.cart$.next(cart);
+      }),
+    );
+  }
+
   cart(): Observable<Cart | null> {
     return this.cart$.asObservable();
   }
@@ -440,9 +492,14 @@ export class CartService {
         ? parseFloat(cart.appliedDiscount)
         : Number(cart.appliedDiscount) || 0;
     cart.giftCardAmount = Number(cart.giftCardAmount) || 0;
+    cart.treasureAmount = Number(cart.treasureAmount) || 0;
+    cart.loyaltyPointsRedeemed = Number(cart.loyaltyPointsRedeemed) || 0;
+    cart.loyaltyDiscount = Number(cart.loyaltyDiscount) || 0;
+    cart.loyaltyPointsAvailable = Number(cart.loyaltyPointsAvailable) || 0;
+    cart.loyaltyPointValue = Number(cart.loyaltyPointValue) || 0;
     cart.totalBeforeGiftCard =
       cart.totalBeforeGiftCard === undefined || cart.totalBeforeGiftCard === null
-        ? cart.total + cart.giftCardAmount
+        ? cart.total + cart.giftCardAmount + cart.treasureAmount
         : Number(cart.totalBeforeGiftCard) || 0;
   }
 

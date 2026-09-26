@@ -35,11 +35,33 @@ export interface ProductSpecifications {
   };
 }
 
+/** One stone row of a studded piece (backend StoneDetailDTO). caratWeight is per stone; totalCaratWeight the row. */
+export interface StoneDetail {
+  id?: string;
+  stoneType?: string;
+  shape?: string;
+  pieceCount?: number;
+  totalCaratWeight?: number;
+  settingType?: string;
+  caratWeight?: number;
+  clarity?: string;
+  colour?: string;
+  cut?: string;
+  certificateLab?: string;
+  certificateNumber?: string;
+  ratePerCarat?: number;
+  origin?: string;
+  treatment?: string;
+  position?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  /** False blocks a return or exchange on this piece; absent means returnable. */
+  returnable?: boolean;
   originalPrice?: number;
   rating?: number;
   reviewCount?: number;
@@ -74,14 +96,7 @@ export interface Product {
     netWeight?: number;
   };
 
-  stoneDetails?: {
-    id?: string;
-    stoneType?: string;
-    shape?: string;
-    pieceCount?: number;
-    totalCaratWeight?: number;
-    settingType?: string;
-  }[];
+  stoneDetails?: StoneDetail[];
 
   species?: string;
   variety?: string;
@@ -209,7 +224,17 @@ export interface Cart {
   wishlist?: Product[];
   appliedGiftCard?: string;
   giftCardAmount?: number;
+  /** total + treasureAmount + giftCardAmount: the invoice value before any prepayment. */
   totalBeforeGiftCard?: number;
+  /** Matured Treasure plan applied as a payment (before the gift card). */
+  appliedTreasureAccountId?: string | null;
+  treasureAmount?: number;
+  /** Loyalty points burned as a discount; loyaltyDiscount is already inside `discount`. */
+  loyaltyPointsRedeemed?: number;
+  loyaltyDiscount?: number;
+  /** Most points this cart could burn now (balance and the max-redeem cap). */
+  loyaltyPointsAvailable?: number;
+  loyaltyPointValue?: number;
 }
 
 export interface Order {
@@ -228,6 +253,9 @@ export interface Order {
   discount?: number;
   appliedGiftCard?: string;
   giftCardAmount?: number;
+  treasureAmount?: number;
+  loyaltyPointsRedeemed?: number;
+  loyaltyDiscount?: number;
   totalBeforeGiftCard?: number;
   trackingNumber?: string;
   estimatedDelivery?: string;
@@ -255,6 +283,15 @@ export interface Order {
   razorpayRefundId?: string;
   /** Whole INR refunded through the gateway. */
   refundedAmount?: number;
+  /** Razorpay order id when the order is awaiting an online payment. */
+  razorpayOrderId?: string | null;
+  /** The quote this order was created from, when any. */
+  rfqId?: string | null;
+  rfqNumber?: string | null;
+  /** When the order was delivered; the returns window counts from here. */
+  deliveredAt?: string | null;
+  /** RMA numbers raised on this order. */
+  returnNumbers?: string[];
 }
 
 /** Whether the order has been pushed to the accounting ERP. */
@@ -270,7 +307,9 @@ export function isPaidOrder(order: Pick<Order, 'status'> | null | undefined): bo
 
 export interface OrderItem {
   id: string;
-  product: Product;
+  /** Null for a custom line (an accepted quote for a made-to-order piece); read `description` then. */
+  product: Product | null;
+  description?: string | null;
   quantity: number;
   price: number;
   options?: any;
@@ -335,13 +374,85 @@ export interface TreasureChestAccount {
   installmentsPaid: number;
   totalInstallments: number;
   balance: number;
-  status: 'ACTIVE' | 'MATURED' | 'CLOSED';
+  status: 'ACTIVE' | 'MATURED' | 'REDEEMED' | 'CLOSED';
   startDate: string;
   nextDueDate: string;
   /** Bonus months x installment (finish contract, section 2). Optional until the backend ships it. */
   bonusAmount?: number;
   /** installment x totalInstallments + bonusAmount. */
   maturityAmount?: number;
+
+  // Gram accrual and gold rate protection.
+  /** 24K grams the paid installments bought at each day's rate. */
+  goldGramsAccrued?: number;
+  /** Today's 24K rate, INR per gram. */
+  ratePerGram?: number;
+  rateIndicative?: boolean;
+  /** goldGramsAccrued x ratePerGram. */
+  goldValue?: number;
+  /** max(balance, goldValue) once MATURED; null before. */
+  redeemableValue?: number | null;
+  redeemableBasis?: 'BALANCE' | 'GOLD';
+  redeemedAmount?: number | null;
+  redeemedOrderId?: string | null;
+  redeemedOrderNumber?: string | null;
+}
+
+/** GET treasure/accounts/{id}/redeemable: the gold rate protection figure. */
+export interface TreasureRedeemable {
+  accountId: string;
+  status: string;
+  redeemable: boolean;
+  balance: number;
+  goldGramsAccrued: number;
+  ratePerGram: number;
+  rateIndicative: boolean;
+  goldValue: number;
+  redeemableValue: number;
+  basis: 'BALANCE' | 'GOLD';
+}
+
+export type LoyaltyTransactionType = 'EARN' | 'REDEEM' | 'EXPIRE' | 'ADJUST' | 'REFERRAL';
+
+export interface LoyaltyTransaction {
+  id: string;
+  type: LoyaltyTransactionType;
+  /** Signed. */
+  points: number;
+  balanceAfter: number;
+  orderId?: string | null;
+  reference?: string | null;
+  expiresAt?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+/** GET loyalty/me. */
+export interface LoyaltySummary {
+  balance: number;
+  balanceValue: number;
+  lifetimeEarned: number;
+  tier: 'SILVER' | 'GOLD' | 'PLATINUM';
+  tierFloor: number;
+  nextTier: 'GOLD' | 'PLATINUM' | null;
+  nextTierAt: number | null;
+  pointsToNextTier: number;
+  expiringSoon: number;
+  expiringSoonAt?: string | null;
+  pointValue: number;
+  pointsPer100: number;
+  maxRedeemPct: number;
+  expiryMonths: number;
+  referralBonus: number;
+  referralCode: string;
+  referredByName?: string | null;
+  history: {
+    content: LoyaltyTransaction[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+  };
 }
 
 /** One monthly payment towards a Treasure Plan (finish contract, section 2). Amounts are whole INR. */
@@ -354,6 +465,11 @@ export interface TreasureInstallment {
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   paidAt?: string;
+  /** 24K grams this installment bought; absent on installments that pre-date the gram scheme. */
+  goldGrams?: number | null;
+  ratePerGram?: number | null;
+  rateIndicative?: boolean;
+
   note?: string;
   createdAt?: string;
 }
@@ -386,6 +502,7 @@ export interface User {
   token?: string;
   treasureChest?: TreasureChestAccount;
   loyaltyPoints?: number;
+  referralCode?: string | null;
 
   // Customer preferences (growth contract, section 3). All optional: the
   // backend adds these columns as nullable and older responses omit them.

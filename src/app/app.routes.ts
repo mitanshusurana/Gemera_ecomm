@@ -101,10 +101,26 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/privacy").then(m => m.PrivacyPolicyComponent)
   },
   {
+    // Returns and exchanges (RMA): raise a request on a delivered order, list mine.
+    path: "returns/new/:orderId",
+    loadComponent: () => import("./pages/return-new").then(m => m.ReturnNewComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: "returns/mine",
+    loadComponent: () => import("./pages/returns-mine").then(m => m.ReturnsMineComponent),
+    canActivate: [authGuard]
+  },
+  {
     // Returns, shipping and cancellation. The storefront promised 30-day
     // returns in six places with no policy page behind any of them.
     path: "returns",
     loadComponent: () => import("./pages/policies").then(m => m.PoliciesComponent)
+  },
+  {
+    // Consultations with a slot grid per store (AppointmentService).
+    path: "appointments",
+    loadComponent: () => import("./pages/appointments").then(m => m.AppointmentsComponent)
   },
   {
     path: "shipping",

@@ -11,19 +11,20 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { CartService, CART_PRICING, GUEST_GIFT_CARD_MESSAGE } from '../services/cart.service';
+import { CartService, CART_PRICING, GUEST_GIFT_CARD_MESSAGE, GUEST_REWARDS_MESSAGE } from '../services/cart.service';
 import { maskGiftCardCode } from '../services/gift-card.service';
+import { TreasureService } from '../services/treasure.service';
 import { SettingService } from '../services/setting.service';
 import { OrderService } from '../services/order.service';
 import { PaymentService } from '../services/payment.service';
+import { RazorpayCheckoutService } from '../services/razorpay-checkout.service';
 import { CurrencyService } from '../services/currency.service';
 import { EmailNotificationService } from '../services/email-notification.service';
 import { ToastService } from '../services/toast.service';
 import { CurrencyConvertPipe } from '../pipes/currency-convert.pipe';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Address, Cart, CartItem } from '../core/models';
+import { Address, Cart, CartItem, TreasureChestAccount, TreasureRedeemable } from '../core/models';
 import { CreateOrderRequest, GSTIN_PATTERN, PAN_PATTERN, PAN_REQUIRED_FROM_INR } from '../core/dtos';
-import { environment } from '../../environments/environment';
 import { COUNTRIES } from '../core/countries';
 
 @Component({
@@ -519,7 +520,7 @@ import { COUNTRIES } from '../core/countries';
                       Payment Method
                     </h3>
                     <div
-                      *ngIf="isFullyCoveredByGiftCard()"
+                      *ngIf="isFullyCovered()"
                       class="flex items-start gap-3 p-4 border border-[#D4AF37] rounded-[12px] bg-[#fbf8ef] mb-3"
                       role="status"
                     >
@@ -527,12 +528,12 @@ import { COUNTRIES } from '../core/countries';
                       <div>
                         <p class="font-semibold text-[#1d1d1f]">No payment needed</p>
                         <p class="text-sm text-[#6e6e73]">
-                          Your gift card covers this order in full. Place the order to redeem
-                          {{ cartGiftCardAmount() | currencyConvert }} from it.
+                          {{ coveredByLabel() }} covers this order in full. Place the order to redeem
+                          {{ (cartGiftCardAmount() + cartTreasureAmount()) | currencyConvert }} from it.
                         </p>
                       </div>
                     </div>
-                    <div class="space-y-3" *ngIf="!isFullyCoveredByGiftCard()">
+                    <div class="space-y-3" *ngIf="!isFullyCovered()">
                       <label
                         class="flex items-center gap-3 p-4 border rounded-[12px] cursor-pointer transition-colors"
                         [ngClass]="
@@ -635,6 +636,80 @@ import { COUNTRIES } from '../core/countries';
                       </p>
                     </ng-template>
                   </div>
+
+                  <!-- Treasure plan: matured balance as a payment -->
+                  <div *ngIf="treasureAccount() as plan" class="border-t border-[#e0e0e0] pt-6">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
+                      Use my Treasure balance
+                    </h3>
+                    <div *ngIf="cartTreasureAccountId(); else treasureOffer" class="flex items-center justify-between gap-4 p-4 border border-[#D4AF37] rounded-[12px] bg-[#fbf8ef]">
+                      <div>
+                        <p class="text-sm font-semibold text-[#1d1d1f]">{{ plan.planName || 'Treasure Plan' }}</p>
+                        <p class="text-sm text-[#6e6e73] mt-0.5">
+                          {{ cartTreasureAmount() | currencyConvert }} applied to this order<ng-container *ngIf="treasureRedeemable() as r">
+                            of {{ r.redeemableValue | currencyConvert }} available</ng-container>
+                        </p>
+                      </div>
+                      <button type="button" (click)="removeTreasure()" [disabled]="isProcessing()" class="btn-ghost text-sm">Remove</button>
+                    </div>
+                    <ng-template #treasureOffer>
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-[#e0e0e0] rounded-[12px] bg-white">
+                        <div>
+                          <p class="text-sm font-semibold text-[#1d1d1f]">{{ plan.planName || 'Treasure Plan' }} &middot; matured</p>
+                          <p class="text-sm text-[#6e6e73] mt-0.5">
+                            <ng-container *ngIf="treasureRedeemable() as r; else planBalance">
+                              {{ r.redeemableValue | currencyConvert }} redeemable today
+                              <span *ngIf="r.basis === 'GOLD'">({{ r.goldGramsAccrued | number:'1.3-3' }} g of gold at today's rate)</span>
+                              <span *ngIf="r.basis !== 'GOLD'">(your balance with the bonus)</span>
+                            </ng-container>
+                            <ng-template #planBalance>{{ plan.balance | currencyConvert }} available</ng-template>
+                          </p>
+                        </div>
+                        <button type="button" (click)="applyTreasure()" [disabled]="isProcessing()" class="btn-outline text-sm !py-2.5 !px-5 whitespace-nowrap">Apply</button>
+                      </div>
+                      <p class="text-xs text-[#6e6e73] mt-2">
+                        Gold rate protection: you redeem the higher of your rupee balance and your grams at today's rate. Anything left stays on the plan.
+                        <a routerLink="/treasure" class="text-[#D4AF37] hover:underline">See the plan</a>
+                      </p>
+                    </ng-template>
+                  </div>
+
+                  <!-- Loyalty points: a discount before tax -->
+                  <div *ngIf="isAuthenticated() && (pointsAvailable() > 0 || cartPointsRedeemed() > 0)" class="border-t border-[#e0e0e0] pt-6">
+                    <h3 class="font-sans font-semibold text-base text-[#1d1d1f] mb-4">
+                      Use points
+                    </h3>
+                    <div *ngIf="cartPointsRedeemed() > 0; else pointsEntry" class="flex items-center justify-between gap-4 p-4 border border-[#D4AF37] rounded-[12px] bg-[#fbf8ef]">
+                      <div>
+                        <p class="text-sm font-semibold text-[#1d1d1f]">{{ cartPointsRedeemed() | number }} points applied</p>
+                        <p class="text-sm text-[#6e6e73] mt-0.5">{{ cartLoyaltyDiscount() | currencyConvert }} off before tax</p>
+                      </div>
+                      <button type="button" (click)="removePoints()" [disabled]="isProcessing()" class="btn-ghost text-sm">Remove</button>
+                    </div>
+                    <ng-template #pointsEntry>
+                      <div class="flex gap-2">
+                        <input
+                          type="number"
+                          [(ngModel)]="pointsInput"
+                          name="pointsInput"
+                          [min]="1"
+                          [max]="pointsAvailable()"
+                          step="1"
+                          inputmode="numeric"
+                          [placeholder]="'Up to ' + pointsAvailable()"
+                          aria-label="Points to use"
+                          class="input-field flex-1"
+                        />
+                        <button type="button" (click)="useMaxPoints()" [disabled]="isProcessing()" class="btn-outline text-sm !py-2.5 !px-4">Max</button>
+                        <button type="button" (click)="applyPoints()" [disabled]="isProcessing()" class="btn-outline text-sm !py-2.5 !px-5">Apply</button>
+                      </div>
+                      <p class="text-xs text-[#6e6e73] mt-2">
+                        You can use up to {{ pointsAvailable() | number }} points on this order, worth {{ pointsValue(pointsAvailable()) | currencyConvert }}
+                        <ng-container *ngIf="pointsInputValue() > 0"> ({{ pointsInput }} points = {{ pointsValue(pointsInputValue()) | currencyConvert }})</ng-container>.
+                        Points come off the price before tax.
+                      </p>
+                    </ng-template>
+                  </div>
                 </div>
               </div>
 
@@ -665,7 +740,7 @@ import { COUNTRIES } from '../core/countries';
                   {{
                     isProcessing()
                       ? 'Processing...'
-                      : isFullyCoveredByGiftCard() || selectedPaymentMethod === 'COD'
+                      : isFullyCovered() || selectedPaymentMethod === 'COD'
                         ? 'Place Order'
                         : 'Pay Now'
                   }}
@@ -737,6 +812,22 @@ import { COUNTRIES } from '../core/countries';
                   >
                 </div>
                 <div
+                  *ngIf="cartPointsRedeemed() > 0"
+                  class="flex justify-between text-xs text-[#6e6e73] -mt-2"
+                >
+                  <span>includes {{ cartPointsRedeemed() | number }} points</span>
+                  <span>-{{ cartLoyaltyDiscount() | currencyConvert }}</span>
+                </div>
+                <div
+                  *ngIf="cartTreasureAmount() > 0"
+                  class="flex justify-between text-emerald-600"
+                >
+                  <span>Treasure plan</span>
+                  <span class="font-semibold"
+                    >-{{ cartTreasureAmount() | currencyConvert }}</span
+                  >
+                </div>
+                <div
                   *ngIf="cartGiftCard() && cartGiftCardAmount() > 0"
                   class="flex justify-between text-emerald-600"
                 >
@@ -749,7 +840,7 @@ import { COUNTRIES } from '../core/countries';
 
               <div class="flex justify-between items-center mb-6">
                 <span class="font-semibold text-base text-[#1d1d1f]">{{
-                  cartGiftCard() ? 'Amount due' : 'Total'
+                  cartGiftCard() || cartTreasureAmount() > 0 ? 'Amount due' : 'Total'
                 }}</span>
                 <span class="font-semibold text-2xl text-[#1d1d1f]">{{
                   cartTotal() | currencyConvert
@@ -808,6 +899,29 @@ export class CheckoutComponent implements OnInit {
     () => !!this.cartGiftCard() && this.cartGiftCardAmount() > 0 && this.cartTotal() <= 0,
   );
   giftCardCode = '';
+
+  // ---- Treasure plan (a payment, applied before the gift card) -------------
+  /** The signed-in customer's MATURED plan, when there is one. */
+  treasureAccount = signal<TreasureChestAccount | null>(null);
+  treasureRedeemable = signal<TreasureRedeemable | null>(null);
+  cartTreasureAccountId = signal<string | null>(null);
+  cartTreasureAmount = signal(0);
+  /** Nothing left to pay after the Treasure plan and/or gift card. */
+  isFullyCovered = computed(
+    () => (this.cartTreasureAmount() > 0 || (!!this.cartGiftCard() && this.cartGiftCardAmount() > 0)) && this.cartTotal() <= 0,
+  );
+  coveredByLabel = computed(() => {
+    const treasure = this.cartTreasureAmount() > 0;
+    const card = !!this.cartGiftCard() && this.cartGiftCardAmount() > 0;
+    return treasure && card ? 'Your Treasure plan and gift card' : treasure ? 'Your Treasure plan' : 'Your gift card';
+  });
+
+  // ---- Loyalty points (a discount before tax) -------------------------------
+  cartPointsRedeemed = signal(0);
+  cartLoyaltyDiscount = signal(0);
+  pointsAvailable = signal(0);
+  pointValue = signal(0);
+  pointsInput: number | null = null;
   readonly giftWrapFee = CART_PRICING.giftWrapFee;
   isProcessing = signal(false);
   isRecovering = signal(false);
@@ -903,6 +1017,8 @@ export class CheckoutComponent implements OnInit {
   selectedAddressId = signal<string>('new');
 
   private paymentService = inject(PaymentService);
+  private razorpay = inject(RazorpayCheckoutService);
+  private treasureService = inject(TreasureService);
   private currencyService = inject(CurrencyService);
   private toastService = inject(ToastService);
   private settingService = inject(SettingService);
@@ -947,6 +1063,7 @@ export class CheckoutComponent implements OnInit {
     }
     this.checkAuth();
     this.loadCartData();
+    this.loadTreasurePlan();
     this.loadRazorpayScript();
 
     // Subscribe to user changes
@@ -978,16 +1095,122 @@ export class CheckoutComponent implements OnInit {
   }
 
   loadRazorpayScript() {
-    if (isPlatformBrowser(this.platformId)) {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
+    this.razorpay.load();
   }
 
   private checkAuth(): void {
     this.isAuthenticated.set(this.authService.isAuthenticated());
+  }
+
+  /** A matured Treasure plan can pay for the order; 404 simply means not enrolled. */
+  private loadTreasurePlan(): void {
+    if (!this.authService.isAuthenticated()) return;
+    this.treasureService.getAccount().subscribe({
+      next: (acct) => {
+        if (acct && acct.status === 'MATURED') {
+          this.treasureAccount.set(acct);
+          this.treasureService.getRedeemable(acct.id).subscribe({
+            next: (r) => this.treasureRedeemable.set(r),
+            error: () => this.treasureRedeemable.set(null),
+          });
+        } else {
+          this.treasureAccount.set(null);
+        }
+      },
+      error: () => this.treasureAccount.set(null),
+    });
+  }
+
+  applyTreasure() {
+    const plan = this.treasureAccount();
+    if (!plan) return;
+    this.isProcessing.set(true);
+    this.cartService.applyTreasure(plan.id).subscribe({
+      next: (cart) => {
+        this.isProcessing.set(false);
+        this.applyCartState(cart);
+        this.toastService.show(
+          this.isFullyCovered()
+            ? 'Treasure plan applied. Your order is fully covered; no payment is needed.'
+            : `Treasure plan applied: ${this.currencyService.format(cart.treasureAmount || 0)} off the amount due.`,
+          'success',
+        );
+      },
+      error: (err: unknown) => {
+        this.isProcessing.set(false);
+        if (!(err instanceof HttpErrorResponse)) {
+          this.toastService.show(err instanceof Error ? err.message : GUEST_REWARDS_MESSAGE, 'error');
+        }
+      },
+    });
+  }
+
+  removeTreasure() {
+    this.isProcessing.set(true);
+    this.cartService.removeTreasure().subscribe({
+      next: (cart) => {
+        this.isProcessing.set(false);
+        this.applyCartState(cart);
+        this.toastService.show('Treasure plan removed from this order.', 'info');
+      },
+      error: () => this.isProcessing.set(false),
+    });
+  }
+
+  pointsInputValue(): number {
+    const n = Math.floor(Number(this.pointsInput));
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
+  pointsValue(points: number): number {
+    return Math.round(points * this.pointValue() * 100) / 100;
+  }
+
+  useMaxPoints() {
+    this.pointsInput = this.pointsAvailable();
+    this.applyPoints();
+  }
+
+  applyPoints() {
+    const points = this.pointsInputValue();
+    if (points <= 0) {
+      this.toastService.show('Enter the number of points to use.', 'error');
+      return;
+    }
+    if (points > this.pointsAvailable()) {
+      this.toastService.show(`You can use up to ${this.pointsAvailable()} points on this order.`, 'error');
+      return;
+    }
+    this.isProcessing.set(true);
+    this.cartService.applyPoints(points).subscribe({
+      next: (cart) => {
+        this.isProcessing.set(false);
+        this.pointsInput = null;
+        this.applyCartState(cart);
+        this.toastService.show(
+          `${cart.loyaltyPointsRedeemed} points applied: ${this.currencyService.format(cart.loyaltyDiscount || 0)} off.`,
+          'success',
+        );
+      },
+      error: (err: unknown) => {
+        this.isProcessing.set(false);
+        if (!(err instanceof HttpErrorResponse)) {
+          this.toastService.show(err instanceof Error ? err.message : GUEST_REWARDS_MESSAGE, 'error');
+        }
+      },
+    });
+  }
+
+  removePoints() {
+    this.isProcessing.set(true);
+    this.cartService.removePoints().subscribe({
+      next: (cart) => {
+        this.isProcessing.set(false);
+        this.applyCartState(cart);
+        this.toastService.show('Points removed from this order.', 'info');
+      },
+      error: () => this.isProcessing.set(false),
+    });
   }
 
   private loadCartData(): void {
@@ -1011,6 +1234,12 @@ export class CheckoutComponent implements OnInit {
     this.cartDiscount.set(cart.appliedDiscount ?? cart.discount ?? 0);
     this.cartGiftCard.set(cart.appliedGiftCard || null);
     this.cartGiftCardAmount.set(cart.giftCardAmount || 0);
+    this.cartTreasureAccountId.set(cart.appliedTreasureAccountId || null);
+    this.cartTreasureAmount.set(cart.treasureAmount || 0);
+    this.cartPointsRedeemed.set(cart.loyaltyPointsRedeemed || 0);
+    this.cartLoyaltyDiscount.set(cart.loyaltyDiscount || 0);
+    this.pointsAvailable.set(cart.loyaltyPointsAvailable || 0);
+    this.pointValue.set(cart.loyaltyPointValue || 0);
     this.cartTotalBeforeGiftCard.set(Number(cart.totalBeforeGiftCard) || 0);
     // A coupon removal or gift-card change can push the total over the cash
     // limit while COD is already selected; fall back to the gateway.
@@ -1039,7 +1268,7 @@ export class CheckoutComponent implements OnInit {
       this.orderError.set(this.gstinError());
       return false;
     }
-    if (this.codBlocked() && this.selectedPaymentMethod === 'COD' && !this.isFullyCoveredByGiftCard()) {
+    if (this.codBlocked() && this.selectedPaymentMethod === 'COD' && !this.isFullyCovered()) {
       this.orderError.set('Cash on delivery is not available above ₹2,00,000 (Section 269ST). Please pay online.');
       return false;
     }
@@ -1055,7 +1284,7 @@ export class CheckoutComponent implements OnInit {
    * client total, and sending one would imply it is authoritative.
    */
   private buildOrderData(
-    paymentMethod: 'COD' | 'GIFT_CARD' | 'RAZORPAY',
+    paymentMethod: 'COD' | 'GIFT_CARD' | 'TREASURE' | 'RAZORPAY',
     paymentDetails: CreateOrderRequest['paymentDetails'],
   ): CreateOrderRequest {
     const { email, ...shippingAddr } = this.shippingForm.value;
@@ -1294,10 +1523,10 @@ export class CheckoutComponent implements OnInit {
   }
 
   private processPaymentSelection() {
-    if (this.isFullyCoveredByGiftCard()) {
+    if (this.isFullyCovered()) {
       // Nothing to collect: no Razorpay order, no COD. The backend debits the
-      // card inside createOrder and marks the order PAID / GIFT_CARD.
-      this.placeUnpaidOrder('GIFT_CARD');
+      // Treasure plan / card inside createOrder and marks the order PAID.
+      this.placeUnpaidOrder(this.isFullyCoveredByGiftCard() ? 'GIFT_CARD' : 'TREASURE');
     } else if (this.selectedPaymentMethod === 'COD') {
       this.handleCODPayment();
     } else {
@@ -1310,7 +1539,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   /** Orders that do not go through the gateway: COD, or fully covered by a gift card. */
-  private placeUnpaidOrder(paymentMethod: 'COD' | 'GIFT_CARD') {
+  private placeUnpaidOrder(paymentMethod: 'COD' | 'GIFT_CARD' | 'TREASURE') {
     // No gateway payment to reference.
     const orderData = this.buildOrderData(paymentMethod, {});
 
@@ -1337,15 +1566,9 @@ export class CheckoutComponent implements OnInit {
   }
 
   private initiateRazorpay() {
-    if (
-      !isPlatformBrowser(this.platformId) ||
-      typeof Razorpay === 'undefined'
-    ) {
+    if (!this.razorpay.isReady()) {
       this.isProcessing.set(false);
-      this.toastService.show(
-        'Payment gateway failed to load. Please check your internet connection or disable ad blockers.',
-        'error',
-      );
+      this.toastService.show(RazorpayCheckoutService.LOAD_ERROR, 'error');
       return;
     }
 
@@ -1375,58 +1598,50 @@ export class CheckoutComponent implements OnInit {
     amount: number;
     currency: string;
   }) {
-    const options: Razorpay.Options = {
-      key: environment.razorpayKey,
+    const opened = this.razorpay.open({
+      orderId: orderData.id,
       amount: orderData.amount,
       currency: orderData.currency,
-      name: 'Caratloop',
       description: 'Jewellery Purchase',
-      order_id: orderData.id,
       prefill: {
         name: `${this.shippingForm.value.firstName} ${this.shippingForm.value.lastName}`,
         email: this.shippingForm.value.email,
         contact: this.shippingForm.value.phone,
       },
-      theme: {
-        color: '#D4AF37',
+      onSuccess: (response) => this.handlePaymentSuccess(response),
+      onDismiss: () => {
+        this.isProcessing.set(false);
+        this.paymentService
+          .logFailedTransaction({
+            error_code: 'PAYMENT_CANCELLED',
+            error_description: 'User closed the payment modal',
+            razorpay_order_id: orderData.id,
+          })
+          .subscribe();
       },
-      handler: (response: Razorpay.PaymentSuccessResponse) => {
-        this.handlePaymentSuccess(response);
+      onFailure: (response) => {
+        this.isProcessing.set(false);
+        this.paymentService
+          .logFailedTransaction({
+            error_code: response.error.code,
+            error_description: response.error.description,
+            error_source: response.error.source,
+            error_step: response.error.step,
+            error_reason: response.error.reason,
+            razorpay_order_id: response.error.metadata.order_id,
+            razorpay_payment_id: response.error.metadata.payment_id,
+          })
+          .subscribe();
+        this.toastService.show(
+          'Payment Failed: ' + response.error.description,
+          'error',
+        );
       },
-      modal: {
-        ondismiss: () => {
-          this.isProcessing.set(false);
-          this.paymentService
-            .logFailedTransaction({
-              error_code: 'PAYMENT_CANCELLED',
-              error_description: 'User closed the payment modal',
-              razorpay_order_id: orderData.id,
-            })
-            .subscribe();
-        },
-      },
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.on('payment.failed', (response: Razorpay.PaymentFailedResponse) => {
-      this.isProcessing.set(false);
-      this.paymentService
-        .logFailedTransaction({
-          error_code: response.error.code,
-          error_description: response.error.description,
-          error_source: response.error.source,
-          error_step: response.error.step,
-          error_reason: response.error.reason,
-          razorpay_order_id: response.error.metadata.order_id,
-          razorpay_payment_id: response.error.metadata.payment_id,
-        })
-        .subscribe();
-      this.toastService.show(
-        'Payment Failed: ' + response.error.description,
-        'error',
-      );
     });
-    rzp.open();
+    if (!opened) {
+      this.isProcessing.set(false);
+      this.toastService.show(RazorpayCheckoutService.LOAD_ERROR, 'error');
+    }
   }
 
   handlePaymentSuccess(response: Razorpay.PaymentSuccessResponse) {
@@ -1522,7 +1737,7 @@ export class CheckoutComponent implements OnInit {
         this.applyCartState(cart);
         const applied = cart.giftCardAmount || 0;
         this.toastService.show(
-          this.isFullyCoveredByGiftCard()
+          this.isFullyCovered()
             ? 'Gift card applied. Your order is fully covered; no payment is needed.'
             : `Gift card applied: ${this.currencyService.format(applied)} off the amount due.`,
           'success',

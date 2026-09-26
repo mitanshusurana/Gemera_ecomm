@@ -8,6 +8,7 @@ import {
   TreasureInstallment,
   TreasureInstallmentConfirmRequest,
   TreasureInstallmentOrderResponse,
+  TreasureRedeemable,
 } from '../core/models';
 
 /**
@@ -100,5 +101,13 @@ export class TreasureService {
   /** Installment history for the caller's account, newest first. */
   getInstallments(): Observable<TreasureInstallment[]> {
     return this.http.get<TreasureInstallment[]>(`${this.baseUrl}/account/installments`);
+  }
+
+  /**
+   * Gold rate protection: what the plan is worth today, the higher of the
+   * rupee balance (bonus included) and the accrued grams at today's rate.
+   */
+  getRedeemable(accountId: string): Observable<TreasureRedeemable> {
+    return this.http.get<TreasureRedeemable>(`${this.baseUrl}/accounts/${encodeURIComponent(accountId)}/redeemable`);
   }
 }

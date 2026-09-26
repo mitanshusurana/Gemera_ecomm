@@ -85,6 +85,7 @@ import { environment } from "../../environments/environment";
             <h4 class="font-semibold text-xs text-[#1d1d1f] uppercase tracking-wider mb-4">Customer Care</h4>
             <ul class="space-y-1 text-sm text-[#333333] leading-[2.2]">
               <li><a routerLink="/contact" class="hover:text-[#D4AF37] transition-colors">Contact Concierge</a></li>
+              <li><a routerLink="/appointments" class="hover:text-[#D4AF37] transition-colors">Book an Appointment</a></li>
               <li><a routerLink="/returns" class="hover:text-[#D4AF37] transition-colors">Shipping &amp; Returns</a></li>
               <li><a routerLink="/track-order" class="hover:text-[#D4AF37] transition-colors">Track Your Order</a></li>
               <li><a routerLink="/verify-certificate" class="hover:text-[#D4AF37] transition-colors">Verify Gem Certificate</a></li>

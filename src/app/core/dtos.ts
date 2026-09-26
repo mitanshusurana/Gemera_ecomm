@@ -12,6 +12,8 @@ export interface RegisterRequest {
   email: string;
   phone: string;
   password: string;
+  /** Optional: a friend's referral code; both sides earn the referral bonus on the first paid order. */
+  referralCode?: string;
 }
 
 // Order DTOs

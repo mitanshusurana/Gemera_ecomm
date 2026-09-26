@@ -85,10 +85,22 @@ type PayStage = 'idle' | 'creating' | 'paying' | 'confirming';
               <p class="text-sm text-[#1d1d1f] mt-2">
                 All {{ acct.totalInstallments }} installments are in and your bonus of
                 <span class="font-semibold">{{ currencyService.format(bonusAmount(acct)) }}</span> has been added.
-                <span class="font-semibold">{{ currencyService.format(acct.balance) }}</span> is ready to redeem on any certified diamond or gold creation.
+                <span class="font-semibold">{{ currencyService.format(redeemableValue(acct)) }}</span> is ready to redeem on any certified diamond or gold creation
+                <ng-container *ngIf="acct.redeemableBasis === 'GOLD'">(your {{ gramsLabel(acct.goldGramsAccrued) }} of gold at today's rate, which is worth more than the rupee balance)</ng-container>.
               </p>
-              <a routerLink="/products" class="btn-apple-pill inline-flex text-sm !py-2.5 !px-6 mt-4">Redeem on the collection</a>
+              <p *ngIf="acct.redeemedAmount" class="text-xs text-[#6e6e73] mt-2">
+                {{ currencyService.format(acct.redeemedAmount) }} has already been used<ng-container *ngIf="acct.redeemedOrderNumber"> on order {{ acct.redeemedOrderNumber }}</ng-container>.
+              </p>
+              <div class="flex flex-wrap gap-3 mt-4">
+                <a routerLink="/products" class="btn-apple-pill inline-flex text-sm !py-2.5 !px-6">Redeem on the collection</a>
+                <a routerLink="/checkout" class="btn-apple-pill-secondary inline-flex text-sm !py-2.5 !px-6">Use it at checkout</a>
+              </div>
             </div>
+          </div>
+
+          <!-- Redeemed -->
+          <div *ngIf="acct.status === 'REDEEMED'" role="status" class="rounded-[18px] border border-[#e0e0e0] bg-[#f5f5f7] p-6 text-sm text-[#1d1d1f]">
+            This plan has been redeemed in full<ng-container *ngIf="acct.redeemedAmount">: {{ currencyService.format(acct.redeemedAmount) }}</ng-container><ng-container *ngIf="acct.redeemedOrderNumber"> went towards order {{ acct.redeemedOrderNumber }}</ng-container>. Thank you for saving with Caratloop.
           </div>
 
           <!-- Closed -->
@@ -193,6 +205,39 @@ type PayStage = 'idle' | 'creating' | 'paying' | 'confirming';
             </div>
           </div>
 
+          <!-- Gold rate protection -->
+          <section class="store-utility-card" aria-labelledby="gold-protection">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+              <div class="max-w-xl">
+                <span class="text-xs uppercase tracking-wider font-semibold text-[#D4AF37] block mb-2">Gold Rate Protection</span>
+                <h2 id="gold-protection" class="font-display font-semibold text-xl text-[#1d1d1f]">Every installment buys gold at that day's rate</h2>
+                <p class="text-sm text-[#6e6e73] mt-2">
+                  Each payment is booked as 24K gold grams at the rate of the day. At maturity you redeem
+                  whichever is higher: your rupee balance with the bonus, or those grams at the rate on the
+                  day you redeem. If gold goes up, your plan goes up with it; if it falls, your rupees are safe.
+                </p>
+              </div>
+              <dl class="grid grid-cols-2 gap-x-8 gap-y-4 text-sm md:min-w-[320px]">
+                <div>
+                  <dt class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">Gold accrued</dt>
+                  <dd class="font-semibold text-[#1d1d1f]">{{ gramsLabel(acct.goldGramsAccrued) }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">Today's 24K rate</dt>
+                  <dd class="font-semibold text-[#1d1d1f]">{{ acct.ratePerGram ? currencyService.format(acct.ratePerGram) + '/g' : '&mdash;' }}<span *ngIf="acct.rateIndicative" class="text-[10px] text-[#7a7a7a] font-normal ml-1">indicative</span></dd>
+                </div>
+                <div>
+                  <dt class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">Gold value today</dt>
+                  <dd class="font-semibold text-[#1d1d1f]">{{ currencyService.format(acct.goldValue || 0) }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">{{ acct.status === 'MATURED' ? 'Redeemable now' : 'Redeemable at maturity' }}</dt>
+                  <dd class="font-semibold text-[#1d1d1f]">{{ currencyService.format(redeemableValue(acct)) }}<span class="text-[10px] text-[#7a7a7a] font-normal ml-1">{{ redeemableBasisLabel(acct) }}</span></dd>
+                </div>
+              </dl>
+            </div>
+          </section>
+
           <!-- History -->
           <section class="store-utility-card !p-0 overflow-hidden" aria-labelledby="installment-history">
             <div class="flex items-center justify-between px-8 py-6 border-b border-[#f0f0f0]">
@@ -217,6 +262,7 @@ type PayStage = 'idle' | 'creating' | 'paying' | 'confirming';
                     <ng-container *ngIf="inst.paidAt; else pendingSince">Paid {{ inst.paidAt | date:'d MMM y' }}</ng-container>
                     <ng-template #pendingSince>{{ inst.createdAt ? (inst.createdAt | date:'d MMM y') : '' }}</ng-template>
                     <span *ngIf="inst.method"> &middot; {{ methodLabel(inst.method) }}</span>
+                    <span *ngIf="inst.goldGrams"> &middot; {{ gramsLabel(inst.goldGrams) }} at {{ currencyService.format(inst.ratePerGram || 0) }}/g</span>
                     <span *ngIf="inst.note"> &middot; {{ inst.note }}</span>
                   </div>
                 </div>
@@ -294,8 +340,9 @@ type PayStage = 'idle' | 'creating' | 'paying' | 'confirming';
                 </div>
               </div>
 
-              <div class="bg-white p-4 rounded-[12px] border border-[#e0e0e0] text-xs text-[#7a7a7a]">
-                &#10022; Redeemable on all certified diamonds and gold creations across our collections.
+              <div class="bg-white p-4 rounded-[12px] border border-[#e0e0e0] text-xs text-[#7a7a7a] space-y-2">
+                <p>&#10022; Redeemable on all certified diamonds and gold creations across our collections, straight from the checkout.</p>
+                <p>&#10022; Gold rate protection: every installment is booked as 24K gold at that day's rate, and at maturity you redeem the higher of the rupee value or the grams at the rate of the day.</p>
               </div>
             </div>
 
@@ -601,6 +648,25 @@ export class TreasureChestComponent implements OnInit {
     return acct.installmentAmount * acct.totalInstallments + this.bonusAmount(acct);
   }
 
+  /** max(balance incl. bonus, grams x today's rate); the maturity figure while the plan is still running. */
+  redeemableValue(acct: TreasureChestAccount): number {
+    if (typeof acct.redeemableValue === 'number') return acct.redeemableValue;
+    if (acct.status === 'ACTIVE') {
+      return Math.max(this.maturityAmount(acct), acct.goldValue || 0);
+    }
+    return Math.max(acct.balance || 0, acct.goldValue || 0);
+  }
+
+  redeemableBasisLabel(acct: TreasureChestAccount): string {
+    if (acct.status === 'ACTIVE') return 'projected';
+    return acct.redeemableBasis === 'GOLD' ? 'gold value' : 'rupee balance';
+  }
+
+  gramsLabel(grams: number | null | undefined): string {
+    const g = Number(grams) || 0;
+    return g.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' g';
+  }
+
   remainingInstallments(acct: TreasureChestAccount): number {
     return Math.max(0, (acct.totalInstallments || 0) - (acct.installmentsPaid || 0));
   }
@@ -614,6 +680,7 @@ export class TreasureChestComponent implements OnInit {
     switch (status) {
       case 'ACTIVE': return 'Active';
       case 'MATURED': return 'Matured';
+      case 'REDEEMED': return 'Redeemed';
       case 'CLOSED': return 'Closed';
       default: return status;
     }
