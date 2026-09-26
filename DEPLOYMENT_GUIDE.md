@@ -116,6 +116,8 @@ five-minute retry job. A 409 from the ERP means the two systems disagree on GST 
 rate settings (admin Settings, tax rates; ERP item master or `GST_RATE_*`) and retry from the admin.
 The ERP records these postings under a service user `ecommerce-bridge@caratloop.local` that cannot sign in.
 
+Repair service invoices (SRV series) and Treasure installments (as on-account advances) post through the same bridge.
+
 Old gold exchange: when the admin credits an exchange request, the store API posts an RCM purchase from the
 customer to `POST /api/v1/integrations/ecommerce/old-gold-purchases`; the customer's credit is a store gift card, and
 the web sale that redeems it carries an `exchange_credit` block so the ERP sets the purchase off against the sale.
@@ -128,6 +130,11 @@ default to disabled; e-mail always sends. Test either channel from the admin Not
 ERP e-invoicing: `EINVOICE_PROVIDER=nic` with the GSP base URL and credentials in `.env.erp` (see
 `projects/erp-backend/app/core/config.py`); use `fake` to exercise the flow without a GSP. TDS and TCS are off until
 `TDS_194Q_ENABLED` / `TCS_206C1H_ENABLED` are set.
+
+Metal rates: no key is needed. Spot prices come from gold-api.com and USD/INR from frankfurter.dev (er-api as a
+fallback); `GOLDAPI_KEY` is only needed if the admin switches the provider to GOLDAPI_IO. Customs duty, local premium
+and the auto-lock hour are set on the admin Metal rates page, where the rate of the day is locked and products priced
+from the rate are repriced.
 
 Seller details printed on web invoices come from admin Settings (legal name, GSTIN, PAN, address,
 state code, invoice series prefix).
