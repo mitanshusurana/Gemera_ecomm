@@ -3,10 +3,22 @@ import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, FormArray, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { catchError, forkJoin } from 'rxjs';
+import { catchError, forkJoin, of, Subject } from 'rxjs';
+import { debounceTime, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { StockService, ProductStockLocations } from '../../services/stock.service';
+import { StockService, ProductStockLocations, apiErrorMessage } from '../../services/stock.service';
+import {
+  BOARD_PURITIES,
+  MakingChargeType,
+  MetalCode,
+  MetalPurity,
+  MetalRateService,
+  PriceBreakdown,
+  PricePreviewRequest,
+  PricingMode,
+  rateLabel
+} from '../../services/metal-rate.service';
 import {
   ALLOWED_SALE_MODES,
   CRAFTS,
@@ -53,8 +65,186 @@ export class ProductAddComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private http: HttpClient,
-    private stockService: StockService
+    private stockService: StockService,
+    private metalRateService: MetalRateService
   ) {}
+
+  // ---- Pricing from the daily metal rate (metal-prices contract) ----
+
+  /** Board purities the pricing section offers, grouped by metal in the select. */
+  readonly pricingPurities = BOARD_PURITIES;
+  readonly pricingMetals: Array<{ value: MetalCode; label: string }> = [
+    { value: 'GOLD', label: 'Gold' },
+    { value: 'SILVER', label: 'Silver' },
+    { value: 'PLATINUM', label: 'Platinum' },
+  ];
+  readonly makingChargeTypes: Array<{ value: MakingChargeType; label: string; suffix: string }> = [
+    { value: 'PER_GRAM', label: 'Per gram', suffix: '₹/g' },
+    { value: 'PERCENT', label: '% of metal value', suffix: '%' },
+    { value: 'FIXED', label: 'Fixed amount', suffix: '₹' },
+  ];
+  /** Controls whose change re-runs the price preview. */
+  private readonly pricingPaths = ['pricingMetal', 'pricingPurity', 'pricingNetWeightGrams', 'makingChargeType', 'makingChargeValue', 'wastagePct', 'stoneValue', 'otherCharges'];
+
+  pricePreview: PriceBreakdown | null = null;
+  previewLoading = false;
+  previewError: string | null = null;
+  private previewRequests = new Subject<PricePreviewRequest | null>();
+
+  get pricingMode(): PricingMode {
+    return (this.productForm?.get('pricingMode')?.value as PricingMode) || 'FIXED';
+  }
+
+  get isMetalRatePricing(): boolean {
+    return this.pricingMode === 'METAL_RATE';
+  }
+
+  /** Metal-rate pricing is offered for finished jewellery sold per piece. */
+  get showPricingModeToggle(): boolean {
+    return this.isPerPiece && this.has('JEWELLERY_DETAILS');
+  }
+
+  get makingChargeSuffix(): string {
+    const type = this.productForm?.get('makingChargeType')?.value as MakingChargeType;
+    return this.makingChargeTypes.find(t => t.value === type)?.suffix ?? '₹';
+  }
+
+  purityChoicesFor(metal: MetalCode): MetalPurity[] {
+    return this.pricingPurities.filter(p => p.metal === metal).map(p => p.purity);
+  }
+
+  purityLabel(metal: MetalCode, purity: MetalPurity): string {
+    return rateLabel({ metal, purity });
+  }
+
+  /** Sum of stone rows' rate per carat x row carats; null when no row carries a rate. */
+  get stoneRowsValue(): number | null {
+    let any = false;
+    let sum = 0;
+    for (let i = 0; i < this.stoneDetails.length; i++) {
+      const rate = Number(this.stoneDetails.at(i)?.get('ratePerCarat')?.value);
+      const carats = this.stoneRowTotal(i);
+      if (isFinite(rate) && rate > 0 && carats !== null) {
+        any = true;
+        sum += rate * carats;
+      }
+    }
+    return any ? Math.round(sum) : null;
+  }
+
+  /** Maps the metal-details vocabulary ('22K', '925 Sterling', ...) onto the board's metal and purity. */
+  private boardPurityFromMetalDetails(): { metal: MetalCode; purity: MetalPurity } | null {
+    const md = this.productForm.get('metalDetails')?.value ?? {};
+    const type = String(md.metalType ?? '').toLowerCase();
+    const purityText = String(md.metalPurity ?? '').toUpperCase();
+    const metal: MetalCode = /silver/.test(type) ? 'SILVER' : /platinum/.test(type) ? 'PLATINUM' : 'GOLD';
+    const match = this.pricingPurities.find(p => p.metal === metal && purityText.startsWith(p.purity));
+    if (match) return match;
+    if (purityText) return null;
+    return { metal, purity: metal === 'GOLD' ? '22K' : metal === 'SILVER' ? '925' : '950' };
+  }
+
+  /** Fills empty pricing fields from the metal and stone sections when the mode switches to METAL_RATE. */
+  private prefillPricingFromDetails() {
+    const form = this.productForm;
+    const empty = (path: string) => {
+      const v = form.get(path)?.value;
+      return v === null || v === undefined || v === '';
+    };
+    const board = this.boardPurityFromMetalDetails();
+    if (board && (empty('pricingPurity') || empty('pricingMetal'))) {
+      form.patchValue({ pricingMetal: board.metal, pricingPurity: board.purity }, { emitEvent: false });
+    }
+    if (empty('pricingNetWeightGrams')) {
+      const net = Number(form.get('metalDetails.netWeight')?.value);
+      if (isFinite(net) && net > 0) form.get('pricingNetWeightGrams')?.setValue(net, { emitEvent: false });
+    }
+    if (empty('stoneValue')) {
+      const stones = this.stoneRowsValue;
+      if (stones !== null) form.get('stoneValue')?.setValue(stones, { emitEvent: false });
+    }
+    if (empty('makingChargeType')) form.get('makingChargeType')?.setValue('PER_GRAM', { emitEvent: false });
+    if (empty('wastagePct')) form.get('wastagePct')?.setValue(0, { emitEvent: false });
+  }
+
+  private onPricingModeChanged() {
+    if (this.isMetalRatePricing) {
+      this.prefillPricingFromDetails();
+      this.requestPreview();
+    } else {
+      this.pricePreview = null;
+      this.previewError = null;
+      this.previewLoading = false;
+      this.previewRequests.next(null);
+    }
+  }
+
+  /** Copy the metal section's weight / purity and the stone rows' value over the pricing fields. */
+  copyPricingFromDetails() {
+    const form = this.productForm;
+    const board = this.boardPurityFromMetalDetails();
+    const net = Number(form.get('metalDetails.netWeight')?.value);
+    form.patchValue({
+      ...(board ? { pricingMetal: board.metal, pricingPurity: board.purity } : {}),
+      ...(isFinite(net) && net > 0 ? { pricingNetWeightGrams: net } : {}),
+      ...(this.stoneRowsValue !== null ? { stoneValue: this.stoneRowsValue } : {}),
+    }, { emitEvent: false });
+    this.requestPreview();
+  }
+
+  /** The preview body when the metal-rate fields are complete enough to price; null otherwise. */
+  private previewBody(): PricePreviewRequest | null {
+    if (!this.isMetalRatePricing) return null;
+    const v = this.productForm.getRawValue();
+    const weight = Number(v.pricingNetWeightGrams);
+    if (!v.pricingMetal || !v.pricingPurity || !isFinite(weight) || weight <= 0) return null;
+    const num = (x: unknown) => {
+      const n = Number(x);
+      return isFinite(n) ? n : 0;
+    };
+    return {
+      pricingMetal: v.pricingMetal,
+      pricingPurity: v.pricingPurity,
+      pricingNetWeightGrams: weight,
+      makingChargeType: v.makingChargeType || 'PER_GRAM',
+      makingChargeValue: num(v.makingChargeValue),
+      wastagePct: num(v.wastagePct),
+      stoneValue: num(v.stoneValue),
+      otherCharges: num(v.otherCharges),
+    };
+  }
+
+  requestPreview() {
+    const body = this.previewBody();
+    this.previewLoading = !!body;
+    if (!body) {
+      this.pricePreview = null;
+      this.previewError = null;
+    }
+    this.previewRequests.next(body);
+  }
+
+  /** Debounced POST /admin/products/price-preview; the resulting price is written into the read-only price field. */
+  private wirePricePreview() {
+    this.previewRequests.pipe(
+      debounceTime(400),
+      switchMap((body) => {
+        if (!body) return of({ body: null as PricePreviewRequest | null, result: null as PriceBreakdown | null, error: null as string | null });
+        return this.metalRateService.pricePreview(body).pipe(
+          switchMap((result) => of({ body, result, error: null as string | null })),
+          catchError((err) => of({ body, result: null as PriceBreakdown | null, error: apiErrorMessage(err, 'Could not preview the price.') }))
+        );
+      })
+    ).subscribe(({ body, result, error }) => {
+      this.previewLoading = false;
+      if (!body) return;
+      this.previewError = error;
+      this.pricePreview = result;
+      if (result && isFinite(Number(result.price))) {
+        this.productForm.get('price')?.setValue(Math.round(Number(result.price) * 100) / 100, { emitEvent: false });
+      }
+    });
+  }
 
   /** Edit mode: read-only quantities per location from GET /admin/stock/products/{id}. */
   stockByLocation: ProductStockLocations | null = null;
@@ -338,6 +528,17 @@ export class ProductAddComponent implements OnInit {
       // Sale & pricing (contract §3)
       saleMode: ['PER_PIECE'],
       unitPrice: [null],
+
+      // Pricing from the daily metal rate (metal-prices contract)
+      pricingMode: ['FIXED'],
+      pricingMetal: ['GOLD'],
+      pricingPurity: [''],
+      pricingNetWeightGrams: [null, [Validators.min(0)]],
+      makingChargeType: ['PER_GRAM'],
+      makingChargeValue: [null, [Validators.min(0)]],
+      wastagePct: [null, [Validators.min(0), Validators.max(100)]],
+      stoneValue: [null, [Validators.min(0)]],
+      otherCharges: [null, [Validators.min(0)]],
       pieceCount: [null],
       lotTotalCaratWeight: [null],
       averagePieceWeight: [null], // derived, read-only
@@ -490,6 +691,20 @@ export class ProductAddComponent implements OnInit {
       if (this.isPatchingForm) return;
       this.onSaleModeChanged();
     });
+
+    // Metal-rate pricing: the mode switch prefills from the metal and stone
+    // sections; every pricing edit re-runs the debounced server preview.
+    this.wirePricePreview();
+    this.productForm.get('pricingMode')?.valueChanges.subscribe(() => {
+      if (this.isPatchingForm) return;
+      this.onPricingModeChanged();
+    });
+    for (const path of this.pricingPaths) {
+      this.productForm.get(path)?.valueChanges.subscribe(() => {
+        if (this.isPatchingForm || !this.isMetalRatePricing) return;
+        this.requestPreview();
+      });
+    }
 
     // Auto-calculate Price Breakup Total.
     //
@@ -787,6 +1002,17 @@ export class ProductAddComponent implements OnInit {
       // Sale & pricing (§3)
       saleMode: product.saleMode || 'PER_PIECE',
       unitPrice: product.unitPrice ?? null,
+
+      // Metal-rate pricing
+      pricingMode: product.pricingMode === 'METAL_RATE' ? 'METAL_RATE' : 'FIXED',
+      pricingMetal: product.pricingMetal || 'GOLD',
+      pricingPurity: product.pricingPurity || '',
+      pricingNetWeightGrams: product.pricingNetWeightGrams ?? null,
+      makingChargeType: product.makingChargeType || 'PER_GRAM',
+      makingChargeValue: product.makingChargeValue ?? null,
+      wastagePct: product.wastagePct ?? null,
+      stoneValue: product.stoneValue ?? null,
+      otherCharges: product.otherCharges ?? null,
       pieceCount: product.pieceCount ?? null,
       lotTotalCaratWeight: product.lotTotalCaratWeight ?? null,
       averagePieceWeight: product.averagePieceWeight ?? null,
@@ -889,6 +1115,11 @@ export class ProductAddComponent implements OnInit {
         priceBreakup: product.priceBreakup
       });
     }
+
+    // The stored breakdown is shown until the operator edits a pricing field,
+    // which then fetches a fresh preview from today's board.
+    this.pricePreview = product.pricingMode === 'METAL_RATE' && product.priceBreakdown ? product.priceBreakdown : null;
+    this.previewError = null;
 
     if (product.customizationOptions) {
       product.customizationOptions.forEach((opt: any) => {
@@ -1187,6 +1418,10 @@ export class ProductAddComponent implements OnInit {
       specifications: null,
       // §3/§4: normalise the type-scoped fields the server validates.
       saleMode: formValue.saleMode || 'PER_PIECE',
+      // Metal-rate pricing only applies to per-piece finished jewellery; the
+      // server keeps the typed price for FIXED products.
+      pricingMode: (this.showPricingModeToggle && formValue.pricingMode === 'METAL_RATE') ? 'METAL_RATE' : 'FIXED',
+      pricingPurity: formValue.pricingPurity || null,
       plainOrStudded: this.itemType === 'JEWELLERY' ? (formValue.plainOrStudded || null) : null,
       craft: (this.itemType === 'JEWELLERY' || this.itemType === 'SET') ? (formValue.craft || null) : null,
       gemGrade: formValue.gemGrade || null,

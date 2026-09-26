@@ -32,6 +32,7 @@ export const routes: Routes = [
       { path: 'products/labels', canActivate: [permissionGuard('labels.print')], loadComponent: () => import('./pages/product-labels/product-labels.component').then(m => m.ProductLabelsComponent) },
       { path: 'products/new', canActivate: [permissionGuard('products.write')], loadComponent: () => import('./pages/product-add/product-add.component').then(m => m.ProductAddComponent) },
       { path: 'products/edit/:id', canActivate: [permissionGuard('products.write')], loadComponent: () => import('./pages/product-add/product-add.component').then(m => m.ProductAddComponent) },
+      { path: 'rates', canActivate: [permissionGuard('rates.write')], loadComponent: () => import('./pages/rates/metal-rates.component').then(m => m.MetalRatesComponent) },
       { path: 'stock', canActivate: [permissionGuard('stock.read')], loadChildren: () => import('./pages/stock/stock.routes').then(m => m.STOCK_ROUTES) },
       { path: 'orders', canActivate: [permissionGuard('orders.read')], loadComponent: () => import('./pages/order-list/order-list.component').then(m => m.OrderListComponent) },
       { path: 'orders/:id', canActivate: [permissionGuard('orders.read')], loadComponent: () => import('./pages/order-detail/order-detail.component').then(m => m.OrderDetailComponent) },

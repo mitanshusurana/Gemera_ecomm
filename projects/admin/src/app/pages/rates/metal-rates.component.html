@@ -1,0 +1,193 @@
+<div class="px-4 sm:px-6 lg:px-8 pb-12">
+  <div class="sm:flex sm:items-center py-6">
+    <div class="sm:flex-auto">
+      <h1 class="text-xl font-semibold text-ink">Metal rates</h1>
+      <p class="mt-2 text-sm text-ink/70">
+        The board every metal-priced product sells at. Lock it once a day; between locks the storefront shows the live, indicative rate.
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex flex-wrap items-center gap-2">
+      <button type="button" (click)="loadBoards()" [disabled]="loading" class="inline-flex items-center gap-2 rounded-md border border-ink/30 bg-surface px-4 py-2 text-sm font-medium text-ink shadow-sm hover:bg-gray-50 disabled:opacity-50">
+        <span class="material-symbols-outlined text-[18px]">refresh</span>
+        Refresh
+      </button>
+      <button type="button" (click)="reprice()" [disabled]="repricing || !today" class="inline-flex items-center gap-2 rounded-md border border-ink/30 bg-surface px-4 py-2 text-sm font-medium text-ink shadow-sm hover:bg-gray-50 disabled:opacity-50" title="Recompute every product priced from the metal rate using the current board">
+        <span class="material-symbols-outlined text-[18px]">sync</span>
+        {{ repricing ? 'Repricing…' : 'Reprice products now' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="repriceResult as r" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+    Repriced <span class="font-semibold">{{ r.repriced | number }}</span> product{{ r.repriced === 1 ? '' : 's' }}<span *ngIf="r.skipped"> and skipped <span class="font-semibold">{{ r.skipped | number }}</span> (missing weight or purity)</span>
+    from the board as of {{ r.asOf | date:'d MMM y, h:mm a' }}.
+  </div>
+
+  <div *ngIf="boardError" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ boardError }}</div>
+  <div *ngIf="liveError" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{{ liveError }}</div>
+
+  <!-- Status cards -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+    <div class="rounded-xl border border-ink/15 bg-surface p-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-semibold text-ink">Today's board</span>
+        <span class="material-symbols-outlined text-[18px]" [class.text-emerald-600]="isLocked" [class.text-amber-600]="!isLocked">{{ isLocked ? 'lock' : 'lock_open' }}</span>
+      </div>
+      <div class="mt-3 text-lg font-bold" [class.text-emerald-700]="isLocked" [class.text-amber-700]="!isLocked">{{ loading ? '…' : (today ? (isLocked ? 'Locked' : 'Live, indicative') : 'Unavailable') }}</div>
+      <div class="mt-1 text-xs text-ink/60">
+        <ng-container *ngIf="today?.lockedAt">Locked {{ today!.lockedAt | date:'d MMM, h:mm a' }}</ng-container>
+        <ng-container *ngIf="today && !today.lockedAt">Not locked yet today</ng-container>
+      </div>
+    </div>
+    <div class="rounded-xl border border-ink/15 bg-surface p-4 shadow-sm">
+      <div class="text-sm font-semibold text-ink">Gold spot</div>
+      <div class="mt-3 text-lg font-bold text-ink">{{ live?.live ? ('$' + (live!.live!.goldUsdPerOunce | number:'1.2-2') + '/oz') : '—' }}</div>
+      <div class="mt-1 text-xs text-ink/60">
+        <ng-container *ngIf="live?.live">Silver ${{ live!.live!.silverUsdPerOunce | number:'1.2-2' }} · Platinum ${{ live!.live!.platinumUsdPerOunce | number:'1.2-2' }}</ng-container>
+        <ng-container *ngIf="live && !live.live">No live feed</ng-container>
+      </div>
+    </div>
+    <div class="rounded-xl border border-ink/15 bg-surface p-4 shadow-sm">
+      <div class="text-sm font-semibold text-ink">USD / INR</div>
+      <div class="mt-3 text-lg font-bold text-ink">{{ live?.fx?.usdInr ? ('₹' + (live!.fx.usdInr | number:'1.2-2')) : (today?.fx?.usdInr ? ('₹' + (today!.fx.usdInr | number:'1.2-2')) : '—') }}</div>
+      <div class="mt-1 text-xs text-ink/60">{{ live?.fx?.source || today?.fx?.source || 'source unknown' }}</div>
+    </div>
+    <div class="rounded-xl border border-ink/15 bg-surface p-4 shadow-sm">
+      <div class="text-sm font-semibold text-ink">Feed updated</div>
+      <div class="mt-3 text-lg font-bold text-ink">{{ live?.live?.updatedAt ? (live!.live!.updatedAt | date:'h:mm a') : '—' }}</div>
+      <div class="mt-1 text-xs text-ink/60">{{ live?.live?.updatedAt ? (live!.live!.updatedAt | date:'d MMM y') : 'Live board as of ' + (live?.asOf ? (live!.asOf | date:'d MMM, h:mm a') : '—') }}</div>
+    </div>
+  </div>
+
+  <!-- Board: locked vs live, with the editable rates -->
+  <section class="rounded-xl border border-ink/15 bg-surface shadow-sm mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-4 py-3">
+      <div>
+        <h2 class="text-base font-semibold text-ink">Rate board</h2>
+        <p class="text-xs text-ink/60">INR per gram. "Today" is what the storefront sells at; "Live" is derived from the feed with the duty and premium below.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" (click)="fillFrom('live')" [disabled]="!live" class="rounded-md border border-ink/30 bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-gray-50 disabled:opacity-50">Use live rates</button>
+        <button type="button" (click)="fillFrom('today')" [disabled]="!today" class="rounded-md border border-ink/30 bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-gray-50 disabled:opacity-50">Use today's rates</button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="p-8 text-center text-sm text-ink/60">Loading the boards…</div>
+
+    <div *ngIf="!loading && rows.length === 0" class="p-8 text-center text-sm text-ink/60">No rates available. Check the provider settings below and refresh.</div>
+
+    <div *ngIf="!loading && rows.length > 0" class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-ink/10 text-sm">
+        <thead>
+          <tr class="text-left text-xs font-semibold uppercase tracking-wide text-ink/60">
+            <th scope="col" class="px-4 py-3">Purity</th>
+            <th scope="col" class="px-4 py-3 text-right">Today <span class="font-normal normal-case">({{ isLocked ? 'locked' : 'live' }})</span></th>
+            <th scope="col" class="px-4 py-3 text-right">Live now</th>
+            <th scope="col" class="px-4 py-3 text-right">Difference</th>
+            <th scope="col" class="px-4 py-3 text-right">Lock at (₹/g)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-ink/10">
+          <tr *ngFor="let row of rows">
+            <td class="px-4 py-3">
+              <span class="font-semibold text-ink">{{ row.label }}</span>
+              <span *ngIf="row.purityFraction !== null" class="ml-2 text-xs text-ink/50">{{ row.purityFraction * 100 | number:'1.0-1' }}% fine</span>
+            </td>
+            <td class="px-4 py-3 text-right tabular-nums text-ink">{{ row.today !== null ? (row.today | currency:'INR':'symbol':'1.0-0') : '—' }}</td>
+            <td class="px-4 py-3 text-right tabular-nums text-ink">{{ row.live !== null ? (row.live | currency:'INR':'symbol':'1.0-0') : '—' }}</td>
+            <td class="px-4 py-3 text-right tabular-nums" [ngClass]="row.diff === null ? 'text-ink/40' : (row.diff > 0 ? 'text-emerald-700' : (row.diff < 0 ? 'text-red-600' : 'text-ink/60'))">
+              <ng-container *ngIf="row.diff !== null; else noDiff">
+                {{ row.diff > 0 ? '+' : '' }}{{ row.diff | currency:'INR':'symbol':'1.0-0' }}
+                <span class="text-xs">({{ row.diffPct! > 0 ? '+' : '' }}{{ row.diffPct | number:'1.0-2' }}%)</span>
+              </ng-container>
+              <ng-template #noDiff>—</ng-template>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <input type="number" min="0" step="0.01" inputmode="decimal" [(ngModel)]="edits[row.key]" [name]="'rate-' + row.key"
+                     class="w-32 rounded-md border-gray-300 text-right shadow-sm focus:border-primary focus:ring-primary sm:text-sm tabular-nums"
+                     [attr.aria-label]="'Rate per gram for ' + row.label">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex flex-col gap-3 border-t border-ink/10 px-4 py-4 sm:flex-row sm:items-end">
+      <div class="flex-1">
+        <label for="lock-note" class="block text-xs font-medium text-ink/70">Note (optional)</label>
+        <input id="lock-note" type="text" [(ngModel)]="lockNote" name="lockNote" maxlength="200" placeholder="e.g. Sarafa Bazar opening rate"
+               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+      </div>
+      <button type="button" (click)="lock()" [disabled]="locking || loading || lockableRates.length === 0"
+              class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-surface shadow-sm hover:bg-primary/90 disabled:opacity-50">
+        <span class="material-symbols-outlined text-[18px]">lock</span>
+        {{ locking ? 'Locking…' : (isLocked ? "Re-lock today's rates" : "Lock today's rates") }}
+      </button>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-6">
+    <!-- History -->
+    <section class="rounded-xl border border-ink/15 bg-surface p-4 shadow-sm lg:col-span-2">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h2 class="text-base font-semibold text-ink">Last 30 days</h2>
+          <p class="text-xs text-ink/60">{{ selectedLabel }} per gram, one point per day the board was set.</p>
+        </div>
+        <div class="flex flex-wrap gap-1" role="group" aria-label="Choose a purity">
+          <button *ngFor="let c of chartChoices" type="button" (click)="selectChart(chartKey(c))"
+                  class="rounded-full border px-2.5 py-1 text-xs font-medium transition-colors"
+                  [ngClass]="chartKey(c) === selectedKey ? 'border-primary bg-primary text-surface' : 'border-ink/20 text-ink hover:bg-gray-50'">
+            {{ chartLabel(c) }}
+          </button>
+        </div>
+      </div>
+      <app-line-chart *ngIf="chartSeries.length > 0; else chartEmpty" [labels]="chartLabels" [tickLabels]="chartTicks" [series]="chartSeries" [ariaLabel]="selectedLabel + ' rate over the last 30 days'"></app-line-chart>
+      <ng-template #chartEmpty>
+        <div class="h-48 flex items-center justify-center text-sm text-ink/50">{{ historyLoading ? 'Loading…' : 'No history for this purity yet.' }}</div>
+      </ng-template>
+    </section>
+
+    <!-- Settings -->
+    <section class="rounded-xl border border-ink/15 bg-surface p-4 shadow-sm">
+      <h2 class="text-base font-semibold text-ink">Rate settings</h2>
+      <p class="text-xs text-ink/60 mb-4">How the live board is derived from the spot price. Saved settings apply to the next live derivation and lock.</p>
+      <form (ngSubmit)="saveSettings()" class="space-y-4">
+        <div>
+          <label for="rate-provider" class="block text-xs font-medium text-ink/70">Price feed</label>
+          <select id="rate-provider" name="metalRateProvider" [(ngModel)]="settings.metalRateProvider" [disabled]="!settingsLoaded"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+            <option *ngFor="let p of providers" [value]="p.value">{{ p.label }}</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="rate-duty" class="block text-xs font-medium text-ink/70">Import duty %</label>
+            <input id="rate-duty" name="metalRateDutyPct" type="number" min="0" max="100" step="0.01" [(ngModel)]="settings.metalRateDutyPct" [disabled]="!settingsLoaded"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+          </div>
+          <div>
+            <label for="rate-premium" class="block text-xs font-medium text-ink/70">Premium %</label>
+            <input id="rate-premium" name="metalRatePremiumPct" type="number" min="-100" max="100" step="0.01" [(ngModel)]="settings.metalRatePremiumPct" [disabled]="!settingsLoaded"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+          </div>
+        </div>
+        <div>
+          <label for="rate-autolock" class="block text-xs font-medium text-ink/70">Auto-lock hour (0-23, IST)</label>
+          <input id="rate-autolock" name="metalRateAutoLockHour" type="text" inputmode="numeric" [(ngModel)]="settings.metalRateAutoLockHour" [disabled]="!settingsLoaded" placeholder="blank = manual"
+                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm">
+          <p class="mt-1 text-xs text-ink/50">Locks the live board at this hour every day. Leave blank to lock by hand.</p>
+        </div>
+        <p *ngIf="settingsProblem" class="text-xs text-red-600">{{ settingsProblem }}</p>
+        <button type="submit" [disabled]="savingSettings || !settingsLoaded || !!settingsProblem"
+                class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-surface shadow-sm hover:bg-primary/90 disabled:opacity-50">
+          {{ savingSettings ? 'Saving…' : 'Save settings' }}
+        </button>
+      </form>
+    </section>
+  </div>
+
+  <p class="text-xs text-ink/50">
+    Live rate per gram = spot USD/oz ÷ 31.1035 × USD/INR × (1 + duty) × (1 + premium) × purity. The storefront's /gold-rate page and the header ticker show today's board.
+  </p>
+</div>

@@ -18,6 +18,7 @@ export const PERMISSIONS = [
   'stock.read',
   'stock.write',
   'labels.print',
+  'rates.write',
   'customers.read',
   'customers.write',
   'rfq.write',

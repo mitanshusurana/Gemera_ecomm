@@ -34,6 +34,7 @@ export function landingPage(auth: AuthService): string {
     ['orders.read', '/orders'],
     ['products.read', '/products'],
     ['stock.read', '/stock'],
+    ['rates.write', '/rates'],
     ['customers.read', '/customers'],
     ['appointments.write', '/appointments'],
     ['repairs.write', '/repairs'],
