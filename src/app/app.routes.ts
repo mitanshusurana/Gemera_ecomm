@@ -85,6 +85,11 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/treasure-chest").then(m => m.TreasureChestComponent)
   },
   {
+    // Daily metal rate board, 30-day history and value calculator.
+    path: "gold-rate",
+    loadComponent: () => import("./pages/gold-rate").then(m => m.GoldRateComponent)
+  },
+  {
     path: "stores",
     loadComponent: () => import("./pages/store-locator").then(m => m.StoreLocatorComponent)
   },

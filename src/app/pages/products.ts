@@ -245,7 +245,10 @@ const EMPTY_FACETS: ProductFacets = {
                 <span class="text-[11px] text-[#7a7a7a] uppercase font-mono tracking-wider block">
                   {{ categoryLabels.label(product.category) }}
                 </span>
-                <span *ngIf="product.isBestSeller || (product.reviewCount && product.reviewCount > 50)" class="bg-[#D4AF37]/15 text-[#D4AF37] text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase">Best Seller</span>
+                <span class="flex items-center gap-1">
+                  <span *ngIf="product.pricingMode === 'METAL_RATE'" class="border border-[#e0e0e0] text-[#6e6e73] text-[10px] font-medium px-2 py-0.5 rounded-full" title="Priced from today's metal rate">Live rate</span>
+                  <span *ngIf="product.isBestSeller || (product.reviewCount && product.reviewCount > 50)" class="bg-[#D4AF37]/15 text-[#D4AF37] text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase">Best Seller</span>
+                </span>
               </div>
 
               <h3 class="font-sans font-semibold text-base text-[#1d1d1f] group-hover:text-[#D4AF37] transition-colors mb-2 line-clamp-2">

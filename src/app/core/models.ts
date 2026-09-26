@@ -172,6 +172,82 @@ export interface Product {
   totalWeight?: number;
 
   priceBreakup?: PriceBreakup;
+
+  // Daily metal-rate pricing (metal-prices contract). FIXED products keep a
+  // hand-typed price; METAL_RATE products are repriced from the locked board.
+  pricingMode?: PricingMode;
+  pricingMetal?: MetalCode;
+  pricingPurity?: MetalPurity;
+  /** g of metal the price is computed on (may differ from metalDetails.netWeight). */
+  pricingNetWeightGrams?: number;
+  makingChargeType?: MakingChargeType;
+  makingChargeValue?: number;
+  wastagePct?: number;
+  stoneValue?: number;
+  otherCharges?: number;
+  /** INR per gram used at the last repricing. */
+  metalRateUsed?: number;
+  pricedAt?: string;
+  /** Present only for METAL_RATE products that have been priced. */
+  priceBreakdown?: PriceBreakdown | null;
+}
+
+// ---------------------------------------------------------------------------
+// Metal rates (GET /metal-prices/today, /metal-prices/history)
+// ---------------------------------------------------------------------------
+
+export type MetalCode = 'GOLD' | 'SILVER' | 'PLATINUM';
+export type MetalPurity = '24K' | '22K' | '18K' | '14K' | '999' | '925' | '950';
+export type PricingMode = 'FIXED' | 'METAL_RATE';
+export type MakingChargeType = 'PER_GRAM' | 'PERCENT' | 'FIXED';
+
+/** One line of the rate board, INR per gram. */
+export interface MetalRate {
+  metal: MetalCode;
+  purity: MetalPurity;
+  /** 0.916 for 22K, 0.925 for sterling silver, ... */
+  purityFraction: number;
+  ratePerGram: number;
+}
+
+export interface MetalBoard {
+  asOf: string;
+  /** LOCKED: the rates the shop fixed for the day. LIVE: derived from the feed, indicative until locked. */
+  source: 'LOCKED' | 'LIVE';
+  lockedAt: string | null;
+  indicative: boolean;
+  fx: { usdInr: number; source: string };
+  live: {
+    goldUsdPerOunce: number;
+    silverUsdPerOunce: number;
+    platinumUsdPerOunce: number;
+    updatedAt: string;
+  } | null;
+  rates: MetalRate[];
+}
+
+export interface MetalRateHistoryPoint {
+  date: string;
+  ratePerGram: number;
+  source: string;
+}
+
+/** How a METAL_RATE product's price was built at its last repricing. */
+export interface PriceBreakdown {
+  metal: MetalCode;
+  purity: MetalPurity;
+  ratePerGram: number;
+  netWeightGrams: number;
+  wastagePct: number;
+  /** ratePerGram x netWeightGrams x (1 + wastagePct / 100). */
+  metalValue: number;
+  makingChargeType: MakingChargeType;
+  makingChargeValue: number;
+  makingCharges: number;
+  stoneValue: number;
+  otherCharges: number;
+  price: number;
+  pricedAt: string;
 }
 
 export interface CustomizationOption {

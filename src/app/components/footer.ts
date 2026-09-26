@@ -89,6 +89,7 @@ import { environment } from "../../environments/environment";
               <li><a routerLink="/returns" class="hover:text-[#D4AF37] transition-colors">Shipping &amp; Returns</a></li>
               <li><a routerLink="/track-order" class="hover:text-[#D4AF37] transition-colors">Track Your Order</a></li>
               <li><a routerLink="/verify-certificate" class="hover:text-[#D4AF37] transition-colors">Verify Gem Certificate</a></li>
+              <li><a routerLink="/gold-rate" class="hover:text-[#D4AF37] transition-colors">Today's Gold Rate</a></li>
             </ul>
           </div>
 

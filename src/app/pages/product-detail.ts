@@ -24,6 +24,7 @@ import {
   ProductDetail,
   Product,
   CustomizationOption,
+  PriceBreakdown,
 } from '../core/models';
 import { ToastService } from '../services/toast.service';
 import { FormsModule } from '@angular/forms';
@@ -928,6 +929,56 @@ const COMPONENT_KEYS = ['componentType', 'material', 'purity', 'pieceCount', 'qu
                 </p>
                 <p class="text-xs text-[#7a7a7a] mt-1">Includes all applicable luxury duties, insured delivery & GIA report.</p>
 
+                <!-- Metal-rate priced piece: the stored breakdown from the day's locked board -->
+                <ng-container *ngIf="metalRateBreakdown() as pb">
+                  <button
+                    (click)="togglePriceBreakup()"
+                    class="text-xs font-semibold text-[#D4AF37] hover:underline flex items-center gap-1 uppercase tracking-wider mt-3"
+                  >
+                    <span>How this price is built</span>
+                    <span>{{ showPriceBreakup() ? '▲' : '▼' }}</span>
+                  </button>
+                  <div *ngIf="showPriceBreakup()" class="mt-4 bg-[#f5f5f7] border border-[#e0e0e0] p-4 rounded-[12px] text-xs animate-fadeIn">
+                    <table class="w-full">
+                      <tbody>
+                        <tr class="text-[#7a7a7a]">
+                          <td class="py-1.5 pr-3">
+                            Metal value
+                            <span class="block text-[11px] text-[#a1a1a6]">
+                              {{ pb.ratePerGram | currencyConvert }}/g &times; {{ pb.netWeightGrams | number:'1.0-3' }} g<ng-container *ngIf="pb.wastagePct"> + {{ pb.wastagePct | number:'1.0-2' }}% wastage</ng-container>
+                            </span>
+                          </td>
+                          <td class="py-1.5 text-right font-semibold text-[#1d1d1f] align-top whitespace-nowrap">{{ pb.metalValue | currencyConvert }}</td>
+                        </tr>
+                        <tr class="text-[#7a7a7a]">
+                          <td class="py-1.5 pr-3">
+                            Making charges
+                            <span class="block text-[11px] text-[#a1a1a6]">{{ makingChargeText(pb) }}</span>
+                          </td>
+                          <td class="py-1.5 text-right font-semibold text-[#1d1d1f] align-top whitespace-nowrap">{{ pb.makingCharges | currencyConvert }}</td>
+                        </tr>
+                        <tr *ngIf="pb.stoneValue" class="text-[#7a7a7a]">
+                          <td class="py-1.5 pr-3">Stones</td>
+                          <td class="py-1.5 text-right font-semibold text-[#1d1d1f] whitespace-nowrap">{{ pb.stoneValue | currencyConvert }}</td>
+                        </tr>
+                        <tr *ngIf="pb.otherCharges" class="text-[#7a7a7a]">
+                          <td class="py-1.5 pr-3">Other charges</td>
+                          <td class="py-1.5 text-right font-semibold text-[#1d1d1f] whitespace-nowrap">{{ pb.otherCharges | currencyConvert }}</td>
+                        </tr>
+                        <tr class="border-t border-[#e0e0e0] font-semibold text-sm text-[#1d1d1f]">
+                          <td class="pt-2 pr-3">Price</td>
+                          <td class="pt-2 text-right text-[#D4AF37] whitespace-nowrap">{{ pb.price | currencyConvert }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <p class="mt-3 pt-3 border-t border-[#e0e0e0] text-[#6e6e73]">
+                      Gold rate {{ pb.ratePerGram | currencyConvert }}/g ({{ pb.purity }}) as of {{ pb.pricedAt | date:'d MMM y, h:mm a' }}.
+                      <a routerLink="/gold-rate" class="text-[#D4AF37] hover:underline">Today's board</a>
+                    </p>
+                    <p class="mt-1 text-[#a1a1a6]">Price updates with the daily rate.</p>
+                  </div>
+                </ng-container>
+
                 <!-- Transparent Price Breakup Accordion -->
                 <button
                   *ngIf="hasPriceBreakup()"
@@ -1632,6 +1683,30 @@ export class ProductDetailComponent
     return !!(p.lotTotalCaratWeight || p.averagePieceWeight || p.sizeRange || p.saleMode === 'PER_LOT');
   });
 
+  /**
+   * A METAL_RATE piece carries the breakdown the API computed from the day's
+   * board; it replaces the legacy priceBreakup reconciliation below for that
+   * piece. FIXED pieces never have one and keep the old behaviour.
+   */
+  metalRateBreakdown = computed<PriceBreakdown | null>(() => {
+    const p = this.product();
+    if (!p || p.pricingMode !== 'METAL_RATE' || !p.priceBreakdown) return null;
+    return p.priceBreakdown;
+  });
+
+  /** "₹850/g on 8.5 g", "12% of metal value" or "Fixed" for the making-charge line. */
+  makingChargeText(pb: PriceBreakdown): string {
+    const value = Number(pb.makingChargeValue) || 0;
+    switch (pb.makingChargeType) {
+      case 'PER_GRAM':
+        return `${this.currencyService.format(value)}/g on ${Number(pb.netWeightGrams).toLocaleString('en-IN', { maximumFractionDigits: 3 })} g`;
+      case 'PERCENT':
+        return `${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}% of metal value`;
+      default:
+        return 'Fixed';
+    }
+  }
+
   currentPriceBreakup = computed(() => {
     const base = this.product()?.priceBreakup;
     if (!base) return null;
@@ -2224,6 +2299,8 @@ export class ProductDetailComponent
 
   // Helpers
   hasPriceBreakup(): boolean {
+    // A metal-rate piece shows its own breakdown table instead.
+    if (this.metalRateBreakdown()) return false;
     const pb = this.product()?.priceBreakup;
     if (!pb) return false;
 
