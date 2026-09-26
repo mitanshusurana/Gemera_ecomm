@@ -17,6 +17,7 @@ from app.core.roles import CAN_AMEND, CAN_MOVE_STOCK, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 from app.core.tenancy import resolve_fiscal_year, resolve_stock_location, resolve_uom
+from app.core.periods import assert_period_open
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,17 @@ class UpdateItemRequest(BaseModel):
 async def get_stock_register(
     as_of_date: Optional[date] = None,
     category: Optional[str] = None,
+    location_id: Optional[UUID] = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     """
     [CGST Rule 56(2)] Commodity-wise Stock Register.
+
+    Optionally for one stock location. The aggregate is scoped to the caller's
+    company: it used to sum every tenant's movements for a material id, which
+    is harmless only while material ids never collide and is wrong in
+    principle for separate books.
     """
     if not as_of_date:
         as_of_date = date.today()
@@ -73,7 +80,8 @@ async def get_stock_register(
                     ELSE 0
                 END AS standard_rate
             FROM caratloop.stock_ledger_entries
-            WHERE entry_date <= :as_of_date
+            WHERE company_id = :cid AND entry_date <= :as_of_date
+              AND (CAST(:loc AS UUID) IS NULL OR location_id = CAST(:loc AS UUID))
             GROUP BY material_id
         )
         SELECT
@@ -100,7 +108,11 @@ async def get_stock_register(
         LEFT JOIN stock_agg sa ON sa.material_id = m.id
         WHERE m.company_id = :cid AND m.is_active = TRUE
     """
-    params = {"cid": current_user["company_id"], "as_of_date": as_of_date}
+    params = {
+        "cid": current_user["company_id"],
+        "as_of_date": as_of_date,
+        "loc": str(location_id) if location_id else None,
+    }
     if category:
         query += " AND m.category = :category"
         params["category"] = category
@@ -127,6 +139,7 @@ async def get_stock_register(
 
     return {
         "as_of_date": str(as_of_date),
+        "location_id": str(location_id) if location_id else None,
         "cgst_rule": "56(2)",
         "register_type": "Commodity-wise Stock Register",
         "items": rows,
@@ -140,24 +153,30 @@ async def get_stock_register(
 @router.get("/materials")
 async def list_materials(
     category: Optional[str] = None,
+    location_id: Optional[UUID] = None,
     page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """List all material master records."""
+    """List all material master records, with the balance on hand.
+
+    ``location_id`` narrows the balance to one stock location; the list of
+    materials is the same either way.
+    """
     query = """
         SELECT m.id, m.code, m.name, m.category, m.hsn_code,
                m.purity_standard, uom.code AS uom, m.gst_tax_rate,
                COALESCE((
                     SELECT SUM(CASE WHEN direction = 'I' THEN quantity ELSE -quantity END)
                     FROM caratloop.stock_ledger_entries
-                    WHERE material_id = m.id
+                    WHERE material_id = m.id AND company_id = m.company_id
+                      AND (CAST(:loc AS UUID) IS NULL OR location_id = CAST(:loc AS UUID))
                ), 0) AS current_stock
         FROM caratloop.materials m
         JOIN caratloop.units_of_measure uom ON uom.id = m.uom_id
         WHERE m.company_id = :cid AND m.is_active = TRUE
     """
-    params = {"cid": current_user["company_id"]}
+    params = {"cid": current_user["company_id"], "loc": str(location_id) if location_id else None}
     if category:
         query += " AND m.category = :cat"
         params["cat"] = category
@@ -180,7 +199,7 @@ async def search_items(q: str = "", limit: int = 20, db: AsyncSession = Depends(
                COALESCE((
                     SELECT SUM(CASE WHEN direction = 'I' THEN quantity ELSE -quantity END)
                     FROM caratloop.stock_ledger_entries
-                    WHERE material_id = m.id
+                    WHERE material_id = m.id AND company_id = m.company_id
                ), 0) AS current_stock
         FROM caratloop.materials m
         JOIN caratloop.units_of_measure uom ON uom.id = m.uom_id
@@ -251,7 +270,9 @@ async def create_item(
                             direction, transaction_type, quantity, amount, sequence_no, created_by
                         ) VALUES (
                             :cid, :fyid, :loc_id, :mat_id, CURRENT_DATE,
-                            'I', 'Opening', :qty, 0, COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, CAST(:created_by AS UUID)
+                            'I', 'Opening', :qty, 0,
+                            COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries WHERE company_id = :cid), 0) + 1,
+                            CAST(:created_by AS UUID)
                         )
                     """),
                     {
@@ -439,6 +460,7 @@ async def record_opening_stock(
     session_id = current_user.get("session_id", "0")
 
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    await assert_period_open(db, company_id, payload.entry_date or date.today(), what="This opening stock entry")
 
     try:
         fy_id = (await resolve_fiscal_year(db, company_id))["id"]
@@ -462,7 +484,8 @@ async def record_opening_stock(
                     ) VALUES (
                         :cid, :fyid, :loc_id, :mat_id, :edate,
                         'I', 'Opening', :qty, :amt, :gw, :nw,
-                        COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, CAST(:created_by AS UUID)
+                        COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries WHERE company_id = :cid), 0) + 1,
+                        CAST(:created_by AS UUID)
                     )
                 """),
                 {

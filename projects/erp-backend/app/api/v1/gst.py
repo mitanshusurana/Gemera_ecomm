@@ -16,6 +16,7 @@ from decimal import Decimal
 from app.core.money import round_money, to_decimal
 from app.core.security import get_current_user
 from app.tax.gst_engine import calculate_rcm_old_gold, get_return_period
+from app.api.v1.sales import export_invoices_for_period
 
 router = APIRouter()
 
@@ -105,23 +106,32 @@ async def get_itc_register(
                 p.name AS vendor_name, p.gstin AS vendor_gstin,
                 ir.igst_credit, ir.cgst_credit, ir.sgst_credit, ir.total_itc,
                 ir.is_eligible, ir.ineligibility_reason,
-                ir.gstr2b_matched, ir.gstr2b_match_date
+                ir.gstr2b_matched, ir.gstr2b_match_date,
+                ir.is_reversal, ir.reversal_of_id
             FROM caratloop.itc_register ir
             JOIN caratloop.parties p ON p.id = ir.vendor_id
             WHERE ir.return_period = :period AND ir.company_id = :cid
-            ORDER BY ir.invoice_date
+            ORDER BY ir.invoice_date, ir.id
         """),
         {"period": period, "cid": current_user["company_id"]},
     )
     rows = result.mappings().all()
 
+    # A reversal row (an amended bill's original) carries the same positive
+    # amounts flagged is_reversal; it is listed, and netted off the totals.
+    def signed(r, field):
+        v = r[field] or 0
+        return -v if r["is_reversal"] else v
+
+    live = [r for r in rows if not r["is_reversal"]]
     summary = {
-        "total_igst_itc": sum(r["igst_credit"] or 0 for r in rows),
-        "total_cgst_itc": sum(r["cgst_credit"] or 0 for r in rows),
-        "total_sgst_itc": sum(r["sgst_credit"] or 0 for r in rows),
-        "total_itc": sum(r["total_itc"] or 0 for r in rows),
-        "matched": sum(1 for r in rows if r["gstr2b_matched"]),
-        "unmatched": sum(1 for r in rows if not r["gstr2b_matched"]),
+        "total_igst_itc": sum(signed(r, "igst_credit") for r in rows),
+        "total_cgst_itc": sum(signed(r, "cgst_credit") for r in rows),
+        "total_sgst_itc": sum(signed(r, "sgst_credit") for r in rows),
+        "total_itc": sum(signed(r, "total_itc") for r in rows),
+        "reversed_itc": sum(r["total_itc"] or 0 for r in rows if r["is_reversal"]),
+        "matched": sum(1 for r in live if r["gstr2b_matched"]),
+        "unmatched": sum(1 for r in live if not r["gstr2b_matched"]),
     }
 
     return {
@@ -152,17 +162,18 @@ async def get_rcm_register(
                 r.igst_rcm, r.cgst_rcm, r.sgst_rcm, r.total_rcm,
                 r.is_paid, r.paid_at,
                 r.itc_availed, r.itc_availed_period,
-                r.remarks
+                r.remarks, r.is_reversal, r.reversal_of_id
             FROM caratloop.rcm_liability_register r
             WHERE r.return_period = :period AND r.company_id = :cid
-            ORDER BY r.transaction_date
+            ORDER BY r.transaction_date, r.id
         """),
         {"period": period, "cid": current_user["company_id"]},
     )
     rows = result.mappings().all()
 
-    total_rcm = sum(r["total_rcm"] or 0 for r in rows)
-    total_paid = sum(r["total_rcm"] or 0 for r in rows if r["is_paid"])
+    # Reversal rows (amended bills) are listed and netted off.
+    total_rcm = sum((-(r["total_rcm"] or 0) if r["is_reversal"] else (r["total_rcm"] or 0)) for r in rows)
+    total_paid = sum((-(r["total_rcm"] or 0) if r["is_reversal"] else (r["total_rcm"] or 0)) for r in rows if r["is_paid"])
 
     return {
         "period": period,
@@ -370,27 +381,33 @@ async def get_gstr3b_summary(
     # accountant reconciles against 2B by hand, but it now says how much of it
     # is matched (today: none) so the unmatched exposure is visible on the
     # face of the return rather than discovered in a notice.
+    # Reversal rows (an amended bill's original) are netted: the amounts are
+    # stored positive with is_reversal, and the sign is applied here.
     itc = await db.execute(
         text("""
             SELECT
-                SUM(igst_credit) AS igst_itc, SUM(cgst_credit) AS cgst_itc,
-                SUM(sgst_credit) AS sgst_itc, SUM(total_itc) AS total_itc,
-                SUM(CASE WHEN gstr2b_matched THEN total_itc ELSE 0 END) AS itc_matched_2b,
-                SUM(CASE WHEN gstr2b_matched THEN 0 ELSE total_itc END) AS itc_unmatched_2b,
-                COUNT(*) FILTER (WHERE NOT gstr2b_matched) AS unmatched_invoices
-            FROM caratloop.itc_register
+                SUM(sgn * igst_credit) AS igst_itc, SUM(sgn * cgst_credit) AS cgst_itc,
+                SUM(sgn * sgst_credit) AS sgst_itc, SUM(sgn * total_itc) AS total_itc,
+                SUM(CASE WHEN gstr2b_matched THEN sgn * total_itc ELSE 0 END) AS itc_matched_2b,
+                SUM(CASE WHEN gstr2b_matched THEN 0 ELSE sgn * total_itc END) AS itc_unmatched_2b,
+                COUNT(*) FILTER (WHERE NOT gstr2b_matched AND NOT is_reversal
+                                   AND NOT EXISTS (SELECT 1 FROM caratloop.itc_register x WHERE x.reversal_of_id = ir.id)) AS unmatched_invoices
+            FROM caratloop.itc_register ir,
+                 LATERAL (SELECT CASE WHEN ir.is_reversal THEN -1 ELSE 1 END AS sgn) s
             WHERE return_period = :period AND company_id = :cid AND is_eligible = TRUE
         """),
         {"period": period, "cid": current_user["company_id"]},
     )
 
-    # RCM
+    # RCM, net of reversals
     rcm = await db.execute(
         text("""
             SELECT
-                SUM(igst_rcm) AS igst_rcm, SUM(cgst_rcm) AS cgst_rcm,
-                SUM(sgst_rcm) AS sgst_rcm, SUM(total_rcm) AS total_rcm
-            FROM caratloop.rcm_liability_register
+                SUM(sgn * purchase_value) AS taxable_value,
+                SUM(sgn * igst_rcm) AS igst_rcm, SUM(sgn * cgst_rcm) AS cgst_rcm,
+                SUM(sgn * sgst_rcm) AS sgst_rcm, SUM(sgn * total_rcm) AS total_rcm
+            FROM caratloop.rcm_liability_register r,
+                 LATERAL (SELECT CASE WHEN r.is_reversal THEN -1 ELSE 1 END AS sgn) s
             WHERE return_period = :period AND company_id = :cid
         """),
         {"period": period, "cid": current_user["company_id"]},
@@ -584,6 +601,8 @@ async def export_gstr1_json(period: str, db: AsyncSession = Depends(get_db), cur
         "b2b": [_b2b_entry(row) for row in b2b_rows],
         "b2cl": [_b2cl_entry(row) for row in b2c_rows if _is_b2cl(row)],
         "b2cs": _b2cs_summary([row for row in b2c_rows if not _is_b2cl(row)]),
+        # Table 6A: exports under LUT (WOPAY) and on payment of IGST (WPAY).
+        "exp": await export_invoices_for_period(db, company_id, period),
     }
     return JSONResponse(content=gstr1_data)
 
@@ -607,42 +626,94 @@ async def export_gstr3b_json(period: str, db: AsyncSession = Depends(get_db), cu
         """),
         {"period": period, "cid": company_id}
     )
-    # ITC
+    # ITC, net of reversals (amended bills leave a reversing row behind).
     itc = await db.execute(
         text("""
             SELECT
-                SUM(igst_credit) AS igst_itc, SUM(cgst_credit) AS cgst_itc,
-                SUM(sgst_credit) AS sgst_itc, SUM(total_itc) AS total_itc
-            FROM caratloop.itc_register
+                SUM(sgn * igst_credit) AS igst_itc, SUM(sgn * cgst_credit) AS cgst_itc,
+                SUM(sgn * sgst_credit) AS sgst_itc, SUM(sgn * total_itc) AS total_itc
+            FROM caratloop.itc_register ir,
+                 LATERAL (SELECT CASE WHEN ir.is_reversal THEN -1 ELSE 1 END AS sgn) s
             WHERE return_period = :period AND company_id = :cid AND is_eligible = TRUE
+        """),
+        {"period": period, "cid": company_id}
+    )
+    # Table 3.1(d): inward supplies liable to reverse charge, and Table
+    # 4(A)(3): the ITC on that same tax. The JSON omitted both, so a jeweller
+    # buying old gold under RCM filed a return that declared no self-liability
+    # -- and claimed no credit for it either.
+    rcm = await db.execute(
+        text("""
+            SELECT
+                SUM(sgn * purchase_value) AS taxable_value,
+                SUM(sgn * igst_rcm) AS igst_rcm, SUM(sgn * cgst_rcm) AS cgst_rcm,
+                SUM(sgn * sgst_rcm) AS sgst_rcm, SUM(sgn * total_rcm) AS total_rcm
+            FROM caratloop.rcm_liability_register r,
+                 LATERAL (SELECT CASE WHEN r.is_reversal THEN -1 ELSE 1 END AS sgn) s
+            WHERE return_period = :period AND company_id = :cid
         """),
         {"period": period, "cid": company_id}
     )
     out = output.mappings().first() or {}
     itc_data = itc.mappings().first() or {}
-    
-    gstr3b_data = {
-        "ret_period": period.replace("-", ""),
+    rcm_data = rcm.mappings().first() or {}
+    company_res = await db.execute(text("SELECT gstin FROM caratloop.companies WHERE id = :cid LIMIT 1"), {"cid": company_id})
+    gstin = company_res.scalar()
+
+    gstr3b_data = build_gstr3b_json(period, out, itc_data, rcm_data, gstin=gstin)
+    return JSONResponse(content=gstr3b_data)
+
+
+def build_gstr3b_json(period: str, out, itc_data, rcm_data, *, gstin: Optional[str] = None) -> dict:
+    """The GSTR-3B JSON in the portal's offline-tool layout.
+
+    sup_details.osup_det is Table 3.1(a); sup_details.isup_rev is 3.1(d);
+    itc_elg.itc_avl carries 4(A)(3) as ty 'ISRC' and 4(A)(5) as ty 'OTH'
+    (the portal's codes -- it does not accept 'All other ITC' as a type).
+    """
+    def f(mapping, key):
+        return float((mapping or {}).get(key) or 0)
+
+    # The portal writes return periods as MMYYYY ('082026'), not YYYYMM.
+    yyyy, mm = period[:4], period[5:7]
+    return {
+        "gstin": gstin or "",
+        "ret_period": f"{mm}{yyyy}",
         "sup_details": {
             "osup_det": {
-                "txval": float(out.get("taxable_value") or 0),
-                "iamt": float(out.get("igst") or 0),
-                "camt": float(out.get("cgst") or 0),
-                "samt": float(out.get("sgst") or 0)
-            }
+                "txval": f(out, "taxable_value"),
+                "iamt": f(out, "igst"),
+                "camt": f(out, "cgst"),
+                "samt": f(out, "sgst"),
+                "csamt": 0.0,
+            },
+            "isup_rev": {
+                "txval": f(rcm_data, "taxable_value"),
+                "iamt": f(rcm_data, "igst_rcm"),
+                "camt": f(rcm_data, "cgst_rcm"),
+                "samt": f(rcm_data, "sgst_rcm"),
+                "csamt": 0.0,
+            },
         },
         "itc_elg": {
             "itc_avl": [
                 {
-                    "ty": "All other ITC",
-                    "iamt": float(itc_data.get("igst_itc") or 0),
-                    "camt": float(itc_data.get("cgst_itc") or 0),
-                    "samt": float(itc_data.get("sgst_itc") or 0)
-                }
+                    "ty": "ISRC",
+                    "iamt": f(rcm_data, "igst_rcm"),
+                    "camt": f(rcm_data, "cgst_rcm"),
+                    "samt": f(rcm_data, "sgst_rcm"),
+                    "csamt": 0.0,
+                },
+                {
+                    "ty": "OTH",
+                    "iamt": f(itc_data, "igst_itc"),
+                    "camt": f(itc_data, "cgst_itc"),
+                    "samt": f(itc_data, "sgst_itc"),
+                    "csamt": 0.0,
+                },
             ]
-        }
+        },
     }
-    return JSONResponse(content=gstr3b_data)
 
 @router.get("/export/gstr1-excel")
 async def export_gstr1_excel(period: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):

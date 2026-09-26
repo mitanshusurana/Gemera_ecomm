@@ -40,15 +40,21 @@ def _sql_text() -> str:
 
 
 def permitted(constraint: str) -> set[str]:
-    """The literals a named CHECK constraint accepts."""
+    """The literals a named CHECK constraint accepts.
+
+    The LAST definition wins: a later migration widens a vocabulary by
+    dropping the constraint and re-creating it under the same name (0009
+    does this to chk_party_type for 'Karigar'), and the files are read in
+    order, so the final match is what the database enforces.
+    """
     sql = _sql_text()
-    m = re.search(
+    matches = re.findall(
         rf"CONSTRAINT\s+{re.escape(constraint)}\s+CHECK\s*\((.*?)\)\s*\)\s*\)",
         sql,
         re.I | re.S,
     )
-    assert m, f"{constraint} is not in the migrations"
-    values = set(re.findall(r"'([A-Za-z_][A-Za-z0-9_]*)'::character varying", m.group(1)))
+    assert matches, f"{constraint} is not in the migrations"
+    values = set(re.findall(r"'([A-Za-z_][A-Za-z0-9_]*)'::character varying", matches[-1]))
     assert values, f"could not read any value out of {constraint}"
     return values
 

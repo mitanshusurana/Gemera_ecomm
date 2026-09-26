@@ -409,8 +409,8 @@ export default function PurchasesPage() {
       };
 
       if (editingInvoiceId) {
-        await apiClient.put(`/purchases/invoices/${editingInvoiceId}`, payload);
-        alert('Purchase invoice updated successfully!');
+        const res = await apiClient.put(`/purchases/invoices/${editingInvoiceId}`, payload);
+        alert(res.data?.message || `Bill reversed and re-posted as ${res.data?.bill_no || 'a new number'}.`);
       } else {
         await apiClient.post('/purchases/invoices', payload);
         alert('Purchase invoice recorded successfully!');
@@ -528,9 +528,27 @@ export default function PurchasesPage() {
                 <tbody className="divide-y divide-border">
                   {invoices.map((inv) => {
                     const itcTax = Number(inv.total_gst) || (Number(inv.cgst_amount || 0) + Number(inv.sgst_amount || 0) + Number(inv.igst_amount || 0));
+                    const isHistory = inv.status === 'Amended' || inv.status === 'Cancelled';
                     return (
-                      <tr key={inv.id} className="hover:bg-white/5 transition-colors">
-                        <td className="py-4 font-mono font-medium text-white">{inv.bill_no}</td>
+                      <tr key={inv.id} className={`hover:bg-white/5 transition-colors ${isHistory ? 'opacity-60' : ''}`}>
+                        <td className="py-4 font-mono font-medium text-white">
+                          {inv.bill_no}
+                          {/* Amendment chain: an amended bill stays on file and points
+                              at the bill that replaced it; the replacement points back. */}
+                          {inv.status === 'Amended' && (
+                            <span className="block text-[10px] font-sans text-warning">
+                              Amended → {inv.amended_by_bill_no ? (
+                                <button className="underline" onClick={() => openDetailedView(inv.amended_by_invoice_id)}>{inv.amended_by_bill_no}</button>
+                              ) : '—'}
+                            </span>
+                          )}
+                          {inv.amends_bill_no && (
+                            <span className="block text-[10px] font-sans text-textSecondary">
+                              amends <button className="underline" onClick={() => openDetailedView(inv.amends_invoice_id)}>{inv.amends_bill_no}</button>
+                            </span>
+                          )}
+                          {inv.status === 'Cancelled' && <span className="block text-[10px] font-sans text-danger">Cancelled</span>}
+                        </td>
                         <td className="py-4 text-textSecondary">{inv.vendor_invoice_date || inv.bill_date}</td>
                         <td className="py-4 font-mono text-textSecondary">{inv.vendor_inv_no}</td>
                         <td className="py-4 font-medium text-white">{inv.vendor_name}</td>
@@ -553,12 +571,15 @@ export default function PurchasesPage() {
                           )}
                         </td>
                         <td className="py-4 flex items-center gap-2">
-                          <button 
-                            onClick={() => openEditDrawer(inv.id)}
-                            className="px-2 py-1 bg-white/10 text-white border border-border rounded hover:bg-white/20 text-xs font-medium flex items-center gap-1"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-primary" /> Edit
-                          </button>
+                          {!isHistory && (
+                            <button
+                              onClick={() => openEditDrawer(inv.id)}
+                              title="Amend: the bill is reversed and re-posted under a new number; nothing posted is deleted"
+                              className="px-2 py-1 bg-white/10 text-white border border-border rounded hover:bg-white/20 text-xs font-medium flex items-center gap-1"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-primary" /> Amend
+                            </button>
+                          )}
                           <button 
                             onClick={() => openDetailedView(inv.id)}
                             className="px-2 py-1 bg-primary/20 text-primary border border-primary/30 rounded hover:bg-primary/30 text-xs font-medium flex items-center gap-1"
@@ -583,9 +604,13 @@ export default function PurchasesPage() {
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <h2 className="text-2xl font-playfair font-bold text-white">
-                  {editingInvoiceId ? 'Edit Purchase Voucher' : 'Record Purchase Voucher'}
+                  {editingInvoiceId ? 'Amend Purchase Voucher' : 'Record Purchase Voucher'}
                 </h2>
-                <p className="text-xs text-textSecondary mt-0.5">Inward commodity bill, vendor bill date & Input Tax Credit (ITC)</p>
+                <p className="text-xs text-textSecondary mt-0.5">
+                  {editingInvoiceId
+                    ? 'The original bill is reversed and kept on file; the corrected bill is posted under a new number (/A1, /A2, ...).'
+                    : 'Inward commodity bill, vendor bill date & Input Tax Credit (ITC)'}
+                </p>
               </div>
               <button onClick={() => setIsDrawerOpen(false)} className="text-textSecondary hover:text-white">
                 <X className="w-6 h-6" />
@@ -896,7 +921,7 @@ export default function PurchasesPage() {
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting} className="px-6 py-2 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
-                  {submitting ? 'Saving...' : (editingInvoiceId ? 'Update Purchase Invoice' : 'Record Purchase Invoice')}
+                  {submitting ? 'Saving...' : (editingInvoiceId ? 'Reverse & Re-post Amended Bill' : 'Record Purchase Invoice')}
                 </button>
               </div>
             </form>
@@ -946,7 +971,25 @@ export default function PurchasesPage() {
                 </p>
               </div>
               <div className="space-y-1 text-right">
-                <p className="text-gray-800"><strong>Bill No:</strong> <span className="font-mono font-bold text-gray-900">{selectedInvoice.bill_no}</span></p>
+                <p className="text-gray-800"><strong>Bill No:</strong> <span className="font-mono font-bold text-gray-900">{selectedInvoice.bill_no}</span>
+                  {selectedInvoice.status === 'Amended' && <span className="ml-2 text-[10px] font-bold text-amber-700 uppercase">Amended — superseded by {selectedInvoice.amended_by_bill_no || '—'}</span>}
+                  {selectedInvoice.status === 'Cancelled' && <span className="ml-2 text-[10px] font-bold text-red-700 uppercase">Cancelled</span>}
+                </p>
+                {selectedInvoice.amends_bill_no && (
+                  <p className="text-gray-700 text-[11px]"><strong>Amends:</strong> <span className="font-mono">{selectedInvoice.amends_bill_no}</span> (reversed and re-posted)</p>
+                )}
+                {Array.isArray(selectedInvoice.chain) && selectedInvoice.chain.length > 1 && (
+                  <p className="text-gray-700 text-[11px]">
+                    <strong>Chain:</strong>{' '}
+                    {selectedInvoice.chain.map((c: any, i: number) => (
+                      <span key={c.id}>
+                        {i > 0 && ' → '}
+                        <span className={`font-mono ${c.id === selectedInvoice.id ? 'font-bold text-gray-900' : ''}`}>{c.bill_no}</span>
+                        <span className="text-gray-500"> ({c.status}, {formatCurrency(Number(c.grand_total || 0))})</span>
+                      </span>
+                    ))}
+                  </p>
+                )}
                 <p className="text-gray-800"><strong>Vendor Inv No:</strong> <span className="font-mono text-gray-900">{selectedInvoice.vendor_inv_no}</span></p>
                 <p className="text-gray-800"><strong>Vendor Inv Date:</strong> <span className="font-mono text-gray-900">{selectedInvoice.vendor_invoice_date || selectedInvoice.bill_date}</span></p>
                 <p className="text-gray-800"><strong>Posting Date:</strong> {selectedInvoice.bill_date}</p>

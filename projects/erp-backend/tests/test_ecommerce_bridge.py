@@ -143,3 +143,17 @@ def test_exchange_credit_rides_on_the_sale_payload():
     assert sale.payment is None
     assert sale.exchange_credit.amount == Decimal("10300")
     assert sale.lines[0].material_code is None
+
+
+def test_advance_and_advance_applied_models():
+    from app.api.v1.integrations import BridgeAdvance, BridgeAdvanceApplied, BridgeCustomer, BridgeCreditNoteRequest
+
+    adv = BridgeAdvance(external_ref="TRS-abc-3", customer=BridgeCustomer(name="A"), amount="5000", date="2026-09-25",
+                        scheme="Treasure plan TC-0001")
+    assert adv.mode == "Razorpay" and adv.amount == Decimal("5000")
+    applied = BridgeAdvanceApplied(amount="5000", reference="TRS-abc")
+    assert not hasattr(applied, "purchase_ref")
+    cn = BridgeCreditNoteRequest(external_ref="ORD-1", invoice_no="WEB/2026-27/00001", amount="10300",
+                                 reason="Refund", date="2026-09-25", refund_paid="0")
+    assert cn.refund_paid == Decimal("0")
+    assert BridgeCreditNoteRequest(external_ref="ORD-1", invoice_no="WEB/1", amount="1", reason="r", date="2026-09-25").refund_paid is None

@@ -41,6 +41,7 @@ from app.core.roles import CAN_AMEND, CAN_MOVE_STOCK, CAN_POST, require
 from app.core.security import get_current_user
 from app.core.stock import assert_stock_available
 from app.core.tenancy import resolve_fiscal_year, resolve_stock_location
+from app.core.periods import assert_period_open
 
 logger = logging.getLogger(__name__)
 
@@ -360,6 +361,7 @@ async def create_approval_memo(
         raise HTTPException(status_code=404, detail="Party not found")
 
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    await assert_period_open(db, company_id, payload.memo_date, what="This approval memo")
 
     try:
         fy = await resolve_fiscal_year(db, company_id)
@@ -656,6 +658,7 @@ async def return_approval_memo(
     closes when nothing remains out. Refuses more than is outstanding."""
     user_id, company_id, ip_address, session_id = _request_context(request, current_user)
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    await assert_period_open(db, company_id, date.today(), what="This memo movement")
 
     try:
         memo = await _load_memo_for_update(db, memo_id, company_id)
@@ -751,6 +754,7 @@ async def convert_approval_memo(
     """
     user_id, company_id, ip_address, session_id = _request_context(request, current_user)
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    await assert_period_open(db, company_id, payload.invoice_date, what="This memo conversion")
 
     memo_no = None
     invoice_lines: list[InvoiceLineRequest] = []
@@ -902,6 +906,7 @@ async def cancel_approval_memo(
     invoiced against it; all stock goes back to the default location."""
     user_id, company_id, ip_address, session_id = _request_context(request, current_user)
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    await assert_period_open(db, company_id, date.today(), what="This memo cancellation")
 
     try:
         memo = await _load_memo_for_update(db, memo_id, company_id)

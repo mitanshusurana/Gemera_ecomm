@@ -19,6 +19,8 @@ from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
 from app.core.tenancy import resolve_fiscal_year
+from app.core.periods import assert_period_open
+from app.tax.compliance import cash_receipt_violation
 
 logger = logging.getLogger(__name__)
 
@@ -194,6 +196,11 @@ async def settle_invoice(db, table, company_id, amount, invoice_id=None, referen
             status_code=409,
             detail="That invoice is cancelled; post the amount on account instead.",
         )
+    if inv["status"] == "Amended":
+        raise HTTPException(
+            status_code=409,
+            detail="That bill has been amended; settle the amended bill (its number ends in /A1, /A2, ...) instead.",
+        )
 
     outstanding = (to_decimal(inv["grand_total"]) - to_decimal(inv["amount_paid"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     if amt > outstanding:
@@ -228,6 +235,7 @@ async def create_receipt(payload: ReceiptPaymentPayload, request: Request, db: A
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
     try:
+        await assert_period_open(db, company_id, payload.date, what="This receipt")
         fy = await get_fy(db, company_id)
         no_res = await db.execute(text("SELECT 'REC/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
@@ -239,6 +247,24 @@ async def create_receipt(payload: ReceiptPaymentPayload, request: Request, db: A
             {"pid": str(payload.party_id), "cid": company_id},
         )
         party_acc = p_res.scalar()
+
+        # s.269ST: no person may receive Rs 2,00,000 or more in cash from one
+        # party in a day. "Cash" is what the voucher says it is; the day's
+        # earlier cash receipts from the same party (credits to its account
+        # from Receipt entries whose debit hit the same cash account) count.
+        if (payload.payment_mode or "").strip().lower() == "cash":
+            cash_res = await db.execute(
+                text(
+                    "SELECT COALESCE(SUM(pl.cr_amount), 0) FROM caratloop.journal_entries je "
+                    "JOIN caratloop.journal_entry_lines pl ON pl.journal_entry_id = je.id AND pl.account_id = CAST(:pacc AS UUID) "
+                    "JOIN caratloop.journal_entry_lines cl ON cl.journal_entry_id = je.id AND cl.account_id = CAST(:cacc AS UUID) AND cl.dr_amount > 0 "
+                    "WHERE je.company_id = :cid AND je.entry_type = 'Receipt' AND je.entry_date = :d AND je.status <> 'Cancelled'"
+                ),
+                {"pacc": str(party_acc), "cacc": str(payload.bank_account_id), "cid": company_id, "d": payload.date},
+            )
+            violation = cash_receipt_violation(cash_res.scalar() or 0, payload.amount)
+            if violation:
+                raise HTTPException(status_code=422, detail=violation)
 
         # Settle first so an over-payment is refused before anything is posted.
         inv_id = await settle_invoice(
@@ -280,6 +306,7 @@ async def create_payment(payload: ReceiptPaymentPayload, request: Request, db: A
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
     
     try:
+        await assert_period_open(db, company_id, payload.date, what="This payment")
         fy = await get_fy(db, company_id)
         no_res = await db.execute(text("SELECT 'PAY/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
@@ -346,7 +373,7 @@ async def get_open_invoices(
         text("""
             SELECT id, bill_no AS invoice_no, vendor_inv_no AS supplier_invoice_no, bill_date AS invoice_date, grand_total, status, payment_status, 'Purchase' AS doc_type
             FROM caratloop.purchase_invoices
-            WHERE vendor_id = CAST(:pid AS UUID) AND company_id = :cid AND status != 'Cancelled'
+            WHERE vendor_id = CAST(:pid AS UUID) AND company_id = :cid AND status NOT IN ('Cancelled', 'Amended')
             ORDER BY bill_date DESC LIMIT 50
         """),
         {"pid": str(party_id), "cid": cid}
@@ -365,6 +392,7 @@ async def create_contra(payload: ContraPayload, request: Request, db: AsyncSessi
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
     
     try:
+        await assert_period_open(db, company_id, payload.date, what="This contra entry")
         fy = await get_fy(db, company_id)
         no_res = await db.execute(text("SELECT 'CON/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
@@ -402,6 +430,7 @@ async def create_journal(payload: JournalPayload, request: Request, db: AsyncSes
         if abs(dr_sum - cr_sum) > 0.01:
             raise HTTPException(status_code=400, detail="Debits and Credits must balance")
 
+        await assert_period_open(db, company_id, payload.date, what="This journal entry")
         fy = await get_fy(db, company_id)
         no_res = await db.execute(text("SELECT 'JRN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
@@ -430,6 +459,7 @@ async def create_credit_note(payload: CreditNotePayload, request: Request, db: A
     session_id = current_user.get("session_id", "0")
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
     try:
+        await assert_period_open(db, company_id, payload.date, what="This credit note")
         fy = await get_fy(db, company_id)
         no_res = await db.execute(text("SELECT 'CDN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
@@ -582,6 +612,7 @@ async def create_debit_note(payload: DebitNotePayload, request: Request, db: Asy
     session_id = current_user.get("session_id", "0")
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
     try:
+        await assert_period_open(db, company_id, payload.date, what="This debit note")
         fy = await get_fy(db, company_id)
         no_res = await db.execute(text("SELECT 'DDN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()

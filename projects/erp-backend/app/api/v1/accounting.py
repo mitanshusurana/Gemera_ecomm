@@ -64,6 +64,12 @@ async def get_trial_balance(
     if not as_of_date:
         as_of_date = date.today()
 
+    # Postings are filtered in a subquery. The previous shape -- LEFT JOIN
+    # journal_entries with the status and date test in the ON clause -- left
+    # the journal_entry_lines row in place when the entry failed the test, so
+    # every line was summed regardless of as_of_date. 'Opening' journals
+    # (year-end carry-forwards) are skipped in a from-inception total; see
+    # app.core.periods.
     result = await db.execute(
         text("""
             SELECT
@@ -71,25 +77,26 @@ async def get_trial_balance(
                 a.normal_balance,
                 COALESCE(a.opening_balance, 0) AS opening_balance,
                 a.opening_balance_type,
-                COALESCE(SUM(jel.dr_amount), 0) AS period_debit,
-                COALESCE(SUM(jel.cr_amount), 0) AS period_credit,
+                COALESCE(t.dr, 0) AS period_debit,
+                COALESCE(t.cr, 0) AS period_credit,
                 CASE
                     WHEN a.normal_balance = 'D' THEN
-                        COALESCE(a.opening_balance, 0) + COALESCE(SUM(jel.dr_amount), 0)
-                        - COALESCE(SUM(jel.cr_amount), 0)
+                        COALESCE(a.opening_balance, 0) + COALESCE(t.dr, 0) - COALESCE(t.cr, 0)
                     ELSE
-                        COALESCE(a.opening_balance, 0) + COALESCE(SUM(jel.cr_amount), 0)
-                        - COALESCE(SUM(jel.dr_amount), 0)
+                        COALESCE(a.opening_balance, 0) + COALESCE(t.cr, 0) - COALESCE(t.dr, 0)
                 END AS closing_balance
             FROM caratloop.accounts a
             JOIN caratloop.account_groups ag ON ag.id = a.group_id
-            LEFT JOIN caratloop.journal_entry_lines jel ON jel.account_id = a.id
-            LEFT JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
-                AND je.status = 'Posted'
-                AND je.entry_date <= :as_of_date
+            LEFT JOIN (
+                SELECT jel.account_id, SUM(jel.dr_amount) AS dr, SUM(jel.cr_amount) AS cr
+                FROM caratloop.journal_entry_lines jel
+                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+                WHERE je.company_id = :cid AND je.status = 'Posted'
+                  AND je.entry_date <= :as_of_date
+                  AND je.entry_type <> 'Opening'
+                GROUP BY jel.account_id
+            ) t ON t.account_id = a.id
             WHERE a.company_id = :cid AND a.is_active = TRUE
-            GROUP BY a.id, a.code, a.name, ag.name, a.normal_balance,
-                     a.opening_balance, a.opening_balance_type
             ORDER BY ag.name, a.code
         """),
         {"as_of_date": as_of_date, "cid": current_user["company_id"]},
@@ -152,6 +159,12 @@ async def get_general_ledger(
               AND je.status = 'Posted'
               AND (:from_date IS NULL OR je.entry_date >= :from_date)
               AND (:to_date IS NULL OR je.entry_date <= :to_date)
+              -- A year's 'Opening' journal restates the balance the earlier
+              -- postings already carry. It is the right first line when the
+              -- ledger is read from that year's start, and double-counts when
+              -- the ledger is read from inception; show it only when the
+              -- range starts on or after it.
+              AND (je.entry_type <> 'Opening' OR (:from_date IS NOT NULL AND je.entry_date >= :from_date))
             ORDER BY je.entry_date, je.id
         """),
         {
@@ -219,18 +232,23 @@ async def list_accounts(
             a.opening_balance, a.opening_balance_type, a.is_system, a.is_active,
             a.description, ag.id AS group_id, ag.code AS group_code,
             ag.name AS group_name, ag.nature,
-            COALESCE(SUM(jel.dr_amount), 0) AS total_dr,
-            COALESCE(SUM(jel.cr_amount), 0) AS total_cr,
+            COALESCE(t.dr, 0) AS total_dr,
+            COALESCE(t.cr, 0) AS total_cr,
             CASE
                 WHEN a.normal_balance = 'D' THEN
-                    COALESCE(a.opening_balance, 0) + COALESCE(SUM(jel.dr_amount), 0) - COALESCE(SUM(jel.cr_amount), 0)
+                    COALESCE(a.opening_balance, 0) + COALESCE(t.dr, 0) - COALESCE(t.cr, 0)
                 ELSE
-                    COALESCE(a.opening_balance, 0) + COALESCE(SUM(jel.cr_amount), 0) - COALESCE(SUM(jel.dr_amount), 0)
+                    COALESCE(a.opening_balance, 0) + COALESCE(t.cr, 0) - COALESCE(t.dr, 0)
             END AS current_balance
         FROM caratloop.accounts a
         JOIN caratloop.account_groups ag ON ag.id = a.group_id
-        LEFT JOIN caratloop.journal_entry_lines jel ON jel.account_id = a.id
-        LEFT JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id AND je.status = 'Posted'
+        LEFT JOIN (
+            SELECT jel.account_id, SUM(jel.dr_amount) AS dr, SUM(jel.cr_amount) AS cr
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_type <> 'Opening'
+            GROUP BY jel.account_id
+        ) t ON t.account_id = a.id
         WHERE a.company_id = :cid AND a.is_active = TRUE
     """
     params = {"cid": current_user["company_id"]}
@@ -240,7 +258,7 @@ async def list_accounts(
     if group_id:
         query += " AND ag.id = :group_id"
         params["group_id"] = str(group_id)
-    query += " GROUP BY a.id, a.code, a.name, a.account_type, a.normal_balance, a.currency, a.opening_balance, a.opening_balance_type, a.is_system, a.is_active, a.description, ag.id, ag.code, ag.name, ag.nature ORDER BY ag.nature, ag.name, a.code"
+    query += " ORDER BY ag.nature, ag.name, a.code"
 
     # Bound the result set. These endpoints previously returned the whole
     # table; the sales register returned every invoice ever raised.

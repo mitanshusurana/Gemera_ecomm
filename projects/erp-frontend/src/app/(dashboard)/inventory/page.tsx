@@ -5,7 +5,7 @@ import { Plus, Search, Filter, Loader2, X, Edit, History, ArrowUpRight, ArrowDow
 import DataTable from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
-import { apiClient } from '@/lib/api';
+import { apiClient, locationsApi, StockLocation } from '@/lib/api';
 
 export default function InventoryPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -13,6 +13,9 @@ export default function InventoryPage() {
   const [inventoryData, setInventoryData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Balances for one stock location, or every location when blank.
+  const [locations, setLocations] = useState<StockLocation[]>([]);
+  const [locationId, setLocationId] = useState('');
 
   // Item Ledger Modal State
   const [selectedLedger, setSelectedLedger] = useState<any | null>(null);
@@ -33,7 +36,7 @@ export default function InventoryPage() {
   const fetchInventoryData = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get('/inventory/materials');
+      const res = await apiClient.get('/inventory/materials', { params: locationId ? { location_id: locationId } : {} });
       const list = Array.isArray(res.data) ? res.data : res.data?.materials || res.data?.data || [];
       setInventoryData(list);
     } catch (error) {
@@ -45,7 +48,14 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchInventoryData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationId]);
+
+  useEffect(() => {
+    locationsApi.list().then((res) => setLocations(res.data?.locations || [])).catch(() => setLocations([]));
   }, []);
+
+  const selectedLocation = locations.find((l) => l.id === locationId);
 
   const openItemLedger = async (itemId: string) => {
     setLoadingLedger(true);
@@ -149,12 +159,29 @@ export default function InventoryPage() {
           <h1 className="text-3xl font-playfair font-bold text-white">Stock Items Master</h1>
           <p className="text-textSecondary mt-1">[CGST Rule 56(2)] Stock Register & Inward/Outward Ledger</p>
         </div>
-        <button 
-          onClick={handleOpenNewItem}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
-        >
-          <Plus className="w-4 h-4" /> Add Stock Item
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="space-y-1">
+            <label className="text-[11px] text-textSecondary font-medium flex items-center gap-1">
+              <Filter className="w-3 h-3 text-primary" /> Stock location
+            </label>
+            <select
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+              className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none min-w-[200px]"
+            >
+              <option value="">All locations</option>
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>{l.code} — {l.name}{l.is_default ? ' (default)' : ''}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={handleOpenNewItem}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity self-end"
+          >
+            <Plus className="w-4 h-4" /> Add Stock Item
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -172,7 +199,7 @@ export default function InventoryPage() {
                   <th className="pb-3 font-medium">Category</th>
                   <th className="pb-3 font-medium">HSN Code</th>
                   <th className="pb-3 font-medium text-right">GST Rate</th>
-                  <th className="pb-3 font-medium text-right">Current Stock</th>
+                  <th className="pb-3 font-medium text-right">{selectedLocation ? `Stock at ${selectedLocation.code}` : 'Current Stock'}</th>
                   <th className="pb-3 font-medium text-center">Actions</th>
                 </tr>
               </thead>

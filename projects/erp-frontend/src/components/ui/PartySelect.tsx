@@ -18,10 +18,15 @@ interface PartySelectProps {
   value?: string;
   onChange: (partyId: string, partyObj?: Party) => void;
   partyType?: 'Customer' | 'Supplier' | 'Both';
+  /** Restrict the search to these stored party types (e.g. ['Karigar', 'Supplier']).
+   *  Sent to the API as a comma-separated `type`; `partyType` alone is
+   *  display-only for backward compatibility. */
+  types?: string[];
   placeholder?: string;
 }
 
-export default function PartySelect({ value, onChange, partyType, placeholder = 'Search party...' }: PartySelectProps) {
+export default function PartySelect({ value, onChange, partyType, types, placeholder = 'Search party...' }: PartySelectProps) {
+  const typeFilter = types && types.length ? types.join(',') : undefined;
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -89,7 +94,7 @@ export default function PartySelect({ value, onChange, partyType, placeholder = 
       setLoading(true);
       try {
         const res = await apiClient.get('/parties', {
-          params: { q: query, limit: 30 }
+          params: typeFilter ? { q: query, limit: 30, type: typeFilter } : { q: query, limit: 30 }
         });
         const partyList = Array.isArray(res.data) ? res.data : res.data?.data || [];
         if (active) {
@@ -117,7 +122,7 @@ export default function PartySelect({ value, onChange, partyType, placeholder = 
       active = false;
       clearTimeout(timer);
     };
-  }, [query, partyType]);
+  }, [query, partyType, typeFilter]);
 
   const handleSelect = (party: Party) => {
     setSelectedParty(party);

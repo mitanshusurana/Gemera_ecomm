@@ -119,9 +119,17 @@ async def get_balance_sheet(
                 END AS balance
             FROM caratloop.accounts a
             JOIN caratloop.account_groups ag ON ag.id = a.group_id
-            LEFT JOIN caratloop.journal_entry_lines jel ON jel.account_id = a.id
-            LEFT JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
-                AND je.status = 'Posted' AND je.entry_date <= :as_of_date
+            -- Postings filtered in a subquery: a date test in a LEFT JOIN's
+            -- ON clause left every line summed regardless of as_of_date.
+            -- 'Opening' journals restate balances already posted and are
+            -- skipped in a from-inception total (app.core.periods).
+            LEFT JOIN (
+                SELECT jel.account_id, jel.dr_amount, jel.cr_amount
+                FROM caratloop.journal_entry_lines jel
+                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+                WHERE je.company_id = :cid AND je.status = 'Posted'
+                  AND je.entry_date <= :as_of_date AND je.entry_type <> 'Opening'
+            ) jel ON jel.account_id = a.id
             WHERE a.company_id = :cid AND a.is_active = TRUE
             GROUP BY ag.nature, ag.name, a.id, a.code, a.name,
                      a.normal_balance, a.opening_balance
@@ -253,12 +261,14 @@ async def get_dashboard_stats(
         ),
         {"cid": cid},
     )
+    # Net of reversals: an amended bill leaves its original row and a
+    # reversing row (is_reversal) in each register.
     itc_res = await db.execute(
-        text("SELECT COALESCE(SUM(total_itc), 0) AS itc_tax FROM caratloop.itc_register WHERE company_id = :cid AND is_eligible = TRUE"),
+        text("SELECT COALESCE(SUM(CASE WHEN is_reversal THEN -total_itc ELSE total_itc END), 0) AS itc_tax FROM caratloop.itc_register WHERE company_id = :cid AND is_eligible = TRUE"),
         {"cid": cid},
     )
     rcm_res = await db.execute(
-        text("SELECT COALESCE(SUM(total_rcm), 0) AS rcm_tax FROM caratloop.rcm_liability_register WHERE company_id = :cid"),
+        text("SELECT COALESCE(SUM(CASE WHEN is_reversal THEN -total_rcm ELSE total_rcm END), 0) AS rcm_tax FROM caratloop.rcm_liability_register WHERE company_id = :cid"),
         {"cid": cid},
     )
     output_tax = float(gst_out_res.scalar() or 0)
@@ -586,6 +596,7 @@ async def get_gst_tax_register(
                 COALESCE(pi.subtotal_value, 0) AS taxable_value,
                 ir.cgst_credit AS cgst_itc, ir.sgst_credit AS sgst_itc, ir.igst_credit AS igst_itc,
                 (NOT ir.is_eligible) AS is_ineligible, ir.ineligibility_reason,
+                ir.is_reversal,
                 p.name AS supplier_name
             FROM caratloop.itc_register ir
             LEFT JOIN caratloop.parties p ON p.id = ir.vendor_id
@@ -605,7 +616,8 @@ async def get_gst_tax_register(
                 rcm.id, rcm.purchase_invoice_id, rcm.vendor_name AS unregistered_seller_name, rcm.vendor_pan AS seller_pan,
                 rcm.transaction_date AS invoice_date, rcm.purchase_value,
                 rcm.cgst_rcm AS rcm_cgst, rcm.sgst_rcm AS rcm_sgst, rcm.igst_rcm AS rcm_igst,
-                rcm.total_rcm AS total_tax, rcm.is_paid AS tax_paid, rcm.itc_availed AS itc_claimed
+                rcm.total_rcm AS total_tax, rcm.is_paid AS tax_paid, rcm.itc_availed AS itc_claimed,
+                rcm.is_reversal
             FROM caratloop.rcm_liability_register rcm
             WHERE rcm.company_id = :cid
               AND rcm.transaction_date BETWEEN :from_date AND :to_date
@@ -622,8 +634,12 @@ async def get_gst_tax_register(
         (-1 if r.get("is_credit_note") else 1) * float(r.get("total_tax_amount") or 0)
         for r in output_entries
     )
-    tot_itc_tax = sum(float(r.get("cgst_itc", 0) + r.get("sgst_itc", 0) + r.get("igst_itc", 0)) for r in itc_entries if not r.get("is_ineligible"))
-    tot_rcm_tax = sum(float(r.get("total_tax") or 0) for r in rcm_entries)
+    # Reversal rows (amended bills) are listed and netted off, like credit notes above.
+    tot_itc_tax = sum(
+        (-1 if r.get("is_reversal") else 1) * float(r.get("cgst_itc", 0) + r.get("sgst_itc", 0) + r.get("igst_itc", 0))
+        for r in itc_entries if not r.get("is_ineligible")
+    )
+    tot_rcm_tax = sum((-1 if r.get("is_reversal") else 1) * float(r.get("total_tax") or 0) for r in rcm_entries)
 
     return {
         "from_date": str(from_date),
@@ -670,7 +686,7 @@ async def get_tds_tcs_register(
     query = """
         SELECT
             r.id, r.kind, r.section, r.document_type, r.document_id, r.document_no, r.document_date,
-            r.base_amount, r.rate, r.amount, r.pan,
+            r.base_amount, r.rate, r.amount, r.pan, r.is_reversal,
             p.id AS party_id, p.name AS party_name, p.gstin AS party_gstin,
             p.tds_pan_verified, p.lower_deduction_pct,
             fy.year_label
@@ -694,18 +710,21 @@ async def get_tds_tcs_register(
     for r in rows:
         r["document_id"] = str(r["document_id"])
         r["party_id"] = str(r["party_id"])
+        # A reversal row (an amended bill's original) is listed and netted
+        # off; it is not a second document.
+        sgn = -1 if r.get("is_reversal") else 1
         k = by_kind.setdefault(r["kind"], {"documents": 0, "base_amount": Decimal("0"), "amount": Decimal("0")})
-        k["documents"] += 1
-        k["base_amount"] += to_decimal(r["base_amount"])
-        k["amount"] += to_decimal(r["amount"])
+        k["documents"] += sgn
+        k["base_amount"] += sgn * to_decimal(r["base_amount"])
+        k["amount"] += sgn * to_decimal(r["amount"])
         pk = f"{r['kind']}:{r['party_id']}"
         pp = by_party.setdefault(pk, {
             "kind": r["kind"], "party_id": r["party_id"], "party_name": r["party_name"],
             "pan": r["pan"], "documents": 0, "base_amount": Decimal("0"), "amount": Decimal("0"),
         })
-        pp["documents"] += 1
-        pp["base_amount"] += to_decimal(r["base_amount"])
-        pp["amount"] += to_decimal(r["amount"])
+        pp["documents"] += sgn
+        pp["base_amount"] += sgn * to_decimal(r["base_amount"])
+        pp["amount"] += sgn * to_decimal(r["amount"])
 
     return {
         "from_date": str(from_date),
@@ -715,7 +734,7 @@ async def get_tds_tcs_register(
         "summary": {
             "by_kind": by_kind,
             "by_party": sorted(by_party.values(), key=lambda x: (x["kind"], -x["amount"])),
-            "total_amount": sum((to_decimal(r["amount"]) for r in rows), Decimal("0")),
+            "total_amount": sum(((-1 if r.get("is_reversal") else 1) * to_decimal(r["amount"]) for r in rows), Decimal("0")),
             "without_pan": sum(1 for r in rows if not r.get("pan")),
         },
         "settings": {
@@ -799,7 +818,7 @@ async def get_outstanding_aging(
           ON pi.vendor_id = p.id AND pi.company_id = p.company_id
         WHERE p.company_id = :cid
           AND pi.payment_status != 'Paid'
-          AND pi.status != 'Cancelled'
+          AND pi.status NOT IN ('Cancelled', 'Amended')
           AND pi.bill_date <= CAST(:as_of_date AS DATE)
         GROUP BY p.id, p.name, p.trade_name, p.gstin, p.phone, p.credit_limit, p.credit_days
         ORDER BY total_outstanding DESC

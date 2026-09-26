@@ -195,5 +195,8 @@ def test_the_journal_legs_name_the_seeded_codes():
     purchases = io.open(ROOT / "app" / "api" / "v1" / "purchases.py", encoding="utf-8").read()
     assert '"TCS-206C"' in sales
     assert "a.code = 'TDS-194Q'" in purchases
-    # The supplier is credited net of the TDS, in both the create and the amend path.
-    assert purchases.count('"cr": grand_total - tds_amount') == 2
+    # The supplier is credited net of the TDS. Create and amend share one
+    # posting routine (_post_purchase) since the amend path became
+    # reverse-and-repost, so the leg appears once.
+    assert purchases.count("grand_total - tds_amount") == 1
+    assert "_post_purchase(" in purchases

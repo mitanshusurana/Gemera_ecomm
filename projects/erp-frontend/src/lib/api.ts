@@ -71,7 +71,72 @@ export const bankingApi = {
   importStatement: (formData: FormData) => apiClient.post('/banking/statement/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getReconciliation: (params: any) => apiClient.get('/banking/reconciliation', { params }),
   matchEntries: (data: any) => apiClient.post('/banking/reconciliation/match', data),
+  unmatchEntries: (data: { match_id?: string; bank_entry_id?: string }) => apiClient.post('/banking/reconciliation/unmatch', data),
   getBrsReport: (params: any) => apiClient.get('/banking/reconciliation/report', { params }),
+};
+
+// Fiscal years: period lock and year-end closing (owner/admin for mutations)
+export interface FiscalYear {
+  id: string;
+  year_label: string;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  is_locked: boolean;
+  is_closed: boolean;
+  locked_at: string | null;
+  locked_by_name: string | null;
+  closed_at: string | null;
+  closed_by_name: string | null;
+  closing_journal_entry_id: number | null;
+  opening_journal_entry_id: number | null;
+  entry_count: number;
+}
+
+export interface ClosingPreviewAccount {
+  id: string;
+  code: string;
+  name: string;
+  nature: string;
+  debits: string | number;
+  credits: string | number;
+  balance: string | number;
+}
+
+export interface ClosingPreview {
+  fiscal_year: { id: string; year_label: string; start_date: string; end_date: string; is_locked: boolean; is_closed: boolean };
+  income_accounts: ClosingPreviewAccount[];
+  expense_accounts: ClosingPreviewAccount[];
+  total_income: string | number;
+  total_expenses: string | number;
+  net_profit: string | number;
+  retained_earnings: { id: string; code: string; name: string; balance_before: string | number; balance_after: string | number };
+  carried_forward: { id: string; code: string; name: string; nature: string; balance_dr: string | number }[];
+  opening_difference: string | number;
+  next_year: { start_date: string; end_date: string; year_label: string; exists: boolean; id: string | null };
+}
+
+export const fiscalYearsApi = {
+  list: () => apiClient.get<{ fiscal_years: FiscalYear[] }>('/fiscal-years'),
+  create: (data: { year_label: string; start_date: string; end_date: string; reason?: string }) =>
+    apiClient.post('/fiscal-years', data),
+  activate: (id: string) => apiClient.post(`/fiscal-years/${id}/activate`, { reason: 'Fiscal year activated' }),
+  lock: (id: string) => apiClient.post(`/fiscal-years/${id}/lock`, { reason: 'Fiscal year locked' }),
+  unlock: (id: string) => apiClient.post(`/fiscal-years/${id}/unlock`, { reason: 'Fiscal year unlocked' }),
+  closingPreview: (id: string) => apiClient.get<ClosingPreview>(`/fiscal-years/${id}/closing-preview`),
+  close: (id: string) => apiClient.post(`/fiscal-years/${id}/close`, { reason: 'Year-end closing' }),
+};
+
+// GSTR-2B import and reconciliation against the ITC register
+export const gstr2bApi = {
+  import: (file: File, period?: string) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    if (period) fd.append('period', period);
+    return apiClient.post('/gst/gstr2b/import', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+  reconcile: (period: string) => apiClient.post(`/gst/gstr2b/reconcile?period=${encodeURIComponent(period)}`),
+  summary: (period: string) => apiClient.get('/gst/gstr2b/summary', { params: { period } }),
 };
 
 // Books APIs
@@ -192,3 +257,123 @@ export const authApi = {
 };
 
 export default api;
+
+// Loose gemstone lots and parcels (carats move through the stock ledger)
+export interface LotRow {
+  id: string;
+  lot_no: string | null;
+  material_id: string;
+  material_code: string;
+  material_name: string;
+  material_category?: string | null;
+  uom?: string | null;
+  carat_weight: string | number;
+  balance_carats: string | number;
+  piece_count: number | null;
+  sieve_size: string | null;
+  shape: string | null;
+  colour: string | null;
+  clarity: string | null;
+  origin: string | null;
+  treatment: string | null;
+  cost_per_carat: string | number | null;
+  parent_lot_id: string | null;
+  parent_lot_no?: string | null;
+  merged_into_lot_id: string | null;
+  status: 'Open' | 'Split' | 'Merged' | 'Sold' | 'Closed';
+  location_id: string | null;
+  location_code?: string | null;
+  location_name?: string | null;
+  certificate_no?: string | null;
+  children_count: number;
+  created_at?: string;
+}
+
+export const lotsApi = {
+  list: (params?: { material_id?: string; status?: string; parent_lot_id?: string; q?: string; open_only?: boolean; limit?: number; offset?: number }) =>
+    apiClient.get<{ lots: LotRow[] }>('/lots', { params }),
+  getById: (id: string) => apiClient.get(`/lots/${id}`),
+  create: (data: any) => apiClient.post('/lots', data),
+  split: (id: string, data: { children: any[]; reason?: string }) => apiClient.post(`/lots/${id}/split`, data),
+  merge: (data: { lot_ids: string[]; lot_no?: string; reason?: string }) => apiClient.post('/lots/merge', data),
+  adjust: (id: string, data: { carat_weight: number | string; reason: string }) => apiClient.post(`/lots/${id}/adjust`, data),
+};
+
+// Stock locations, per-location balances and transfers between them
+export interface StockLocation {
+  id: string;
+  code: string;
+  name: string;
+  location_type: string;
+  address: string | null;
+  is_active: boolean;
+  is_default: boolean;
+  materials_moved?: number;
+  stock_value?: string | number;
+}
+
+export const locationsApi = {
+  list: (include_inactive = false) =>
+    apiClient.get<{ locations: StockLocation[]; location_types: string[] }>('/stock-locations', { params: { include_inactive } }),
+  create: (data: any) => apiClient.post('/stock-locations', data),
+  update: (id: string, data: any) => apiClient.patch(`/stock-locations/${id}`, data),
+  balances: (params?: { location_id?: string; material_id?: string; as_of_date?: string; include_zero?: boolean }) =>
+    apiClient.get('/stock-locations/balances', { params }),
+  transfers: (params?: { from_date?: string; to_date?: string; location_id?: string; limit?: number; offset?: number }) =>
+    apiClient.get('/stock-locations/transfers', { params }),
+  getTransfer: (transferNo: string) => apiClient.get(`/stock-locations/transfers/${transferNo}`),
+  transfer: (data: any) => apiClient.post('/stock-locations/transfers', data),
+};
+
+// Job work (karigar challans, receipts, ITC-04, deemed supply) — CGST s.143
+export const jobWorkApi = {
+  listChallans: (params?: { status?: string; job_worker_id?: string; limit?: number; offset?: number }) =>
+    apiClient.get('/job-work/challans', { params }),
+  getChallan: (id: string) => apiClient.get(`/job-work/challans/${id}`),
+  createChallan: (data: any) => apiClient.post('/job-work/challans', data),
+  receive: (id: string, data: any) => apiClient.post(`/job-work/challans/${id}/receive`, data),
+  deemSupply: (id: string, data: { invoice_date?: string; place_of_supply?: string; reason?: string }) =>
+    apiClient.post(`/job-work/challans/${id}/deem-supply`, data),
+  overdue: (params?: { as_of?: string }) => apiClient.get('/job-work/overdue', { params }),
+  itc04: (params: { from_date: string; to_date: string }) => apiClient.get('/job-work/itc-04', { params }),
+  receipts: (params?: { job_worker_id?: string; from_date?: string; to_date?: string; limit?: number; offset?: number }) =>
+    apiClient.get('/job-work/receipts', { params }),
+  karigarStatement: (partyId: string, params?: { from_date?: string; to_date?: string }) =>
+    apiClient.get(`/job-work/karigars/${partyId}/statement`, { params }),
+};
+
+// Production: bills of materials and BOM-driven orders
+export interface BomLinePayload {
+  material_id: string;
+  quantity_per_unit: number | string;
+  standard_loss_pct?: number | string;
+  loss_type?: string | null;
+  notes?: string | null;
+}
+export interface BomPayload {
+  name: string;
+  output_material_id: string;
+  output_quantity?: number | string;
+  product_id?: string | null;
+  product_type?: string;
+  bom_version?: string;
+  effective_from?: string | null;
+  effective_to?: string | null;
+  is_active?: boolean;
+  remarks?: string | null;
+  lines: BomLinePayload[];
+  reason?: string;
+}
+export const productionApi = {
+  listOrders: (params?: { status?: string; month_year?: string; limit?: number; offset?: number }) =>
+    apiClient.get('/production/orders', { params }),
+  getOrder: (id: string) => apiClient.get(`/production/orders/${id}`),
+  createOrder: (data: any) => apiClient.post('/production/orders', data),
+  completeOrder: (id: string, data: any) => apiClient.post(`/production/orders/${id}/complete`, data),
+  listBoms: (params?: { active_only?: boolean; limit?: number; offset?: number }) =>
+    apiClient.get('/production/boms', { params }),
+  getBom: (id: string, output_quantity?: number | string) =>
+    apiClient.get(`/production/boms/${id}`, { params: output_quantity ? { output_quantity } : undefined }),
+  createBom: (data: BomPayload) => apiClient.post('/production/boms', data),
+  updateBom: (id: string, data: BomPayload) => apiClient.put(`/production/boms/${id}`, data),
+};

@@ -157,6 +157,14 @@ class BridgeExchangeCredit(BaseModel):
     purchase_ref: Optional[str] = None                     # this ledger's purchase bill number, if known
 
 
+class BridgeAdvanceApplied(BaseModel):
+    """Part of a sale paid from money the customer deposited earlier (the
+    Treasure savings plan). The deposits reached this ledger as on-account
+    receipts, so the party already carries the credit."""
+    amount: Decimal = Field(gt=0)
+    reference: str = Field(min_length=1, max_length=40)   # e.g. TRS-<account id>
+
+
 class BridgeSaleRequest(BaseModel):
     external_ref: str = Field(min_length=1, max_length=40)
     invoice_no: str = Field(min_length=1, max_length=30)
@@ -169,6 +177,19 @@ class BridgeSaleRequest(BaseModel):
     totals: BridgeTotals
     payment: Optional[BridgePayment] = None
     exchange_credit: Optional[BridgeExchangeCredit] = None
+    advance_applied: Optional[BridgeAdvanceApplied] = None
+
+
+class BridgeAdvance(BaseModel):
+    """An on-account receipt: a Treasure plan installment or any other
+    deposit taken before a sale exists."""
+    external_ref: str = Field(min_length=1, max_length=40)
+    customer: BridgeCustomer
+    amount: Decimal = Field(gt=0)
+    date: date
+    mode: str = "Razorpay"
+    reference: Optional[str] = None
+    scheme: Optional[str] = None
 
 
 class BridgeOldGoldPurchase(BaseModel):
@@ -191,6 +212,10 @@ class BridgeCreditNoteRequest(BaseModel):
     amount: Decimal = Field(gt=0)
     reason: str = Field(min_length=1)
     date: date
+    # Money actually returned to the customer (gateway refund). Absent means
+    # the whole note was paid back; zero means nothing was: the credit stays
+    # on the party (store credit or a Treasure balance restored by the shop).
+    refund_paid: Optional[Decimal] = Field(default=None, ge=0)
 
 
 # ─── Pure helpers (unit-tested without a database) ───────────────────────────
@@ -448,8 +473,13 @@ async def _post_receipt_if_due(
 async def _net_exchange_credit(
     db: AsyncSession, request: Request, user: dict, company_id: str,
     party_id: str, invoice_id: str, invoice_no: str, credit: BridgeExchangeCredit,
+    *, tag: str = "EXCH", label: str = "Old gold exchange credit",
 ) -> Optional[str]:
-    """Settle a web sale with old-gold exchange credit.
+    """Settle a web sale with credit the party already holds on its ledger.
+
+    Used for old-gold exchange credit (tag EXCH, with the purchase bill set
+    off too) and for Treasure plan advances (tag ADV, receipts already on
+    account). Original description follows.
 
     The customer's party account already carries a credit from the old-gold
     purchase and a debit from this sale, so the ledger nets itself. What the
@@ -461,7 +491,7 @@ async def _net_exchange_credit(
     """
     user_id = str(user["id"])
     ip_address = request.client.host if request.client else "0.0.0.0"
-    reference_no = f"{invoice_no}/EXCH/{credit.reference}"[:50]
+    reference_no = f"{invoice_no}/{tag}/{credit.reference}"[:50]
 
     dup = await db.execute(
         text(
@@ -495,10 +525,10 @@ async def _net_exchange_credit(
     if not party_acc:
         raise HTTPException(status_code=400, detail="Customer has no ledger account; nothing was saved.")
 
-    await set_audit_context(db, user_id, "0", ip_address, f"Exchange credit {credit.reference} set off against {invoice_no}")
+    await set_audit_context(db, user_id, "0", ip_address, f"{label} {credit.reference} set off against {invoice_no}")
     fy = await get_fy(db, company_id)
     await settle_invoice(db, "sales_invoices", company_id, amount, invoice_id=invoice_id, party_id=party_id)
-    if credit.purchase_ref:
+    if getattr(credit, "purchase_ref", None):
         # The old-gold bill may already be partly set off by an earlier sale,
         # or may carry a paise of rounding; settle what it still has.
         pres = await db.execute(
@@ -519,7 +549,7 @@ async def _net_exchange_credit(
             logger.warning("Bridge: exchange purchase %s not found for party %s; sale %s settled by credit only",
                            credit.purchase_ref, party_id, invoice_no)
 
-    narr = f"Old gold exchange credit {credit.reference} set off against {invoice_no}"
+    narr = f"{label} {credit.reference} set off against {invoice_no}"
     no_res = await db.execute(
         text("SELECT 'JV/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
         {"fy": fy["year_label"]},
@@ -621,12 +651,19 @@ async def record_ecommerce_sale(
                 db, request, user, company_id, str(row["customer_id"]), str(row["id"]),
                 invoice_no, payload.exchange_credit,
             )
+        advance_no = None
+        if payload.advance_applied:
+            advance_no = await _net_exchange_credit(
+                db, request, user, company_id, str(row["customer_id"]), str(row["id"]),
+                invoice_no, payload.advance_applied, tag="ADV", label="Advance",
+            )
         return {
             "status": "success",
             "invoice_no": invoice_no,
             "invoice_id": str(row["id"]),
             "receipt_voucher_no": receipt_no,
             "setoff_voucher_no": setoff_no,
+            "advance_voucher_no": advance_no,
             "already_recorded": True,
         }
 
@@ -676,6 +713,7 @@ async def record_ecommerce_sale(
             narration=f"Web order {payload.external_ref}",
             reason=f"Storefront order {payload.external_ref} invoiced as {invoice_no}",
             external_invoice_no=invoice_no,
+            pan=(payload.customer.pan or "").strip().upper() or None,  # Rule 114B on Rs 2 lakh+ sales
         ),
         request,
         db,
@@ -695,6 +733,12 @@ async def record_ecommerce_sale(
         setoff_no = await _net_exchange_credit(
             db, request, user, company_id, party_id, invoice_id, invoice_no, payload.exchange_credit,
         )
+    advance_no = None
+    if payload.advance_applied:
+        advance_no = await _net_exchange_credit(
+            db, request, user, company_id, party_id, invoice_id, invoice_no,
+            payload.advance_applied, tag="ADV", label="Advance",
+        )
 
     return {
         "status": "success",
@@ -703,8 +747,85 @@ async def record_ecommerce_sale(
         "party_id": party_id,
         "receipt_voucher_no": receipt_no,
         "setoff_voucher_no": setoff_no,
+        "advance_voucher_no": advance_no,
         "grand_total": str(erp_grand),
     }
+
+
+@router.post("/ecommerce/advances", dependencies=[Depends(require_api_key)])
+async def record_advance(
+    payload: BridgeAdvance,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """On-account receipt for money taken before a sale (Treasure plan
+    installments). Dr bank / Cr customer; no invoice to settle. The later
+    sale that spends it carries ``advance_applied`` and nets the two."""
+    company_id = await _resolve_company(db)
+    user = await _service_user(db, company_id)
+    user_id = str(user["id"])
+    ip_address = request.client.host if request.client else "0.0.0.0"
+    reference_no = f"ADV/{payload.external_ref.strip()}"[:50]
+
+    dup = await db.execute(
+        text(
+            "SELECT entry_no FROM caratloop.journal_entries WHERE company_id = CAST(:cid AS UUID) "
+            "AND entry_type = 'Receipt' AND reference_no = :ref"
+        ),
+        {"cid": company_id, "ref": reference_no},
+    )
+    prior = dup.scalar()
+    if prior:
+        return {"status": "success", "voucher_no": prior, "already_recorded": True}
+
+    bank_acc = await _account_id(db, company_id, settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE)
+    if not bank_acc:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Settlement account {settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE} is missing from the chart "
+                "of accounts; the advance was not recorded."
+            ),
+        )
+    party_id = await _find_or_create_customer(db, request, user, company_id, payload.customer, payload.external_ref)
+    acc_res = await db.execute(
+        text("SELECT account_id FROM caratloop.parties WHERE id = CAST(:pid AS UUID) AND company_id = CAST(:cid AS UUID)"),
+        {"pid": party_id, "cid": company_id},
+    )
+    party_acc = acc_res.scalar()
+
+    amount = to_decimal(payload.amount).quantize(PAISA, ROUND_HALF_UP)
+    scheme = (payload.scheme or "advance").strip()
+    narr = f"{scheme}: on-account receipt {payload.external_ref} ({payload.mode} {payload.reference or ''})".strip()[:500]
+    await set_audit_context(db, user_id, "0", ip_address, f"Advance {payload.external_ref} from storefront")
+    try:
+        fy = await get_fy(db, company_id)
+        no_res = await db.execute(
+            text("SELECT 'REC/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+            {"fy": fy["year_label"]},
+        )
+        vno = no_res.scalar()
+        je_id = await post_journal(
+            db, company_id, str(fy["id"]), vno, payload.date, "Receipt", narr,
+            reference_no, amount, user_id, ip_address, "0",
+            [
+                {"acc": bank_acc, "dr": amount, "cr": 0, "narr": narr},
+                {"acc": str(party_acc), "dr": 0, "cr": amount, "narr": narr},
+            ],
+        )
+        await assert_journal_balanced(db, je_id, context="e-commerce advance receipt")
+        await db.commit()
+        return {"status": "success", "voucher_no": vno, "party_id": party_id, "amount": str(amount)}
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.exception("E-commerce advance failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Advance posting failed. The operation was rolled back and nothing was saved.",
+        ) from e
 
 
 @router.post("/ecommerce/old-gold-purchases", dependencies=[Depends(require_api_key)])
@@ -932,8 +1053,13 @@ async def record_ecommerce_credit_note(
         # The money actually went back to the customer's card or account, so
         # the credit sitting on their ledger is paid out through the bank.
         refund_no = None
+        # What actually left the bank. Store credit or a restored Treasure
+        # balance stays on the party as a credit and is spent by a later sale.
+        refund_out = total if payload.refund_paid is None else min(
+            to_decimal(payload.refund_paid).quantize(PAISA, ROUND_HALF_UP), total
+        )
         bank_acc = await _account_id(db, company_id, settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE)
-        if bank_acc:
+        if bank_acc and refund_out > 0:
             pay_res = await db.execute(
                 text("SELECT 'PAY/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
                 {"fy": fy["year_label"]},
@@ -942,15 +1068,15 @@ async def record_ecommerce_credit_note(
             pay_narr = f"Refund to {inv['party_name']} for web order {payload.external_ref}"[:500]
             pay_id = await post_journal(
                 db, company_id, str(fy["id"]), refund_no, payload.date, "Payment", pay_narr,
-                f"Refund {payload.external_ref}"[:50], total, user_id, ip_address, "0",
+                f"Refund {payload.external_ref}"[:50], refund_out, user_id, ip_address, "0",
                 [
-                    {"acc": str(inv["party_account"]), "dr": total, "cr": 0, "narr": pay_narr},
-                    {"acc": bank_acc, "dr": 0, "cr": total, "narr": pay_narr},
+                    {"acc": str(inv["party_account"]), "dr": refund_out, "cr": 0, "narr": pay_narr},
+                    {"acc": bank_acc, "dr": 0, "cr": refund_out, "narr": pay_narr},
                 ],
                 ref_type="PaymentVoucher", ref_id=inv["id"],
             )
             await assert_journal_balanced(db, pay_id, context="e-commerce refund payment")
-        else:
+        elif refund_out > 0:
             logger.warning(
                 "Bridge: settlement account %s missing; refund for %s booked as a customer credit only",
                 settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE, invoice_no,

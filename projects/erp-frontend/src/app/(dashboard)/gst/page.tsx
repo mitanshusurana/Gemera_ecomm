@@ -4,27 +4,43 @@ import { useState, useEffect } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
-import { Download, FileJson, FileSpreadsheet, Loader2, Calendar, ShieldCheck, AlertCircle, FileText } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+import { Download, FileJson, FileSpreadsheet, Loader2, Calendar, ShieldCheck, AlertCircle, FileText, FileUp, GitCompareArrows } from 'lucide-react';
+import { apiClient, gstr2bApi } from '@/lib/api';
 import { previousPeriod } from '@/lib/fiscal';
+
+const BUCKETS: { key: string; title: string; note: string; variant: 'success' | 'warning' | 'danger' | 'info' }[] = [
+  { key: 'Matched', title: 'Matched', note: 'Supplier filed; the credit is claimable under s.16(2)(aa).', variant: 'success' },
+  { key: 'Mismatch', title: 'Mismatch', note: 'Same supplier and invoice, but the amounts differ by more than Rs 1.', variant: 'warning' },
+  { key: 'Missing_In_Books', title: 'In 2B, not in books', note: 'The supplier reported a bill that has not been recorded here.', variant: 'info' },
+  { key: 'Missing_In_2B', title: 'In books, not in 2B', note: 'Claimed in the ITC register but the supplier has not filed it. Not claimable yet.', variant: 'danger' },
+];
 
 export default function GSTPage() {
   const [activeTab, setActiveTab] = useState('Output Tax');
   const [selectedPeriod, setSelectedPeriod] = useState(previousPeriod());
   const [loading, setLoading] = useState(true);
-  
+
   const [outputTaxData, setOutputTaxData] = useState<any>(null);
   const [itcData, setItcData] = useState<any>(null);
   const [rcmData, setRcmData] = useState<any>(null);
   const [gstr1Data, setGstr1Data] = useState<any>(null);
   const [gstr3bData, setGstr3bData] = useState<any>(null);
 
-  const tabs = ['Output Tax', 'ITC Register', 'RCM Register', 'GSTR-1 Staging', 'GSTR-3B Summary'];
+  // GSTR-2B
+  const [gstr2bData, setGstr2bData] = useState<any>(null);
+  const [gstr2bFile, setGstr2bFile] = useState<File | null>(null);
+  const [gstr2bBusy, setGstr2bBusy] = useState<'import' | 'reconcile' | null>(null);
+  const [gstr2bMessage, setGstr2bMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+
+  const tabs = ['Output Tax', 'ITC Register', 'RCM Register', 'GSTR-1 Staging', 'GSTR-3B Summary', 'GSTR-2B'];
 
   const fetchGstData = async () => {
     setLoading(true);
     try {
-      if (activeTab === 'Output Tax') {
+      if (activeTab === 'GSTR-2B') {
+        const res = await gstr2bApi.summary(selectedPeriod);
+        setGstr2bData(res.data);
+      } else if (activeTab === 'Output Tax') {
         const res = await apiClient.get(`/gst/tax-register?period=${selectedPeriod}`);
         setOutputTaxData(res.data);
       } else if (activeTab === 'ITC Register') {
@@ -64,6 +80,43 @@ export default function GSTPage() {
       downloadAnchor.remove();
     } catch (err) {
       alert('Failed to export GSTN JSON file');
+    }
+  };
+
+  const errorText = (err: any, fallback: string) => {
+    const d = err?.response?.data?.detail;
+    return typeof d === 'string' ? d : fallback;
+  };
+
+  const handleGstr2bImport = async () => {
+    if (!gstr2bFile) return;
+    setGstr2bBusy('import');
+    setGstr2bMessage(null);
+    try {
+      const res = await gstr2bApi.import(gstr2bFile, selectedPeriod);
+      setGstr2bMessage({ kind: 'ok', text: `Imported ${res.data.invoices} invoices from ${res.data.suppliers} suppliers for ${res.data.period}. Run Reconcile to match them.` });
+      setGstr2bFile(null);
+      if (res.data.period && res.data.period !== selectedPeriod) setSelectedPeriod(res.data.period);
+      else fetchGstData();
+    } catch (err) {
+      setGstr2bMessage({ kind: 'err', text: errorText(err, 'GSTR-2B import failed') });
+    } finally {
+      setGstr2bBusy(null);
+    }
+  };
+
+  const handleGstr2bReconcile = async () => {
+    setGstr2bBusy('reconcile');
+    setGstr2bMessage(null);
+    try {
+      const res = await gstr2bApi.reconcile(selectedPeriod);
+      const d = res.data;
+      setGstr2bMessage({ kind: 'ok', text: `Reconciled ${selectedPeriod}: ${d.matched} matched, ${d.mismatch} mismatched, ${d.missing_in_books} only in 2B, ${d.missing_in_2b} only in books.` });
+      fetchGstData();
+    } catch (err) {
+      setGstr2bMessage({ kind: 'err', text: errorText(err, 'GSTR-2B reconciliation failed') });
+    } finally {
+      setGstr2bBusy(null);
     }
   };
 
@@ -216,6 +269,124 @@ export default function GSTPage() {
             </div>
             <DataTable columns={rcmColumns} data={rcmData?.records || []} />
           </div>
+        ) : activeTab === 'GSTR-2B' ? (
+          <div className="space-y-6">
+            <div className="p-4 bg-surface border border-border rounded-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h4 className="text-base font-playfair font-bold text-white">GSTR-2B Reconciliation for {selectedPeriod}</h4>
+                <p className="text-xs text-textSecondary">
+                  [s.16(2)(aa)] Upload the GSTR-2B JSON downloaded from the GST portal, then reconcile it against the ITC register.
+                  {gstr2bData?.last_reconciled_at && <> Last reconciled {new Date(gstr2bData.last_reconciled_at).toLocaleString('en-IN')}.</>}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  className="text-xs text-textSecondary file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20"
+                  onChange={(e) => setGstr2bFile(e.target.files?.[0] || null)}
+                />
+                <button
+                  onClick={handleGstr2bImport}
+                  disabled={!gstr2bFile || !!gstr2bBusy}
+                  className="flex items-center gap-2 px-3.5 py-2 bg-primary/20 text-primary border border-primary/50 rounded-lg hover:bg-primary/30 text-xs font-semibold disabled:opacity-50"
+                >
+                  {gstr2bBusy === 'import' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />} Upload 2B
+                </button>
+                <button
+                  onClick={handleGstr2bReconcile}
+                  disabled={!!gstr2bBusy || !gstr2bData?.imported_invoices}
+                  className="flex items-center gap-2 px-3.5 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 text-xs disabled:opacity-50"
+                >
+                  {gstr2bBusy === 'reconcile' ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitCompareArrows className="w-4 h-4" />} Reconcile
+                </button>
+              </div>
+            </div>
+
+            {gstr2bMessage && (
+              <div className={`p-3 rounded-lg text-xs border ${gstr2bMessage.kind === 'ok' ? 'bg-success/10 border-success/30 text-success' : 'bg-danger/10 border-danger/30 text-danger'}`}>
+                {gstr2bMessage.text}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {BUCKETS.map((b) => {
+                const bucket = gstr2bData?.buckets?.[b.key];
+                return (
+                  <div key={b.key} className="p-4 bg-surface border border-border rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-textSecondary uppercase tracking-wider">{b.title}</span>
+                      <Badge variant={b.variant}>{bucket?.count ?? 0}</Badge>
+                    </div>
+                    <p className="text-lg font-playfair font-bold text-white mt-1">{formatCurrency(Number(bucket?.total_tax || 0))}</p>
+                    <p className="text-[11px] text-textSecondary">tax on {formatCurrency(Number(bucket?.taxable || 0))}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {!gstr2bData?.imported_invoices ? (
+              <div className="p-6 bg-surface/50 border border-border rounded-xl text-center text-xs text-textSecondary">
+                No GSTR-2B imported for {selectedPeriod}. {gstr2bData?.itc_rows_in_period || 0} ITC register rows are waiting to be matched.
+              </div>
+            ) : gstr2bData.unreconciled > 0 ? (
+              <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg text-xs text-warning">
+                {gstr2bData.unreconciled} imported invoice(s) have not been reconciled yet. Click Reconcile.
+              </div>
+            ) : null}
+
+            {BUCKETS.map((b) => {
+              const bucket = gstr2bData?.buckets?.[b.key];
+              const rows: any[] = bucket?.rows || [];
+              const fromBooks = b.key === 'Missing_In_2B';
+              return (
+                <div key={b.key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-sm font-semibold text-white flex items-center gap-2">
+                      {b.title} <Badge variant={b.variant}>{rows.length}</Badge>
+                    </h5>
+                    <span className="text-[11px] text-textSecondary">{b.note}</span>
+                  </div>
+                  <div className="bg-surface border border-border rounded-xl overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="text-textSecondary border-b border-border">
+                        <tr>
+                          <th className="px-3 py-2">Supplier GSTIN</th>
+                          <th className="px-3 py-2">Supplier</th>
+                          <th className="px-3 py-2">Invoice No</th>
+                          <th className="px-3 py-2">Date</th>
+                          {!fromBooks && <th className="px-3 py-2">Our Bill</th>}
+                          <th className="px-3 py-2 text-right">Taxable</th>
+                          <th className="px-3 py-2 text-right">IGST</th>
+                          <th className="px-3 py-2 text-right">CGST</th>
+                          <th className="px-3 py-2 text-right">SGST</th>
+                          {b.key === 'Mismatch' && <th className="px-3 py-2">Difference</th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {rows.length === 0 ? (
+                          <tr><td colSpan={10} className="px-3 py-4 text-center text-textSecondary">Nothing in this bucket</td></tr>
+                        ) : rows.map((r: any) => (
+                          <tr key={r.id} className="hover:bg-white/5">
+                            <td className="px-3 py-2 font-mono text-primary">{r.supplier_gstin || r.vendor_gstin}</td>
+                            <td className="px-3 py-2 text-white">{r.supplier_name || r.vendor_name || r.books?.vendor_name || '—'}</td>
+                            <td className="px-3 py-2 font-mono text-white">{r.invoice_no}</td>
+                            <td className="px-3 py-2 text-textSecondary">{r.invoice_date || '—'}</td>
+                            {!fromBooks && <td className="px-3 py-2 font-mono text-textSecondary">{r.books?.bill_no || '—'}</td>}
+                            <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(r.taxable || 0))}</td>
+                            <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(fromBooks ? r.igst_credit : r.igst) || 0)}</td>
+                            <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(fromBooks ? r.cgst_credit : r.cgst) || 0)}</td>
+                            <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(fromBooks ? r.sgst_credit : r.sgst) || 0)}</td>
+                            {b.key === 'Mismatch' && <td className="px-3 py-2 text-warning">{r.match_note}</td>}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : activeTab === 'GSTR-1 Staging' ? (
           <div className="space-y-6">
             <div className="p-4 bg-surface border border-border rounded-xl flex items-center justify-between">
@@ -310,7 +481,11 @@ export default function GSTPage() {
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(d) Inward Supplies Liable to Reverse Charge (Old Gold):</span>
-                    <span className="font-mono font-bold text-amber-400">{formatCurrency(rcmTotal)}</span>
+                    <span className="font-mono font-bold text-amber-400">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.total_rcm || 0))}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-border/50">
+                    <span className="text-textSecondary">(d) taxable value of RCM inward supplies:</span>
+                    <span className="font-mono text-white">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.taxable_value || 0))}</span>
                   </div>
                 </div>
               </div>
@@ -322,9 +497,19 @@ export default function GSTPage() {
                 </h5>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between py-1 border-b border-border/50">
-                    <span className="text-textSecondary">(A) ITC Available (All Other Inward Purchases):</span>
-                    <span className="font-mono font-bold text-emerald-400">{formatCurrency(itcTotal)}</span>
+                    <span className="text-textSecondary">(A)(3) ITC on inward supplies liable to reverse charge:</span>
+                    <span className="font-mono font-bold text-emerald-400">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.total_rcm || 0))}</span>
                   </div>
+                  <div className="flex justify-between py-1 border-b border-border/50">
+                    <span className="text-textSecondary">(A)(5) All Other ITC:</span>
+                    <span className="font-mono font-bold text-emerald-400">{formatCurrency(Number(gstr3bData?.table_4_itc_available?.total_itc ?? itcTotal))}</span>
+                  </div>
+                  {Number(gstr3bData?.table_4_itc_available?.itc_unmatched_2b || 0) > 0 && (
+                    <div className="flex justify-between py-1 border-b border-border/50 text-warning">
+                      <span>of which not yet in GSTR-2B (not claimable, s.16(2)(aa)):</span>
+                      <span className="font-mono">{formatCurrency(Number(gstr3bData.table_4_itc_available.itc_unmatched_2b))}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(B) Net ITC Available (A - Reversals):</span>
                     <span className="font-mono font-bold text-emerald-400">{formatCurrency(itcTotal)}</span>

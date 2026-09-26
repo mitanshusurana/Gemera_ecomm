@@ -138,3 +138,160 @@ def test_due_date_is_always_after_dispatch(goods_type):
     """The DB CHECK asserts the same thing; they must not disagree."""
     d = date(2026, 6, 1)
     assert return_due_date(d, goods_type) > d
+
+
+# ─── Migration 0009 and the Karigar vocabulary ───────────────────────────────
+
+import io
+import re
+from pathlib import Path
+
+from pglast import parse_sql
+
+ROOT = Path(__file__).resolve().parents[1]
+SQL_0009 = ROOT / "migrations" / "sql" / "0009_karigar_job_work_costing.sql"
+VERSION_0009 = ROOT / "migrations" / "versions" / "0009_karigar_job_work_costing.py"
+
+
+def test_migration_0009_sql_parses():
+    """libpg_query is PostgreSQL's own parser: this rejects what the server would."""
+    statements = parse_sql(io.open(SQL_0009, encoding="utf-8").read())
+    assert len(statements) >= 15
+
+
+def test_migration_0009_revises_0008():
+    src = io.open(VERSION_0009, encoding="utf-8").read()
+    assert re.search(r"^revision\s*=\s*['\"]0009['\"]", src, re.M)
+    assert re.search(r"^down_revision\s*=\s*['\"]0008['\"]", src, re.M)
+    assert "0009_karigar_job_work_costing.sql" in src
+
+
+def test_migration_0009_adds_the_agreed_columns():
+    sql = io.open(SQL_0009, encoding="utf-8").read()
+    assert "'Karigar'::character varying" in sql
+    for table, col in (
+        ("parties", "karigar_skills"),
+        ("job_work_receipts", "making_charge_bill_id"),
+        ("job_work_receipt_lines", "unit_cost"),
+        ("job_work_receipt_lines", "making_charge_share"),
+        ("bom_headers", "output_material_id"),
+        ("bom_headers", "output_quantity"),
+    ):
+        assert re.search(
+            rf"ALTER TABLE caratloop\.{table}\s+ADD COLUMN IF NOT EXISTS {col}\b", sql
+        ), f"{table}.{col} missing"
+
+
+def test_party_type_vocabulary_covers_karigar():
+    """Every alias maps onto a value the (latest) CHECK permits, and the
+    artisan words map onto Karigar rather than being folded into Vendor."""
+    from test_check_constraint_vocabularies import permitted
+    from app.api.v1.parties import (
+        DEBTOR_TYPES, PARTY_CODE_PREFIX, PARTY_TYPE_ALIASES, normalise_party_type,
+        normalise_party_types,
+    )
+
+    allowed = permitted("chk_party_type")
+    assert "Karigar" in allowed
+    assert set(PARTY_TYPE_ALIASES.values()) <= allowed
+    assert normalise_party_type("karigar") == "Karigar"
+    assert normalise_party_type("Artisan") == "Karigar"
+    assert normalise_party_type("Supplier") == "Vendor"
+    assert "Karigar" not in DEBTOR_TYPES, "a karigar is paid, so files under Sundry Creditors"
+    assert PARTY_CODE_PREFIX["Karigar"] == "KAR"
+    assert set(PARTY_CODE_PREFIX) == allowed
+    assert normalise_party_types("Karigar,Supplier, karigar") == ["Karigar", "Vendor"]
+
+
+def test_unknown_party_type_is_a_422_not_a_500():
+    from fastapi import HTTPException
+    from app.api.v1.parties import normalise_party_type
+
+    with pytest.raises(HTTPException) as exc:
+        normalise_party_type("Goldsmith")
+    assert exc.value.status_code == 422
+
+
+# ─── Cost of what comes back ─────────────────────────────────────────────────
+
+from app.tax.job_work import ReceiptCostLine, roll_up_receipt_cost, unit_issue_cost
+
+
+def _line(key, received, wastage="0", unit="0"):
+    return ReceiptCostLine(
+        key=key, quantity_received=Decimal(received), quantity_wastage=Decimal(wastage),
+        unit_issue_cost=Decimal(unit),
+    )
+
+
+def test_returned_pieces_carry_metal_plus_making():
+    """100 g out at 7,000/g, 98 g back + 2 g lost, karigar bills 15,000:
+    the 98 g carry 700,000 (all the metal, wastage included) + 15,000."""
+    [c] = roll_up_receipt_cost([_line(1, "98", "2", "7000")], Decimal("15000"))
+
+    assert c.metal_cost == Decimal("700000.00")
+    assert c.making_charge_share == Decimal("15000.00")
+    assert c.total_cost == Decimal("715000.00")
+    assert c.unit_cost == Decimal("7295.9184")  # 715,000 / 98
+
+
+def test_making_charges_split_by_metal_cost_and_re_sum_exactly():
+    lines = [
+        _line("a", "10", "0", "7000"),   # 70,000
+        _line("b", "5", "0", "7000"),    # 35,000
+        _line("c", "3", "0", "1000"),    #  3,000  -> awkward thirds
+    ]
+    costs = roll_up_receipt_cost(lines, Decimal("1000.01"))
+    shares = {c.key: c.making_charge_share for c in costs}
+
+    assert sum(shares.values()) == Decimal("1000.01")
+    # 70,000 / 108,000 of 1,000.01 = 648.15..., and the last line takes the
+    # rounding remainder rather than letting the shares drift from the bill.
+    assert shares["a"] == Decimal("648.15")
+    assert shares["b"] == Decimal("324.08")
+    assert shares["c"] == Decimal("27.78")
+
+
+def test_pure_wastage_line_takes_no_making_charge():
+    """Nothing came back on it, so there is nothing to carry the charge."""
+    costs = {c.key: c for c in roll_up_receipt_cost(
+        [_line("back", "50", "0", "100"), _line("lost", "0", "1", "100")], Decimal("500"),
+    )}
+
+    assert costs["lost"].making_charge_share == Decimal("0.00")
+    assert costs["lost"].metal_cost == Decimal("100.00")
+    assert costs["lost"].unit_cost == Decimal("0")
+    assert costs["back"].making_charge_share == Decimal("500.00")
+
+
+def test_nothing_received_leaves_charges_unallocated():
+    costs = roll_up_receipt_cost([_line(1, "0", "3", "100")], Decimal("900"))
+    assert costs[0].making_charge_share == Decimal("0.00")
+    assert costs[0].total_cost == Decimal("300.00")
+
+
+def test_uncosted_metal_splits_charges_by_quantity():
+    """Legacy challans carry no cost; fall back to quantity so the charge is
+    still spread rather than dumped on one line."""
+    costs = {c.key: c for c in roll_up_receipt_cost(
+        [_line("x", "30", "0", "0"), _line("y", "10", "0", "0")], Decimal("400"),
+    )}
+    assert costs["x"].making_charge_share == Decimal("300.00")
+    assert costs["y"].making_charge_share == Decimal("100.00")
+
+
+def test_zero_making_charges_is_metal_only():
+    [c] = roll_up_receipt_cost([_line(1, "10", "0", "7000")], Decimal("0"))
+    assert c.total_cost == Decimal("70000.00")
+    assert c.unit_cost == Decimal("7000.0000")
+
+
+def test_unit_issue_cost_guards_zero_quantity():
+    assert unit_issue_cost(Decimal("700000"), Decimal("100")) == Decimal("7000.0000")
+    assert unit_issue_cost(Decimal("700000"), Decimal("0")) == Decimal("0")
+
+
+def test_cost_amounts_are_decimal():
+    [c] = roll_up_receipt_cost([_line(1, "98", "2", "7000")], Decimal("15000"))
+    for v in (c.metal_cost, c.making_charge_share, c.total_cost, c.unit_cost):
+        assert isinstance(v, Decimal)

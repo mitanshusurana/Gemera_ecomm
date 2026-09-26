@@ -17,10 +17,11 @@ from pydantic import BaseModel, Field
 
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
-from app.core.money import to_decimal
+from app.core.money import ZERO, round_money, to_decimal
 from app.core.stock import assert_stock_available
 from app.core.roles import CAN_MOVE_STOCK, require
 from app.core.pagination import Page, paginate
+from app.core.periods import assert_period_open
 from app.core.security import get_current_user
 from app.core.tenancy import resolve_fiscal_year
 
@@ -66,11 +67,297 @@ class WastageLine(BaseModel):
 
 class CreateProductionOrderRequest(BaseModel):
     product_name: str = "Gold Jewelry Item"
-    order_date: date = date.today()
+    order_date: date = Field(default_factory=date.today)
     planned_qty: Decimal = Field(default=Decimal("1"), gt=0)
+    # From a bill of materials: the order takes the BOM's product, and the
+    # response carries the consumption and output lines scaled to
+    # output_quantity (planned_qty when absent) for the completion form.
+    bom_id: Optional[UUID] = None
+    output_quantity: Optional[Decimal] = Field(default=None, gt=0)
+    product_id: Optional[UUID] = None
     allowed_wastage_pct: Decimal = Field(default=Decimal("2.5"), ge=0, le=100)
     remarks: Optional[str] = None
     reason: str = "Production order creation"
+
+
+# ─── Bill of materials ───────────────────────────────────────────────────────
+#
+# bom_headers and bom_lines were in the baseline and never read: every
+# production order created a one-line stub BOM per product and then ignored
+# it, so the operator typed the recipe again at completion. A BOM is per
+# output_quantity of the finished material; an order scales its lines.
+
+class BomLineRequest(BaseModel):
+    material_id: UUID
+    quantity_per_unit: Decimal = Field(gt=0)
+    standard_loss_pct: Decimal = Field(default=Decimal("0"), ge=0, le=100)
+    loss_type: Optional[str] = Field(default=None, max_length=30)
+    notes: Optional[str] = None
+
+
+class BomRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    # The finished material the BOM produces.
+    output_material_id: UUID
+    output_quantity: Decimal = Field(default=Decimal("1"), gt=0)
+    # An existing product, else one is created from the name so the
+    # baseline's NOT NULL product_id is satisfied.
+    product_id: Optional[UUID] = None
+    product_type: str = Field(default="Necklace", max_length=30)
+    bom_version: str = Field(default="1.0", max_length=10)
+    effective_from: Optional[date] = None
+    effective_to: Optional[date] = None
+    is_active: bool = True
+    remarks: Optional[str] = None
+    lines: List[BomLineRequest]
+    reason: str = "Bill of materials"
+
+
+def scale_bom_lines(lines, bom_output_quantity, output_quantity) -> list[dict]:
+    """Consumption lines for ``output_quantity`` of output.
+
+    quantity_per_unit is per ``bom_output_quantity`` of output (1 unless the
+    BOM was written for a batch). Expected loss is the standard loss on the
+    gross issue, so qty_issued includes it and expected_loss says how much of
+    it the order expects to lose.
+    """
+    factor = to_decimal(output_quantity) / to_decimal(bom_output_quantity or 1)
+    out = []
+    for ln in lines:
+        net = (to_decimal(ln["quantity_per_unit"]) * factor).quantize(Decimal("0.0001"))
+        loss_pct = to_decimal(ln.get("standard_loss_pct") or 0)
+        gross = (net / (1 - loss_pct / 100)).quantize(Decimal("0.0001")) if loss_pct < 100 else net
+        out.append({
+            **{k: v for k, v in ln.items() if k not in ("quantity_per_unit",)},
+            "quantity_per_unit": str(ln["quantity_per_unit"]),
+            "qty_issued": str(gross),
+            "net_required": str(net),
+            "expected_loss": str((gross - net).quantize(Decimal("0.0001"))),
+            "loss_pct": str(loss_pct),
+        })
+    return out
+
+
+async def _load_bom(db: AsyncSession, company_id, bom_id) -> dict | None:
+    head_res = await db.execute(
+        text("""
+            SELECT b.id, b.name, b.product_id, p.name AS product_name, p.sku AS product_sku,
+                   b.bom_version, b.effective_from, b.effective_to, b.is_active, b.remarks,
+                   b.output_material_id, om.code AS output_material_code, om.name AS output_material_name,
+                   b.output_quantity, b.created_at
+            FROM caratloop.bom_headers b
+            JOIN caratloop.products p ON p.id = b.product_id
+            LEFT JOIN caratloop.materials om ON om.id = b.output_material_id
+            WHERE b.id = :id AND b.company_id = :cid
+        """),
+        {"id": str(bom_id), "cid": company_id},
+    )
+    head = head_res.mappings().first()
+    if not head:
+        return None
+    line_res = await db.execute(
+        text("""
+            SELECT l.id, l.sequence_no, l.material_id, m.code AS material_code, m.name AS material_name,
+                   m.category, u.code AS uom, l.quantity_per_unit, l.standard_loss_pct, l.loss_type, l.notes
+            FROM caratloop.bom_lines l
+            JOIN caratloop.materials m ON m.id = l.material_id
+            LEFT JOIN caratloop.units_of_measure u ON u.id = l.uom_id
+            WHERE l.bom_id = :id
+            ORDER BY l.sequence_no
+        """),
+        {"id": str(bom_id)},
+    )
+    out = dict(head)
+    out["lines"] = [dict(r) for r in line_res.mappings().all()]
+    return out
+
+
+async def _write_bom_lines(db: AsyncSession, company_id, bom_id, lines: List[BomLineRequest]) -> None:
+    for seq, ln in enumerate(lines, 1):
+        ins = await db.execute(
+            text("""
+                INSERT INTO caratloop.bom_lines
+                    (bom_id, sequence_no, material_id, quantity_per_unit, uom_id,
+                     standard_loss_pct, loss_type, notes)
+                SELECT CAST(:bid AS UUID), :seq, m.id, :qty, m.uom_id, :loss, :ltype, :notes
+                FROM caratloop.materials m
+                WHERE m.id = CAST(:mid AS UUID) AND m.company_id = :cid
+                RETURNING id
+            """),
+            {
+                "bid": str(bom_id), "seq": seq, "mid": str(ln.material_id), "qty": ln.quantity_per_unit,
+                "loss": ln.standard_loss_pct, "ltype": ln.loss_type, "notes": ln.notes, "cid": company_id,
+            },
+        )
+        if ins.scalar() is None:
+            raise HTTPException(status_code=400, detail=f"Material {ln.material_id} is not in this company's item master.")
+
+
+async def _resolve_bom_product(db: AsyncSession, company_id, payload: BomRequest) -> str:
+    if payload.product_id:
+        res = await db.execute(
+            text("SELECT id FROM caratloop.products WHERE id = :id AND company_id = :cid"),
+            {"id": str(payload.product_id), "cid": company_id},
+        )
+        found = res.scalar()
+        if not found:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return str(found)
+    res = await db.execute(
+        text("""
+            INSERT INTO caratloop.products (company_id, material_id, sku, name, product_type)
+            SELECT :cid, m.id, 'BOM-' || LPAD(FLOOR(RANDOM()*100000)::TEXT, 5, '0'), :name, :ptype
+            FROM caratloop.materials m WHERE m.id = CAST(:mid AS UUID) AND m.company_id = :cid
+            RETURNING id
+        """),
+        {"cid": company_id, "mid": str(payload.output_material_id), "name": payload.name[:200], "ptype": payload.product_type},
+    )
+    pid = res.scalar()
+    if not pid:
+        raise HTTPException(status_code=400, detail="Output material is not in this company's item master.")
+    return str(pid)
+
+
+@router.get("/boms")
+async def list_boms(
+    active_only: bool = True,
+    page: Page = Depends(paginate),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    query = """
+        SELECT b.id, b.name, b.product_id, p.name AS product_name, b.bom_version,
+               b.effective_from, b.effective_to, b.is_active, b.output_material_id,
+               om.code AS output_material_code, om.name AS output_material_name, b.output_quantity,
+               (SELECT COUNT(*) FROM caratloop.bom_lines l WHERE l.bom_id = b.id) AS line_count,
+               (SELECT COUNT(*) FROM caratloop.production_orders po WHERE po.bom_id = b.id) AS orders_count
+        FROM caratloop.bom_headers b
+        JOIN caratloop.products p ON p.id = b.product_id
+        LEFT JOIN caratloop.materials om ON om.id = b.output_material_id
+        WHERE b.company_id = :cid
+    """
+    params = {"cid": current_user["company_id"]}
+    if active_only:
+        query += " AND b.is_active = TRUE"
+    query += " ORDER BY COALESCE(b.name, p.name), b.bom_version"
+    query = page.apply(query)
+    params.update(page.params)
+    res = await db.execute(text(query), params)
+    rows = [dict(r) for r in res.mappings().all()]
+    return {"boms": rows, **page.envelope(rows)}
+
+
+@router.post("/boms", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
+async def create_bom(
+    payload: BomRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = str(current_user["id"])
+    company_id = current_user["company_id"]
+    ip_address = request.client.host if request.client else "0.0.0.0"
+    session_id = current_user.get("session_id", "0")
+    await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    if not payload.lines:
+        raise HTTPException(status_code=422, detail="A bill of materials needs at least one line.")
+    try:
+        product_id = await _resolve_bom_product(db, company_id, payload)
+        res = await db.execute(
+            text("""
+                INSERT INTO caratloop.bom_headers
+                    (company_id, product_id, name, bom_version, effective_from, effective_to,
+                     is_active, remarks, output_material_id, output_quantity, created_by)
+                VALUES (:cid, CAST(:pid AS UUID), :name, :ver, :efrom, :eto, :active, :remarks,
+                        CAST(:omid AS UUID), :oqty, CAST(:cb AS UUID))
+                RETURNING id
+            """),
+            {
+                "cid": company_id, "pid": product_id, "name": payload.name, "ver": payload.bom_version,
+                "efrom": payload.effective_from or date.today(), "eto": payload.effective_to,
+                "active": payload.is_active, "remarks": payload.remarks,
+                "omid": str(payload.output_material_id), "oqty": payload.output_quantity, "cb": user_id,
+            },
+        )
+        bom_id = res.scalar()
+        await _write_bom_lines(db, company_id, bom_id, payload.lines)
+        await db.commit()
+        return {"status": "success", "id": str(bom_id), "product_id": product_id}
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.exception("Failed to create BOM")
+        raise HTTPException(status_code=500, detail="Failed to save the bill of materials. Nothing was saved.") from e
+
+
+@router.get("/boms/{bom_id}")
+async def get_bom(
+    bom_id: UUID,
+    output_quantity: Optional[Decimal] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    bom = await _load_bom(db, current_user["company_id"], bom_id)
+    if not bom:
+        raise HTTPException(status_code=404, detail="Bill of materials not found")
+    if output_quantity is not None and output_quantity > 0:
+        bom["plan"] = scale_bom_lines(bom["lines"], bom["output_quantity"], output_quantity)
+    return bom
+
+
+@router.put("/boms/{bom_id}", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
+async def update_bom(
+    bom_id: UUID,
+    payload: BomRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Replace the header fields and the lines. A BOM is master data, not a
+    ledger: the audit trigger records the old rows, and orders already raised
+    keep the plan they were raised with."""
+    user_id = str(current_user["id"])
+    company_id = current_user["company_id"]
+    ip_address = request.client.host if request.client else "0.0.0.0"
+    session_id = current_user.get("session_id", "0")
+    await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    if not payload.lines:
+        raise HTTPException(status_code=422, detail="A bill of materials needs at least one line.")
+    try:
+        existing = await _load_bom(db, company_id, bom_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="Bill of materials not found")
+        product_id = str(existing["product_id"])
+        if payload.product_id:
+            product_id = await _resolve_bom_product(db, company_id, payload)
+        await db.execute(
+            text("""
+                UPDATE caratloop.bom_headers
+                SET product_id = CAST(:pid AS UUID), name = :name, bom_version = :ver,
+                    effective_from = :efrom, effective_to = :eto, is_active = :active,
+                    remarks = :remarks, output_material_id = CAST(:omid AS UUID), output_quantity = :oqty
+                WHERE id = :id AND company_id = :cid
+            """),
+            {
+                "id": str(bom_id), "cid": company_id, "pid": product_id, "name": payload.name,
+                "ver": payload.bom_version, "efrom": payload.effective_from or existing["effective_from"],
+                "eto": payload.effective_to, "active": payload.is_active, "remarks": payload.remarks,
+                "omid": str(payload.output_material_id), "oqty": payload.output_quantity,
+            },
+        )
+        await db.execute(text("DELETE FROM caratloop.bom_lines WHERE bom_id = :id"), {"id": str(bom_id)})
+        await _write_bom_lines(db, company_id, bom_id, payload.lines)
+        await db.commit()
+        return {"status": "success", "id": str(bom_id)}
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.exception("Failed to update BOM")
+        raise HTTPException(status_code=500, detail="Failed to save the bill of materials. Nothing was saved.") from e
 
 
 class CompleteProductionOrderRequest(BaseModel):
@@ -95,10 +382,12 @@ async def list_production_orders(
     query = """
         SELECT
             po.id, po.order_no, po.order_date, po.status, po.month_year,
-            po.planned_qty, po.actual_qty,
+            po.planned_qty, po.actual_qty, po.allowed_wastage_pct, po.bom_id,
+            b.name AS bom_name, b.output_material_id,
             p.name AS product_name, p.collection_name,
             p.sku AS product_sku
         FROM caratloop.production_orders po
+        LEFT JOIN caratloop.bom_headers b ON b.id = po.bom_id
         JOIN caratloop.products p ON p.id = po.product_id
         WHERE po.company_id = :company_id
     """
@@ -121,6 +410,38 @@ async def list_production_orders(
     return {"orders": [dict(o) for o in orders]}
 
 
+@router.get("/orders/{order_id}")
+async def get_production_order(
+    order_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """One order with its BOM plan scaled to planned_qty, so the completion
+    form starts from the recipe rather than a blank line."""
+    company_id = current_user["company_id"]
+    res = await db.execute(
+        text("""
+            SELECT po.id, po.order_no, po.order_date, po.status, po.month_year, po.planned_qty,
+                   po.actual_qty, po.allowed_wastage_pct, po.remarks, po.bom_id, po.completed_at,
+                   p.name AS product_name, p.sku AS product_sku
+            FROM caratloop.production_orders po
+            JOIN caratloop.products p ON p.id = po.product_id
+            WHERE po.id = :id AND po.company_id = :cid
+        """),
+        {"id": str(order_id), "cid": company_id},
+    )
+    order = res.mappings().first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Production order not found")
+    out = dict(order)
+    bom = await _load_bom(db, company_id, order["bom_id"]) if order["bom_id"] else None
+    out["bom"] = bom
+    out["plan"] = (
+        scale_bom_lines(bom["lines"], bom["output_quantity"], order["planned_qty"]) if bom and bom["lines"] else []
+    )
+    return out
+
+
 @router.post("/orders", dependencies=[Depends(require(*CAN_MOVE_STOCK))])
 async def create_production_order(
     payload: CreateProductionOrderRequest,
@@ -136,12 +457,37 @@ async def create_production_order(
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
     try:
-        # 1. Get or create product
-        prod_res = await db.execute(
-            text("SELECT id FROM caratloop.products WHERE company_id = :cid LIMIT 1"),
-            {"cid": company_id}
-        )
-        prod_id = prod_res.scalar()
+        await assert_period_open(db, company_id, payload.order_date, what="This production order")
+
+        planned_qty = to_decimal(payload.output_quantity or payload.planned_qty)
+        bom: dict | None = None
+        bom_id = None
+        if payload.bom_id:
+            bom = await _load_bom(db, company_id, payload.bom_id)
+            if not bom:
+                raise HTTPException(status_code=404, detail="Bill of materials not found")
+            if not bom["is_active"]:
+                raise HTTPException(status_code=409, detail=f"BOM '{bom['name'] or bom['product_name']}' is inactive.")
+            prod_id = str(bom["product_id"])
+            bom_id = str(bom["id"])
+        elif payload.product_id:
+            prod_res = await db.execute(
+                text("SELECT id FROM caratloop.products WHERE id = :id AND company_id = :cid"),
+                {"id": str(payload.product_id), "cid": company_id},
+            )
+            prod_id = prod_res.scalar()
+            if not prod_id:
+                raise HTTPException(status_code=404, detail="Product not found")
+        else:
+            prod_id = None
+
+        # 1. Get or create product (legacy path: no BOM and no product given)
+        if not prod_id:
+            prod_res = await db.execute(
+                text("SELECT id FROM caratloop.products WHERE company_id = :cid AND name = :name LIMIT 1"),
+                {"cid": company_id, "name": payload.product_name}
+            )
+            prod_id = prod_res.scalar()
         if not prod_id:
             mat_res = await db.execute(text("SELECT id FROM caratloop.materials WHERE company_id = :cid LIMIT 1"), {"cid": company_id})
             mat_id = mat_res.scalar()
@@ -157,12 +503,13 @@ async def create_production_order(
             )
             prod_id = new_prod.scalar()
 
-        # 2. Get or create BOM
-        bom_res = await db.execute(
-            text("SELECT id FROM caratloop.bom_headers WHERE product_id = :pid LIMIT 1"),
-            {"pid": prod_id}
-        )
-        bom_id = bom_res.scalar()
+        # 2. Get or create BOM (the baseline requires one on every order)
+        if bom is None:
+            bom_res = await db.execute(
+                text("SELECT id FROM caratloop.bom_headers WHERE product_id = :pid AND company_id = :cid ORDER BY is_active DESC, created_at DESC LIMIT 1"),
+                {"pid": prod_id, "cid": company_id}
+            )
+            bom_id = bom_res.scalar()
         if not bom_id:
             new_bom = await db.execute(
                 text("""
@@ -206,7 +553,7 @@ async def create_production_order(
                 "odate": payload.order_date,
                 "pid": prod_id,
                 "bomid": bom_id,
-                "pqty": payload.planned_qty,
+                "pqty": planned_qty,
                 "my": month_year,
                 "rem": payload.remarks or f"Manufacturing order for {payload.product_name}",
                 "cb": user_id
@@ -214,7 +561,16 @@ async def create_production_order(
         )
         po_id = po_res.scalar()
         await db.commit()
-        return {"status": "success", "id": str(po_id), "order_no": order_no}
+        plan = scale_bom_lines(bom["lines"], bom["output_quantity"], planned_qty) if bom and bom["lines"] else []
+        return {
+            "status": "success",
+            "id": str(po_id),
+            "order_no": order_no,
+            "bom_id": str(bom_id),
+            "planned_qty": str(planned_qty),
+            "output_material_id": str(bom["output_material_id"]) if bom and bom["output_material_id"] else None,
+            "plan": plan,
+        }
     except HTTPException:
         # Deliberate 4xx responses (validation, authorisation,
         # insufficient stock, unbalanced entry) must not be
@@ -293,6 +649,10 @@ async def complete_production_order(
     )
 
     try:
+        # The completion date is when the stock moves and the journal posts;
+        # a locked year refuses it before anything is written.
+        await assert_period_open(db, company_id, payload.completion_date, what="This production completion")
+
         total_material_cost = Decimal("0")
         consumption_entry_ids = []
         output_entry_ids = []

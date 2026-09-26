@@ -23,7 +23,8 @@ import {
   Minus,
   AlertTriangle,
   ClipboardList,
-  Receipt
+  Receipt,
+  Hammer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { financialYearLabel } from '@/lib/fiscal';
@@ -45,10 +46,13 @@ const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, group: 'Main' },
   { name: 'Parties', href: '/parties', icon: Users, group: 'Masters' },
   { name: 'Stock Items', href: '/inventory', icon: Package, group: 'Masters' },
+  { name: 'Gemstone Lots', href: '/lots', icon: Package, group: 'Masters' },
+  { name: 'Locations & Transfers', href: '/locations', icon: ArrowLeftRight, group: 'Masters' },
   { name: 'Manufacturing', href: '/manufacturing', icon: Factory, group: 'Operations' },
   { name: 'Sales', href: '/sales', icon: ShoppingCart, group: 'Operations' },
   { name: 'Purchases', href: '/purchases', icon: ShoppingBag, group: 'Operations' },
   { name: 'Memos (Jangad)', href: '/memos', icon: ClipboardList, group: 'Operations' },
+  { name: 'Job Work', href: '/job-work', icon: Hammer, group: 'Operations' },
   { name: 'Receipt', href: '/vouchers/receipt', icon: ArrowDownLeft, group: 'Vouchers' },
   { name: 'Payment', href: '/vouchers/payment', icon: ArrowUpRight, group: 'Vouchers' },
   { name: 'Journal', href: '/vouchers/journal', icon: BookOpen, group: 'Vouchers' },
@@ -59,6 +63,9 @@ const navigation: NavItem[] = [
   { name: 'Ledger', href: '/ledger', icon: FileText, group: 'Books' },
   { name: 'Outstanding', href: '/outstanding', icon: AlertTriangle, group: 'Books' },
   { name: 'Accounting', href: '/accounting', icon: BookOpen, group: 'Finance' },
+  // Period lock and year-end closing; the API refuses lock/close to anyone
+  // but owner/admin, the page hides the buttons for everyone else.
+  { name: 'Fiscal Years', href: '/fiscal-years', icon: Calendar, group: 'Finance' },
   { name: 'GST', href: '/gst', icon: Receipt, group: 'Finance' },
   { name: 'GST & Compliance', href: '/gst/exports', icon: FileText, group: 'Finance' },
   { name: 'Reconciliation', href: '/banking', icon: Landmark, group: 'Banking' },

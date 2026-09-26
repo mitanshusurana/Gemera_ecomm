@@ -42,6 +42,8 @@ class UpdatePartyRequest(BaseModel):
     tcs_applicable: Optional[bool] = None
     lower_deduction_pct: Optional[float] = None
     tds_pan_verified: Optional[bool] = None
+    # Karigar only: what they make ("22K bangles, kundan setting").
+    karigar_skills: Optional[str] = None
     reason: str = "Party update"
 
 async def fetch_gstin_from_surepass(gstin: str, token: str) -> dict:
@@ -229,11 +231,17 @@ async def fetch_gstin_details(
     return await fetch_gstin_from_surepass(gstin, token)
 
 # caratloop.parties.party_type is CHECK-constrained to Customer / Vendor /
-# Both. The whole user interface says "Supplier" -- which is the word the trade
-# uses -- and sent it straight through, so creating a supplier failed with a
-# 500 from the database, and the supplier dropdown, which filters on the same
-# word, matched nothing that could ever have been stored. Accept the word the
-# interface uses and store the one the schema permits.
+# Both / Karigar (the last added by migration 0009). The whole user interface
+# says "Supplier" -- which is the word the trade uses -- and sent it straight
+# through, so creating a supplier failed with a 500 from the database, and the
+# supplier dropdown, which filters on the same word, matched nothing that could
+# ever have been stored. Accept the word the interface uses and store the one
+# the schema permits.
+#
+# A Karigar is an artisan paid making charges for work on metal that stays
+# ours (CGST s.143 job work). They are a Sundry Creditor like a Vendor, but a
+# distinct type so the job-work screens can list artisans without listing
+# every bullion dealer.
 PARTY_TYPE_ALIASES = {
     "customer": "Customer",
     "debtor": "Customer",
@@ -241,7 +249,31 @@ PARTY_TYPE_ALIASES = {
     "supplier": "Vendor",
     "creditor": "Vendor",
     "both": "Both",
+    "karigar": "Karigar",
+    "artisan": "Karigar",
+    "job_worker": "Karigar",
+    "jobworker": "Karigar",
 }
+
+# Party code prefix and ledger side per stored type.
+PARTY_CODE_PREFIX = {"Customer": "CUST", "Vendor": "SUPP", "Both": "SUPP", "Karigar": "KAR"}
+DEBTOR_TYPES = frozenset({"Customer", "Both"})
+
+
+def normalise_party_types(value: str | None) -> list[str]:
+    """A comma-separated list of party types, each normalised, in order.
+
+    The job-work karigar picker wants "Karigar,Supplier": an artisan may
+    have been filed as a Vendor before the Karigar type existed.
+    """
+    seen: list[str] = []
+    for part in (value or "").split(","):
+        if not part.strip():
+            continue
+        stored = normalise_party_type(part)
+        if stored not in seen:
+            seen.append(stored)
+    return seen
 
 
 def normalise_party_type(value: str | None) -> str:
@@ -255,7 +287,7 @@ def normalise_party_type(value: str | None) -> str:
         raise HTTPException(
             status_code=422,
             detail=(
-                f"Unknown party type '{value}'. Use Customer, Supplier or Both."
+                f"Unknown party type '{value}'. Use Customer, Supplier, Karigar or Both."
             ),
         )
     return stored
@@ -295,6 +327,7 @@ class CreatePartyRequest(BaseModel):
     tcs_applicable: bool = False
     lower_deduction_pct: Optional[float] = None
     tds_pan_verified: bool = False
+    karigar_skills: Optional[str] = None
     reason: str = "Party creation"
 
 @router.post("")
@@ -326,7 +359,7 @@ async def create_party(
 
         # Auto-generate party_code if omitted
         if not payload.party_code:
-            prefix = "CUST" if party_type == "Customer" else "SUPP"
+            prefix = PARTY_CODE_PREFIX.get(party_type, "SUPP")
             count_res = await db.execute(
                 text("SELECT caratloop.next_document_number(:cid, NULL, :dtype)"),
                 {"cid": company_id, "dtype": f"Party:{prefix}"}
@@ -340,7 +373,7 @@ async def create_party(
         # A 'Both' party is filed under Sundry Debtors, so its account must be
         # a Debtor too. Branching on == "Customer" gave it a Creditor account
         # inside the Debtors group, which no trial balance could reconcile.
-        is_debtor = party_type in ("Customer", "Both")
+        is_debtor = party_type in DEBTOR_TYPES
         acc_group_code = "DEBTORS" if is_debtor else "CREDITORS"
         
         acc_result = await db.execute(
@@ -406,13 +439,13 @@ async def create_party(
                     state_code, state_name, pincode, phone, email, is_old_gold_supplier,
                     credit_limit, credit_days,
                     tds_applicable, tcs_applicable, lower_deduction_pct, tds_pan_verified,
-                    created_by
+                    karigar_skills, created_by
                 ) VALUES (
                     :cid, :acc_id, :ptype, :pcode, :name, :tname, :gstin, :pan, :aadhaar, CAST(:kyc_docs AS JSONB),
                     :gst_reg, :addr1, :addr2, :city, :state_c, :state_n, :pin,
                     :phone, :email, :old_gold, :limit, :days,
                     :tds_applicable, :tcs_applicable, :lower_pct, :pan_verified,
-                    :created_by
+                    :skills, :created_by
                 ) RETURNING id
             """),
             {
@@ -427,6 +460,7 @@ async def create_party(
                 "limit": payload.credit_limit or 0, "days": payload.credit_days or 30,
                 "tds_applicable": bool(payload.tds_applicable), "tcs_applicable": bool(payload.tcs_applicable),
                 "lower_pct": payload.lower_deduction_pct, "pan_verified": bool(payload.tds_pan_verified),
+                "skills": (payload.karigar_skills or "").strip() or None,
                 "created_by": user_id
             }
         )
@@ -459,6 +493,8 @@ async def list_parties(
             p.name, p.trade_name, p.gstin, p.pan, p.aadhaar_no, p.kyc_documents, p.gst_reg_type, p.phone, p.email, p.state_code, p.state_name, p.state_name as state,
             p.address_line1, p.address_line2, p.address_line1 as address, p.city, p.pincode,
             p.credit_limit, p.credit_limit as "creditLimit",
+            p.karigar_skills, p.tds_applicable, p.tcs_applicable, p.lower_deduction_pct, p.tds_pan_verified,
+            p.credit_days, p.is_old_gold_supplier,
             COALESCE((
                 SELECT SUM(dr_amount - cr_amount) 
                 FROM caratloop.journal_entry_lines 
@@ -486,9 +522,17 @@ async def list_parties(
 
     if type:
         # Normalised for the same reason as on write: the interface asks for
-        # "Supplier", which is stored as "Vendor".
-        query += " AND (p.party_type = :type OR p.party_type = 'Both')"
-        params["type"] = normalise_party_type(type)
+        # "Supplier", which is stored as "Vendor". Several may be given
+        # ("Karigar,Supplier"); a 'Both' party answers to Customer and Vendor
+        # but is not an artisan.
+        wanted = normalise_party_types(type)
+        placeholders = []
+        for i, t in enumerate(wanted):
+            params[f"type{i}"] = t
+            placeholders.append(f":type{i}")
+        if set(wanted) & {"Customer", "Vendor"}:
+            placeholders.append("'Both'")
+        query += " AND p.party_type IN (" + ", ".join(placeholders) + ")"
     if q:
         query += " AND (p.name ILIKE :q OR p.party_code ILIKE :q OR p.gstin ILIKE :q)"
         params["q"] = f"%{q}%"

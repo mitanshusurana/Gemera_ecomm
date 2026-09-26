@@ -47,6 +47,7 @@ export default function PartiesPage() {
     tcs_applicable: false,
     lower_deduction_pct: '' as string | number,
     tds_pan_verified: false,
+    karigar_skills: '',
     kyc_documents: {
       pan_card: '',
       gst_cert: '',
@@ -160,6 +161,7 @@ export default function PartiesPage() {
       tcs_applicable: false,
       lower_deduction_pct: '',
       tds_pan_verified: false,
+      karigar_skills: '',
       kyc_documents: {
         pan_card: '',
         gst_cert: '',
@@ -198,6 +200,7 @@ export default function PartiesPage() {
       tcs_applicable: Boolean(party.tcs_applicable),
       lower_deduction_pct: party.lower_deduction_pct === null || party.lower_deduction_pct === undefined ? '' : Number(party.lower_deduction_pct),
       tds_pan_verified: Boolean(party.tds_pan_verified),
+      karigar_skills: party.karigar_skills || '',
       kyc_documents: party.kyc_documents || {
         pan_card: '',
         gst_cert: '',
@@ -325,7 +328,12 @@ export default function PartiesPage() {
                       <td className="py-4 text-textSecondary text-xs max-w-[220px] truncate" title={`${party.address_line1 || party.address || ''}, ${party.city || ''} ${party.pincode || ''}`}>
                         {party.address_line1 || party.address ? `${party.address_line1 || party.address}, ${party.city || ''}` : '—'}
                       </td>
-                      <td className="py-4 text-textSecondary">{party.type || party.party_type}</td>
+                      <td className="py-4 text-textSecondary">
+                        {party.type || party.party_type}
+                        {(party.type || party.party_type) === 'Karigar' && party.karigar_skills && (
+                          <span className="block text-xs text-textSecondary/70 max-w-[180px] truncate" title={party.karigar_skills}>{party.karigar_skills}</span>
+                        )}
+                      </td>
                       <td className="py-4 text-textSecondary">{party.state_name || party.state}</td>
                       <td className={`py-4 text-right font-medium ${party.outstanding > 0 ? 'text-success' : party.outstanding < 0 ? 'text-danger' : 'text-textSecondary'}`}>
                         {party.outstanding ? formatCurrency(Math.abs(party.outstanding)) : '—'} {party.outstanding > 0 ? 'Dr' : party.outstanding < 0 ? 'Cr' : ''}
@@ -558,7 +566,13 @@ export default function PartiesPage() {
                     <option value="Both">Both (Customer & Supplier)</option>
                     <option value="Customer">Customer (Sundry Debtor)</option>
                     <option value="Supplier">Supplier (Sundry Creditor)</option>
+                    <option value="Karigar">Karigar / Artisan (Job Work, Sundry Creditor)</option>
                   </select>
+                  {formData.party_type === 'Karigar' && (
+                    <p className="text-xs text-textSecondary mt-1">
+                      Paid making charges for work on metal that stays yours (CGST s.143). Their bills post to Sundry Creditors.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm text-textSecondary mb-1">GST Registration Type *</label>
@@ -632,6 +646,19 @@ export default function PartiesPage() {
                   />
                 </div>
               </div>
+
+              {formData.party_type === 'Karigar' && (
+                <div>
+                  <label className="block text-sm text-textSecondary mb-1">What they make (skills)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 22K bangles, kundan setting, polishing"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    value={formData.karigar_skills}
+                    onChange={(e) => setFormData({ ...formData, karigar_skills: e.target.value })}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

@@ -134,3 +134,109 @@ def wastage_pct(sent, wastage) -> Decimal:
     if sent_d <= 0:
         return ZERO
     return round_money(to_decimal(wastage) / sent_d * 100)
+
+
+# ─── What the returned pieces cost ───────────────────────────────────────────
+#
+# Stock came back from the karigar valued at the metal alone, so a finished
+# bangle sat in the register at the price of its gold and the making charges
+# vanished into expense. AS 2 puts conversion cost into inventory: the pieces
+# should carry the metal that went into them (including the metal lost making
+# them) plus what the karigar was paid to make them.
+
+@dataclass(frozen=True)
+class ReceiptCostLine:
+    """One receipt line before costing.
+
+    ``unit_issue_cost`` is what a unit of the material cost when it left on
+    the challan (the Job_Work_Out row's amount / quantity, else the weighted
+    average), so the metal comes back at the value it went out at.
+    """
+
+    key: object
+    quantity_received: Decimal
+    quantity_wastage: Decimal = ZERO
+    unit_issue_cost: Decimal = ZERO
+
+
+@dataclass(frozen=True)
+class ReceiptLineCost:
+    key: object
+    metal_cost: Decimal          # (received + wastage) x issue cost
+    making_charge_share: Decimal  # this line's slice of the karigar's bill
+    total_cost: Decimal          # what the Job_Work_In row carries
+    unit_cost: Decimal           # total_cost / quantity received, 4 dp
+
+
+def roll_up_receipt_cost(lines, making_charges) -> list[ReceiptLineCost]:
+    """Cost each received line: issued metal (received plus wastage) at issue
+    cost, plus a share of the making charges.
+
+    Wastage is loaded onto the pieces it was lost making: the gold that
+    became polishing dust is part of what the bangle cost. A line that
+    received nothing (pure wastage write-off) keeps its metal cost for the
+    statement but takes no making charge, because there is nothing to carry
+    it; if no line received anything, the making charges are left unallocated
+    (returned as zero shares) for the caller to expense.
+
+    The making charges are split in proportion to metal cost, or to quantity
+    received when nothing was costed, and rounded to the paisa with the
+    remainder on the last receiving line so the shares re-sum exactly.
+    """
+    items = [
+        ReceiptCostLine(
+            key=ln.key,
+            quantity_received=to_decimal(ln.quantity_received),
+            quantity_wastage=to_decimal(ln.quantity_wastage),
+            unit_issue_cost=to_decimal(ln.unit_issue_cost),
+        )
+        for ln in lines
+    ]
+    charges = round_money(making_charges)
+
+    metal = {
+        it.key: round_money((it.quantity_received + it.quantity_wastage) * it.unit_issue_cost)
+        for it in items
+    }
+    receiving = [it for it in items if it.quantity_received > 0]
+
+    weights = {it.key: metal[it.key] for it in receiving}
+    if sum(weights.values(), ZERO) <= 0:
+        weights = {it.key: it.quantity_received for it in receiving}
+    weight_total = sum(weights.values(), ZERO)
+
+    shares: dict = {it.key: ZERO for it in items}
+    if receiving and charges > 0 and weight_total > 0:
+        allocated = ZERO
+        for it in receiving[:-1]:
+            share = round_money(charges * weights[it.key] / weight_total)
+            shares[it.key] = share
+            allocated += share
+        shares[receiving[-1].key] = round_money(charges - allocated)
+
+    out: list[ReceiptLineCost] = []
+    for it in items:
+        total = round_money(metal[it.key] + shares[it.key])
+        unit = (
+            (total / it.quantity_received).quantize(Decimal("0.0001"))
+            if it.quantity_received > 0
+            else ZERO
+        )
+        out.append(
+            ReceiptLineCost(
+                key=it.key,
+                metal_cost=metal[it.key],
+                making_charge_share=shares[it.key],
+                total_cost=total,
+                unit_cost=unit,
+            )
+        )
+    return out
+
+
+def unit_issue_cost(amount, quantity) -> Decimal:
+    """Cost per unit of what went out on the challan; zero when unknown."""
+    qty = to_decimal(quantity)
+    if qty <= 0:
+        return ZERO
+    return (to_decimal(amount) / qty).quantize(Decimal("0.0001"))

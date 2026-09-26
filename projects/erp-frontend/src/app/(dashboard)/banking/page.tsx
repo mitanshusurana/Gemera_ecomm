@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { bankingApi, apiClient } from '@/lib/api';
 import StatsCard from '@/components/ui/StatsCard';
 import Modal from '@/components/ui/Modal';
-import { FileUp, Landmark, CheckCircle, Clock, Check, X, Printer, ArrowRightLeft, AlertCircle, Loader2 } from 'lucide-react';
+import { FileUp, Landmark, CheckCircle, Clock, Check, X, Printer, ArrowRightLeft, AlertCircle, Loader2, Link2Off } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 import { previousPeriod } from '@/lib/fiscal';
@@ -15,6 +15,8 @@ export default function BankingPage() {
   const [selectedMonth, setSelectedMonth] = useState(previousPeriod());
   const [unreconciled, setUnreconciled] = useState<any[]>([]);
   const [statementEntries, setStatementEntries] = useState<any[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [unmatching, setUnmatching] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
@@ -51,6 +53,7 @@ export default function BankingPage() {
       const sEntries = res.data?.bank_entries || res.data?.statement_entries || [];
       setUnreconciled(bEntries);
       setStatementEntries(sEntries);
+      setMatches(res.data?.matches || []);
     } catch (err) {
       console.error('Failed to fetch reconciliation data:', err);
     } finally {
@@ -122,6 +125,19 @@ export default function BankingPage() {
       alert(err.response?.data?.detail || 'Failed to match entries');
     } finally {
       setMatching(false);
+    }
+  };
+
+  const handleUnmatch = async (m: any) => {
+    if (!confirm(`Undo the match between ${m.entry_no || 'book entry'} and the statement line of ${m.txn_date}?`)) return;
+    setUnmatching(m.match_id);
+    try {
+      await bankingApi.unmatchEntries({ match_id: m.match_id, bank_entry_id: m.bank_entry_id });
+      fetchReconciliation();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to remove the match');
+    } finally {
+      setUnmatching(null);
     }
   };
 
@@ -372,8 +388,73 @@ export default function BankingPage() {
         </div>
       </div>
       
+      {/* Matched pairs: what has been reconciled this month, and the way back */}
+      <div className="glass-card">
+        <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
+          <h3 className="font-bold text-white">Matched Pairs — {selectedMonth}</h3>
+          <Badge variant={matches.length > 0 ? 'success' : 'default'}>{matches.length} Matched</Badge>
+        </div>
+        <div className="overflow-x-auto p-4">
+          <table className="w-full text-left text-sm">
+            <thead className="text-textSecondary border-b border-border">
+              <tr>
+                <th className="pb-3 font-medium">Book Entry</th>
+                <th className="pb-3 font-medium">Book Date</th>
+                <th className="pb-3 font-medium text-right">Book Amount (₹)</th>
+                <th className="pb-3 font-medium">Statement Line</th>
+                <th className="pb-3 font-medium">Stmt Date</th>
+                <th className="pb-3 font-medium text-right">Stmt Amount (₹)</th>
+                <th className="pb-3 font-medium">Matched</th>
+                <th className="pb-3 font-medium text-center">Undo</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {matches.length === 0 ? (
+                <tr><td colSpan={8} className="py-8 text-center text-textSecondary">No matches recorded for this month.</td></tr>
+              ) : matches.map((m) => {
+                const bookDr = Number(m.dr_amount || 0);
+                const bookCr = Number(m.cr_amount || 0);
+                const stmtCr = Number(m.credit || 0);
+                const stmtDr = Number(m.debit || 0);
+                return (
+                  <tr key={m.match_id} className="hover:bg-white/5">
+                    <td className="py-3 text-xs">
+                      <span className="font-mono text-white">{m.entry_no || '—'}</span>
+                      <span className="block text-textSecondary truncate max-w-[220px]" title={m.narration}>{m.narration}</span>
+                    </td>
+                    <td className="py-3 text-xs text-textSecondary">{m.entry_date}</td>
+                    <td className={`py-3 text-right font-mono text-xs ${bookDr > 0 ? 'text-success' : 'text-danger'}`}>
+                      {formatCurrency(bookDr || bookCr)} {bookDr > 0 ? 'Dr' : 'Cr'}
+                    </td>
+                    <td className="py-3 text-xs text-textSecondary truncate max-w-[220px]" title={m.description}>
+                      {m.description || 'Statement Txn'} {m.ref_no ? <span className="font-mono">({m.ref_no})</span> : null}
+                    </td>
+                    <td className="py-3 text-xs text-textSecondary">{m.txn_date}</td>
+                    <td className={`py-3 text-right font-mono text-xs ${stmtCr > 0 ? 'text-success' : 'text-danger'}`}>
+                      {formatCurrency(stmtCr || stmtDr)} {stmtCr > 0 ? 'Cr' : 'Dr'}
+                    </td>
+                    <td className="py-3 text-xs text-textSecondary">
+                      {m.matched_at ? new Date(m.matched_at).toLocaleDateString('en-IN') : '—'}{m.matched_by_name ? ` by ${m.matched_by_name}` : ''}
+                    </td>
+                    <td className="py-3 text-center">
+                      <button
+                        onClick={() => handleUnmatch(m)}
+                        disabled={unmatching === m.match_id}
+                        className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-textSecondary hover:text-white hover:border-danger disabled:opacity-50 flex items-center gap-1 mx-auto"
+                      >
+                        {unmatching === m.match_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2Off className="w-3 h-3" />} Unmatch
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="flex justify-end">
-        <button 
+        <button
           onClick={handleOpenBrsReport}
           className="px-6 py-2.5 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 flex items-center gap-2 shadow-lg shadow-primary/20"
         >
@@ -389,32 +470,84 @@ export default function BankingPage() {
           title="Bank Reconciliation Statement (BRS)"
         >
           <div className="space-y-4">
-            <div className="p-4 bg-surface border border-border rounded-xl space-y-2 text-xs">
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-textSecondary">Account:</span>
-                <span className="font-semibold text-white">{accounts.find(a => a.id === selectedAccount)?.name || 'Primary Bank Account'}</span>
+            {loadingBrs || !brsReport ? (
+              <div className="py-10 flex items-center justify-center gap-3 text-textSecondary text-sm">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" /> Computing the reconciliation statement...
               </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-textSecondary">Period:</span>
-                <span className="font-semibold text-white">{selectedMonth}</span>
-              </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-white font-medium">Balance as per General Ledger (Books):</span>
-                <span className="font-mono font-bold text-white">{formatCurrency(bookBalance)}</span>
-              </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-textSecondary">Add: Cheques deposited but not yet cleared by bank:</span>
-                <span className="font-mono text-emerald-400">+{formatCurrency(totalStmtCr)}</span>
-              </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-textSecondary">Less: Cheques issued but not yet presented for payment:</span>
-                <span className="font-mono text-rose-400">-{formatCurrency(totalStmtDr)}</span>
-              </div>
-              <div className="flex justify-between pt-2 text-sm font-bold">
-                <span className="text-primary">Estimated Balance as per Bank Statement:</span>
-                <span className="font-mono text-primary">{formatCurrency(stmtBalance)}</span>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="p-4 bg-surface border border-border rounded-xl space-y-2 text-xs">
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-textSecondary">Account:</span>
+                    <span className="font-semibold text-white">{brsReport.account_name} ({brsReport.account_code})</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-textSecondary">As at:</span>
+                    <span className="font-semibold text-white">{brsReport.as_of_date}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-white font-medium">Balance as per books (bank ledger account):</span>
+                    <span className="font-mono font-bold text-white">{formatCurrency(Number(brsReport.balance_as_per_books))}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-textSecondary">Add: payments in the books not yet presented at the bank ({brsReport.unpresented_payments?.length || 0}):</span>
+                    <span className="font-mono text-emerald-400">+{formatCurrency(Number(brsReport.add_unpresented_payments))}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-textSecondary">Less: deposits in the books not yet cleared by the bank ({brsReport.uncleared_deposits?.length || 0}):</span>
+                    <span className="font-mono text-rose-400">-{formatCurrency(Number(brsReport.less_uncleared_deposits))}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2 text-sm font-bold">
+                    <span className="text-primary">Balance the bank statement should show:</span>
+                    <span className="font-mono text-primary">{formatCurrency(Number(brsReport.expected_balance_as_per_bank))}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-border pb-2">
+                    <span className="text-textSecondary">Balance as per bank statement{brsReport.statement_balance_date ? ` (line dated ${brsReport.statement_balance_date})` : ''}:</span>
+                    <span className="font-mono text-white">
+                      {brsReport.balance_as_per_bank_statement === null || brsReport.balance_as_per_bank_statement === undefined
+                        ? 'No statement imported'
+                        : formatCurrency(Number(brsReport.balance_as_per_bank_statement))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 text-sm font-bold">
+                    <span className={brsReport.reconciled ? 'text-success' : 'text-warning'}>Difference:</span>
+                    <span className={`font-mono ${brsReport.reconciled ? 'text-success' : 'text-warning'}`}>
+                      {brsReport.difference === null || brsReport.difference === undefined ? '—' : formatCurrency(Number(brsReport.difference))}
+                    </span>
+                  </div>
+                  {(Number(brsReport.bank_credits_not_in_books) > 0 || Number(brsReport.bank_debits_not_in_books) > 0) && (
+                    <div className="pt-2 text-[11px] text-textSecondary">
+                      Statement lines not in the books: credits {formatCurrency(Number(brsReport.bank_credits_not_in_books))}, debits {formatCurrency(Number(brsReport.bank_debits_not_in_books))} ({brsReport.statement_lines_not_in_books?.length || 0} lines: bank charges, interest, direct credits to record).
+                    </div>
+                  )}
+                  <p className="pt-1 text-[11px] text-textSecondary italic">{brsReport.note}</p>
+                </div>
+
+                {(brsReport.unpresented_payments?.length > 0 || brsReport.uncleared_deposits?.length > 0) && (
+                  <div className="max-h-48 overflow-y-auto border border-border rounded-xl">
+                    <table className="w-full text-[11px]">
+                      <thead className="bg-surface text-textSecondary sticky top-0">
+                        <tr>
+                          <th className="px-3 py-1.5 text-left">Outstanding item</th>
+                          <th className="px-3 py-1.5 text-left">Date</th>
+                          <th className="px-3 py-1.5 text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {[...(brsReport.unpresented_payments || []).map((r: any) => ({ ...r, kind: 'Unpresented payment', amt: r.cr_amount })),
+                          ...(brsReport.uncleared_deposits || []).map((r: any) => ({ ...r, kind: 'Uncleared deposit', amt: r.dr_amount }))].map((r: any) => (
+                          <tr key={r.id}>
+                            <td className="px-3 py-1.5 text-white">{r.kind}: <span className="font-mono">{r.entry_no}</span> <span className="text-textSecondary">{r.narration}</span></td>
+                            <td className="px-3 py-1.5 text-textSecondary">{r.entry_date}</td>
+                            <td className="px-3 py-1.5 text-right font-mono text-white">{formatCurrency(Number(r.amt))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
 
             <div className="flex justify-end gap-3 pt-2">
               <button 

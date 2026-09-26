@@ -264,3 +264,105 @@ def get_return_period(date_str: str) -> str:
     else:
         d = date_str
     return d.strftime("%Y-%m")
+
+
+# ─── Export supplies and foreign currency ────────────────────────────────────
+#
+# Section 16 IGST Act: an export is a zero-rated supply. The exporter either
+# (a) supplies under a Letter of Undertaking without paying IGST, or
+# (b) pays IGST at the goods' own rate and claims it back as a refund.
+# Either way the place of supply is outside India, which GSTR-1 records as
+# state code 96 ("Other Country") in Table 6A, and the supply is inter-state
+# by definition (s.7(5)(a) IGST Act), so it can never be CGST+SGST.
+#
+# A Bill of Supply (Rule 49) is issued for a supply on which no tax is
+# charged; it carries no GST lines at all.
+
+# GSTR-1 Table 6A place-of-supply code for a buyer outside India.
+EXPORT_PLACE_OF_SUPPLY = "96"
+
+EXPORT_LUT = "LUT_without_tax"
+EXPORT_WITH_IGST = "With_IGST"
+EXPORT_TYPES = (EXPORT_LUT, EXPORT_WITH_IGST)
+
+# gst_output_tax_register.supply_type for the two export kinds; the GSTR-1
+# JSON uses the same tokens (exp_typ WPAY / WOPAY) without the prefix.
+SUPPLY_TYPE_FOR_EXPORT = {
+    EXPORT_LUT: "Export_WOPAY",
+    EXPORT_WITH_IGST: "Export_WPAY",
+}
+
+INVOICE_TYPE_TAX = "Tax_Invoice"
+INVOICE_TYPE_EXPORT = "Export_Invoice"
+INVOICE_TYPE_BILL_OF_SUPPLY = "Bill_of_Supply"
+INVOICE_TYPES = (INVOICE_TYPE_TAX, INVOICE_TYPE_EXPORT, INVOICE_TYPE_BILL_OF_SUPPLY)
+
+HOME_CURRENCY = "INR"
+
+
+def _zero_gst(mat_val: Decimal, mak_val: Decimal, material_gst_rate: Money, making_gst_rate: Money) -> JewelryGSTResult:
+    z = Decimal("0.00")
+    return JewelryGSTResult(
+        is_inter_state=True,
+        material_value=mat_val,
+        making_charges=mak_val,
+        cgst_material=z, sgst_material=z, igst_material=z, material_gst_total=z,
+        cgst_making=z, sgst_making=z, igst_making=z, making_gst_total=z,
+        total_cgst=z, total_sgst=z, total_igst=z, total_gst=z,
+        grand_total=mat_val + mak_val,
+        material_gst_rate=Decimal(str(material_gst_rate)),
+        making_gst_rate=Decimal(str(making_gst_rate)),
+    )
+
+
+def calculate_export_gst(
+    material_value: Money,
+    making_charges: Money,
+    export_type: str,
+    material_gst_rate: Money = Decimal("3.00"),
+    making_gst_rate: Money = Decimal("5.00"),
+) -> JewelryGSTResult:
+    """GST on an export invoice, in the currency the values are given in.
+
+    Under LUT every tax figure is zero. With payment of IGST the tax is IGST
+    at the material and making rates, exactly as an inter-state domestic sale
+    would be charged -- so the same engine is used with a buyer state that
+    cannot equal the seller's.
+    """
+    if export_type not in EXPORT_TYPES:
+        raise ValueError(f"export_type must be one of {EXPORT_TYPES}, got {export_type!r}")
+    mat_val = _money(material_value)
+    mak_val = _money(making_charges)
+    if export_type == EXPORT_LUT:
+        return _zero_gst(mat_val, mak_val, material_gst_rate, making_gst_rate)
+    return calculate_jewelry_gst(
+        material_value=mat_val,
+        making_charges=mak_val,
+        seller_state_code="08",
+        buyer_state_code=EXPORT_PLACE_OF_SUPPLY,
+        material_gst_rate=material_gst_rate,
+        making_gst_rate=making_gst_rate,
+    )
+
+
+def calculate_bill_of_supply(
+    material_value: Money,
+    making_charges: Money,
+    material_gst_rate: Money = Decimal("0.00"),
+    making_gst_rate: Money = Decimal("0.00"),
+) -> JewelryGSTResult:
+    """A Bill of Supply carries no tax: every GST figure is zero."""
+    return _zero_gst(_money(material_value), _money(making_charges), material_gst_rate, making_gst_rate)
+
+
+def to_inr(amount: Money, exchange_rate: Money) -> Decimal:
+    """A foreign-currency amount in rupees at the invoice's exchange rate.
+
+    Rounded to the paisa: the rupee figure is what the books and the GST
+    return carry, and s.15 read with Rule 34 fixes the rate at the invoice
+    date (the CBIC notified rate for exports, or the RBI reference rate).
+    """
+    rate = _money(exchange_rate)
+    if rate <= 0:
+        raise ValueError("exchange_rate must be positive")
+    return _round(_money(amount) * rate)

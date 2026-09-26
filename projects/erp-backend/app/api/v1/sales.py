@@ -22,17 +22,33 @@ from app.core.costing import (
     resolve_stock_account,
 )
 from app.core.ledger import assert_journal_balanced
-from app.core.money import to_decimal
+from app.core.money import round_money, to_decimal
 from app.core.stock import assert_stock_available
 from app.core.roles import CAN_AMEND, CAN_POST, require
 from app.core.pagination import Page, paginate
 from app.core.security import get_current_user
-from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
+from app.tax.compliance import pan_required_for_sale, pan_required_message
+from app.tax.gst_engine import (
+    EXPORT_PLACE_OF_SUPPLY,
+    EXPORT_TYPES,
+    HOME_CURRENCY,
+    INVOICE_TYPE_BILL_OF_SUPPLY,
+    INVOICE_TYPE_EXPORT,
+    INVOICE_TYPE_TAX,
+    INVOICE_TYPES,
+    SUPPLY_TYPE_FOR_EXPORT,
+    calculate_bill_of_supply,
+    calculate_export_gst,
+    calculate_jewelry_gst,
+    get_return_period,
+    to_inr,
+)
 from app.tax.job_work import JOB_WORK_SAC
 from app.tax.tds_tcs import has_valid_pan, tcs_on_sale
 from app.core.config import settings
 from app.core.tenancy import resolve_default_uom, resolve_fiscal_year, resolve_stock_location
 from app.tax.gstin import is_gstin_shaped
+from app.core.periods import assert_period_open
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +95,10 @@ class InvoiceLineRequest(BaseModel):
     # web order line carries its own rate (0.25% loose stones, 3% jewellery)
     # and has no material row here to read one from.
     material_gst_rate: Optional[Decimal] = Field(default=None, ge=0, le=100)
+    # The gemstone lot this line is taken from. The quantity (carats) is
+    # relieved from the lot's own stock ledger entries as well as the
+    # material's, and the lot is marked Sold when nothing is left in it.
+    lot_id: Optional[UUID] = None
 
     @model_validator(mode="after")
     def _net_not_more_than_gross(self):
@@ -106,6 +126,54 @@ class CreateSalesInvoiceRequest(BaseModel):
     # customer a tax invoice in its own series (WEB/...), and one supply must
     # carry one invoice number in the books. Refused if already recorded.
     external_invoice_no: Optional[str] = Field(default=None, max_length=30)
+
+    # ─── Kind of document ────────────────────────────────────────────────────
+    # Tax_Invoice (Rule 46, the default), Export_Invoice (zero-rated, s.16
+    # IGST Act) or Bill_of_Supply (Rule 49, no tax charged).
+    invoice_type: str = Field(default=INVOICE_TYPE_TAX, max_length=20)
+    # Required for an export: LUT_without_tax (no IGST) or With_IGST (IGST at
+    # the goods' rate, refunded later). Refused on any other kind.
+    export_type: Optional[str] = Field(default=None, max_length=20)
+    # ISO 4217. Line amounts are entered in this currency and converted to
+    # rupees at exchange_rate for the books; the foreign totals are kept too.
+    currency: str = Field(default=HOME_CURRENCY, min_length=3, max_length=3)
+    exchange_rate: Decimal = Field(default=Decimal("1"), gt=0)
+    # Shipping bill particulars (GSTR-1 Table 6A) and the LUT under which the
+    # goods left without payment of tax.
+    shipping_bill_no: Optional[str] = Field(default=None, max_length=20)
+    shipping_bill_date: Optional[date] = None
+    port_code: Optional[str] = Field(default=None, max_length=10)
+    buyer_country: Optional[str] = Field(default=None, max_length=60)
+    lut_no: Optional[str] = Field(default=None, max_length=30)
+    # Rule 114B: the buyer's PAN for a sale of Rs 2,00,000 or more when the
+    # party has neither a PAN nor a GSTIN on record. Stored on the party.
+    pan: Optional[str] = None  # normalised and checked below (AAAAA9999A)
+
+    @model_validator(mode="after")
+    def _kind_is_consistent(self):
+        self.invoice_type = (self.invoice_type or INVOICE_TYPE_TAX).strip()
+        if self.invoice_type not in INVOICE_TYPES:
+            raise ValueError(f"invoice_type must be one of {', '.join(INVOICE_TYPES)}")
+        self.currency = (self.currency or HOME_CURRENCY).strip().upper()
+        if self.invoice_type == INVOICE_TYPE_EXPORT:
+            if self.export_type not in EXPORT_TYPES:
+                raise ValueError(
+                    "export_type is required on an export invoice: "
+                    + " or ".join(EXPORT_TYPES)
+                )
+        elif self.export_type is not None:
+            raise ValueError("export_type applies only to an Export_Invoice")
+        if self.currency != HOME_CURRENCY and self.exchange_rate == 1:
+            raise ValueError(
+                f"exchange_rate is required when the invoice currency is {self.currency}"
+            )
+        if self.currency == HOME_CURRENCY and self.exchange_rate != 1:
+            raise ValueError("exchange_rate must be 1 on a rupee invoice")
+        if self.pan is not None:
+            self.pan = self.pan.strip().upper() or None
+            if self.pan is not None and not has_valid_pan(self.pan):
+                raise ValueError("pan is not a well-formed PAN (AAAAA9999A)")
+        return self
 
 
 @router.post("/invoices", dependencies=[Depends(require(*CAN_POST))])
@@ -154,7 +222,14 @@ async def create_sales_invoice(
     # Precedence: an explicit place of supply, else the customer's registered
     # state. Falling back to the seller's state would silently mis-classify the
     # supply and send the wrong tax to the wrong government.
-    buyer_state = (payload.place_of_supply or customer.get("state_code") or "").strip()
+    is_export = payload.invoice_type == INVOICE_TYPE_EXPORT
+    is_bill_of_supply = payload.invoice_type == INVOICE_TYPE_BILL_OF_SUPPLY
+    if is_export:
+        # The buyer is outside India: GSTR-1 Table 6A records the place of
+        # supply as 96 (Other Country) whatever the client sent.
+        buyer_state = EXPORT_PLACE_OF_SUPPLY
+    else:
+        buyer_state = (payload.place_of_supply or customer.get("state_code") or "").strip()
     if not buyer_state:
         raise HTTPException(
             status_code=400,
@@ -166,8 +241,14 @@ async def create_sales_invoice(
         )
     seller_state = settings.COMPANY_STATE_CODE
 
+    # Foreign-currency invoices: every line amount arrives in payload.currency
+    # and is converted once, here, at the invoice's own rate. The rupee figure
+    # is what the books, the stock ledger and the GST register carry.
+    fx = payload.exchange_rate if payload.currency != HOME_CURRENCY else Decimal("1")
+
     # [MCA-11g] Set audit context
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    await assert_period_open(db, company_id, payload.invoice_date, what="This sales invoice")
 
     # ─── Compute line-level GST ───────────────────────────────────────────────
     total_material = Decimal("0")
@@ -180,12 +261,52 @@ async def create_sales_invoice(
     total_cgst_mak = Decimal("0")
     total_sgst_mak = Decimal("0")
 
+    # Foreign-currency totals, kept beside the rupee ones on an export.
+    fc_taxable = Decimal("0")
+    fc_other = Decimal("0")
+
     computed_lines = []
     for line in payload.lines:
         mat_gst_rate = Decimal("3.0")
         mat_hsn = line.hsn_sac_code or ""
         mat_row_id = None
         mat_uom_id = None
+        lot = None
+        if line.lot_id:
+            # A gemstone lot: it fixes the material, must be open, and must
+            # hold the carats being sold.
+            lot_res = await db.execute(
+                text(
+                    "SELECT b.id, b.lot_no, b.material_id, b.status, "
+                    "       COALESCE((SELECT SUM(CASE WHEN e.direction = 'I' THEN e.quantity ELSE -e.quantity END) "
+                    "                 FROM caratloop.stock_ledger_entries e WHERE e.batch_id = b.id), 0) AS balance "
+                    "FROM caratloop.stock_batches b "
+                    "WHERE b.id = :lid AND b.company_id = :cid"
+                ),
+                {"lid": str(line.lot_id), "cid": company_id},
+            )
+            lot = lot_res.mappings().first()
+            if lot is None:
+                raise HTTPException(status_code=404, detail=f"Lot {line.lot_id} not found.")
+            if lot["status"] != "Open":
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Lot {lot['lot_no']} is {lot['status']} and cannot be sold from. No data was saved.",
+                )
+            if to_decimal(lot["balance"]) < line.quantity:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        f"Lot {lot['lot_no']} holds {to_decimal(lot['balance'])} ct; "
+                        f"{line.quantity} ct requested. No data was saved."
+                    ),
+                )
+            if line.material_id and _as_uuid(line.material_id) not in (None, str(lot["material_id"])):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Lot {lot['lot_no']} is not of material {line.material_id}.",
+                )
+            line.material_id = lot["material_id"]
         if line.material_id:
             m_res = await db.execute(
                 text(
@@ -218,26 +339,45 @@ async def create_sales_invoice(
                 ),
             )
 
-        taxable_mat = line.material_value * (1 - line.discount_pct / 100)
-        taxable_mak = line.making_charges * (1 - line.discount_pct / 100)
+        # Line amounts in the invoice currency, then in rupees. On a rupee
+        # invoice fx is 1 and the two are the same figure.
+        fc_mat = line.material_value * (1 - line.discount_pct / 100)
+        fc_mak = line.making_charges * (1 - line.discount_pct / 100)
+        fc_taxable += round_money(fc_mat + fc_mak)
+        fc_other += round_money(line.other_charges)
+        mat_value_inr = to_inr(line.material_value, fx)
+        mak_value_inr = to_inr(line.making_charges, fx)
+        other_inr = to_inr(line.other_charges, fx)
+        taxable_mat = mat_value_inr * (1 - line.discount_pct / 100)
+        taxable_mak = mak_value_inr * (1 - line.discount_pct / 100)
 
         # Pass Decimal straight through. Casting to float here meant a
         # discounted value such as 66666.66666666667 was taxed as its binary
         # expansion rather than the exact decimal.
-        gst = calculate_jewelry_gst(
-            material_value=taxable_mat,
-            making_charges=taxable_mak,
-            seller_state_code=seller_state,
-            buyer_state_code=buyer_state,
-            material_gst_rate=mat_gst_rate,
-        )
+        if is_export:
+            gst = calculate_export_gst(
+                material_value=taxable_mat,
+                making_charges=taxable_mak,
+                export_type=payload.export_type,
+                material_gst_rate=mat_gst_rate,
+            )
+        elif is_bill_of_supply:
+            gst = calculate_bill_of_supply(taxable_mat, taxable_mak)
+        else:
+            gst = calculate_jewelry_gst(
+                material_value=taxable_mat,
+                making_charges=taxable_mak,
+                seller_state_code=seller_state,
+                buyer_state_code=buyer_state,
+                material_gst_rate=mat_gst_rate,
+            )
 
-        line_total = (taxable_mat + taxable_mak + line.other_charges
+        line_total = (taxable_mat + taxable_mak + other_inr
                       + gst.total_gst)
 
         total_material += taxable_mat
         total_making += taxable_mak
-        total_other += line.other_charges
+        total_other += other_inr
         total_igst_mat += gst.igst_material
         total_igst_mak += gst.igst_making
         total_cgst_mat += gst.cgst_material
@@ -252,6 +392,10 @@ async def create_sales_invoice(
             "mat_hsn": mat_hsn,
             "mat_id": mat_row_id,
             "uom_id": mat_uom_id,
+            "lot": lot,
+            "mat_value_inr": mat_value_inr,
+            "mak_value_inr": mak_value_inr,
+            "other_inr": other_inr,
             "taxable_mat": taxable_mat,
             "taxable_mak": taxable_mak,
             "line_total": line_total,
@@ -259,6 +403,28 @@ async def create_sales_invoice(
 
     total_gst = total_igst_mat + total_igst_mak + total_cgst_mat + total_sgst_mat + total_cgst_mak + total_sgst_mak
     grand_total = total_material + total_making + total_other + total_gst
+
+    # Foreign-currency grand total: the taxed and untaxed legs as entered,
+    # plus the rupee tax restated at the invoice rate (zero under LUT).
+    fc_grand_total = None
+    fc_taxable_value = None
+    if payload.currency != HOME_CURRENCY:
+        fc_taxable_value = fc_taxable
+        fc_grand_total = round_money(fc_taxable + fc_other + (total_gst / fx))
+
+    # Rule 114B: a domestic sale of Rs 2,00,000 or more needs the buyer's PAN
+    # (or GSTIN) on record. A PAN supplied with the invoice is stored on the
+    # party. Exports are the seller's declaration to a buyer outside India,
+    # who may furnish Form 60 in place of a PAN; they are not gated here.
+    if not is_export and pan_required_for_sale(grand_total, customer.get("pan"), customer.get("gstin")):
+        if payload.pan is None:
+            raise HTTPException(status_code=422, detail=pan_required_message(grand_total))
+        await db.execute(
+            text("UPDATE caratloop.parties SET pan = :pan WHERE id = :pid AND company_id = :cid"),
+            {"pan": payload.pan, "pid": str(payload.customer_id), "cid": company_id},
+        )
+        customer = dict(customer)
+        customer["pan"] = payload.pan
 
     try:
         # ─── Generate invoice number ──────────────────────────────────────────
@@ -313,13 +479,17 @@ async def create_sales_invoice(
             invoice_no = f"CL/{fy['year_label']}/{inv_count:05d}"
 
         inv_date_obj = date.fromisoformat(str(payload.invoice_date)) if isinstance(payload.invoice_date, str) else payload.invoice_date
-        is_inter_state = buyer_state != seller_state
+        # An export is inter-state by definition (s.7(5)(a) IGST Act).
+        is_inter_state = is_export or buyer_state != seller_state
         inv_result = await db.execute(
             text("""
                 INSERT INTO caratloop.sales_invoices (
-                    company_id, fiscal_year_id, invoice_no, invoice_date,
+                    company_id, fiscal_year_id, invoice_no, invoice_date, invoice_type,
                     customer_id, customer_gstin, customer_state_code,
                     place_of_supply, is_inter_state,
+                    currency, exchange_rate, export_type,
+                    shipping_bill_no, shipping_bill_date, port_code, buyer_country, lut_no,
+                    fc_taxable_value, fc_grand_total,
                     subtotal_material_value, subtotal_making_charges, subtotal_other_charges,
                     taxable_material_value, taxable_making_value,
                     igst_material, igst_making,
@@ -329,9 +499,12 @@ async def create_sales_invoice(
                     payment_terms,
                     narration, status, created_by
                 ) VALUES (
-                    :cid, :fyid, :inv_no, :inv_date,
+                    :cid, :fyid, :inv_no, :inv_date, :inv_type,
                     :cust_id, :cust_gstin, :cust_state,
                     :pos, :is_inter,
+                    :currency, :fx, :export_type,
+                    :sb_no, :sb_date, :port_code, :buyer_country, :lut_no,
+                    :fc_taxable, :fc_grand,
                     :mat_val, :mak_val, :other_val,
                     :mat_val, :mak_val,
                     :igst_mat, :igst_mak,
@@ -348,11 +521,22 @@ async def create_sales_invoice(
                 "fyid": str(fy["id"]),
                 "inv_no": invoice_no,
                 "inv_date": inv_date_obj,
+                "inv_type": payload.invoice_type,
                 "cust_id": str(payload.customer_id),
                 "cust_gstin": customer["gstin"],
                 "cust_state": buyer_state,
                 "pos": buyer_state,
                 "is_inter": is_inter_state,
+                "currency": payload.currency,
+                "fx": fx,
+                "export_type": payload.export_type,
+                "sb_no": payload.shipping_bill_no,
+                "sb_date": payload.shipping_bill_date,
+                "port_code": payload.port_code,
+                "buyer_country": payload.buyer_country,
+                "lut_no": payload.lut_no,
+                "fc_taxable": fc_taxable_value,
+                "fc_grand": fc_grand_total,
                 "mat_val": total_material,
                 "mak_val": total_making,
                 "other_val": total_other,
@@ -391,11 +575,12 @@ async def create_sales_invoice(
                     default_uom = await resolve_default_uom(db)
                 uom_id = default_uom
             g = cl["gst"]
-            disc_amt = (line.material_value + line.making_charges) * (line.discount_pct / 100)
+            # Line columns are rupees, like every money column.
+            disc_amt = (cl["mat_value_inr"] + cl["mak_value_inr"]) * (line.discount_pct / 100)
             await db.execute(
                 text("""
                     INSERT INTO caratloop.sales_invoice_lines (
-                        invoice_id, sequence_no, product_id, material_id,
+                        invoice_id, sequence_no, product_id, material_id, lot_id,
                         hsn_sac_code, description, quantity, uom_id,
                         gross_weight, net_weight, stone_weight, gold_weight, purity,
                         material_value, making_charges, other_charges,
@@ -405,7 +590,7 @@ async def create_sales_invoice(
                         igst_material, igst_making, cgst_material, sgst_material,
                         cgst_making, sgst_making, line_total
                     ) VALUES (
-                        :inv_id, :seq, :product_id, :material_id,
+                        :inv_id, :seq, :product_id, :material_id, :lot_id,
                         :hsn, :descr, :qty, :uom_id,
                         :gw, :nw, :sw, :gldw, :purity,
                         :mat_val, :mak_chg, :oth_chg,
@@ -421,6 +606,7 @@ async def create_sales_invoice(
                     "seq": seq,
                     "product_id": str(line.product_id) if line.product_id else None,
                     "material_id": str(cl["mat_id"]) if cl["mat_id"] else None,
+                    "lot_id": str(cl["lot"]["id"]) if cl["lot"] else None,
                     "hsn": cl["mat_hsn"],
                     "descr": line.description,
                     "qty": line.quantity,
@@ -430,15 +616,15 @@ async def create_sales_invoice(
                     "sw": line.stone_weight,
                     "gldw": line.gold_weight,
                     "purity": line.purity,
-                    "mat_val": line.material_value,
-                    "mak_chg": line.making_charges,
-                    "oth_chg": line.other_charges,
+                    "mat_val": cl["mat_value_inr"],
+                    "mak_chg": cl["mak_value_inr"],
+                    "oth_chg": cl["other_inr"],
                     "disc_pct": line.discount_pct,
                     "disc_amt": disc_amt,
                     "tax_mat": cl["taxable_mat"],
                     "tax_mak": cl["taxable_mak"],
                     "mat_rate": cl["mat_gst_rate"],
-                    "mak_rate": Decimal("5.00"),
+                    "mak_rate": g.making_gst_rate,
                     "igst_m": g.igst_material, "igst_k": g.igst_making,
                     "cgst_m": g.cgst_material, "sgst_m": g.sgst_material,
                     "cgst_k": g.cgst_making, "sgst_k": g.sgst_making,
@@ -497,16 +683,20 @@ async def create_sales_invoice(
                     cogs_by_account[stock_acc] = (
                         cogs_by_account.get(stock_acc, Decimal("0")) + line_cogs
                     )
+                # sequence_no is per company: MAX over the whole table made
+                # one tenant's numbering depend on every other tenant's.
                 await db.execute(
                     text("""
                         INSERT INTO caratloop.stock_ledger_entries (
-                            company_id, fiscal_year_id, location_id, material_id, entry_date,
+                            company_id, fiscal_year_id, location_id, material_id, batch_id, entry_date,
                             direction, transaction_type, quantity, amount, gross_weight, net_weight,
                             source_document_type, source_document_id, source_document_no, sequence_no, created_by
                         ) VALUES (
-                            :cid, :fyid, :loc_id, :mat_id, :entry_date,
+                            :cid, :fyid, :loc_id, :mat_id, :batch_id, :entry_date,
                             'O', 'Sale_Delivery', :qty, :amt, :gw, :nw,
-                            'SalesInvoice', :inv_id, :inv_no, COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, CAST(:created_by AS UUID)
+                            'SalesInvoice', :inv_id, :inv_no,
+                            COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries WHERE company_id = :cid), 0) + 1,
+                            CAST(:created_by AS UUID)
                         )
                     """),
                     {
@@ -514,6 +704,7 @@ async def create_sales_invoice(
                         "fyid": str(fy["id"]),
                         "loc_id": loc_id,
                         "mat_id": mat_id,
+                        "batch_id": str(cl["lot"]["id"]) if cl["lot"] else None,
                         "entry_date": inv_date_obj,
                         "qty": line.quantity,
                         # Cost, not the sale value. Recording line_total here
@@ -527,13 +718,38 @@ async def create_sales_invoice(
                         "created_by": user_id
                     }
                 )
+                if cl["lot"] is not None:
+                    # Nothing left in the parcel: it is sold. The balance is
+                    # re-read so two lines from one lot on one invoice add up.
+                    bal_res = await db.execute(
+                        text(
+                            "SELECT COALESCE(SUM(CASE WHEN direction = 'I' THEN quantity ELSE -quantity END), 0) "
+                            "FROM caratloop.stock_ledger_entries WHERE batch_id = :bid"
+                        ),
+                        {"bid": str(cl["lot"]["id"])},
+                    )
+                    if to_decimal(bal_res.scalar()) <= 0:
+                        await db.execute(
+                            text(
+                                "UPDATE caratloop.stock_batches SET status = 'Sold', updated_at = NOW() "
+                                "WHERE id = :bid AND company_id = :cid"
+                            ),
+                            {"bid": str(cl["lot"]["id"]), "cid": company_id},
+                        )
 
         # ─── Post to GST Output Tax Register [CGST-R56-4] ────────────────────
         return_period = get_return_period(payload.invoice_date)
         # B2B declares the buyer holds a GST registration and routes the
         # invoice into GSTR-1 Table 4 against their GSTIN. Any non-empty
         # string used to qualify, "Unregistered" included.
-        supply_type = "B2B" if is_gstin_shaped(customer.get("gstin")) else "B2C_Large"
+        # An export goes to GSTR-1 Table 6A as WPAY/WOPAY; a bill of supply is
+        # a nil-rated/exempt supply (Table 8).
+        if is_export:
+            supply_type = SUPPLY_TYPE_FOR_EXPORT[payload.export_type]
+        elif is_bill_of_supply:
+            supply_type = "Exempt"
+        else:
+            supply_type = "B2B" if is_gstin_shaped(customer.get("gstin")) else "B2C_Large"
         await db.execute(
             text("""
                 INSERT INTO caratloop.gst_output_tax_register (
@@ -551,7 +767,7 @@ async def create_sales_invoice(
                     :party_id, :party_gstin, :pos, :is_inter, :supply_type,
                     :mat_hsn, :making_sac,
                     :mat_val, :mat_gst_rate,
-                    :mak_val, 5.00,
+                    :mak_val, :mak_gst_rate,
                     :igst, :cgst, :sgst, :total_gst,
                     :created_by
                 )
@@ -577,6 +793,8 @@ async def create_sales_invoice(
                 "mat_val": total_material,
                 "mat_gst_rate": computed_lines[0]["mat_gst_rate"] if computed_lines else Decimal("3.0"),
                 "mak_val": total_making,
+                # 5% on a tax invoice; 0 on a bill of supply or an LUT export.
+                "mak_gst_rate": computed_lines[0]["gst"].making_gst_rate if computed_lines else Decimal("5.00"),
                 "igst": total_igst_mat + total_igst_mak,
                 "cgst": total_cgst_mat + total_cgst_mak,
                 "sgst": total_sgst_mat + total_sgst_mak,
@@ -804,6 +1022,11 @@ async def create_sales_invoice(
             "invoice_id": invoice_id,
             "journal_entry_no": je_no,
             "is_inter_state": is_inter_state,
+            "invoice_type": payload.invoice_type,
+            "export_type": payload.export_type,
+            "currency": payload.currency,
+            "exchange_rate": str(fx),
+            "fc_grand_total": float(fc_grand_total) if fc_grand_total is not None else None,
             "tax_summary": {
                 "material_value": float(total_material),
                 "making_charges": float(total_making),
@@ -854,6 +1077,8 @@ async def list_sales_invoices(
             p.city AS customer_city, p.state_name AS customer_state_name, p.state_code AS customer_state_code,
             p.pincode AS customer_pincode, p.phone AS customer_phone, p.email AS customer_email,
             si.is_inter_state, si.place_of_supply,
+            si.invoice_type, si.export_type, si.currency, si.exchange_rate,
+            si.fc_grand_total, si.buyer_country,
             si.subtotal_material_value, si.subtotal_making_charges,
             si.total_gst, si.tcs_amount, si.grand_total,
             si.e_invoice_status, si.e_invoice_irn, si.eway_bill_no
@@ -916,6 +1141,9 @@ async def get_sales_invoice(
                 si.cgst_making, si.sgst_making, si.total_gst, si.round_off,
                 si.grand_total, si.amount_in_words,
                 si.tcs_section, si.tcs_rate, si.tcs_base, si.tcs_amount,
+                si.currency, si.exchange_rate, si.export_type,
+                si.shipping_bill_no, si.shipping_bill_date, si.port_code,
+                si.buyer_country, si.lut_no, si.fc_taxable_value, si.fc_grand_total,
                 si.e_invoice_irn, si.e_invoice_ack_no, si.e_invoice_ack_date,
                 si.e_invoice_qr_code, si.e_invoice_cancelled_at,
                 si.e_invoice_status, si.eway_bill_no, si.eway_bill_date, si.eway_bill_valid_upto,
@@ -947,10 +1175,12 @@ async def get_sales_invoice(
                 l.material_gst_rate, l.making_gst_rate,
                 l.igst_material, l.igst_making, l.cgst_material, l.sgst_material,
                 l.cgst_making, l.sgst_making, l.line_total,
-                m.code AS material_code, m.name AS material_name
+                m.code AS material_code, m.name AS material_name,
+                l.lot_id, b.lot_no
             FROM caratloop.sales_invoice_lines l
             LEFT JOIN caratloop.materials m ON m.id = l.material_id
             LEFT JOIN caratloop.units_of_measure u ON u.id = l.uom_id
+            LEFT JOIN caratloop.stock_batches b ON b.id = l.lot_id
             WHERE l.invoice_id = :id
             ORDER BY l.sequence_no
         """),
@@ -1008,6 +1238,7 @@ async def delete_sales_invoice(
     session_id = current_user.get("session_id", "0")
 
     await set_audit_context(db, user_id, session_id, ip_address, reason)
+    await assert_period_open(db, company_id, date.today(), what="This cancellation")
 
     try:
         # 1. Fetch invoice
@@ -1122,21 +1353,36 @@ async def delete_sales_invoice(
                 {"rev_je_id": rev_je_id, "orig_je_id": orig_je_id}
             )
 
-        # 4. Reverse Stock Ledger Entries
+        # 4. Reverse Stock Ledger Entries. Company-scoped: invoice numbers
+        # repeat across tenants. batch_id is carried so a lot's carats come
+        # back into the lot, and sequence_no is per company.
         await db.execute(
             text("""
                 INSERT INTO caratloop.stock_ledger_entries (
-                    company_id, fiscal_year_id, location_id, material_id, entry_date,
+                    company_id, fiscal_year_id, location_id, material_id, batch_id, entry_date,
                     direction, transaction_type, quantity, amount, gross_weight, net_weight,
                     source_document_type, source_document_id, source_document_no, sequence_no, created_by
                 )
-                SELECT company_id, fiscal_year_id, location_id, material_id, CURRENT_DATE,
-                    'I', 'Return_Inward', quantity, amount, gross_weight, net_weight,
-                    'SalesInvoice', source_document_id, 'CNCL-' || source_document_no, COALESCE((SELECT MAX(sequence_no) FROM caratloop.stock_ledger_entries), 0) + 1, CAST(:created_by AS UUID)
-                FROM caratloop.stock_ledger_entries
-                WHERE source_document_no = :inv_no AND direction = 'O'
+                SELECT s.company_id, s.fiscal_year_id, s.location_id, s.material_id, s.batch_id, CURRENT_DATE,
+                    'I', 'Return_Inward', s.quantity, s.amount, s.gross_weight, s.net_weight,
+                    'SalesInvoice', s.source_document_id, 'CNCL-' || s.source_document_no,
+                    COALESCE((SELECT MAX(x.sequence_no) FROM caratloop.stock_ledger_entries x WHERE x.company_id = :cid), 0)
+                        + ROW_NUMBER() OVER (ORDER BY s.id),
+                    CAST(:created_by AS UUID)
+                FROM caratloop.stock_ledger_entries s
+                WHERE s.source_document_no = :inv_no AND s.direction = 'O' AND s.company_id = :cid
             """),
-            {"inv_no": invoice_no, "created_by": user_id}
+            {"inv_no": invoice_no, "created_by": user_id, "cid": company_id}
+        )
+        # A lot the invoice emptied is open again now that its carats are back.
+        await db.execute(
+            text("""
+                UPDATE caratloop.stock_batches b SET status = 'Open', updated_at = NOW()
+                WHERE b.company_id = :cid AND b.status = 'Sold'
+                  AND b.id IN (SELECT l.lot_id FROM caratloop.sales_invoice_lines l
+                               WHERE l.invoice_id = :inv_id AND l.lot_id IS NOT NULL)
+            """),
+            {"cid": company_id, "inv_id": str(inv_id)},
         )
 
         # 5. Reverse GST output tax with a credit note.
@@ -1218,3 +1464,85 @@ async def delete_sales_invoice(
             detail="Failed to delete invoice. The operation was rolled back and nothing was saved.",
         ) from e
 
+
+
+# ─── GSTR-1 Table 6A feed ────────────────────────────────────────────────────
+#
+# TODO(gst.py owner): wire ``export_invoices_for_period`` into
+# ``export_gstr1_json`` in app/api/v1/gst.py as the ``exp`` section of the
+# GSTR-1 JSON (and an "Exports (Table 6A)" sheet in the Excel export). This
+# module may not edit gst.py; the helper returns the section ready to drop in:
+#
+#     from app.api.v1.sales import export_invoices_for_period
+#     gstr1["exp"] = await export_invoices_for_period(db, company_id, period)
+#
+async def export_invoices_for_period(db: AsyncSession, company_id, period: str) -> list[dict]:
+    """GSTR-1 ``exp`` section (Table 6A) for one return period, GSTN JSON shape.
+
+    One entry per export kind that has invoices::
+
+        [{"exp_typ": "WPAY" | "WOPAY",
+          "inv": [{"inum", "idt" (DD-MM-YYYY), "val", "sbpcode", "sbnum",
+                   "sbdt" (DD-MM-YYYY), "itms": [{"txval", "rt", "iamt", "csamt"}]}]}]
+
+    Read from the invoices themselves rather than the output register, because
+    the shipping bill particulars live on the invoice. Cancelled invoices are
+    left out (their credit note reverses the register row). Two item rows per
+    invoice where making charges exist: material at its rate, making at its.
+    """
+    res = await db.execute(
+        text("""
+            SELECT si.invoice_no, si.invoice_date, si.export_type, si.grand_total,
+                   si.shipping_bill_no, si.shipping_bill_date, si.port_code,
+                   si.taxable_material_value, si.taxable_making_value,
+                   si.igst_material, si.igst_making,
+                   (SELECT MAX(l.material_gst_rate) FROM caratloop.sales_invoice_lines l
+                     WHERE l.invoice_id = si.id) AS material_gst_rate,
+                   (SELECT MAX(l.making_gst_rate) FROM caratloop.sales_invoice_lines l
+                     WHERE l.invoice_id = si.id) AS making_gst_rate
+            FROM caratloop.sales_invoices si
+            WHERE si.company_id = :cid
+              AND si.invoice_type = 'Export_Invoice'
+              AND si.status <> 'Cancelled'
+              AND to_char(si.invoice_date, 'YYYY-MM') = :period
+            ORDER BY si.invoice_date, si.invoice_no
+        """),
+        {"cid": str(company_id), "period": period},
+    )
+    rows = res.mappings().all()
+
+    def _dmy(d) -> str | None:
+        return d.strftime("%d-%m-%Y") if d else None
+
+    sections: dict[str, list[dict]] = {}
+    for r in rows:
+        exp_typ = "WOPAY" if r["export_type"] == "LUT_without_tax" else "WPAY"
+        items = []
+        mat = to_decimal(r["taxable_material_value"])
+        mak = to_decimal(r["taxable_making_value"])
+        if mat > 0 or not items:
+            items.append({
+                "txval": float(round_money(mat)),
+                "rt": float(to_decimal(r["material_gst_rate"] if r["material_gst_rate"] is not None else 3)) if exp_typ == "WPAY" else 0.0,
+                "iamt": float(round_money(r["igst_material"])),
+                "csamt": 0.0,
+            })
+        if mak > 0:
+            items.append({
+                "txval": float(round_money(mak)),
+                "rt": float(to_decimal(r["making_gst_rate"] if r["making_gst_rate"] is not None else 5)) if exp_typ == "WPAY" else 0.0,
+                "iamt": float(round_money(r["igst_making"])),
+                "csamt": 0.0,
+            })
+        inv = {
+            "inum": r["invoice_no"],
+            "idt": _dmy(r["invoice_date"]),
+            "val": float(round_money(r["grand_total"])),
+            "sbpcode": r["port_code"],
+            "sbnum": r["shipping_bill_no"],
+            "sbdt": _dmy(r["shipping_bill_date"]),
+            "itms": items,
+        }
+        sections.setdefault(exp_typ, []).append(inv)
+
+    return [{"exp_typ": k, "inv": v} for k, v in sections.items()]
