@@ -9,7 +9,7 @@ import logging
 from uuid import UUID
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, Union
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -64,6 +64,26 @@ def _as_uuid(value) -> str | None:
         return None
 
 
+DEFAULT_MAKING_GST_RATE = Decimal("5.00")
+
+
+def service_sac_for_register(computed_lines: list) -> str:
+    """The SAC the output register files the making/service leg under.
+
+    Jewellery making is SAC 998892 (shared with job work). An invoice whose
+    every line has no material value and a positive making leg is a pure
+    service supply (a repair: SAC 998722 at 18%), and the register must carry
+    that line's own code so the HSN summary in GSTR-1 is right.
+    """
+    if computed_lines and all(
+        to_decimal(cl["taxable_mat"]) == 0 and to_decimal(cl["taxable_mak"]) > 0 for cl in computed_lines
+    ):
+        own = str(computed_lines[0].get("mat_hsn") or "").strip()
+        if own:
+            return own
+    return JOB_WORK_SAC
+
+
 class InvoiceLineRequest(BaseModel):
     """Money and quantities are Decimal end to end.
 
@@ -74,7 +94,10 @@ class InvoiceLineRequest(BaseModel):
     """
 
     product_id: Optional[UUID] = None
-    material_id: Optional[UUID] = None
+    # The item-master row: its UUID, or its code (the storefront bridge sends
+    # the code a product is mapped to). The lookup accepts either; a UUID is
+    # tried first so a code that happens to look like one still resolves.
+    material_id: Optional[Union[UUID, str]] = None
     hsn_sac_code: Optional[str] = None       # Falls back to the item master
     description: Optional[str] = None
     quantity: Decimal = Field(default=Decimal("1"), ge=0)
@@ -95,6 +118,12 @@ class InvoiceLineRequest(BaseModel):
     # web order line carries its own rate (0.25% loose stones, 3% jewellery)
     # and has no material row here to read one from.
     material_gst_rate: Optional[Decimal] = Field(default=None, ge=0, le=100)
+    # Explicit GST rate on the making / service leg of this line. Absent
+    # means the 5% of SAC 998892 (jewellery making). The storefront bridge
+    # sets 18% for a repair service invoice (SAC 998722), which travels as a
+    # line of zero material and the service value in making_charges so the
+    # posting credits service income rather than material sales.
+    making_gst_rate: Optional[Decimal] = Field(default=None, ge=0, le=100)
     # The gemstone lot this line is taken from. The quantity (carats) is
     # relieved from the lot's own stock ledger entries as well as the
     # material's, and the lot is marked Sold when nothing is left in it.
@@ -327,6 +356,7 @@ async def create_sales_invoice(
                 mat_hsn = m_row["hsn_code"] or mat_hsn
         if line.material_gst_rate is not None:
             mat_gst_rate = line.material_gst_rate
+        mak_gst_rate = line.making_gst_rate if line.making_gst_rate is not None else DEFAULT_MAKING_GST_RATE
 
         # Rule 46(g): every line on a tax invoice carries its HSN. Refuse now
         # rather than write a line the document cannot lawfully print.
@@ -360,6 +390,7 @@ async def create_sales_invoice(
                 making_charges=taxable_mak,
                 export_type=payload.export_type,
                 material_gst_rate=mat_gst_rate,
+                making_gst_rate=mak_gst_rate,
             )
         elif is_bill_of_supply:
             gst = calculate_bill_of_supply(taxable_mat, taxable_mak)
@@ -370,6 +401,7 @@ async def create_sales_invoice(
                 seller_state_code=seller_state,
                 buyer_state_code=buyer_state,
                 material_gst_rate=mat_gst_rate,
+                making_gst_rate=mak_gst_rate,
             )
 
         line_total = (taxable_mat + taxable_mak + other_inr
@@ -750,6 +782,7 @@ async def create_sales_invoice(
             supply_type = "Exempt"
         else:
             supply_type = "B2B" if is_gstin_shaped(customer.get("gstin")) else "B2C_Large"
+        making_sac = service_sac_for_register(computed_lines)
         await db.execute(
             text("""
                 INSERT INTO caratloop.gst_output_tax_register (
@@ -788,8 +821,8 @@ async def create_sales_invoice(
                 "mat_hsn": computed_lines[0]["mat_hsn"] if computed_lines else "",
                 # SAC for the making-charges half. Shared with job work so the
                 # two cannot drift; it was hardcoded here as 998821, the
-                # textile code.
-                "making_sac": JOB_WORK_SAC,
+                # textile code. A service-only invoice (repair) keeps its own SAC.
+                "making_sac": making_sac,
                 "mat_val": total_material,
                 "mat_gst_rate": computed_lines[0]["mat_gst_rate"] if computed_lines else Decimal("3.0"),
                 "mak_val": total_making,

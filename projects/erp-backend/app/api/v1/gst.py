@@ -560,6 +560,18 @@ def _b2cs_summary(rows):
     return out
 
 
+def portal_period(period: str) -> str:
+    """'2026-09' (the register's YYYY-MM) -> '092026', the MMYYYY the GST portal
+    writes in GSTR-1 ``fp`` and GSTR-3B ``ret_period``. Accepts '202609' too."""
+    digits = "".join(ch for ch in str(period or "") if ch.isdigit())
+    if len(digits) != 6:
+        raise ValueError(f"period must be YYYY-MM, got {period!r}")
+    yyyy, mm = digits[:4], digits[4:6]
+    if not 1 <= int(mm) <= 12:
+        raise ValueError(f"period must be YYYY-MM, got {period!r}")
+    return f"{mm}{yyyy}"
+
+
 @router.get("/export/gstr1-json")
 async def export_gstr1_json(period: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     company_id = current_user["company_id"]
@@ -597,7 +609,8 @@ async def export_gstr1_json(period: str, db: AsyncSession = Depends(get_db), cur
     
     gstr1_data = {
         "gstin": company["gstin"] if company else "",
-        "fp": period.replace("-", ""),
+        # The portal's filing period is MMYYYY ('092026'); YYYYMM is refused.
+        "fp": portal_period(period),
         "b2b": [_b2b_entry(row) for row in b2b_rows],
         "b2cl": [_b2cl_entry(row) for row in b2c_rows if _is_b2cl(row)],
         "b2cs": _b2cs_summary([row for row in b2c_rows if not _is_b2cl(row)]),
@@ -674,11 +687,9 @@ def build_gstr3b_json(period: str, out, itc_data, rcm_data, *, gstin: Optional[s
     def f(mapping, key):
         return float((mapping or {}).get(key) or 0)
 
-    # The portal writes return periods as MMYYYY ('082026'), not YYYYMM.
-    yyyy, mm = period[:4], period[5:7]
     return {
         "gstin": gstin or "",
-        "ret_period": f"{mm}{yyyy}",
+        "ret_period": portal_period(period),
         "sup_details": {
             "osup_det": {
                 "txval": f(out, "taxable_value"),

@@ -9,6 +9,12 @@ the same length and alphabet as a real IRN. Acknowledgement numbers are the
 first 15 digits of the same hash, and the "signed" QR is the plain JSON the
 IRP would have put inside its JWS, so the printed QR scans to something
 readable.
+
+Like the IRP, the fake remembers what it has registered (per process, keyed
+on document type, number and date) so ``get_irn_by_doc`` hands back the very
+IrnResult a ``generate_irn`` produced earlier. For a document it never saw it
+answers with the IRN it would issue for the bare document details, which is
+still deterministic, so a sandbox run and a test agree.
 """
 
 from __future__ import annotations
@@ -37,12 +43,25 @@ def deterministic_irn(payload: dict) -> str:
     return hashlib.sha256(canonical(payload).encode("utf-8")).hexdigest()
 
 
+def doc_key(doc_type: str, doc_no: str, doc_date: str) -> tuple[str, str, str]:
+    return (str(doc_type or "").strip().upper(), str(doc_no or "").strip(), str(doc_date or "").strip())
+
+
 class FakeProvider:
     name = "fake"
+
+    # What this process has registered: the IRP keeps the IRN for a document
+    # and so does the fake. Shared across instances because get_provider()
+    # builds a fresh one per request.
+    _issued: dict[tuple[str, str, str], IrnResult] = {}
 
     def __init__(self, now=None):
         self._now = now
         self.calls: list[tuple[str, dict]] = []
+
+    @classmethod
+    def forget_all(cls) -> None:
+        cls._issued.clear()
 
     def _clock(self) -> datetime:
         return self._now or datetime.now(IST).replace(microsecond=0)
@@ -68,7 +87,7 @@ class FakeProvider:
             "Irn": irn,
             "IrnDt": ack_date.strftime("%Y-%m-%d %H:%M:%S"),
         }
-        return IrnResult(
+        result = IrnResult(
             irn=irn,
             ack_no=ack_no,
             ack_date=ack_date,
@@ -76,6 +95,28 @@ class FakeProvider:
             signed_invoice=canonical({"data": payload, "irn": irn}),
             status="ACT",
             raw={"Status": 1, "Data": {"Irn": irn, "AckNo": ack_no}},
+        )
+        FakeProvider._issued[doc_key(doc.get("Typ"), doc.get("No"), doc.get("Dt"))] = result
+        return result
+
+    async def get_irn_by_doc(self, doc_type: str, doc_no: str, doc_date: str) -> IrnResult:
+        """The IRN this fake issued for the document, or the one it would issue
+        for the bare document details when it has not seen it."""
+        key = doc_key(doc_type, doc_no, doc_date)
+        self.calls.append(("get_irn_by_doc", {"doctype": key[0], "docnum": key[1], "docdate": key[2]}))
+        known = FakeProvider._issued.get(key)
+        if known is not None:
+            return known
+        payload = {"DocDtls": {"Typ": key[0], "No": key[1], "Dt": key[2]}}
+        irn = deterministic_irn(payload)
+        ack_no = str(int(irn[:12], 16))[:15].rjust(15, "1")
+        ack_date = self._clock()
+        qr = {"DocNo": key[1], "DocTyp": key[0], "DocDt": key[2], "Irn": irn,
+              "IrnDt": ack_date.strftime("%Y-%m-%d %H:%M:%S")}
+        return IrnResult(
+            irn=irn, ack_no=ack_no, ack_date=ack_date,
+            signed_qr=canonical(qr), signed_invoice=None, status="ACT",
+            raw={"Status": 1, "Data": {"Irn": irn, "AckNo": ack_no, "Status": "ACT"}},
         )
 
     async def cancel_irn(self, irn: str, reason_code: str, remarks: str) -> CancelResult:

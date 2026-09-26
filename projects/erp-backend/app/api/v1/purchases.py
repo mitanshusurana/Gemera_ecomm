@@ -324,12 +324,24 @@ _STOCK_ACCOUNT_BY_CATEGORY = {
 }
 
 
+# Item-master category of a service item (the karigar's making-charge line,
+# job_work.MAKING_MATERIAL_CODE). A service is bought, expensed and taxed like
+# any other line, but nothing arrives in stock, so no stock ledger row.
+SERVICE_CATEGORY = "Service"
+
+
+def is_service_material(category) -> bool:
+    return str(category or "").strip().lower() == SERVICE_CATEGORY.lower()
+
+
 async def _resolve_material(db: AsyncSession, company_id, material_ref, default_uom_id):
-    """(material_id, uom_id, stock_account_id) for a line's material reference.
+    """(material_id, uom_id, stock_account_id, is_service) for a line's material reference.
 
     One lookup instead of the two the create path used to do per line (one
     for the stock ledger, another for the journal), so the two halves of the
-    posting cannot disagree about which material a line is.
+    posting cannot disagree about which material a line is. ``is_service``
+    is True for a 'Service' category item: it is journalled to its account
+    (an expense) but never receipted into stock.
     """
     if not material_ref or not str(material_ref).strip():
         raise HTTPException(status_code=400, detail="Every purchase line must name a stock material.")
@@ -348,7 +360,7 @@ async def _resolve_material(db: AsyncSession, company_id, material_ref, default_
         stock_acc = str(row["stock_account_id"])
     else:
         stock_acc = await _account_id(db, company_id, _STOCK_ACCOUNT_BY_CATEGORY.get(row["category"], "STK-008"))
-    return row["id"], uom_id, stock_acc
+    return row["id"], uom_id, stock_acc, is_service_material(row["category"])
 
 
 def _line_values(item: PurchaseLineRequest) -> tuple[Decimal, Decimal]:
@@ -493,7 +505,7 @@ async def _post_purchase(
     stock_legs: list[tuple[str, Decimal]] = []   # (stock account id, line value) for the journal
     for seq_idx, item in enumerate(payload.items, start=1):
         gst_rate = priced[seq_idx - 1].gst_rate
-        mat_id, line_uom_id, stock_acc = await _resolve_material(db, company_id, item.material_id, default_uom_id)
+        mat_id, line_uom_id, stock_acc, is_service = await _resolve_material(db, company_id, item.material_id, default_uom_id)
         line_mat_val, line_total = _line_values(item)
         stock_legs.append((stock_acc, line_total))
 
@@ -527,6 +539,12 @@ async def _post_purchase(
                 "total": line_total,
             },
         )
+
+        # A service item (the karigar's making-charge bill) is expensed
+        # through the journal below; it never arrives in stock, so no receipt
+        # row: one used to be written and showed up as a phantom balance.
+        if is_service:
+            continue
 
         await db.execute(
             text("""

@@ -1,11 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect from '@/components/ui/ItemSelect';
-import { Save, Loader2 } from 'lucide-react';
+import EInvoicePanel from '@/components/einvoice/EInvoicePanel';
+import { Save, Loader2, QrCode } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { vouchersApi, apiClient } from '@/lib/api';
+
+/** A credit note as the vouchers list returns it (journal entry). */
+interface NoteRow {
+  id: number | string;
+  entry_no: string;
+  entry_date: string;
+  narration: string;
+  total_debit: number | string;
+  status: string;
+}
 
 export default function CreditNotePage() {
   const [party, setParty] = useState('');
@@ -21,6 +32,25 @@ export default function CreditNotePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // The note just posted (for its "Generate IRN"), the recent notes, and the
+  // note whose e-invoice panel is open. A credit note against a B2B invoice
+  // is e-invoiced as a CRN; the panel says so when the note is B2C.
+  const [lastNote, setLastNote] = useState<{ id: number | string; voucher_no: string } | null>(null);
+  const [recent, setRecent] = useState<NoteRow[]>([]);
+  const [einvoiceFor, setEinvoiceFor] = useState<{ id: number | string; no: string } | null>(null);
+
+  const loadRecent = useCallback(async () => {
+    try {
+      const res = await vouchersApi.list({ type: 'Credit_Note', limit: 20, offset: 0 });
+      const rows = Array.isArray(res.data) ? res.data : res.data?.items || res.data?.rows || [];
+      setRecent(rows);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  useEffect(() => { loadRecent(); }, [loadRecent]);
 
   useEffect(() => {
     if (party) {
@@ -61,9 +91,11 @@ export default function CreditNotePage() {
       });
       if (res.data) {
         setSuccess(`Credit Note posted successfully! Voucher No: ${res.data.voucher_no || 'Created'}`);
+        setLastNote(res.data.id ? { id: res.data.id, voucher_no: res.data.voucher_no } : null);
         setWeight('');
         setRate('');
         setSelectedInvoice(null);
+        loadRecent();
       }
     } catch (e: any) {
       console.error(e);
@@ -81,6 +113,24 @@ export default function CreditNotePage() {
           <p className="text-textSecondary mt-1">Auto-generated Voucher Number (Sales Return)</p>
         </div>
       </div>
+
+      {error && (
+        <div className="p-3 rounded-lg border border-danger/30 bg-danger/10 text-danger text-sm">{error}</div>
+      )}
+      {success && (
+        <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg border border-success/30 bg-success/10 text-success text-sm">
+          <span>{success}</span>
+          {lastNote && (
+            <button
+              type="button"
+              onClick={() => setEinvoiceFor({ id: lastNote.id, no: lastNote.voucher_no })}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gold-gradient text-background"
+            >
+              <QrCode className="w-3.5 h-3.5" /> Generate IRN
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="glass-card p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -212,6 +262,62 @@ export default function CreditNotePage() {
           </button>
         </div>
       </div>
+
+      {/* Recent notes: open the e-invoice panel to generate, view or cancel the IRN. */}
+      <div className="glass-card p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-playfair font-medium text-white">Recent credit notes</h3>
+          <p className="text-xs text-textSecondary">A note against a B2B invoice is reported to the IRP as a CRN.</p>
+        </div>
+        {recent.length === 0 ? (
+          <p className="text-sm text-textSecondary">No credit notes yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-textSecondary border-b border-border">
+                  <th className="py-2 pr-4">Voucher</th>
+                  <th className="py-2 pr-4">Date</th>
+                  <th className="py-2 pr-4">Narration</th>
+                  <th className="py-2 pr-4 text-right">Amount</th>
+                  <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 text-right">e-Invoice</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((row) => (
+                  <tr key={String(row.id)} className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-mono text-white">{row.entry_no}</td>
+                    <td className="py-2 pr-4 text-textSecondary">{row.entry_date ? new Date(row.entry_date).toLocaleDateString('en-IN') : '—'}</td>
+                    <td className="py-2 pr-4 text-textSecondary truncate max-w-[24rem]" title={row.narration}>{row.narration}</td>
+                    <td className="py-2 pr-4 text-right text-white">{formatCurrency(Number(row.total_debit || 0))}</td>
+                    <td className="py-2 pr-4 text-textSecondary">{row.status}</td>
+                    <td className="py-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setEinvoiceFor({ id: row.id, no: row.entry_no })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border text-white hover:border-primary"
+                      >
+                        <QrCode className="w-3.5 h-3.5" /> IRN
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {einvoiceFor && (
+        <EInvoicePanel
+          kind="credit_note"
+          invoiceId={String(einvoiceFor.id)}
+          invoiceNo={einvoiceFor.no}
+          onClose={() => setEinvoiceFor(null)}
+          onChanged={loadRecent}
+        />
+      )}
     </div>
   );
 }

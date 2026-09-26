@@ -10,6 +10,14 @@ nothing wrote them. This module does, and keeps a log of every exchange with
 the provider in caratloop.einvoice_log, success or failure, so a disputed IRN
 can be traced to the exact request and response.
 
+A credit note against a B2B invoice is e-invoiced the same way (Typ CRN with
+the invoice it reduces in PrecDocDtls): /gst/einvoice/credit-notes/{id}. The
+note is a journal entry, so its IRN lives in caratloop.einvoice_documents
+rather than on the entry. When the IRP refuses a generate with 2150 (it
+already holds an IRN for that document: a retry after a timeout, or a save
+that failed) the IRN is fetched by document details and recorded as
+recovered; both calls are logged.
+
 The e-way bill is generated from the IRN (Part A comes from the invoice, Part
 B from the transport details posted here). Jewellery under Chapter 71 is
 exempt from the e-way bill under Rule 138(14) read with Annexure, except where
@@ -23,7 +31,8 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from decimal import Decimal
+from typing import Any, Mapping, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -44,7 +53,9 @@ from app.einvoice.provider import (
     ProviderError,
     TransportDetails,
 )
-from app.einvoice.schema import EInvoiceValidationError, build_einvoice_payload
+from app.einvoice.recovery import ProviderCall, generate_or_recover
+from app.einvoice.schema import EInvoiceValidationError, build_credit_note_payload, build_einvoice_payload
+from app.tax.gst_engine import calculate_jewelry_gst
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +64,18 @@ router = APIRouter(tags=["e-Invoice & e-Way Bill"])
 # einvoice_log.action and .status vocabularies; the CHECKs in 0007 permit
 # exactly these. Passed as bind parameters, so test_einvoice.py compares the
 # constants against the CHECKs directly.
-LOG_ACTIONS = frozenset({"Generate_IRN", "Cancel_IRN", "Generate_EWB", "Cancel_EWB"})
+LOG_ACTIONS = frozenset({"Generate_IRN", "Cancel_IRN", "Get_IRN_By_Doc", "Generate_EWB", "Cancel_EWB"})
 LOG_STATUSES = frozenset({"Success", "Failed"})
 
 STATUS_NOT_GENERATED = "Not_Generated"
 STATUS_GENERATED = "Generated"
 STATUS_CANCELLED = "Cancelled"
+
+# einvoice_documents.document_type and .status; the CHECKs in 0011 permit
+# exactly these.
+DOCUMENT_TYPES = frozenset({"Invoice", "Credit_Note"})
+DOCUMENT_STATUSES = frozenset({STATUS_NOT_GENERATED, STATUS_GENERATED, STATUS_CANCELLED})
+DOC_CREDIT_NOTE = "Credit_Note"
 
 TRANSPORT_MODES = {"1": "Road", "2": "Rail", "3": "Air", "4": "Ship"}
 
@@ -143,16 +160,18 @@ async def _log(
     status: str,
     error: Optional[str],
     user_id: str,
+    journal_entry_id: Optional[int] = None,
 ) -> None:
     await db.execute(
         text(
             "INSERT INTO caratloop.einvoice_log "
-            "(company_id, invoice_id, action, request_payload, response_payload, status, error, created_by) "
-            "VALUES (:cid, :inv_id, :action, CAST(:req AS JSONB), CAST(:resp AS JSONB), :status, :error, :cb)"
+            "(company_id, invoice_id, journal_entry_id, action, request_payload, response_payload, status, error, created_by) "
+            "VALUES (:cid, :inv_id, :je_id, :action, CAST(:req AS JSONB), CAST(:resp AS JSONB), :status, :error, :cb)"
         ),
         {
             "cid": company_id,
             "inv_id": str(invoice_id),
+            "je_id": journal_entry_id,
             "action": action,
             "req": _jsonable(request_payload) if request_payload is not None else None,
             "resp": _jsonable(response_payload) if response_payload is not None else None,
@@ -161,6 +180,63 @@ async def _log(
             "cb": user_id,
         },
     )
+
+
+async def _log_calls(
+    db: AsyncSession, calls: list[ProviderCall], *, company_id: str, invoice_id: Any, user_id: str,
+    journal_entry_id: Optional[int] = None,
+) -> None:
+    """One log row per provider exchange (a recovered generate makes two)."""
+    for call in calls:
+        await _log(
+            db, company_id=company_id, invoice_id=invoice_id, action=call.action,
+            request_payload=call.request, response_payload=call.response,
+            status=call.status, error=call.error, user_id=user_id, journal_entry_id=journal_entry_id,
+        )
+
+
+async def _fail_generate(
+    db: AsyncSession, exc: ProviderError, *, company_id: str, invoice_id: Any, user_id: str,
+    journal_entry_id: Optional[int] = None,
+) -> None:
+    """Record every call a failed generate made, commit, then 502."""
+    calls = getattr(exc, "provider_calls", None) or [
+        ProviderCall("Generate_IRN", None, exc.details, "Failed", exc.message)
+    ]
+    await _log_calls(db, calls, company_id=company_id, invoice_id=invoice_id, user_id=user_id,
+                     journal_entry_id=journal_entry_id)
+    await db.commit()
+    raise HTTPException(
+        status_code=502,
+        detail=f"The e-invoice provider refused the request: {exc.message}"
+        + (f" (code {exc.code})" if exc.code else ""),
+    )
+
+
+async def _recovered_from_irp(
+    db: AsyncSession, *, company_id: str, invoice_id: Any = None, journal_entry_id: Optional[int] = None,
+) -> bool:
+    """Whether the IRN on record was fetched from the IRP (after a 2150)
+    rather than issued by this ledger's own generate call."""
+    if journal_entry_id is not None:
+        res = await db.execute(
+            text(
+                "SELECT response_payload ->> 'recovered' FROM caratloop.einvoice_log "
+                "WHERE company_id = :cid AND journal_entry_id = :je_id AND status = 'Success' "
+                "AND action IN ('Generate_IRN', 'Get_IRN_By_Doc') ORDER BY created_at DESC LIMIT 1"
+            ),
+            {"cid": company_id, "je_id": journal_entry_id},
+        )
+    else:
+        res = await db.execute(
+            text(
+                "SELECT response_payload ->> 'recovered' FROM caratloop.einvoice_log "
+                "WHERE company_id = :cid AND invoice_id = :inv_id AND journal_entry_id IS NULL AND status = 'Success' "
+                "AND action IN ('Generate_IRN', 'Get_IRN_By_Doc') ORDER BY created_at DESC LIMIT 1"
+            ),
+            {"cid": company_id, "inv_id": str(invoice_id)},
+        )
+    return str(res.scalar() or "").lower() == "true"
 
 
 def _provider_or_503():
@@ -228,12 +304,16 @@ async def get_einvoice(
 
     threshold = to_decimal(settings.EINVOICE_THRESHOLD_INR)
     below_threshold = threshold > 0 and to_decimal(invoice.get("grand_total")) < threshold
+    recovered = bool(invoice.get("e_invoice_irn")) and await _recovered_from_irp(
+        db, company_id=company_id, invoice_id=invoice["id"]
+    )
 
     return {
         "invoice_id": str(invoice["id"]),
         "invoice_no": invoice["invoice_no"],
         "invoice_status": invoice.get("status"),
         "e_invoice_status": invoice.get("e_invoice_status") or STATUS_NOT_GENERATED,
+        "recovered_from_irp": recovered,
         "irn": invoice.get("e_invoice_irn"),
         "ack_no": invoice.get("e_invoice_ack_no"),
         "ack_date": invoice.get("e_invoice_ack_date"),
@@ -296,13 +376,11 @@ async def generate_einvoice(
 
     provider = _provider_or_503()
     try:
-        result = await provider.generate_irn(payload)
+        outcome = await generate_or_recover(provider, payload)
     except ProviderError as exc:
-        await _fail(
-            db, company_id=company_id, invoice_id=invoice["id"], action="Generate_IRN",
-            request_payload=payload, exc=exc, user_id=user_id,
-        )
-        return  # unreachable; _fail raises
+        await _fail_generate(db, exc, company_id=company_id, invoice_id=invoice["id"], user_id=user_id)
+        return  # unreachable; _fail_generate raises
+    result = outcome.result
 
     try:
         await db.execute(
@@ -324,12 +402,7 @@ async def generate_einvoice(
                 "cid": company_id,
             },
         )
-        await _log(
-            db, company_id=company_id, invoice_id=invoice["id"], action="Generate_IRN",
-            request_payload=payload,
-            response_payload={"irn": result.irn, "ack_no": result.ack_no, "ack_date": result.ack_date, "status": result.status, "raw": result.raw},
-            status="Success", error=None, user_id=user_id,
-        )
+        await _log_calls(db, outcome.calls, company_id=company_id, invoice_id=invoice["id"], user_id=user_id)
         await db.commit()
     except HTTPException:
         await db.rollback()
@@ -352,7 +425,385 @@ async def generate_einvoice(
         "ack_no": result.ack_no,
         "ack_date": result.ack_date,
         "e_invoice_status": STATUS_GENERATED,
+        "recovered": outcome.recovered,
         "provider": provider.name,
+    }
+
+
+# ─── Credit notes ────────────────────────────────────────────────────────────
+
+
+def _journal_ref(ref: str) -> tuple[Optional[int], Optional[str]]:
+    """A credit note is addressed by its journal entry: the bigint id the
+    vouchers API returns, or the entry's UUID. (id, uuid), one of them set."""
+    value = str(ref or "").strip()
+    if value.isdigit():
+        return int(value), None
+    try:
+        return None, str(UUID(value))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="journal_entry_id must be the entry's id or UUID.")
+
+
+def credit_note_lines(register: Mapping[str, Any], seller_state: str) -> list[dict]:
+    """The note's item rows in the shape build_items reads, from its output
+    tax register row: a material leg at the material rate and, when the note
+    reduced making charges, a making leg at the making rate. The tax on each
+    leg is recomputed with the same engine that posted the note, so the
+    items agree with the register to the paisa.
+    """
+    mat = to_decimal(register.get("taxable_material_value") or 0)
+    mak = to_decimal(register.get("taxable_making_value") or 0)
+    gst = calculate_jewelry_gst(
+        material_value=mat,
+        making_charges=mak,
+        seller_state_code=seller_state,
+        buyer_state_code=str(register.get("place_of_supply") or seller_state),
+        material_gst_rate=to_decimal(register.get("material_gst_rate") or 3),
+        making_gst_rate=to_decimal(register.get("making_gst_rate") or 5),
+    )
+    return [{
+        "sequence_no": 1,
+        "hsn_sac_code": register.get("hsn_material") or (register.get("hsn_making") if mat == 0 else None),
+        "description": (register.get("remarks") or "Credit note")[:300],
+        "quantity": Decimal("1"),
+        "uom": "OTH",
+        "material_value": mat, "taxable_material": mat,
+        "making_charges": mak, "taxable_making": mak,
+        "other_charges": Decimal("0"), "discount_pct": Decimal("0"),
+        "making_sac": register.get("hsn_making"),
+        "material_gst_rate": gst.material_gst_rate, "making_gst_rate": gst.making_gst_rate,
+        "igst_material": gst.igst_material, "cgst_material": gst.cgst_material, "sgst_material": gst.sgst_material,
+        "igst_making": gst.igst_making, "cgst_making": gst.cgst_making, "sgst_making": gst.sgst_making,
+        "line_total": mat + mak + gst.total_gst,
+    }]
+
+
+async def _load_credit_note(db: AsyncSession, company_id: str, ref: str):
+    """(entry, original invoice, register row or None, party, company) for a
+    Credit_Note journal entry of this company."""
+    je_id, je_uuid = _journal_ref(ref)
+    je_res = await db.execute(
+        text(
+            "SELECT id, entry_uuid, entry_no, entry_date, entry_type, narration, reference_no, "
+            "       reference_type, reference_id, total_debit, status "
+            "FROM caratloop.journal_entries "
+            "WHERE company_id = CAST(:cid AS UUID) AND entry_type = 'Credit_Note' "
+            "  AND (id = CAST(:jid AS BIGINT) OR entry_uuid = CAST(:juuid AS UUID))"
+        ),
+        {"cid": company_id, "jid": je_id, "juuid": je_uuid},
+    )
+    entry = je_res.mappings().first()
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+
+    # The invoice the note reduces: reference_id (CreditNote -> invoice id)
+    # since the note vouchers were written; older rows carry the invoice
+    # number in reference_no (the bridge writes '<invoice no>/CN/<rma>').
+    ref_no = str(entry.get("reference_no") or "").split("/CN/")[0].strip()
+    inv_res = await db.execute(
+        text(
+            "SELECT * FROM caratloop.sales_invoices "
+            "WHERE company_id = CAST(:cid AS UUID) "
+            "  AND (id = CAST(:rid AS UUID) OR invoice_no = :ino) "
+            "ORDER BY CASE WHEN id = CAST(:rid AS UUID) THEN 0 ELSE 1 END LIMIT 1"
+        ),
+        {"cid": company_id, "rid": str(entry["reference_id"]) if entry.get("reference_id") else None, "ino": ref_no or None},
+    )
+    invoice = inv_res.mappings().first()
+    if invoice is None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"The invoice credit note {entry['entry_no']} reduces could not be found; it cannot be e-invoiced.",
+        )
+
+    reg_res = await db.execute(
+        text(
+            "SELECT * FROM caratloop.gst_output_tax_register "
+            "WHERE company_id = CAST(:cid AS UUID) AND is_credit_note AND invoice_no = :note_no "
+            "ORDER BY created_at DESC LIMIT 1"
+        ),
+        {"cid": company_id, "note_no": entry["entry_no"]},
+    )
+    register = reg_res.mappings().first()
+
+    party_res = await db.execute(
+        text("SELECT * FROM caratloop.parties WHERE id = :pid AND company_id = :cid"),
+        {"pid": str(invoice["customer_id"]), "cid": company_id},
+    )
+    party = party_res.mappings().first()
+    if party is None:
+        raise HTTPException(status_code=409, detail="The invoice's customer is no longer on the party master.")
+
+    comp_res = await db.execute(text("SELECT * FROM caratloop.companies WHERE id = :cid"), {"cid": company_id})
+    company = comp_res.mappings().first()
+    if company is None:
+        raise HTTPException(status_code=409, detail="Company master record not found.")
+    return dict(entry), dict(invoice), (dict(register) if register else None), dict(party), dict(company)
+
+
+def _credit_note_payload(entry: dict, invoice: dict, register: Optional[dict], party: dict, company: dict) -> dict:
+    if register is None:
+        raise EInvoiceValidationError([
+            f"No output tax register row is recorded for credit note {entry['entry_no']}; "
+            "the note's values cannot be established."
+        ])
+    seller_state = str(company.get("state_code") or settings.COMPANY_STATE_CODE)
+    lines = credit_note_lines(register, seller_state)
+    note = {
+        "note_no": entry["entry_no"],
+        "note_date": entry["entry_date"],
+        "grand_total": entry["total_debit"],
+        "place_of_supply": register.get("place_of_supply") or invoice.get("place_of_supply"),
+        "is_inter_state": register.get("is_inter_state", invoice.get("is_inter_state")),
+        "customer_gstin": register.get("party_gstin") or invoice.get("customer_gstin"),
+    }
+    return build_credit_note_payload(company, note, invoice, lines, party)
+
+
+async def _document_row(db: AsyncSession, company_id: str, document_type: str, document_id: Any) -> Optional[dict]:
+    res = await db.execute(
+        text(
+            "SELECT * FROM caratloop.einvoice_documents "
+            "WHERE company_id = CAST(:cid AS UUID) AND document_type = :dtype AND document_id = CAST(:did AS UUID)"
+        ),
+        {"cid": company_id, "dtype": document_type, "did": str(document_id)},
+    )
+    row = res.mappings().first()
+    return dict(row) if row else None
+
+
+@router.get("/einvoice/credit-notes/{journal_entry_id}")
+async def get_credit_note_einvoice(
+    journal_entry_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """The stored IRN for a credit note plus the CRN document it would send."""
+    company_id = str(current_user["company_id"])
+    entry, invoice, register, party, company = await _load_credit_note(db, company_id, journal_entry_id)
+    doc = await _document_row(db, company_id, DOC_CREDIT_NOTE, entry["entry_uuid"]) or {}
+
+    payload: Optional[dict] = None
+    errors: list[str] = []
+    try:
+        payload = _credit_note_payload(entry, invoice, register, party, company)
+    except EInvoiceValidationError as exc:
+        errors = exc.errors
+
+    log_res = await db.execute(
+        text(
+            "SELECT id, action, status, error, created_at "
+            "FROM caratloop.einvoice_log WHERE journal_entry_id = :je_id AND company_id = :cid "
+            "ORDER BY created_at DESC LIMIT 20"
+        ),
+        {"je_id": entry["id"], "cid": company_id},
+    )
+    recovered = bool(doc.get("irn")) and await _recovered_from_irp(db, company_id=company_id, journal_entry_id=entry["id"])
+
+    return {
+        "journal_entry_id": entry["id"],
+        "entry_uuid": str(entry["entry_uuid"]),
+        "note_no": entry["entry_no"],
+        "note_date": entry["entry_date"],
+        "note_status": entry.get("status"),
+        "against_invoice_no": invoice["invoice_no"],
+        "original_invoice_id": str(invoice["id"]),
+        "e_invoice_status": doc.get("status") or STATUS_NOT_GENERATED,
+        "recovered_from_irp": recovered,
+        "irn": doc.get("irn"),
+        "ack_no": doc.get("ack_no"),
+        "ack_date": doc.get("ack_date"),
+        "qr_code": doc.get("signed_qr"),
+        "cancelled_at": doc.get("cancelled_at"),
+        "provider": (settings.EINVOICE_PROVIDER or "disabled").lower(),
+        "payload": payload,
+        "validation_errors": errors,
+        "cancel_reasons": IRN_CANCEL_REASONS,
+        "log": [dict(r) for r in log_res.mappings().all()],
+    }
+
+
+@router.post("/einvoice/credit-notes/{journal_entry_id}/generate", dependencies=[Depends(require(*CAN_POST))])
+async def generate_credit_note_einvoice(
+    journal_entry_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Build the CRN document, send it, record the IRN in einvoice_documents.
+
+    A 2150 from the IRP (it already holds an IRN for this note) is answered
+    by fetching that IRN and storing it; the response then says
+    ``recovered: true``.
+    """
+    user_id, company_id, ip, session_id = _ctx(request, current_user)
+    await set_audit_context(db, user_id, session_id, ip, "e-Invoice IRN generation (credit note)")
+
+    entry, invoice, register, party, company = await _load_credit_note(db, company_id, journal_entry_id)
+    if entry.get("status") == "Reversed":
+        raise HTTPException(status_code=409, detail="The credit note is reversed; a reversed note is not e-invoiced.")
+    doc = await _document_row(db, company_id, DOC_CREDIT_NOTE, entry["entry_uuid"]) or {}
+    if doc.get("status") == STATUS_GENERATED and doc.get("irn"):
+        raise HTTPException(status_code=409, detail=f"An IRN already exists for {entry['entry_no']}: {doc['irn']}")
+    if doc.get("status") == STATUS_CANCELLED:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"The IRN for {entry['entry_no']} was cancelled. The IRP does not re-register a "
+                "cancelled document number; raise a fresh credit note instead."
+            ),
+        )
+
+    try:
+        payload = _credit_note_payload(entry, invoice, register, party, company)
+    except EInvoiceValidationError as exc:
+        raise HTTPException(status_code=422, detail="Credit note cannot be e-invoiced: " + "; ".join(exc.errors))
+
+    provider = _provider_or_503()
+    try:
+        outcome = await generate_or_recover(provider, payload)
+    except ProviderError as exc:
+        await _fail_generate(
+            db, exc, company_id=company_id, invoice_id=invoice["id"], user_id=user_id, journal_entry_id=entry["id"],
+        )
+        return  # unreachable
+    result = outcome.result
+
+    try:
+        await db.execute(
+            text(
+                "INSERT INTO caratloop.einvoice_documents "
+                "(company_id, document_type, document_id, document_no, irn, ack_no, ack_date, "
+                " signed_qr, signed_invoice, status, cancelled_at, updated_at) "
+                "VALUES (CAST(:cid AS UUID), :dtype, CAST(:did AS UUID), :dno, :irn, :ack_no, :ack_date, "
+                "        :qr, :signed, :status, NULL, NOW()) "
+                "ON CONFLICT (company_id, document_type, document_id) DO UPDATE SET "
+                "  document_no = EXCLUDED.document_no, irn = EXCLUDED.irn, ack_no = EXCLUDED.ack_no, "
+                "  ack_date = EXCLUDED.ack_date, signed_qr = EXCLUDED.signed_qr, "
+                "  signed_invoice = EXCLUDED.signed_invoice, status = EXCLUDED.status, "
+                "  cancelled_at = NULL, updated_at = NOW()"
+            ),
+            {
+                "cid": company_id, "dtype": DOC_CREDIT_NOTE, "did": str(entry["entry_uuid"]),
+                "dno": str(entry["entry_no"])[:30],
+                "irn": result.irn, "ack_no": result.ack_no[:20], "ack_date": result.ack_date,
+                "qr": result.signed_qr, "signed": result.signed_invoice, "status": STATUS_GENERATED,
+            },
+        )
+        await _log_calls(
+            db, outcome.calls, company_id=company_id, invoice_id=invoice["id"], user_id=user_id,
+            journal_entry_id=entry["id"],
+        )
+        await db.commit()
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as exc:
+        await db.rollback()
+        logger.exception("Credit note IRN was issued but could not be recorded")
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"The IRP issued IRN {result.irn} for {entry['entry_no']} but it could not be saved. "
+                "Record it manually from the provider portal; nothing else was changed."
+            ),
+        ) from exc
+
+    return {
+        "status": "success",
+        "note_no": entry["entry_no"],
+        "journal_entry_id": entry["id"],
+        "irn": result.irn,
+        "ack_no": result.ack_no,
+        "ack_date": result.ack_date,
+        "e_invoice_status": STATUS_GENERATED,
+        "recovered": outcome.recovered,
+        "provider": provider.name,
+    }
+
+
+@router.post("/einvoice/credit-notes/{journal_entry_id}/cancel", dependencies=[Depends(require(*CAN_AMEND))])
+async def cancel_credit_note_einvoice(
+    journal_entry_id: str,
+    payload: CancelIrnRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Cancel the note's IRN at the IRP (within 24 hours of acknowledgement).
+    The note itself stays in the books."""
+    user_id, company_id, ip, session_id = _ctx(request, current_user)
+    await set_audit_context(db, user_id, session_id, ip, payload.reason)
+    if payload.reason_code not in IRN_CANCEL_REASONS:
+        raise HTTPException(
+            status_code=422,
+            detail="reason_code must be one of " + ", ".join(f"{k} ({v})" for k, v in IRN_CANCEL_REASONS.items()),
+        )
+
+    entry, invoice, _register, _party, _company = await _load_credit_note(db, company_id, journal_entry_id)
+    doc = await _document_row(db, company_id, DOC_CREDIT_NOTE, entry["entry_uuid"]) or {}
+    irn = doc.get("irn")
+    if doc.get("status") != STATUS_GENERATED or not irn:
+        raise HTTPException(status_code=409, detail="This credit note has no active IRN to cancel.")
+    ack = doc.get("ack_date")
+    if ack is not None:
+        if isinstance(ack, str):
+            ack = datetime.fromisoformat(ack)
+        if ack.tzinfo is None:
+            ack = ack.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - ack > timedelta(hours=IRN_CANCEL_WINDOW_HOURS):
+            raise HTTPException(
+                status_code=409,
+                detail=f"The IRP accepts cancellation only within {IRN_CANCEL_WINDOW_HOURS} hours of the acknowledgement.",
+            )
+
+    provider = _provider_or_503()
+    req = {"Irn": irn, "CnlRsn": payload.reason_code, "CnlRem": payload.remarks}
+    try:
+        result = await provider.cancel_irn(irn, payload.reason_code, payload.remarks)
+    except ProviderError as exc:
+        await _log(
+            db, company_id=company_id, invoice_id=invoice["id"], action="Cancel_IRN",
+            request_payload=req, response_payload=exc.details, status="Failed", error=exc.message,
+            user_id=user_id, journal_entry_id=entry["id"],
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=502,
+            detail=f"The e-invoice provider refused the request: {exc.message}"
+            + (f" (code {exc.code})" if exc.code else ""),
+        )
+
+    try:
+        await db.execute(
+            text(
+                "UPDATE caratloop.einvoice_documents SET status = :status, cancelled_at = :at, updated_at = NOW() "
+                "WHERE company_id = CAST(:cid AS UUID) AND document_type = :dtype AND document_id = CAST(:did AS UUID)"
+            ),
+            {"status": STATUS_CANCELLED, "at": result.cancel_date, "cid": company_id,
+             "dtype": DOC_CREDIT_NOTE, "did": str(entry["entry_uuid"])},
+        )
+        await _log(
+            db, company_id=company_id, invoice_id=invoice["id"], action="Cancel_IRN",
+            request_payload=req, response_payload={"irn": result.irn, "cancel_date": result.cancel_date, "raw": result.raw},
+            status="Success", error=None, user_id=user_id, journal_entry_id=entry["id"],
+        )
+        await db.commit()
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as exc:
+        await db.rollback()
+        logger.exception("Credit note IRN cancellation could not be recorded")
+        raise HTTPException(status_code=500, detail="The IRN was cancelled at the IRP but could not be recorded here.") from exc
+
+    return {
+        "status": "success",
+        "note_no": entry["entry_no"],
+        "irn": irn,
+        "e_invoice_status": STATUS_CANCELLED,
+        "cancelled_at": result.cancel_date,
     }
 
 

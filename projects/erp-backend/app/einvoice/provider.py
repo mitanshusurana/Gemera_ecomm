@@ -96,7 +96,13 @@ class EwbCancelResult:
 
 
 class Provider(Protocol):
-    """The four things a GSP does for this ERP, plus authentication."""
+    """What a GSP does for this ERP, plus authentication.
+
+    ``get_irn_by_doc`` is the recovery path: when the IRP answers a generate
+    with error 2150 (an IRN already exists for this document), the IRN it
+    issued earlier is fetched by document type, number and date and stored
+    as if the generate had succeeded.
+    """
 
     name: str
 
@@ -104,11 +110,30 @@ class Provider(Protocol):
 
     async def generate_irn(self, payload: dict) -> IrnResult: ...
 
+    async def get_irn_by_doc(self, doc_type: str, doc_no: str, doc_date: str) -> IrnResult: ...
+
     async def cancel_irn(self, irn: str, reason_code: str, remarks: str) -> CancelResult: ...
 
     async def generate_ewaybill_by_irn(self, irn: str, transport: TransportDetails) -> EwbResult: ...
 
     async def cancel_ewaybill(self, ewb_no: str, reason: str) -> EwbCancelResult: ...
+
+
+# NIC error code for "IRN already generated for this document" (the IRP
+# refuses a second registration of the same type + number + date). The
+# InfoDtls of that refusal carry the existing IRN, but not every GSP passes
+# them on, so the recovery is a separate lookup by document details.
+DUPLICATE_IRN_CODE = "2150"
+
+
+def is_duplicate_irn_error(exc: ProviderError) -> bool:
+    if str(exc.code or "").strip() == DUPLICATE_IRN_CODE:
+        return True
+    details = exc.details if isinstance(exc.details, dict) else {}
+    for err in details.get("errors") or []:
+        if isinstance(err, dict) and str(err.get("ErrorCode", "")).strip() == DUPLICATE_IRN_CODE:
+            return True
+    return False
 
 
 # NIC cancellation reason codes for an IRN (schema 1.1, CnlRsn).

@@ -12,8 +12,9 @@ person, and its postings must be attributable as such):
 
 * ``POST /integrations/ecommerce/sales`` -- a paid (or dispatched
   cash-on-delivery) order, already invoiced by the shop in its own ``WEB/``
-  series. It is recorded under that same number: one supply, one invoice
-  number in the books. The GST is recomputed here from the lines and compared
+  series, or a repair job's service invoice (``SRV/`` series, lines flagged
+  ``is_service``). It is recorded under that same number: one supply, one
+  invoice number in the books. The GST is recomputed here from the lines and compared
   with what the shop charged before anything is written; a mismatch is a 409
   and nothing is saved, because two systems disagreeing about tax is a fact
   the accountant must see, not something to paper over. A settled payment
@@ -133,6 +134,10 @@ class BridgeLine(BaseModel):
     # Value after discount, before tax: the base the shop taxed.
     taxable_value: Decimal = Field(ge=0)
     gst_rate: Decimal = Field(ge=0, le=100)
+    # A service line (repair, SAC 9987xx): no material and no stock. It is
+    # booked through the invoice's making/service leg at gst_rate, so the
+    # ledger credits service income (SAL-003) and not material sales.
+    is_service: bool = False
 
 
 class BridgeTotals(BaseModel):
@@ -230,17 +235,21 @@ def expected_totals(
     invoice posting uses, so the pre-check and the posting cannot drift."""
     taxable = cgst = sgst = igst = Decimal("0")
     for ln in lines:
+        # A service line goes through the making leg, exactly as the posting
+        # books it (see service_line_request), so the two cannot disagree.
+        service = bool(getattr(ln, "is_service", False))
         gst = calculate_jewelry_gst(
-            material_value=to_decimal(ln.taxable_value),
-            making_charges=Decimal("0"),
+            material_value=Decimal("0") if service else to_decimal(ln.taxable_value),
+            making_charges=to_decimal(ln.taxable_value) if service else Decimal("0"),
             seller_state_code=seller_state,
             buyer_state_code=place_of_supply,
             material_gst_rate=to_decimal(ln.gst_rate),
+            making_gst_rate=to_decimal(ln.gst_rate),
         )
         taxable += to_decimal(ln.taxable_value)
-        cgst += gst.cgst_material
-        sgst += gst.sgst_material
-        igst += gst.igst_material
+        cgst += gst.cgst_material + gst.cgst_making
+        sgst += gst.sgst_material + gst.sgst_making
+        igst += gst.igst_material + gst.igst_making
     grand = taxable + to_decimal(other_charges) + cgst + sgst + igst
     return {
         "taxable": taxable.quantize(PAISA, ROUND_HALF_UP),
@@ -249,6 +258,40 @@ def expected_totals(
         "igst": igst.quantize(PAISA, ROUND_HALF_UP),
         "grand_total": grand.quantize(PAISA, ROUND_HALF_UP),
     }
+
+
+def line_request(ln: BridgeLine, other_charges: Decimal) -> InvoiceLineRequest:
+    """The sales-module line for a bridge line.
+
+    Goods: the taxable value is the material value at the line's rate, the
+    material code (if any) relieves stock. Service: zero material, the value
+    on the making leg at the line's rate, no material code, so the invoice
+    posts it to service income with no stock movement.
+    """
+    descr = ln.description.strip()
+    if ln.sku:
+        descr = f"{descr} [{ln.sku.strip()}]"
+    if ln.is_service:
+        return InvoiceLineRequest(
+            material_id=None,
+            hsn_sac_code=ln.hsn_sac_code.strip(),
+            description=descr[:255],
+            quantity=to_decimal(ln.quantity),
+            material_value=Decimal("0"),
+            material_gst_rate=to_decimal(ln.gst_rate),
+            making_charges=to_decimal(ln.taxable_value),
+            making_gst_rate=to_decimal(ln.gst_rate),
+            other_charges=to_decimal(other_charges),
+        )
+    return InvoiceLineRequest(
+        material_id=(ln.material_code or "").strip() or None,
+        hsn_sac_code=ln.hsn_sac_code.strip(),
+        description=descr[:255],
+        quantity=to_decimal(ln.quantity),
+        material_value=to_decimal(ln.taxable_value),
+        material_gst_rate=to_decimal(ln.gst_rate),
+        other_charges=to_decimal(other_charges),
+    )
 
 
 def totals_mismatch(expected: dict, claimed: BridgeTotals, tolerance: Decimal = TOTALS_TOLERANCE) -> dict:
@@ -685,23 +728,11 @@ async def record_ecommerce_sale(
 
     party_id = await _find_or_create_customer(db, request, user, company_id, payload.customer, payload.external_ref)
 
-    lines = []
-    for i, ln in enumerate(payload.lines):
-        descr = ln.description.strip()
-        if ln.sku:
-            descr = f"{descr} [{ln.sku.strip()}]"
-        lines.append(
-            InvoiceLineRequest(
-                material_id=(ln.material_code or "").strip() or None,
-                hsn_sac_code=ln.hsn_sac_code.strip(),
-                description=descr[:255],
-                quantity=to_decimal(ln.quantity),
-                material_value=to_decimal(ln.taxable_value),
-                material_gst_rate=to_decimal(ln.gst_rate),
-                # Untaxed charges ride on the first line; the invoice sums them.
-                other_charges=to_decimal(payload.other_charges) if i == 0 else Decimal("0"),
-            )
-        )
+    # Untaxed charges ride on the first line; the invoice sums them.
+    lines = [
+        line_request(ln, to_decimal(payload.other_charges) if i == 0 else Decimal("0"))
+        for i, ln in enumerate(payload.lines)
+    ]
 
     result = await create_sales_invoice(
         CreateSalesInvoiceRequest(
@@ -1001,7 +1032,7 @@ async def record_ecommerce_credit_note(
         lines.append({"acc": str(inv["party_account"]), "dr": 0, "cr": total, "narr": narr})
 
         cn_res = await db.execute(
-            text("SELECT 'CDN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+            text("SELECT 'CN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
             {"fy": fy["year_label"]},
         )
         cn_no = cn_res.scalar()

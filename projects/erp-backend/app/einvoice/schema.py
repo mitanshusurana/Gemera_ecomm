@@ -19,6 +19,11 @@ Two things about the jewellery trade shape the item list:
 Only B2B is e-invoiced. A B2C invoice (buyer without a GSTIN) is refused with
 a message rather than sent: the IRP would reject it, and the dynamic QR that
 B2C invoices above Rs 500 crore turnover need is a different thing entirely.
+
+A credit note against a B2B invoice is e-invoiced too (Rule 48(4) covers
+credit and debit notes under s.34): the same document with ``DocDtls.Typ``
+"CRN" and a ``PrecDocDtls`` block naming the invoice it reduces. The IRP wants
+the note's values as positive amounts; the sign is carried by the type.
 """
 
 from __future__ import annotations
@@ -236,50 +241,66 @@ def build_items(lines: Iterable[Mapping[str, Any]], is_inter_state: bool, errors
     return items
 
 
-def build_einvoice_payload(
+DOC_TYPE_INVOICE = "INV"
+DOC_TYPE_CREDIT_NOTE = "CRN"
+DOC_TYPE_DEBIT_NOTE = "DBN"
+
+
+def _document(
     company: Mapping[str, Any],
-    invoice: Mapping[str, Any],
+    doc: Mapping[str, Any],
     lines: Iterable[Mapping[str, Any]],
     party: Mapping[str, Any],
+    *,
+    doc_typ: str,
+    doc_no: str,
+    doc_date,
+    what: str,
+    preceding: Optional[list[dict]] = None,
 ) -> dict:
-    """The schema-1.1 document, or raise EInvoiceValidationError.
+    """The schema-1.1 document for an invoice or a note, or raise
+    EInvoiceValidationError. Every defect found is reported together, so the
+    user fixes the party master once rather than once per field.
 
-    Every defect found is reported together, so the user fixes the party
-    master once rather than once per field.
+    ``doc`` supplies place_of_supply, is_inter_state, grand_total and the
+    optional tcs_amount / round_off; the header comes from the keyword
+    arguments so a note can name its own number and date while the values
+    are read the same way as an invoice's.
     """
     errors: list[str] = []
     lines = list(lines)
 
-    buyer_gstin = str(_get(party, "gstin", "") or _get(invoice, "customer_gstin", "") or "").strip().upper()
+    buyer_gstin = str(_get(party, "gstin", "") or _get(doc, "customer_gstin", "") or "").strip().upper()
     if not is_gstin_shaped(buyer_gstin):
         raise EInvoiceValidationError([
-            "This is a B2C invoice (the buyer has no GSTIN). e-Invoicing under Rule 48(4) "
-            "applies to B2B supplies only; a B2C tax invoice is issued without an IRN."
+            f"This is a B2C {what} (the buyer has no GSTIN). e-Invoicing under Rule 48(4) "
+            f"applies to B2B supplies only; a B2C {what} is issued without an IRN."
         ])
 
     seller = _address(company, who="Seller", errors=errors, require_gstin=True)
     buyer = _address(party, who="Buyer", errors=errors, require_gstin=True)
     buyer["Gstin"] = buyer_gstin
 
-    pos = str(_get(invoice, "place_of_supply", "") or buyer.get("Stcd") or "").strip()
+    pos = str(_get(doc, "place_of_supply", "") or buyer.get("Stcd") or "").strip()
     if pos.isdigit():
         pos = pos.zfill(2)
     if not (len(pos) == 2 and pos.isdigit()):
         errors.append("place of supply is required (two-digit state code)")
     buyer["Pos"] = pos
 
-    doc_no = str(_get(invoice, "invoice_no", "") or "").strip()
+    doc_no = str(doc_no or "").strip()
     if not _DOC_NO_RE.match(doc_no):
         errors.append(
-            f"invoice number '{doc_no}' is not acceptable to the IRP (1-16 characters, letters, digits, '/' and '-')"
+            f"{what} number '{doc_no}' is not acceptable to the IRP (1-16 characters, letters, digits, '/' and '-')"
+            + (f"; it is {len(doc_no)} characters" if len(doc_no) > 16 else "")
         )
     try:
-        doc_dt = _date_ddmmyyyy(_get(invoice, "invoice_date", None))
+        doc_dt = _date_ddmmyyyy(doc_date)
     except (TypeError, ValueError):
         doc_dt = ""
-        errors.append("invoice date is missing")
+        errors.append(f"{what} date is missing")
 
-    is_inter_state = bool(_get(invoice, "is_inter_state", False))
+    is_inter_state = bool(_get(doc, "is_inter_state", False))
     items = build_items(lines, is_inter_state, errors)
 
     ass_val = sum((to_decimal(i["AssAmt"]) for i in items), ZERO)
@@ -287,15 +308,15 @@ def build_einvoice_payload(
     sgst = sum((to_decimal(i["SgstAmt"]) for i in items), ZERO)
     igst = sum((to_decimal(i["IgstAmt"]) for i in items), ZERO)
     other = sum((to_decimal(i["OthChrg"]) for i in items), ZERO)
-    tcs = round_money(_get(invoice, "tcs_amount", 0))
-    round_off = round_money(_get(invoice, "round_off", 0))
+    tcs = round_money(_get(doc, "tcs_amount", 0))
+    round_off = round_money(_get(doc, "round_off", 0))
     total = round_money(ass_val + cgst + sgst + igst + other + tcs + round_off)
 
-    stored_total = round_money(_get(invoice, "grand_total", total))
+    stored_total = round_money(_get(doc, "grand_total", total))
     if abs(stored_total - total) > Decimal("1.00"):
         errors.append(
-            f"invoice total {stored_total} does not agree with its lines ({total}); "
-            "the invoice must be corrected before an IRN is requested"
+            f"{what} total {stored_total} does not agree with its lines ({total}); "
+            f"the {what} must be corrected before an IRN is requested"
         )
 
     if errors:
@@ -309,7 +330,7 @@ def build_einvoice_payload(
             "RegRev": "N",
             "IgstOnIntra": "N",
         },
-        "DocDtls": {"Typ": "INV", "No": doc_no, "Dt": doc_dt},
+        "DocDtls": {"Typ": doc_typ, "No": doc_no, "Dt": doc_dt},
         "SellerDtls": seller,
         "BuyerDtls": buyer,
         "ItemList": items,
@@ -326,10 +347,91 @@ def build_einvoice_payload(
             "TotInvVal": _num(total),
         },
     }
+    if preceding:
+        payload["PrecDocDtls"] = preceding
     # Optional keys the IRP rejects when null.
     for block in (payload["SellerDtls"], payload["BuyerDtls"]):
         for key in [k for k, v in block.items() if v is None]:
             del block[key]
+    return payload
+
+
+def build_einvoice_payload(
+    company: Mapping[str, Any],
+    invoice: Mapping[str, Any],
+    lines: Iterable[Mapping[str, Any]],
+    party: Mapping[str, Any],
+) -> dict:
+    """The schema-1.1 document for a tax invoice (``DocDtls.Typ`` INV), or
+    raise EInvoiceValidationError."""
+    return _document(
+        company, invoice, lines, party,
+        doc_typ=DOC_TYPE_INVOICE,
+        doc_no=_get(invoice, "invoice_no", ""),
+        doc_date=_get(invoice, "invoice_date", None),
+        what="invoice",
+    )
+
+
+def build_credit_note_payload(
+    company: Mapping[str, Any],
+    note: Mapping[str, Any],
+    original_invoice: Mapping[str, Any],
+    lines: Iterable[Mapping[str, Any]],
+    party: Mapping[str, Any],
+) -> dict:
+    """The schema-1.1 document for a credit note (``DocDtls.Typ`` CRN).
+
+    ``note`` carries note_no, note_date, grand_total, place_of_supply and
+    is_inter_state (the note follows its invoice's GST treatment);
+    ``original_invoice`` carries invoice_no and invoice_date and becomes the
+    ``PrecDocDtls`` entry. Item values are the note's own amounts, positive:
+    the IRP refuses negative figures on a CRN.
+    """
+    errors: list[str] = []
+    orig_no = str(_get(original_invoice, "invoice_no", "") or "").strip()
+    if not _DOC_NO_RE.match(orig_no):
+        errors.append(
+            f"the original invoice number '{orig_no}' is not acceptable to the IRP "
+            "(1-16 characters, letters, digits, '/' and '-')"
+        )
+    try:
+        orig_dt = _date_ddmmyyyy(_get(original_invoice, "invoice_date", None))
+    except (TypeError, ValueError):
+        orig_dt = ""
+        errors.append("the original invoice date is missing")
+
+    lines = list(lines)
+    for idx, line in enumerate(lines, 1):
+        for key in ("material_value", "making_charges", "taxable_material", "taxable_making",
+                    "igst_material", "cgst_material", "sgst_material",
+                    "igst_making", "cgst_making", "sgst_making"):
+            if to_decimal(_get(line, key, 0)) < 0:
+                errors.append(f"line {idx}: {key} is negative; a credit note carries positive amounts")
+    if to_decimal(_get(note, "grand_total", 0)) <= 0:
+        errors.append("the credit note has no value")
+
+    doc = {
+        "customer_gstin": _get(note, "customer_gstin", None) or _get(original_invoice, "customer_gstin", None),
+        "place_of_supply": _get(note, "place_of_supply", None) or _get(original_invoice, "place_of_supply", None),
+        "is_inter_state": _get(note, "is_inter_state", _get(original_invoice, "is_inter_state", False)),
+        "grand_total": _get(note, "grand_total", None),
+        "tcs_amount": 0,
+        "round_off": _get(note, "round_off", 0),
+    }
+    try:
+        payload = _document(
+            company, doc, lines, party,
+            doc_typ=DOC_TYPE_CREDIT_NOTE,
+            doc_no=_get(note, "note_no", ""),
+            doc_date=_get(note, "note_date", None),
+            what="credit note",
+            preceding=[{"InvNo": orig_no, "InvDt": orig_dt}],
+        )
+    except EInvoiceValidationError as exc:
+        raise EInvoiceValidationError(errors + exc.errors)
+    if errors:
+        raise EInvoiceValidationError(errors)
     return payload
 
 

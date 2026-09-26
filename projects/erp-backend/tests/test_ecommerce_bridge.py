@@ -157,3 +157,73 @@ def test_advance_and_advance_applied_models():
                                  reason="Refund", date="2026-09-25", refund_paid="0")
     assert cn.refund_paid == Decimal("0")
     assert BridgeCreditNoteRequest(external_ref="ORD-1", invoice_no="WEB/1", amount="1", reason="r", date="2026-09-25").refund_paid is None
+
+
+# ─── Repair service invoices ─────────────────────────────────────────────────
+
+def service_line(value="1000", rate="18", sac="998722"):
+    return BridgeLine(description="Service - Resizing (job RJ-2026-00042)", hsn_sac_code=sac,
+                      taxable_value=Decimal(value), gst_rate=Decimal(rate), is_service=True)
+
+
+def test_a_service_line_is_taxed_at_its_own_rate_through_the_making_leg():
+    exp = expected_totals([service_line()], Decimal("0"), "08", "08")
+    assert exp["taxable"] == Decimal("1000.00")
+    assert exp["cgst"] == Decimal("90.00") and exp["sgst"] == Decimal("90.00") and exp["igst"] == Decimal("0.00")
+    assert exp["grand_total"] == Decimal("1180.00")
+
+    inter = expected_totals([service_line()], Decimal("0"), "08", "27")
+    assert inter["igst"] == Decimal("180.00") and inter["cgst"] == Decimal("0.00")
+
+
+def test_service_and_goods_lines_add_up_together():
+    exp = expected_totals([line("10000", "3", "7113"), service_line()], Decimal("50"), "08", "08")
+    assert exp["taxable"] == Decimal("11000.00")
+    assert exp["cgst"] == Decimal("240.00") and exp["sgst"] == Decimal("240.00")
+    assert exp["grand_total"] == Decimal("11530.00")
+
+
+def test_service_line_becomes_a_making_only_invoice_line():
+    from app.api.v1.integrations import line_request
+
+    req = line_request(service_line(), Decimal("0"))
+    assert req.material_id is None
+    assert req.material_value == Decimal("0")
+    assert req.making_charges == Decimal("1000")
+    assert req.making_gst_rate == Decimal("18")
+    assert req.material_gst_rate == Decimal("18")
+    assert req.hsn_sac_code == "998722"
+    assert req.description == "Service - Resizing (job RJ-2026-00042)"
+
+    goods = line_request(
+        BridgeLine(description="Ring", sku="JW-1", material_code="FG-RING-1", hsn_sac_code="7113",
+                   taxable_value=Decimal("10000"), gst_rate=Decimal("3")),
+        Decimal("50"),
+    )
+    assert goods.material_id == "FG-RING-1", "an item-master code is accepted, not only a UUID"
+    assert goods.material_value == Decimal("10000") and goods.making_charges == Decimal("0")
+    assert goods.making_gst_rate is None
+    assert goods.other_charges == Decimal("50")
+    assert goods.description == "Ring [JW-1]"
+
+
+def test_is_service_defaults_off_so_existing_web_orders_are_unchanged():
+    assert BridgeLine(description="x", hsn_sac_code="7113", taxable_value=Decimal("1"), gst_rate=Decimal("3")).is_service is False
+
+
+def test_the_pre_check_and_the_posting_agree_on_a_service_invoice():
+    """The 409 pre-check must compute a service line exactly as the sales
+    module will book it: zero material, the value on the making leg."""
+    from app.api.v1.integrations import line_request
+    from app.tax.gst_engine import calculate_jewelry_gst
+
+    ln = service_line("1500", "18")
+    req = line_request(ln, Decimal("0"))
+    booked = calculate_jewelry_gst(
+        material_value=req.material_value, making_charges=req.making_charges,
+        seller_state_code="08", buyer_state_code="08",
+        material_gst_rate=req.material_gst_rate, making_gst_rate=req.making_gst_rate,
+    )
+    exp = expected_totals([ln], Decimal("0"), "08", "08")
+    assert exp["cgst"] == booked.cgst_making and exp["sgst"] == booked.sgst_making
+    assert booked.cgst_material == 0

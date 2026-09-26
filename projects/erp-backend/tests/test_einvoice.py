@@ -18,7 +18,15 @@ import pytest
 from pglast import parse_sql
 
 from app.einvoice.fake_provider import FakeProvider, deterministic_irn
-from app.einvoice.provider import IRN_CANCEL_REASONS, ProviderError, TransportDetails
+from app.einvoice.provider import (
+    IRN_CANCEL_REASONS,
+    IrnResult,
+    ProviderError,
+    TransportDetails,
+    is_duplicate_irn_error,
+)
+from app.einvoice.recovery import ACTION_GENERATE, ACTION_GET_BY_DOC, generate_or_recover
+from app.einvoice.schema import build_credit_note_payload
 from app.einvoice.schema import (
     EInvoiceValidationError,
     build_einvoice_payload,
@@ -335,9 +343,11 @@ def _all_sql() -> str:
 
 
 def _permitted(constraint: str) -> set[str]:
-    m = re.search(rf"CONSTRAINT\s+{re.escape(constraint)}\s+CHECK\s*\((.*?)\)\s*\)\s*\)", _all_sql(), re.I | re.S)
-    assert m, f"{constraint} is not in the migrations"
-    return set(re.findall(r"'([A-Za-z_]+)'::character varying", m.group(1)))
+    # The last definition wins: 0011 re-creates chk_einvoice_log_action with
+    # the lookup action added, and the files are read in order.
+    found = re.findall(rf"CONSTRAINT\s+{re.escape(constraint)}\s+CHECK\s*\((.*?)\)\s*\)\s*\)", _all_sql(), re.I | re.S)
+    assert found, f"{constraint} is not in the migrations"
+    return set(re.findall(r"'([A-Za-z_]+)'::character varying", found[-1]))
 
 
 def test_migration_sql_parses():
@@ -376,6 +386,10 @@ def test_log_vocabularies_match_the_checks():
 def test_every_log_action_the_module_writes_is_permitted():
     src = io.open(ROOT / "app" / "api" / "v1" / "einvoice.py", encoding="utf-8").read()
     written = set(re.findall(r'action="([A-Za-z_]+)"', src))
+    # The generate path logs through recovery.ProviderCall, whose actions are
+    # module constants there rather than literals here.
+    recovery = io.open(ROOT / "app" / "einvoice" / "recovery.py", encoding="utf-8").read()
+    written |= set(re.findall(r'^ACTION_\w+ = "([A-Za-z_]+)"', recovery, re.M))
     assert written == _permitted("chk_einvoice_log_action")
     statuses = set(re.findall(r'status="(Success|Failed)"', src))
     assert statuses == _permitted("chk_einvoice_log_status")
@@ -395,3 +409,228 @@ def test_router_mounts_the_module_under_gst_and_the_stub_is_gone():
 
 def test_cancel_reasons_are_the_nic_codes():
     assert set(IRN_CANCEL_REASONS) == {"1", "2", "3", "4"}
+
+
+# ─── Credit notes (Typ CRN) ──────────────────────────────────────────────────
+
+def note(**over):
+    base = {
+        "note_no": "CN/2026-27/00007", "note_date": date(2026, 9, 25), "place_of_supply": "27",
+        "is_inter_state": True, "customer_gstin": "27AABCU9603R1ZM",
+        # 10000 material @3% IGST = 300; 1000 making @5% IGST = 50
+        "grand_total": Decimal("11350.00"),
+    }
+    base.update(over)
+    return base
+
+
+def note_lines():
+    return [{
+        "sequence_no": 1, "hsn_sac_code": "71131910", "description": "Credit Note against CL/2026-27/00042 — returned bangle",
+        "quantity": Decimal("1"), "uom": "OTH",
+        "material_value": Decimal("10000"), "taxable_material": Decimal("10000"),
+        "making_charges": Decimal("1000"), "taxable_making": Decimal("1000"),
+        "other_charges": Decimal("0"), "discount_pct": Decimal("0"),
+        "material_gst_rate": Decimal("3.00"), "making_gst_rate": Decimal("5.00"),
+        "igst_material": Decimal("300"), "igst_making": Decimal("50"),
+        "cgst_material": Decimal("0"), "sgst_material": Decimal("0"), "cgst_making": Decimal("0"), "sgst_making": Decimal("0"),
+        "line_total": Decimal("11350"),
+    }]
+
+
+def test_credit_note_is_a_crn_naming_the_invoice_it_reduces():
+    p = build_credit_note_payload(company(), note(), invoice(), note_lines(), party())
+    assert p["DocDtls"] == {"Typ": "CRN", "No": "CN/2026-27/00007", "Dt": "25/09/2026"}
+    assert p["PrecDocDtls"] == [{"InvNo": "CL/2026-27/00042", "InvDt": "21/09/2026"}]
+    assert p["TranDtls"]["SupTyp"] == "B2B"
+    assert p["SellerDtls"]["Gstin"] == "08AAACC1234F1Z9" and p["BuyerDtls"]["Gstin"] == "27AABCU9603R1ZM"
+    json.dumps(p)
+
+
+def test_credit_note_values_are_positive_and_total_the_note():
+    p = build_credit_note_payload(company(), note(), invoice(), note_lines(), party())
+    goods, service = p["ItemList"]
+    assert goods["AssAmt"] == 10000.0 and goods["IgstAmt"] == 300.0 and goods["IsServc"] == "N"
+    assert service["AssAmt"] == 1000.0 and service["IgstAmt"] == 50.0 and service["IsServc"] == "Y"
+    assert p["ValDtls"]["AssVal"] == 11000.0
+    assert p["ValDtls"]["IgstVal"] == 350.0
+    assert p["ValDtls"]["TotInvVal"] == 11350.0
+    for item in p["ItemList"]:
+        for key in ("AssAmt", "IgstAmt", "CgstAmt", "SgstAmt", "TotItemVal"):
+            assert item[key] >= 0
+
+
+def test_credit_note_against_a_b2c_invoice_is_refused():
+    with pytest.raises(EInvoiceValidationError) as exc:
+        build_credit_note_payload(company(), note(customer_gstin=None), invoice(customer_gstin=None), note_lines(), party(gstin=None))
+    assert "B2C credit note" in exc.value.errors[0]
+
+
+def test_credit_note_refuses_negative_amounts_and_a_bad_original():
+    ls = note_lines()
+    ls[0]["material_value"] = Decimal("-10000")
+    ls[0]["taxable_material"] = Decimal("-10000")
+    with pytest.raises(EInvoiceValidationError) as exc:
+        build_credit_note_payload(company(), note(), invoice(invoice_no="THIS-NUMBER-IS-FAR-TOO-LONG", invoice_date=None), ls, party())
+    errors = "; ".join(exc.value.errors)
+    assert "negative" in errors
+    assert "original invoice number" in errors
+    assert "original invoice date is missing" in errors
+
+
+def test_the_ledgers_cdn_series_is_one_character_too_long_for_the_irp():
+    """CDN/<FY>/<5 digits> is 17 characters; the IRP accepts 16. The builder
+    says so instead of sending a document the IRP will refuse."""
+    with pytest.raises(EInvoiceValidationError) as exc:
+        build_credit_note_payload(company(), note(note_no="CDN/2026-27/00007"), invoice(), note_lines(), party())
+    assert any("17 characters" in e for e in exc.value.errors)
+
+
+def test_credit_note_total_must_agree_with_its_lines():
+    with pytest.raises(EInvoiceValidationError) as exc:
+        build_credit_note_payload(company(), note(grand_total=Decimal("9999")), invoice(), note_lines(), party())
+    assert any("credit note total" in e for e in exc.value.errors)
+
+
+def test_credit_note_lines_from_the_register_split_the_tax_per_leg():
+    from app.api.v1.einvoice import credit_note_lines
+
+    register = {
+        "taxable_material_value": Decimal("10000"), "material_gst_rate": Decimal("3.00"),
+        "taxable_making_value": Decimal("1000"), "making_gst_rate": Decimal("5.00"),
+        "place_of_supply": "08", "is_inter_state": False, "hsn_material": "7113", "hsn_making": "998892",
+        "remarks": "Credit Note against CL/2026-27/00042 — resize",
+    }
+    (line,) = credit_note_lines(register, "08")
+    assert line["cgst_material"] == Decimal("150.00") and line["sgst_material"] == Decimal("150.00")
+    assert line["cgst_making"] == Decimal("25.00") and line["sgst_making"] == Decimal("25.00")
+    assert line["igst_material"] == 0 and line["line_total"] == Decimal("11350.00")
+    assert line["hsn_sac_code"] == "7113"
+
+    p = build_credit_note_payload(
+        company(), note(place_of_supply="08", is_inter_state=False, customer_gstin="08AABCU9603R1ZM"),
+        invoice(place_of_supply="08", is_inter_state=False), [line], party(gstin="08AABCU9603R1ZM", state_code="08"),
+    )
+    assert p["ValDtls"]["CgstVal"] == 175.0 and p["ValDtls"]["SgstVal"] == 175.0 and p["ValDtls"]["IgstVal"] == 0.0
+
+
+# ─── Duplicate-IRN recovery ──────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_fake_provider_hands_back_the_irn_it_issued_for_a_document():
+    FakeProvider.forget_all()
+    payload = build_einvoice_payload(company(), invoice(), lines(), party())
+    issued = await FakeProvider().generate_irn(payload)
+    doc = payload["DocDtls"]
+    found = await FakeProvider().get_irn_by_doc(doc["Typ"], doc["No"], doc["Dt"])
+    assert found.irn == issued.irn and found.ack_no == issued.ack_no
+
+    # A document it never registered still gets a deterministic answer.
+    a = await FakeProvider().get_irn_by_doc("INV", "CL/2026-27/00099", "21/09/2026")
+    b = await FakeProvider().get_irn_by_doc("INV", "CL/2026-27/00099", "21/09/2026")
+    assert a.irn == b.irn and len(a.irn) == 64 and a.irn != issued.irn
+
+
+class _DuplicateThenLookup:
+    """A provider whose generate answers 2150 and whose lookup succeeds."""
+
+    name = "stub"
+
+    def __init__(self, *, code="2150", lookup_fails=False, empty=False):
+        self.code = code
+        self.lookup_fails = lookup_fails
+        self.empty = empty
+        self.calls = []
+
+    async def generate_irn(self, payload):
+        self.calls.append("generate_irn")
+        raise ProviderError("Duplicate IRN", code=self.code, details={"errors": [{"ErrorCode": self.code}]})
+
+    async def get_irn_by_doc(self, doc_type, doc_no, doc_date):
+        self.calls.append(("get_irn_by_doc", doc_type, doc_no, doc_date))
+        if self.lookup_fails:
+            raise ProviderError("lookup refused", code="3028")
+        return IrnResult(irn="" if self.empty else "f" * 64, ack_no="112010000000001", ack_date=datetime(2026, 9, 21, 10, 0),
+                         signed_qr="qr", signed_invoice=None, status="ACT", raw={"Status": 1})
+
+
+@pytest.mark.asyncio
+async def test_a_duplicate_irn_is_recovered_by_document_details_and_both_calls_are_recorded():
+    provider = _DuplicateThenLookup()
+    payload = build_einvoice_payload(company(), invoice(), lines(), party())
+    outcome = await generate_or_recover(provider, payload)
+    assert outcome.recovered is True
+    assert outcome.result.irn == "f" * 64
+    assert provider.calls == ["generate_irn", ("get_irn_by_doc", "INV", "CL/2026-27/00042", "21/09/2026")]
+    assert [(c.action, c.status) for c in outcome.calls] == [(ACTION_GENERATE, "Failed"), (ACTION_GET_BY_DOC, "Success")]
+    assert outcome.calls[1].response["recovered"] is True
+    assert outcome.calls[0].error == "Duplicate IRN"
+
+
+@pytest.mark.asyncio
+async def test_a_plain_success_is_not_marked_recovered():
+    FakeProvider.forget_all()
+    payload = build_einvoice_payload(company(), invoice(), lines(), party())
+    outcome = await generate_or_recover(FakeProvider(), payload)
+    assert outcome.recovered is False
+    assert [(c.action, c.status) for c in outcome.calls] == [(ACTION_GENERATE, "Success")]
+    assert outcome.calls[0].response["recovered"] is False
+
+
+@pytest.mark.asyncio
+async def test_other_refusals_and_a_failed_lookup_are_raised_with_their_calls():
+    payload = build_einvoice_payload(company(), invoice(), lines(), party())
+
+    other = _DuplicateThenLookup(code="2172")
+    with pytest.raises(ProviderError) as exc:
+        await generate_or_recover(other, payload)
+    assert other.calls == ["generate_irn"]
+    assert [c.action for c in exc.value.provider_calls] == [ACTION_GENERATE]
+
+    broken = _DuplicateThenLookup(lookup_fails=True)
+    with pytest.raises(ProviderError) as exc:
+        await generate_or_recover(broken, payload)
+    assert exc.value.code == "3028"
+    assert [(c.action, c.status) for c in exc.value.provider_calls] == [(ACTION_GENERATE, "Failed"), (ACTION_GET_BY_DOC, "Failed")]
+
+    empty = _DuplicateThenLookup(empty=True)
+    with pytest.raises(ProviderError) as exc:
+        await generate_or_recover(empty, payload)
+    assert "did not return it" in exc.value.message
+
+
+def test_duplicate_detection_reads_the_code_or_the_error_list():
+    assert is_duplicate_irn_error(ProviderError("x", code="2150"))
+    assert is_duplicate_irn_error(ProviderError("x", code=None, details={"errors": [{"ErrorCode": "2150", "ErrorMessage": "Duplicate IRN"}]}))
+    assert not is_duplicate_irn_error(ProviderError("x", code="2172"))
+    assert not is_duplicate_irn_error(ProviderError("x"))
+
+
+@pytest.mark.asyncio
+async def test_nic_provider_looks_the_irn_up_by_document_details():
+    import httpx
+
+    from app.einvoice.nic_provider import NicConfig, NicProvider
+
+    seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path.endswith("/auth"):
+            return httpx.Response(200, json={"Status": 1, "Data": {"AuthToken": "tok", "TokenExpiry": "2099-01-01 00:00:00"}})
+        assert request.method == "GET"
+        assert request.url.path == "/eicore/v1.03/Invoice/irnbydocdetails"
+        assert dict(request.url.params) == {"doctype": "CRN", "docnum": "CN/2026-27/00007", "docdate": "25/09/2026"}
+        assert request.headers["AuthToken"] == "tok"
+        return httpx.Response(200, json={"Status": 1, "Data": {
+            "Irn": "a" * 64, "AckNo": "112010000000042", "AckDt": "2026-09-25 10:15:00",
+            "SignedQRCode": "qr", "SignedInvoice": "signed", "Status": "ACT",
+        }})
+
+    cfg = NicConfig(base_url="https://gsp.example", client_id="c", client_secret="s", username="u", password="p", gstin="08AAACC1234F1Z9")
+    provider = NicProvider(cfg, client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    result = await provider.get_irn_by_doc("crn", "CN/2026-27/00007", "25/09/2026")
+    assert result.irn == "a" * 64 and result.ack_no == "112010000000042" and result.signed_invoice == "signed"
+    from app.einvoice.nic_provider import IST
+    assert result.ack_date == datetime(2026, 9, 25, 10, 15, tzinfo=IST)
+    assert [r.method for r in seen] == ["POST", "GET"]

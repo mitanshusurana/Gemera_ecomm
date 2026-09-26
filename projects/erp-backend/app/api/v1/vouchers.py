@@ -461,7 +461,7 @@ async def create_credit_note(payload: CreditNotePayload, request: Request, db: A
     try:
         await assert_period_open(db, company_id, payload.date, what="This credit note")
         fy = await get_fy(db, company_id)
-        no_res = await db.execute(text("SELECT 'CDN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
+        no_res = await db.execute(text("SELECT 'CN/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"), {"fy": fy['year_label']})
         vno = no_res.scalar()
 
         # Company-scoped: unscoped, a caller could credit another company's

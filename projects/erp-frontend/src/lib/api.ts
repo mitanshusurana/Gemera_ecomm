@@ -188,6 +188,12 @@ export const einvoiceApi = {
   generateEwayBill: (invoiceId: string, data: EwayBillPayload) => apiClient.post(`/gst/eway-bill/${invoiceId}`, data),
   cancelEwayBill: (invoiceId: string, data: { reason_code: string; remarks?: string }) =>
     apiClient.post(`/gst/eway-bill/${invoiceId}/cancel`, data),
+  // Credit notes (Typ CRN): addressed by the note's journal entry id or UUID.
+  getCreditNote: (journalEntryId: string | number) => apiClient.get(`/gst/einvoice/credit-notes/${journalEntryId}`),
+  generateCreditNote: (journalEntryId: string | number) =>
+    apiClient.post(`/gst/einvoice/credit-notes/${journalEntryId}/generate`),
+  cancelCreditNote: (journalEntryId: string | number, data: { reason_code: string; remarks: string }) =>
+    apiClient.post(`/gst/einvoice/credit-notes/${journalEntryId}/cancel`, data),
 };
 
 // TDS s.194Q / TCS s.206C(1H) register (Form 26Q / 27EQ feed)

@@ -7,6 +7,8 @@ The IRP publishes a small set of JSON endpoints (sandbox: einv-apisandbox.nic.in
     POST {base}/eivital/{version}/auth              authentication
     POST {base}/eicore/{version}/Invoice            generate IRN (schema 1.1 body)
     POST {base}/eicore/{version}/Invoice/Cancel     cancel IRN {Irn, CnlRsn, CnlRem}
+    GET  {base}/eicore/{version}/Invoice/irnbydocdetails?doctype=&docnum=&docdate=
+                                                    the IRN already issued for a document
     POST {base}/eiewb/{version}/ewaybill            e-way bill by IRN {Irn, Distance, Trans*, Veh*}
     POST {base}/eiewb/{version}/ewayapi/canewb      cancel e-way bill {ewbNo, cancelRsnCode, cancelRmrk}
 
@@ -37,9 +39,11 @@ implemented: the hooks are where it plugs in, and nothing here pretends to do
 it. ``NicConfig.paths`` and ``version`` are configurable because GSPs pin
 different API versions (v1.03 / v1.04).
 
-Not implemented: Get IRN details, Get e-way bill details, IRN generation with
-e-way bill in one call. When the IRP answers 2150 (duplicate IRN) the error is
-surfaced with the IRP's InfoDtls so the operator can recover the existing IRN.
+Not implemented: Get IRN details by IRN, Get e-way bill details, IRN
+generation with e-way bill in one call. When the IRP answers 2150 (duplicate
+IRN) the endpoint fetches the existing IRN with ``get_irn_by_doc`` (document
+type, number and date as dd/mm/yyyy) and records it; the refusal itself is
+surfaced with the IRP's InfoDtls in the log.
 """
 
 from __future__ import annotations
@@ -69,6 +73,7 @@ DEFAULT_PATHS = {
     "auth": "/eivital/{version}/auth",
     "generate_irn": "/eicore/{version}/Invoice",
     "cancel_irn": "/eicore/{version}/Invoice/Cancel",
+    "irn_by_doc": "/eicore/{version}/Invoice/irnbydocdetails",
     "ewb_by_irn": "/eiewb/{version}/ewaybill",
     "cancel_ewb": "/eiewb/{version}/ewayapi/canewb",
 }
@@ -190,10 +195,20 @@ class NicProvider:
         return headers
 
     async def _post(self, key: str, payload: dict) -> dict:
-        await self._ensure_token()
         body = self._encode(payload, self)
-        async with self._client_factory() as client:
-            resp = await client.post(self.config.url(key), headers=self._call_headers(), json=body)
+        return await self._call("POST", key, json=body)
+
+    async def _get(self, key: str, params: dict) -> dict:
+        return await self._call("GET", key, params=params)
+
+    async def _call(self, method: str, key: str, **request) -> dict:
+        await self._ensure_token()
+
+        async def send() -> httpx.Response:
+            async with self._client_factory() as client:
+                return await client.request(method, self.config.url(key), headers=self._call_headers(), **request)
+
+        resp = await send()
         raw = _json_or_error(resp)
         ok, data, errors = _envelope(raw)
         if not ok:
@@ -202,8 +217,7 @@ class NicProvider:
             if code in {"1005", "1006", "1007"} and self.auth_token:
                 self.auth_token = None
                 await self._ensure_token()
-                async with self._client_factory() as client:
-                    resp = await client.post(self.config.url(key), headers=self._call_headers(), json=body)
+                resp = await send()
                 raw = _json_or_error(resp)
                 ok, data, errors = _envelope(raw)
             if not ok:
@@ -219,6 +233,27 @@ class NicProvider:
 
     async def generate_irn(self, payload: dict) -> IrnResult:
         data = await self._post("generate_irn", payload)
+        return IrnResult(
+            irn=str(data.get("Irn") or ""),
+            ack_no=str(data.get("AckNo") or ""),
+            ack_date=_parse_dt(data.get("AckDt")) or datetime.now(IST),
+            signed_qr=str(data.get("SignedQRCode") or ""),
+            signed_invoice=data.get("SignedInvoice"),
+            status=str(data.get("Status") or "ACT"),
+            raw=data.get("_raw", {}),
+        )
+
+    async def get_irn_by_doc(self, doc_type: str, doc_no: str, doc_date: str) -> IrnResult:
+        """GET Invoice/irnbydocdetails: the IRN the IRP holds for a document.
+
+        ``doc_date`` is dd/mm/yyyy, as DocDtls.Dt was sent. The answer has
+        the same shape as a generate (Irn, AckNo, AckDt, SignedQRCode,
+        SignedInvoice, Status), so it is stored the same way.
+        """
+        data = await self._get(
+            "irn_by_doc",
+            {"doctype": str(doc_type).strip().upper(), "docnum": str(doc_no).strip(), "docdate": str(doc_date).strip()},
+        )
         return IrnResult(
             irn=str(data.get("Irn") or ""),
             ack_no=str(data.get("AckNo") or ""),

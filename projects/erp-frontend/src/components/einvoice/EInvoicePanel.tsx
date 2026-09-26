@@ -1,13 +1,15 @@
 'use client';
 
 /**
- * e-Invoice (IRN) and e-Way Bill actions for one sales invoice.
+ * e-Invoice (IRN) and e-Way Bill actions for one sales invoice, or the IRN
+ * actions for one credit note (kind="credit_note": Typ CRN, no e-way bill).
  *
  * Shows what the ERP holds (IRN, acknowledgement, QR, e-way bill), what it
  * would send to the IRP (the schema 1.1 payload, or why it cannot be sent),
- * and the three actions: Generate IRN, Cancel IRN (with reason), Generate
- * e-Way Bill (with transport details). Every action re-reads the server
- * state afterwards; nothing is inferred client-side.
+ * and the actions: Generate IRN, Cancel IRN (with reason), Generate e-Way
+ * Bill (with transport details). Every action re-reads the server state
+ * afterwards; nothing is inferred client-side. An IRN the server fetched
+ * back from the IRP after a duplicate refusal is flagged "Recovered".
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -17,9 +19,14 @@ import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import { einvoiceApi, EwayBillPayload } from '@/lib/api';
 
+export type EInvoiceKind = 'invoice' | 'credit_note';
+
 interface Props {
+  /** Sales invoice id, or the credit note's journal entry id / UUID. */
   invoiceId: string;
   invoiceNo: string;
+  /** Which document: a tax invoice (default) or a credit note against one. */
+  kind?: EInvoiceKind;
   onClose: () => void;
   /** Called after any successful change so the register can refresh. */
   onChanged?: () => void;
@@ -42,7 +49,9 @@ const errorText = (err: any, fallback: string) => {
   return err?.message || fallback;
 };
 
-export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged }: Props) {
+export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', onClose, onChanged }: Props) {
+  const isNote = kind === 'credit_note';
+  const docLabel = isNote ? 'credit note' : 'invoice';
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -62,14 +71,14 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
     setLoading(true);
     setError('');
     try {
-      const res = await einvoiceApi.get(invoiceId);
+      const res = isNote ? await einvoiceApi.getCreditNote(invoiceId) : await einvoiceApi.get(invoiceId);
       setData(res.data);
     } catch (err: any) {
       setError(errorText(err, 'Could not load e-invoice details'));
     } finally {
       setLoading(false);
     }
-  }, [invoiceId]);
+  }, [invoiceId, isNote]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -79,7 +88,8 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
     setNotice('');
     try {
       const res = await fn();
-      setNotice(`${label} succeeded${res?.data?.irn ? `: IRN ${res.data.irn}` : res?.data?.eway_bill_no ? `: e-Way Bill ${res.data.eway_bill_no}` : '.'}`);
+      const recovered = res?.data?.recovered ? ' (recovered from the IRP: it already held this IRN)' : '';
+      setNotice(`${label} succeeded${res?.data?.irn ? `: IRN ${res.data.irn}${recovered}` : res?.data?.eway_bill_no ? `: e-Way Bill ${res.data.eway_bill_no}` : '.'}`);
       setView('summary');
       await load();
       onChanged?.();
@@ -92,12 +102,13 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
 
   const generateIrn = () => {
     if (!confirm(`Send ${invoiceNo} to the IRP and generate its IRN? This cannot be undone after 24 hours.`)) return;
-    run('IRN generation', () => einvoiceApi.generate(invoiceId));
+    run('IRN generation', () => (isNote ? einvoiceApi.generateCreditNote(invoiceId) : einvoiceApi.generate(invoiceId)));
   };
 
   const cancelIrn = () => {
     if (cancelRemarks.trim().length < 3) { setError('Remarks are required (at least 3 characters).'); return; }
-    run('IRN cancellation', () => einvoiceApi.cancel(invoiceId, { reason_code: cancelReason, remarks: cancelRemarks.trim() }));
+    const body = { reason_code: cancelReason, remarks: cancelRemarks.trim() };
+    run('IRN cancellation', () => (isNote ? einvoiceApi.cancelCreditNote(invoiceId, body) : einvoiceApi.cancel(invoiceId, body)));
   };
 
   const generateEwb = () => {
@@ -120,7 +131,8 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
 
   const status: string = data?.e_invoice_status || 'Not_Generated';
   const hasIrn = status === 'Generated' && !!data?.irn;
-  const canGenerate = !hasIrn && status !== 'Cancelled' && data?.invoice_status !== 'Cancelled'
+  const documentCancelled = isNote ? data?.note_status === 'Reversed' : data?.invoice_status === 'Cancelled';
+  const canGenerate = !hasIrn && status !== 'Cancelled' && !documentCancelled
     && (data?.validation_errors || []).length === 0 && !data?.below_threshold;
   const providerOff = data?.provider === 'disabled';
   const fmtDt = (v: any) => (v ? new Date(v).toLocaleString('en-IN') : '—');
@@ -129,7 +141,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
   const label = 'block text-xs text-textSecondary mb-1';
 
   return (
-    <Modal isOpen onClose={onClose} title={`e-Invoice — ${invoiceNo}`}>
+    <Modal isOpen onClose={onClose} title={isNote ? `e-Invoice (credit note) — ${invoiceNo}` : `e-Invoice — ${invoiceNo}`}>
       {loading ? (
         <div className="py-10 flex items-center justify-center gap-2 text-textSecondary">
           <Loader2 className="w-5 h-5 animate-spin" /> Loading IRP details…
@@ -152,6 +164,17 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
               <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" /><span>{notice}</span>
             </div>
           )}
+          {isNote && data?.against_invoice_no && (
+            <p className="text-xs text-textSecondary">
+              Credit note against invoice <span className="font-mono text-white">{data.against_invoice_no}</span>; sent to the IRP as document type CRN with that invoice in PrecDocDtls.
+            </p>
+          )}
+          {hasIrn && data?.recovered_from_irp && (
+            <div className="flex items-start gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5 text-xs text-textSecondary">
+              <RefreshCw className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+              <span><span className="text-white font-medium">Recovered from IRP.</span> The IRP already held an IRN for this {docLabel} (a retry after a timeout or an unsaved earlier attempt); it was fetched by document details and recorded here rather than issued afresh.</span>
+            </div>
+          )}
 
           {/* Stored state */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,7 +192,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
                 )}
               </div>
             </div>
-            <div className="bg-surface border border-border rounded-xl p-4 space-y-2">
+            {!isNote && <div className="bg-surface border border-border rounded-xl p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs uppercase tracking-wider text-textSecondary">e-Way Bill</span>
                 {data?.eway_bill?.no ? <Badge variant="success">Issued</Badge> : <Badge variant="default">None</Badge>}
@@ -179,13 +202,13 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
                 <div><span className="text-textSecondary">Generated</span><p className="text-white">{fmtDt(data?.eway_bill?.date)}</p></div>
                 <div><span className="text-textSecondary">Valid up to</span><p className="text-white">{fmtDt(data?.eway_bill?.valid_upto)}</p></div>
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* Why it cannot be sent */}
           {(data?.validation_errors || []).length > 0 && (
             <div className="p-3 rounded-lg border border-warning/30 bg-warning/5 text-xs space-y-1">
-              <p className="font-semibold text-warning">This invoice cannot be e-invoiced as it stands:</p>
+              <p className="font-semibold text-warning">This {docLabel} cannot be e-invoiced as it stands:</p>
               <ul className="list-disc pl-5 text-textSecondary space-y-0.5">
                 {data.validation_errors.map((e: string, i: number) => <li key={i}>{e}</li>)}
               </ul>
@@ -215,7 +238,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-danger/40 text-danger hover:bg-danger/10 disabled:opacity-50">
                   <XCircle className="w-3.5 h-3.5" /> Cancel IRN
                 </button>
-                {!data?.eway_bill?.no ? (
+                {isNote ? null : !data?.eway_bill?.no ? (
                   <button onClick={() => setView(view === 'ewb' ? 'summary' : 'ewb')} disabled={busy}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-50">
                     <Truck className="w-3.5 h-3.5" /> Generate e-Way Bill
@@ -235,7 +258,9 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
 
           {view === 'payload' && (
             <div className="space-y-2">
-              <p className="text-xs text-textSecondary">NIC e-invoice schema 1.1 — exactly what Generate sends. Material and making are separate items; TCS, if any, travels in OthChrg.</p>
+              <p className="text-xs text-textSecondary">{isNote
+                ? 'NIC e-invoice schema 1.1, document type CRN — exactly what Generate sends. Values are the note\'s own amounts, positive; the invoice it reduces is in PrecDocDtls.'
+                : 'NIC e-invoice schema 1.1 — exactly what Generate sends. Material and making are separate items; TCS, if any, travels in OthChrg.'}</p>
               <pre className="bg-background border border-border rounded-lg p-3 text-[11px] leading-relaxed text-white overflow-auto max-h-80">
                 {data?.payload ? JSON.stringify(data.payload, null, 2) : 'Payload cannot be built — see the validation notes above.'}
               </pre>
@@ -244,7 +269,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, onClose, onChanged
 
           {view === 'cancel' && (
             <div className="space-y-3 p-4 rounded-xl border border-danger/30 bg-danger/5">
-              <p className="text-xs text-textSecondary">The IRP accepts cancellation within 24 hours of acknowledgement. The invoice number cannot be re-registered afterwards; cancelling the IRN does not cancel the invoice in the books.</p>
+              <p className="text-xs text-textSecondary">The IRP accepts cancellation within 24 hours of acknowledgement. The {docLabel} number cannot be re-registered afterwards; cancelling the IRN does not cancel the {docLabel} in the books.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className={label}>Reason</label>
