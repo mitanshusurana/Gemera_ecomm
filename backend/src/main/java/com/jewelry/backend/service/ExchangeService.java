@@ -48,12 +48,10 @@ import java.util.regex.Pattern;
  * capture, the counter workflow (receive, assay, credit or reject) and the
  * store-credit gift card plus ERP purchase that a credit produces.
  *
- * Rates: MetalPriceService returns GoldAPI figures in USD per gram; the
- * storefront's CurrencyService treats the {@code usdRate} setting as USD per
- * INR (default 0.012), so INR per gram = USD per gram / usdRate. A rate above
- * 1 is read as INR per USD instead, so either convention in the setting
- * gives rupees. Silver has no feed: {@code silverRatePerGram} (INR per gram
- * fine) is read from settings and is always marked indicative.
+ * Rates: gold comes from MetalRateService (GoldAPI USD per gram converted
+ * with the {@code usdRate} setting; see that class for the convention).
+ * Silver has no feed: {@code silverRatePerGram} (INR per gram fine) is read
+ * from settings and is always marked indicative.
  */
 @Service
 public class ExchangeService {
@@ -103,7 +101,7 @@ public class ExchangeService {
     GlobalSettingRepository globalSettingRepository;
 
     @Autowired
-    MetalPriceService metalPriceService;
+    MetalRateService metalRateService;
 
     @Autowired
     GiftCardService giftCardService;
@@ -163,22 +161,10 @@ public class ExchangeService {
             BigDecimal silver = setting(SETTING_SILVER_RATE).map(ExchangeService::parseDecimal).orElse(null);
             return new FineRate(silver == null || silver.signum() <= 0 ? FALLBACK_SILVER_INR_PER_GRAM : silver, true);
         }
-        Map<String, Object> prices = metalPriceService.getLivePrices();
-        boolean mock = prices == null || Boolean.TRUE.equals(prices.get("is_mock"));
-        BigDecimal usdPerGram = prices == null ? null : parseDecimal(prices.get("24k"));
-        if (usdPerGram == null || usdPerGram.signum() <= 0) {
-            usdPerGram = new BigDecimal("75.57"); // MetalPriceService fallback figure
-            mock = true;
-        }
-        BigDecimal usdRate = setting(SETTING_USD_RATE).map(ExchangeService::parseDecimal).orElse(null);
-        if (usdRate == null || usdRate.signum() <= 0) {
-            usdRate = new BigDecimal("0.012");
-            mock = true;
-        }
-        BigDecimal inr = usdRate.compareTo(BigDecimal.ONE) < 0
-                ? usdPerGram.divide(usdRate, 4, RoundingMode.HALF_UP)   // usdRate = USD per INR (storefront convention)
-                : usdPerGram.multiply(usdRate);                          // usdRate = INR per USD
-        return new FineRate(inr.setScale(2, RoundingMode.HALF_UP), mock);
+        // Gold: GoldAPI USD/gram converted with the usdRate setting, shared
+        // with the Treasure plan's gram accrual so both quote the same rupee.
+        MetalRateService.FineRate gold = metalRateService.gold24kInrPerGram();
+        return new FineRate(gold.inrPerGram(), gold.indicative());
     }
 
     BigDecimal deductionPct() {
@@ -552,14 +538,26 @@ public class ExchangeService {
         return data;
     }
 
+    @Autowired
+    com.jewelry.backend.service.notification.NotificationService notificationService;
+
+    /** E-mail (unchanged template), plus WhatsApp and SMS, through NotificationService; never throws. */
     private void send(ExchangeRequest r, String templateName, String type, Map<String, String> data) {
-        if (r.getEmail() == null || r.getEmail().isBlank()) {
-            return;
-        }
         try {
-            emailService.sendTemplate(type, r.getEmail(), templateName, data);
+            com.jewelry.backend.service.notification.NotificationEvent event =
+                    com.jewelry.backend.service.notification.NotificationEvent.parse(type);
+            if (event == null) {
+                if (r.getEmail() != null && !r.getEmail().isBlank()) {
+                    emailService.sendTemplate(type, r.getEmail(), templateName, data);
+                }
+                return;
+            }
+            notificationService.notify(event,
+                    com.jewelry.backend.service.notification.Recipient.of(
+                            r.getUser(), r.getCustomerName(), r.getEmail(), r.getPhone(), r.getRequestNumber()),
+                    data);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Exchange " + r.getRequestNumber() + ": " + templateName + " email could not be sent", e);
+            LOGGER.log(Level.WARNING, "Exchange " + r.getRequestNumber() + ": " + templateName + " notification could not be sent", e);
         }
     }
 

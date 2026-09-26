@@ -21,6 +21,12 @@ public class OrderDTO {
     private String appliedGiftCard;
     private BigDecimal giftCardAmount;
 
+    // Treasure plan balance applied (a payment) and loyalty points burned (a discount inside `discount`).
+    private UUID appliedTreasureAccountId;
+    private BigDecimal treasureAmount;
+    private Integer loyaltyPointsRedeemed;
+    private BigDecimal loyaltyDiscount;
+
     private String status;
     private LocalDate estimatedDelivery;
     private String trackingNumber;
@@ -47,6 +53,14 @@ public class OrderDTO {
     // Refund bookkeeping (REFUNDED / CANCELLED after online payment).
     private String razorpayRefundId;
     private BigDecimal refundedAmount;
+
+    // The quote this order was created from, when any.
+    private UUID rfqId;
+    private String rfqNumber;
+
+    // Returns: when the order was delivered (window start) and the RMAs raised on it.
+    private LocalDateTime deliveredAt;
+    private List<String> returnNumbers;
 
     // Admin order flow (OPERATIONS-CONTRACT.md section 3)
     private String customerEmail;

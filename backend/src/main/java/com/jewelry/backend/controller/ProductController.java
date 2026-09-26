@@ -47,6 +47,26 @@ public class ProductController {
     @Autowired
     StorageService storageService;
 
+    @Autowired
+    com.jewelry.backend.security.AccessService access;
+
+    /**
+     * Cost price and its timestamp are staff-only (products.write): the mapper
+     * leaves them null so cart, order and wishlist responses never carry them;
+     * only the product endpoints here add them for staff callers.
+     */
+    private ProductDTO withStaffFields(ProductDTO dto, Product product) {
+        if (dto != null && product != null && access.has("products.write")) {
+            dto.setCostPrice(product.getCostPrice());
+            dto.setCostUpdatedAt(product.getCostUpdatedAt());
+        }
+        return dto;
+    }
+
+    private ProductDTO toStaffDTO(Product product) {
+        return withStaffFields(entityMapper.toProductDTO(product), product);
+    }
+
 
     @GetMapping
     @Transactional(readOnly = true)
@@ -73,7 +93,7 @@ public class ProductController {
                 category, subCategory, metals, stones, designStyles, occasions, styles,
                 gemGrade, craft, saleMode,
                 priceMin, priceMax, search, certified, featured, lowStock, pageable);
-        return ResponseEntity.ok(products.map(entityMapper::toProductDTO));
+        return ResponseEntity.ok(products.map(this::toStaffDTO));
     }
 
     // Declared before the "/{id}" mappings so "sku" is never parsed as a UUID.
@@ -81,7 +101,7 @@ public class ProductController {
     @Transactional(readOnly = true)
     @Operation(summary = "Get product by SKU (label QR codes and the admin scanner); case-insensitive, 404 when unknown")
     public ResponseEntity<ProductDTO> getProductBySku(@PathVariable String sku) {
-        return ResponseEntity.ok(entityMapper.toProductDTO(productService.getProductBySku(sku)));
+        return ResponseEntity.ok(toStaffDTO(productService.getProductBySku(sku)));
     }
 
     // Declared before the "/{id}" mappings so "facets" is never parsed as a UUID.
@@ -102,7 +122,7 @@ public class ProductController {
     @Transactional(readOnly = true)
     @Operation(summary = "Get product details")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable UUID id) {
-        ProductDTO productDTO = entityMapper.toProductDTO(productService.getProductById(id));
+        ProductDTO productDTO = toStaffDTO(productService.getProductById(id));
         return ResponseEntity.ok()
                 .header("Link", "<https://www.caratloop.com/products/" + id + ">; rel=\"canonical\"")
                 .header("X-Robots-Tag", "index, follow")
@@ -125,7 +145,7 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "4") int size) {
         Page<Product> products = productService.getSimilarProducts(id, PageRequest.of(page, size));
-        return ResponseEntity.ok(products.map(entityMapper::toProductDTO));
+        return ResponseEntity.ok(products.map(this::toStaffDTO));
     }
 
     @GetMapping("/categories")
@@ -141,7 +161,7 @@ public class ProductController {
             @RequestParam String query,
             @RequestParam(defaultValue = "10") int limit) {
         Page<Product> page = productService.getAllProducts(null, null, null, query, null, null, PageRequest.of(0, limit));
-        List<ProductDTO> dtos = page.getContent().stream().map(entityMapper::toProductDTO).collect(Collectors.toList());
+        List<ProductDTO> dtos = page.getContent().stream().map(this::toStaffDTO).collect(Collectors.toList());
         return ResponseEntity.ok(Map.of("results", dtos));
     }
 
@@ -153,7 +173,7 @@ public class ProductController {
     public ResponseEntity<ProductDTO> createProduct(@RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
         Product created = productService.createProduct(product);
-        return ResponseEntity.status(201).body(entityMapper.toProductDTO(created));
+        return ResponseEntity.status(201).body(toStaffDTO(created));
     }
 
     @PutMapping("/{id}")
@@ -163,7 +183,7 @@ public class ProductController {
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable UUID id, @RequestBody @jakarta.validation.Valid ProductDTO productDTO) {
         Product product = entityMapper.toProductEntity(productDTO);
         Product updated = productService.updateProduct(id, product);
-        return ResponseEntity.ok(entityMapper.toProductDTO(updated));
+        return ResponseEntity.ok(toStaffDTO(updated));
     }
 
     @DeleteMapping("/{id}")

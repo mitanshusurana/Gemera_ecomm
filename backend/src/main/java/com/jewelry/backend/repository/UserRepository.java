@@ -11,4 +11,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countByRoleNot(String role);
     long countByRole(String role);
     java.util.List<User> findByRoleNotOrderByCreatedAtAsc(String role);
+    Optional<User> findByReferralCodeIgnoreCase(String referralCode);
 }

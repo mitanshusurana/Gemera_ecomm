@@ -201,14 +201,14 @@ public class RFQController {
     }
 
     @PostMapping("/requests/{id}/accept")
-    @Operation(summary = "Accept Quote")
-    public ResponseEntity<Void> acceptQuote(@PathVariable UUID id, Principal principal) {
+    @Transactional
+    @Operation(summary = "Accept the latest quote: creates the PENDING_PAYMENT order and its Razorpay order")
+    public ResponseEntity<com.jewelry.backend.dto.AcceptQuoteResponse> acceptQuote(@PathVariable UUID id, Principal principal) {
         RFQ rfq = rfqService.getRequest(id);
         if (!isOwnerOrAdmin(rfq.getUser().getId(), principal)) {
             return ResponseEntity.status(403).build();
         }
-        rfqService.acceptQuote(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(rfqService.acceptQuote(id));
     }
 
     @PostMapping("/requests/{id}/reject")

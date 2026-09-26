@@ -20,4 +20,10 @@ public class RFQRequestDTO {
     private LocalDateTime expiresAt;
     private List<RFQItemDTO> items;
     private List<RFQQuoteDTO> quotes;
+    private LocalDateTime createdAt;
+
+    // The order created when the quote was accepted (RFQService.acceptQuote), when any.
+    private UUID orderId;
+    private String orderNumber;
+    private String orderStatus;
 }

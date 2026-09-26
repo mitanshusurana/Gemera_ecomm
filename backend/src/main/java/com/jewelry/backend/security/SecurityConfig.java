@@ -110,6 +110,10 @@ public class SecurityConfig {
 
       // CSRF disabled (using JWT instead)
       .csrf(csrf -> csrf.disable())
+      // Unauthenticated requests answer 401, not the 403 of the default entry point,
+      // so the SPA can tell "sign in" from "not allowed".
+      .exceptionHandling(e -> e.authenticationEntryPoint(
+          new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)))
 
       // Session management
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -143,11 +147,18 @@ public class SecurityConfig {
           // Guests can ask to be told when a sold-out piece is back.
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/notifications/stock").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/appointments").permitAll()
+          // Slot grid is public; guests cancel or move their booking with the phone they gave.
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/appointments/slots").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/appointments/*/cancel").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/appointments/*/reschedule").permitAll()
           // Repair jobs: guests may book, upload a photo, track and approve by job number + phone.
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/repairs/requests").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/repairs/photos").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/repairs/track/**").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/repairs/*/approve-estimate").permitAll()
+          // Repair payment (Razorpay order + signature check) and the service invoice: same job number + phone gate.
+          .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/repairs/*/payments/**").permitAll()
+          .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/repairs/*/invoice").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/inquiries").permitAll()
           .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reviews/**").permitAll()
           .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN")

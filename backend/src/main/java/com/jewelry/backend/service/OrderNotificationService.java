@@ -6,6 +6,9 @@ import com.jewelry.backend.dto.AddressDTO;
 import com.jewelry.backend.entity.Order;
 import com.jewelry.backend.entity.OrderItem;
 import com.jewelry.backend.entity.User;
+import com.jewelry.backend.service.notification.NotificationEvent;
+import com.jewelry.backend.service.notification.NotificationService;
+import com.jewelry.backend.service.notification.Recipient;
 import com.jewelry.backend.util.EmailText;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +35,9 @@ public class OrderNotificationService {
 
     @Autowired
     EmailService emailService;
+
+    @Autowired
+    NotificationService notificationService;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -95,29 +101,56 @@ public class OrderNotificationService {
 
     // ------------------------------------------------------------------
 
+    /**
+     * E-mail through the seeded template exactly as before (same type string,
+     * same placeholders), plus WhatsApp and SMS via NotificationService when
+     * the customer allows them. The phone comes from the profile, falling back
+     * to the shipping address.
+     */
     private void send(Order order, String templateName, String type, Map<String, String> extra) {
         try {
-            String to = recipient(order);
-            if (to == null) {
-                LOGGER.warning("Order " + order.getOrderNumber() + ": no customer email, skipping " + templateName);
-                return;
-            }
             Map<String, String> data = new HashMap<>(extra);
             data.put("orderNumber", text(order.getOrderNumber(), ""));
             data.put("customerName", EmailText.escape(customerName(order)));
             data.put("storefrontUrl", EmailText.trimSlash(frontendUrl));
-            emailService.sendTemplate(type, to, templateName, data);
+
+            NotificationEvent event = eventFor(type);
+            Recipient recipient = recipient(order);
+            if (event == null) {
+                if (recipient.hasEmail()) {
+                    emailService.sendTemplate(type, recipient.email(), templateName, data);
+                }
+                return;
+            }
+            if (!recipient.hasEmail() && !recipient.hasPhone()) {
+                LOGGER.warning("Order " + order.getOrderNumber() + ": no customer email or phone, skipping " + templateName);
+                return;
+            }
+            notificationService.notify(event, recipient, data);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Order " + order.getOrderNumber() + ": " + templateName + " email could not be sent", e);
+            LOGGER.log(Level.WARNING, "Order " + order.getOrderNumber() + ": " + templateName + " notification could not be sent", e);
         }
     }
 
-    private static String recipient(Order order) {
-        User user = order.getUser();
-        if (user != null && user.getEmail() != null && !user.getEmail().isBlank()) {
-            return user.getEmail();
-        }
-        return null;
+    /** Legacy EmailNotification.type strings to events; unknown types stay e-mail only. */
+    static NotificationEvent eventFor(String type) {
+        if (type == null) return null;
+        return switch (type) {
+            case "ORDER_CONFIRMATION" -> NotificationEvent.ORDER_CONFIRMED;
+            case "ORDER_PROCESSING" -> NotificationEvent.ORDER_PROCESSING;
+            case "SHIPPING" -> NotificationEvent.ORDER_SHIPPED;
+            case "DELIVERY" -> NotificationEvent.ORDER_DELIVERED;
+            case "ORDER_CANCELLED" -> NotificationEvent.ORDER_CANCELLED;
+            case "ORDER_REFUNDED" -> NotificationEvent.ORDER_REFUNDED;
+            default -> null;
+        };
+    }
+
+    private Recipient recipient(Order order) {
+        AddressDTO address = shippingAddress(order);
+        String addressName = address == null ? null : join(address.getFirstName(), address.getLastName());
+        String addressPhone = address == null ? null : address.getPhone();
+        return Recipient.of(order.getUser(), addressName, null, addressPhone, order.getOrderNumber());
     }
 
     private String customerName(Order order) {
@@ -171,7 +204,9 @@ public class OrderNotificationService {
         }
         StringBuilder sb = new StringBuilder();
         for (OrderItem item : order.getItems()) {
-            String name = item.getProduct() != null && item.getProduct().getName() != null
+            String name = item.getDescription() != null && !item.getDescription().isBlank()
+                    ? item.getDescription()
+                    : item.getProduct() != null && item.getProduct().getName() != null
                     ? item.getProduct().getName() : "Item";
             String sku = item.getProduct() != null && item.getProduct().getSku() != null
                     ? " <span style=\"color:#999;font-size:12px;\">" + EmailText.escape(item.getProduct().getSku()) + "</span>"

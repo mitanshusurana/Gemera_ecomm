@@ -54,6 +54,9 @@ public class AdminController {
     @Autowired
     MetalPriceService metalPriceService;
 
+    @Autowired
+    com.jewelry.backend.service.UserService userService;
+
     @GetMapping("/users")
     @PreAuthorize("@access.has('customers.read')")
     @Operation(summary = "Get all users with CRM stats")
@@ -65,7 +68,7 @@ public class AdminController {
             UserDTO dto = entityMapper.toUserDTO(user);
             BigDecimal totalSpend = orderRepository.sumTotalByUserAndStatusIn(user, List.of("COMPLETED", "DELIVERED"));
             dto.setTotalSpend(totalSpend);
-            dto.setTier("Gold");
+            dto.setTier(userService.tierOf(user));
             return dto;
         });
         return ResponseEntity.ok(userDTOs);

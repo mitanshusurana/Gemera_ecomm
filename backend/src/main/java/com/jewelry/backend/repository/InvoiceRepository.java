@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     Optional<Invoice> findByOrderId(UUID orderId);
     Optional<Invoice> findByInvoiceNumber(String invoiceNumber);
+    Optional<Invoice> findByRepairJobId(UUID repairJobId);
 }

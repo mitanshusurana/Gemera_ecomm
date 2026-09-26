@@ -2,7 +2,11 @@ package com.jewelry.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -31,7 +35,31 @@ public class User extends BaseEntity {
      */
     private Boolean active = true;
 
+    /** Current redeemable points balance; kept in step with the LoyaltyTransaction ledger by LoyaltyService. */
     private Integer loyaltyPoints = 0;
+
+    /** Share code (e.g. PRIYA-7K2Q), generated once and unique; see LoyaltyService. */
+    @Column(unique = true)
+    private String referralCode;
+
+    /** Customer who referred this one (their referralCode was entered at registration). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "referred_by_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User referredBy;
+
+    /** True once both sides received the referral bonus (the referee's first paid order). */
+    private Boolean referralBonusPaid;
+
+    /**
+     * Notification channel preferences (service/notification). Null means
+     * "never set": e-mail on, WhatsApp on when a phone exists, SMS off; see
+     * {@code Recipient.of(User, ...)}.
+     */
+    private Boolean notifyEmail;
+    private Boolean notifyWhatsapp;
+    private Boolean notifySms;
 
     private String resetToken;
     private java.time.LocalDateTime resetTokenExpiry;

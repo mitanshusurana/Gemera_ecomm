@@ -48,6 +48,9 @@ public class PaymentWebhookService {
     @Autowired
     TreasurePlanService treasurePlanService;
 
+    @Autowired
+    RepairJobService repairJobService;
+
     /** True only when a secret is configured and the HMAC in the header matches the raw body. */
     public boolean verify(String body, String signature) {
         if (webhookSecret == null || webhookSecret.isBlank()) {
@@ -124,9 +127,16 @@ public class PaymentWebhookService {
             return;
         }
 
+        Optional<com.jewelry.backend.entity.RepairJob> repair = repairJobService.markPaidByRazorpayOrder(razorpayOrderId, razorpayPaymentId);
+        if (repair.isPresent()) {
+            LOGGER.info("Razorpay " + eventName + ": repair job " + repair.get().getJobNumber()
+                    + " paid " + repair.get().getPaidAmount());
+            return;
+        }
+
         // The checkout may not have created the order yet; createOrder will
         // verify the signature itself and mark the order PAID when it runs.
-        LOGGER.info("Razorpay " + eventName + " for " + razorpayOrderId + " matched no order, gift card or treasure installment yet");
+        LOGGER.info("Razorpay " + eventName + " for " + razorpayOrderId + " matched no order, gift card, treasure installment or repair job yet");
     }
 
     private void handleFailed(JSONObject payment, String razorpayOrderId, String razorpayPaymentId) {

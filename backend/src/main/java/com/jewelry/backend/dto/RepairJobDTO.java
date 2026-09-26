@@ -33,6 +33,14 @@ public record RepairJobDTO(
         BigDecimal paidAmount,
         String paymentMode,
         String paymentReference,
+        /** Open Razorpay order for the amount due, admin view only; null once settled. */
+        String razorpayOrderId,
+        BigDecimal paymentDueAmount,
+        /** Rupees still owed on the bill (final amount, else the estimate); null before an estimate exists. */
+        BigDecimal amountDue,
+        /** Service tax invoice, once issued. */
+        String invoiceNumber,
+        LocalDate invoiceDate,
         String assignedTo,
         String internalNotes,
         LocalDateTime receivedAt,

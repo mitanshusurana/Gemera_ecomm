@@ -125,6 +125,19 @@ public class OrderController {
                 .body(pdf);
     }
 
+    /**
+     * Razorpay order for an order of mine that is awaiting payment (an
+     * accepted quote, the balance of an exchange). The storefront opens the
+     * checkout with it and then calls POST /payments/verify as usual.
+     */
+    @PostMapping("/{orderId}/payment-order")
+    @Transactional
+    @Operation(summary = "Create or reuse the Razorpay order for a PENDING_PAYMENT order of mine")
+    public ResponseEntity<com.jewelry.backend.service.ManualOrderService.PaymentOrder> paymentOrder(
+            @PathVariable UUID orderId, Principal principal) {
+        return ResponseEntity.ok(orderService.paymentOrderFor(orderId, principal.getName()));
+    }
+
     /** Pushes the order's invoice (and any pending credit note) to the ERP immediately. */
     @PostMapping("/{id}/erp-sync")
     @PreAuthorize("@access.has('erp.sync')")

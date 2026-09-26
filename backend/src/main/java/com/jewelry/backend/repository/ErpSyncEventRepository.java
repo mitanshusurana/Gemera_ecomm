@@ -18,6 +18,11 @@ public interface ErpSyncEventRepository extends JpaRepository<ErpSyncEvent, UUID
 
     Optional<ErpSyncEvent> findByExchangeRequestIdAndEventType(UUID exchangeRequestId, String eventType);
 
+    Optional<ErpSyncEvent> findByTreasureInstallmentIdAndEventType(UUID treasureInstallmentId, String eventType);
+
+    /** Per-RMA credit notes: keyed on the RMA number instead of the order. */
+    Optional<ErpSyncEvent> findByReferenceAndEventType(String reference, String eventType);
+
     // Delivery queue: oldest first so the ERP receives documents in the order
     // they were issued, and a cap on attempts so a permanently broken row
     // stops consuming the scheduler.

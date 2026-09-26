@@ -9,6 +9,9 @@ import com.jewelry.backend.entity.GiftCard;
 import com.jewelry.backend.entity.Invoice;
 import com.jewelry.backend.entity.InvoiceLine;
 import com.jewelry.backend.entity.Order;
+import com.jewelry.backend.entity.TreasureChestAccount;
+import com.jewelry.backend.entity.TreasureInstallment;
+import com.jewelry.backend.entity.User;
 import com.jewelry.backend.repository.ErpSyncEventRepository;
 import com.jewelry.backend.repository.ExchangeRequestRepository;
 import com.jewelry.backend.repository.GiftCardRepository;
@@ -42,8 +45,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Outbox that pushes store invoices (sales) and refunds (credit notes) to
- * the ERP's e-commerce integration endpoints.
+ * Outbox that pushes store invoices (sales), refunds (credit notes), old
+ * gold purchases and Treasure plan installments (advances) to the ERP's
+ * e-commerce integration endpoints.
  *
  * Writing the event is part of the order flow; delivering it is not. The
  * scheduler retries failed deliveries every five minutes, except after a
@@ -61,6 +65,7 @@ public class ErpSyncService {
     static final String SALES_PATH = "/api/v1/integrations/ecommerce/sales";
     static final String CREDIT_NOTES_PATH = "/api/v1/integrations/ecommerce/credit-notes";
     static final String OLD_GOLD_PATH = "/api/v1/integrations/ecommerce/old-gold-purchases";
+    static final String ADVANCES_PATH = "/api/v1/integrations/ecommerce/advances";
     // lastError prefix that marks a totals mismatch (HTTP 409); flush() skips these.
     private static final String CONFLICT_PREFIX = "HTTP 409";
 
@@ -113,6 +118,9 @@ public class ErpSyncService {
     /**
      * Records a credit note against the order's invoice. Nothing is queued
      * when the order has no invoice (nothing to reverse in the ERP).
+     * {@code refund_paid} is the money actually returned through Razorpay
+     * (order.refundedAmount, 0 for COD / gift-card / Treasure settlements),
+     * so the ERP posts a refund voucher only for what really went back.
      */
     @Transactional(rollbackFor = Exception.class)
     public Optional<ErpSyncEvent> enqueueCreditNote(Order order, BigDecimal amount, String reason) {
@@ -130,8 +138,55 @@ public class ErpSyncService {
         body.put("amount", money(amount));
         body.put("reason", reason == null || reason.isBlank() ? "Refund" : reason.trim());
         body.put("date", LocalDate.now(InvoiceService.INDIA).toString());
+        body.put("refund_paid", money(order.getRefundedAmount()));
         ErpSyncEvent event = newEvent(order, ErpSyncEvent.TYPE_CREDIT_NOTE, toJson(body));
         return Optional.of(eventRepository.save(event));
+    }
+
+    /**
+     * Credit note for one return (RMA): keyed on the RMA number so an order
+     * can carry several partial returns. {@code refundPaid} is what went back
+     * through the gateway (0 for store credit and exchanges). Empty when the
+     * order has no invoice.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Optional<ErpSyncEvent> enqueueReturnCreditNote(Order order, String rmaNumber, BigDecimal amount,
+                                                          BigDecimal refundPaid, String reason) {
+        Optional<Invoice> invoice = invoiceRepository.findByOrderId(order.getId());
+        if (invoice.isEmpty() || rmaNumber == null || rmaNumber.isBlank()) {
+            return Optional.empty();
+        }
+        Optional<ErpSyncEvent> existing = eventRepository.findByReferenceAndEventType(rmaNumber, ErpSyncEvent.TYPE_CREDIT_NOTE);
+        if (existing.isPresent()) {
+            return existing;
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("external_ref", rmaNumber);
+        body.put("invoice_no", invoice.get().getInvoiceNumber());
+        body.put("amount", money(amount));
+        body.put("reason", reason == null || reason.isBlank() ? "Return " + rmaNumber : reason.trim());
+        body.put("date", LocalDate.now(InvoiceService.INDIA).toString());
+        body.put("refund_paid", money(refundPaid));
+        ErpSyncEvent event = newEvent(order, ErpSyncEvent.TYPE_CREDIT_NOTE, toJson(body));
+        event.setReference(rmaNumber);
+        return Optional.of(eventRepository.save(event));
+    }
+
+    /**
+     * Records a PAID Treasure plan installment as an advance receipt for the
+     * ERP; called from TreasurePlanService.applyPayment. Idempotent per
+     * installment.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public ErpSyncEvent enqueueAdvance(TreasureInstallment installment) {
+        Optional<ErpSyncEvent> existing = eventRepository.findByTreasureInstallmentIdAndEventType(
+                installment.getId(), ErpSyncEvent.TYPE_ADVANCE);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        ErpSyncEvent event = newEvent(null, ErpSyncEvent.TYPE_ADVANCE, advancePayload(installment));
+        event.setTreasureInstallment(installment);
+        return eventRepository.save(event);
     }
 
     /**
@@ -247,8 +302,10 @@ public class ErpSyncService {
     private void deliver(ErpSyncEvent event) {
         String type = event.getEventType();
         boolean oldGold = ErpSyncEvent.TYPE_OLD_GOLD_PURCHASE.equals(type);
+        boolean advance = ErpSyncEvent.TYPE_ADVANCE.equals(type);
         String path = ErpSyncEvent.TYPE_SALE.equals(type) ? SALES_PATH
                 : oldGold ? OLD_GOLD_PATH
+                : advance ? ADVANCES_PATH
                 : CREDIT_NOTES_PATH;
         String referenceKey = ErpSyncEvent.TYPE_SALE.equals(type) ? "invoice_id"
                 : oldGold ? "purchase_invoice_no"
@@ -299,6 +356,9 @@ public class ErpSyncService {
         }
         if (event.getExchangeRequest() != null) {
             return "exchange " + event.getExchangeRequest().getRequestNumber();
+        }
+        if (event.getTreasureInstallment() != null) {
+            return "treasure installment " + event.getTreasureInstallment().getId();
         }
         return "?";
     }
@@ -396,9 +456,20 @@ public class ErpSyncService {
         Map<String, Object> exchangeCredit = exchangeCredit(order);
         BigDecimal creditAmount = exchangeCredit == null ? BigDecimal.ZERO : (BigDecimal) exchangeCredit.get("amount");
 
+        // Treasure plan money was received earlier as ADVANCE receipts, so
+        // it is not part of this invoice's payment; the ERP sets the advance
+        // off against the invoice from its own advance_applied block.
+        BigDecimal treasureAmount = money(order.getTreasureAmount());
+        Map<String, Object> advanceApplied = null;
+        if (treasureAmount.signum() > 0 && order.getAppliedTreasureAccountId() != null) {
+            advanceApplied = new LinkedHashMap<>();
+            advanceApplied.put("amount", treasureAmount);
+            advanceApplied.put("reference", "TRS-" + order.getAppliedTreasureAccountId());
+        }
+
         Map<String, Object> payment = null;
         if (!InvoiceService.isCashOnDelivery(order)) {
-            BigDecimal paid = money(invoice.getGrandTotal()).subtract(creditAmount);
+            BigDecimal paid = money(invoice.getGrandTotal()).subtract(creditAmount).subtract(treasureAmount);
             if (paid.signum() > 0) {
                 payment = new LinkedHashMap<>();
                 boolean gateway = notBlank(order.getRazorpayPaymentId());
@@ -426,15 +497,58 @@ public class ErpSyncService {
                 .add(roundOff.signum() > 0 ? roundOff : BigDecimal.ZERO);
         body.put("other_charges", money(otherCharges));
         body.put("totals", totals);
-        if (exchangeCredit != null) {
-            // Settled wholly by exchange credit: no payment block at all.
+        if (exchangeCredit != null || advanceApplied != null) {
+            // Settled wholly by exchange credit / advance: no payment block at all.
             if (payment != null) {
                 body.put("payment", payment);
             }
-            body.put("exchange_credit", exchangeCredit);
+            if (exchangeCredit != null) {
+                body.put("exchange_credit", exchangeCredit);
+            }
+            if (advanceApplied != null) {
+                body.put("advance_applied", advanceApplied);
+            }
         } else {
             body.put("payment", payment);
         }
+        return toJson(body);
+    }
+
+    /**
+     * Body for POST /api/v1/integrations/ecommerce/advances: one paid
+     * Treasure installment. The customer block has the same shape as the
+     * sale's; address fields are null because an installment carries none.
+     */
+    private String advancePayload(TreasureInstallment installment) {
+        TreasureChestAccount account = installment.getAccount();
+        User user = account == null ? null : account.getUser();
+
+        Map<String, Object> customer = new LinkedHashMap<>();
+        String first = user == null || user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String last = user == null || user.getLastName() == null ? "" : user.getLastName().trim();
+        String name = (first + " " + last).trim();
+        customer.put("name", name.isEmpty() ? (user == null ? null : user.getEmail()) : name);
+        customer.put("email", user == null ? null : user.getEmail());
+        customer.put("phone", user == null ? null : user.getPhone());
+        customer.put("gstin", null);
+        customer.put("pan", null);
+        customer.put("state_code", null);
+        customer.put("address_line1", null);
+        customer.put("city", null);
+        customer.put("pincode", null);
+
+        boolean gateway = TreasureInstallment.METHOD_RAZORPAY.equals(installment.getMethod())
+                && notBlank(installment.getRazorpayPaymentId());
+        LocalDateTime paidAt = installment.getPaidAt() != null ? installment.getPaidAt() : LocalDateTime.now();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("external_ref", "TRS-" + (account == null ? "?" : account.getId()) + "-" + installment.getInstallmentNumber());
+        body.put("customer", customer);
+        body.put("amount", money(installment.getAmount()));
+        body.put("date", paidAt.toLocalDate().toString());
+        body.put("mode", gateway ? "Razorpay" : "Cash");
+        body.put("reference", gateway ? installment.getRazorpayPaymentId().trim() : null);
+        body.put("scheme", "Treasure plan " + (account == null ? "?" : account.getId()));
         return toJson(body);
     }
 

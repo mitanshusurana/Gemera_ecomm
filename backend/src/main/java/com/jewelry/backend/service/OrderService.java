@@ -77,6 +77,18 @@ public class OrderService {
     @Autowired
     ErpSyncService erpSyncService;
 
+    @Autowired
+    TreasurePlanService treasurePlanService;
+
+    @Autowired
+    LoyaltyService loyaltyService;
+
+    @Autowired
+    ManualOrderService manualOrderService;
+
+    @Autowired
+    com.jewelry.backend.repository.ReturnRequestRepository returnRequestRepository;
+
     // Income-tax Rule 114B (PAN mandatory) and Section 269ST (no cash receipt)
     // both bite at two lakh rupees per transaction.
     static final java.math.BigDecimal PAN_THRESHOLD = new java.math.BigDecimal("200000");
@@ -154,6 +166,18 @@ public class OrderService {
         order.setAppliedGiftCard(giftCardApplied ? cart.getAppliedGiftCard() : null);
         order.setGiftCardAmount(giftCardApplied ? giftCardAmount : java.math.BigDecimal.ZERO);
 
+        // Treasure plan (a payment) and loyalty points (a discount already in
+        // cart.discount): copied now, settled below in the same transaction.
+        java.math.BigDecimal treasureAmount = cart.getTreasureAmount() == null
+                ? java.math.BigDecimal.ZERO : cart.getTreasureAmount().setScale(2, java.math.RoundingMode.HALF_UP);
+        boolean treasureApplied = cart.getAppliedTreasureAccountId() != null
+                && treasureAmount.compareTo(java.math.BigDecimal.ZERO) > 0;
+        order.setAppliedTreasureAccountId(treasureApplied ? cart.getAppliedTreasureAccountId() : null);
+        order.setTreasureAmount(treasureApplied ? treasureAmount : java.math.BigDecimal.ZERO);
+        int pointsRedeemed = cart.getLoyaltyPointsRedeemed() == null ? 0 : cart.getLoyaltyPointsRedeemed();
+        order.setLoyaltyPointsRedeemed(Math.max(pointsRedeemed, 0));
+        order.setLoyaltyDiscount(cart.getLoyaltyDiscount() == null ? java.math.BigDecimal.ZERO : cart.getLoyaltyDiscount());
+
         try {
             order.setShippingAddress(objectMapper.writeValueAsString(request.getShippingAddress()));
             order.setBillingAddress(objectMapper.writeValueAsString(request.getBillingAddress()));
@@ -188,10 +212,10 @@ public class OrderService {
             order.setStatus("CONFIRMED");
         }
 
-        // A gift card that covers the whole total is the payment.
-        if (giftCardApplied && order.getTotal() != null
+        // A gift card or Treasure plan that covers the whole total is the payment.
+        if ((giftCardApplied || treasureApplied) && order.getTotal() != null
                 && order.getTotal().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            order.setPaymentMethod("GIFT_CARD");
+            order.setPaymentMethod(giftCardApplied ? "GIFT_CARD" : "TREASURE");
             order.setStatus("PAID");
         }
 
@@ -219,6 +243,7 @@ public class OrderService {
             orderItem.setProduct(product);
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(product.getPrice());
+            orderItem.setUnitCost(product.getCostPrice());
             orderItem.setOptions(cartItem.getOptions());
 
             orderItemRepository.save(orderItem);
@@ -248,6 +273,15 @@ public class OrderService {
             giftCardService.redeem(cart.getAppliedGiftCard(), giftCardAmount);
         }
 
+        // Treasure plan: the account row is locked and its redeemable value
+        // re-checked; it becomes REDEEMED (or keeps the rest redeemable).
+        if (treasureApplied) {
+            treasurePlanService.redeem(cart.getAppliedTreasureAccountId(), treasureAmount, savedOrder);
+        }
+
+        // Loyalty points burned on this order (REDEEM row; balance re-checked).
+        loyaltyService.redeemForOrder(savedOrder);
+
         // Clear cart
         cart.getItems().clear();
         cart.setSubtotal(java.math.BigDecimal.ZERO);
@@ -258,7 +292,16 @@ public class OrderService {
         cart.setAppliedCoupon(null);
         cart.setAppliedGiftCard(null);
         cart.setGiftCardAmount(java.math.BigDecimal.ZERO);
+        cart.setAppliedTreasureAccountId(null);
+        cart.setTreasureAmount(java.math.BigDecimal.ZERO);
+        cart.setLoyaltyPointsRedeemed(0);
+        cart.setLoyaltyDiscount(java.math.BigDecimal.ZERO);
         cartRepository.save(cart);
+
+        // Points are earned once the money is in; COD earns on DELIVERED.
+        if ("PAID".equals(savedOrder.getStatus())) {
+            loyaltyService.earnForOrder(savedOrder);
+        }
 
         // Confirmation e-mail for orders that are already settled: online
         // payment verified above, gift card covering the total, or cash on
@@ -459,7 +502,9 @@ public class OrderService {
                 // aborts the whole transition and the order stays where it was.
                 refundOnlinePayment(order, reason);
                 recreditGiftCard(order);
+                restoreTreasure(order);
                 restockOnce(order);
+                loyaltyService.reverseForOrder(order, reason);
                 moneyReturned = true;
             }
             case "CANCELLED" -> {
@@ -469,6 +514,16 @@ public class OrderService {
                 }
                 restockOnce(order);
                 recreditGiftCard(order);
+                restoreTreasure(order);
+                loyaltyService.reverseForOrder(order, reason);
+            }
+            case "DELIVERED" -> {
+                // The returns window (ReturnService) counts from here.
+                order.setDeliveredAt(java.time.LocalDateTime.now());
+                // Cash on delivery: the money is in now, so the points are earned now.
+                if (InvoiceService.isCashOnDelivery(order)) {
+                    loyaltyService.earnForOrder(order);
+                }
             }
             default -> { }
         }
@@ -477,11 +532,22 @@ public class OrderService {
         Order saved = orderRepository.save(order);
 
         // Reverse the sale in the ERP when an invoiced order is refunded or
-        // cancelled after payment. enqueueCreditNote is a no-op without an invoice.
+        // cancelled after payment. enqueueCreditNote is a no-op without an
+        // invoice; partial returns settled through ReturnService already
+        // carry their own credit notes, so only the remainder is reversed.
         if (moneyReturned) {
-            invoiceService.findForOrder(saved.getId()).ifPresent(invoice ->
-                    erpSyncService.enqueueCreditNote(saved, invoice.getGrandTotal(),
-                            "Refund: " + (reason == null || reason.isBlank() ? "order " + next.toLowerCase() : reason.trim())));
+            invoiceService.findForOrder(saved.getId()).ifPresent(invoice -> {
+                java.math.BigDecimal credited = java.math.BigDecimal.ZERO;
+                for (ReturnRequest r : returnRequestRepository.findByOrderIdAndStatusIn(saved.getId(),
+                        List.of(ReturnRequest.STATUS_REFUNDED, ReturnRequest.STATUS_EXCHANGED))) {
+                    credited = credited.add(nz(r.getRefundAmount()));
+                }
+                java.math.BigDecimal amount = nz(invoice.getGrandTotal()).subtract(credited);
+                if (amount.signum() > 0) {
+                    erpSyncService.enqueueCreditNote(saved, amount,
+                            "Refund: " + (reason == null || reason.isBlank() ? "order " + next.toLowerCase() : reason.trim()));
+                }
+            });
         }
 
         // Cash-on-delivery orders get their tax invoice when they ship;
@@ -496,16 +562,19 @@ public class OrderService {
     }
 
     /**
-     * Refunds order.total through Razorpay once. Orders without a gateway
-     * payment (COD, gift-card only) or already refunded are left alone.
+     * Refunds what is left of order.total through Razorpay. Orders without a
+     * gateway payment (COD, gift-card only) or already refunded in full are
+     * left alone; a partial return (ReturnService) may have refunded part of
+     * it already, in which case only the remainder goes back.
      */
     private void refundOnlinePayment(Order order, String reason) {
         String paymentId = order.getRazorpayPaymentId();
-        if (paymentId == null || paymentId.isBlank() || order.getRefundedAmount() != null) {
+        if (paymentId == null || paymentId.isBlank()) {
             return;
         }
-        java.math.BigDecimal amount = order.getTotal() == null ? java.math.BigDecimal.ZERO
-                : order.getTotal().setScale(2, java.math.RoundingMode.HALF_UP);
+        java.math.BigDecimal total = nz(order.getTotal()).setScale(2, java.math.RoundingMode.HALF_UP);
+        java.math.BigDecimal already = nz(order.getRefundedAmount()).setScale(2, java.math.RoundingMode.HALF_UP);
+        java.math.BigDecimal amount = total.subtract(already);
         if (amount.signum() <= 0) {
             return;
         }
@@ -513,7 +582,24 @@ public class OrderService {
                 + (reason == null || reason.isBlank() ? "" : ": " + reason.trim());
         String refundId = paymentService.refund(paymentId, amount, note);
         order.setRazorpayRefundId(refundId);
-        order.setRefundedAmount(amount);
+        order.setRefundedAmount(already.add(amount));
+    }
+
+    /**
+     * Razorpay order for one of the customer's own orders that is still
+     * PENDING_PAYMENT (an accepted quote, the balance of an exchange).
+     * Created once and reused; payment completes through the verify /
+     * webhook path like a checkout payment.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public ManualOrderService.PaymentOrder paymentOrderFor(UUID orderId, String userEmail) {
+        Order order = getOrder(orderId);
+        boolean staff = access.has(StaffPermissions.ORDERS_WRITE);
+        if (!staff && (order.getUser() == null || userEmail == null
+                || !userEmail.equalsIgnoreCase(order.getUser().getEmail()))) {
+            throw new jakarta.persistence.EntityNotFoundException("Order not found");
+        }
+        return manualOrderService.ensureGatewayOrder(order);
     }
 
     /**
@@ -591,6 +677,15 @@ public class OrderService {
             }
             product.setStock(product.getStock() + Math.max(item.getQuantity(), 0));
             productRepository.save(product);
+        }
+    }
+
+    /** Puts the redeemed Treasure balance and grams back on the plan; never fatal to the cancellation. */
+    private void restoreTreasure(Order order) {
+        try {
+            treasurePlanService.restore(order);
+        } catch (RuntimeException e) {
+            LOGGER.log(Level.WARNING, "Order " + order.getOrderNumber() + ": Treasure plan could not be restored: " + e.getMessage());
         }
     }
 

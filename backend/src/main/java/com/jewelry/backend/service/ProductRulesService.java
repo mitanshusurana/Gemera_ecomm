@@ -168,7 +168,8 @@ public class ProductRulesService {
 
     /** JW for unknown/null item types, matching the "treat as JEWELLERY" rule. */
     public static String skuPrefix(String itemType) {
-        return SKU_PREFIXES.getOrDefault(itemType, "JW");
+        // Map.of rejects a null key; the documented fallback for "no type" is JW.
+        return SKU_PREFIXES.getOrDefault(itemType == null ? "" : itemType, "JW");
     }
 
     // ------------------------------------------------------------------
@@ -317,7 +318,58 @@ public class ProductRulesService {
         for (String key : keys) {
             labels.add(FIELD_LABELS.getOrDefault(key, key));
         }
+        String stoneWarning = stoneWeightWarning(product, effectiveType);
+        if (stoneWarning != null) {
+            labels.add(stoneWarning);
+        }
         return labels;
+    }
+
+    /** Tolerance between the product's total stone weight and the sum of its stone rows. */
+    public static final BigDecimal STONE_WEIGHT_TOLERANCE_CT = new BigDecimal("0.05");
+
+    /**
+     * Warning-level check for studded JEWELLERY and SET pieces: the product's
+     * totalCaratWeight should equal the sum over stone rows of
+     * caratWeight x pieceCount (a row without a per-stone weight contributes
+     * its totalCaratWeight) within {@link #STONE_WEIGHT_TOLERANCE_CT}. Only
+     * evaluated when both sides are given. Never blocks a save; the message is
+     * appended to the dry-run output so the product shows on the
+     * needs-attention list, and the admin form shows it live. Null when fine.
+     */
+    public static String stoneWeightWarning(Product product, String itemType) {
+        if (product == null || product.getTotalCaratWeight() == null
+                || product.getStoneDetails() == null || product.getStoneDetails().isEmpty()) {
+            return null;
+        }
+        if (itemType != null && !JEWELLERY.equals(itemType) && !SET.equals(itemType)) {
+            return null;
+        }
+        BigDecimal rows = BigDecimal.ZERO;
+        boolean anyWeight = false;
+        for (com.jewelry.backend.entity.StoneDetail stone : product.getStoneDetails()) {
+            if (stone == null) {
+                continue;
+            }
+            if (stone.getCaratWeight() != null) {
+                int pieces = stone.getPieceCount() == null || stone.getPieceCount() < 1 ? 1 : stone.getPieceCount();
+                rows = rows.add(stone.getCaratWeight().multiply(BigDecimal.valueOf(pieces)));
+                anyWeight = true;
+            } else if (stone.getTotalCaratWeight() != null) {
+                rows = rows.add(stone.getTotalCaratWeight());
+                anyWeight = true;
+            }
+        }
+        if (!anyWeight) {
+            return null;
+        }
+        BigDecimal total = product.getTotalCaratWeight();
+        if (total.subtract(rows).abs().compareTo(STONE_WEIGHT_TOLERANCE_CT) <= 0) {
+            return null;
+        }
+        return "Stone weight mismatch: total " + total.setScale(3, RoundingMode.HALF_UP).toPlainString()
+                + " ct vs stone rows " + rows.setScale(3, RoundingMode.HALF_UP).toPlainString()
+                + " ct (tolerance " + STONE_WEIGHT_TOLERANCE_CT.toPlainString() + " ct)";
     }
 
     /** True when {@link #derivePrice} would produce a price without throwing. */

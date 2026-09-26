@@ -8,10 +8,14 @@ import com.jewelry.backend.dto.TreasureInstallmentConfirmRequest;
 import com.jewelry.backend.dto.TreasureInstallmentDTO;
 import com.jewelry.backend.dto.TreasureInstallmentOrderResponse;
 import com.jewelry.backend.dto.TreasurePlanConfigDTO;
+import com.jewelry.backend.dto.TreasureRedeemableDTO;
+import com.jewelry.backend.dto.TreasureChestAccountDTO;
 import com.jewelry.backend.dto.VerifyPaymentRequest;
+import com.jewelry.backend.entity.Order;
 import com.jewelry.backend.entity.TreasureChestAccount;
 import com.jewelry.backend.entity.TreasureInstallment;
 import com.jewelry.backend.entity.User;
+import com.jewelry.backend.repository.OrderRepository;
 import com.jewelry.backend.repository.TreasureChestAccountRepository;
 import com.jewelry.backend.repository.TreasureInstallmentRepository;
 import com.jewelry.backend.repository.UserRepository;
@@ -58,7 +62,12 @@ public class TreasurePlanService {
 
     public static final String STATUS_ACTIVE = "ACTIVE";
     public static final String STATUS_MATURED = "MATURED";
+    /** Matured balance spent in full at checkout (OrderService.createOrder). */
+    public static final String STATUS_REDEEMED = "REDEEMED";
     public static final String STATUS_CLOSED = "CLOSED";
+
+    public static final String BASIS_BALANCE = "BALANCE";
+    public static final String BASIS_GOLD = "GOLD";
 
     private static final String CURRENCY = "INR";
     private static final String DEFAULT_PLAN_NAME = "Treasure Chest";
@@ -79,6 +88,15 @@ public class TreasurePlanService {
 
     @Autowired
     EmailService emailService;
+
+    @Autowired
+    MetalRateService metalRateService;
+
+    @Autowired
+    ErpSyncService erpSyncService;
+
+    @Autowired
+    OrderRepository orderRepository;
 
     @Value("${app.frontend-url:http://localhost:4200}")
     private String frontendUrl;
@@ -343,7 +361,8 @@ public class TreasurePlanService {
      * that is already PAID is returned unchanged and sends no further email.
      * A CLOSED plan refuses payments; a MATURED one still takes the money
      * onto the balance (it was captured by the gateway) without changing
-     * status.
+     * status. Each payment also books the 24K grams it bought at the day's
+     * rate (gram accrual) and queues an ADVANCE for the ERP.
      */
     @Transactional(rollbackFor = Exception.class)
     public TreasureChestAccount applyPayment(TreasureInstallment installment) {
@@ -372,8 +391,20 @@ public class TreasurePlanService {
         installment.setStatus(TreasureInstallment.STATUS_PAID);
         installment.setPaidAt(LocalDateTime.now());
 
+        // Gram accrual: the rupees buy 24K gold at today's rate; the grams are
+        // what the gold rate protection pays out on at maturity.
+        MetalRateService.FineRate rate = metalRateService.gold24kInrPerGram();
+        BigDecimal grams = amount.divide(rate.inrPerGram(), 4, RoundingMode.HALF_UP);
+        installment.setRatePerGram(rate.inrPerGram());
+        installment.setRateIndicative(rate.indicative());
+        installment.setGoldGrams(grams);
+        account.setGoldGramsAccrued(grams4(account.getGoldGramsAccrued()).add(grams));
+
         account.setInstallmentsPaid(paid);
         account.setCurrentBalance(money(account.getCurrentBalance()).add(amount));
+        if (STATUS_REDEEMED.equals(account.getStatus())) {
+            account.setStatus(STATUS_MATURED); // money arriving after redemption is redeemable again
+        }
         LocalDate due = account.getNextDueDate() == null ? LocalDate.now() : account.getNextDueDate();
         account.setNextDueDate(due.plusMonths(1));
 
@@ -388,13 +419,175 @@ public class TreasurePlanService {
         }
 
         TreasureChestAccount saved = treasureChestAccountRepository.save(account);
-        treasureInstallmentRepository.save(installment);
+        TreasureInstallment savedInstallment = treasureInstallmentRepository.save(installment);
 
-        sendInstallmentEmail(saved, installment);
+        // Advance receipt for the books; the outbox delivers it later.
+        try {
+            erpSyncService.enqueueAdvance(savedInstallment);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Treasure installment " + savedInstallment.getId() + ": ERP advance could not be queued", e);
+        }
+
+        sendInstallmentEmail(saved, savedInstallment);
         if (matured) {
             sendMaturedEmail(saved, bonus);
         }
         return saved;
+    }
+
+    // ------------------------------------------------------------------
+    // Redemption at checkout (gold rate protection)
+    // ------------------------------------------------------------------
+
+    /**
+     * What the account is worth today: the rupee balance (bonus included) or
+     * the accrued grams at today's 24K rate, whichever is higher. Only a
+     * MATURED account may be spent; the figure is still computed for the
+     * others so the storefront can show the customer how the plan is doing.
+     */
+    public TreasureRedeemableDTO redeemable(TreasureChestAccount account) {
+        MetalRateService.FineRate rate = metalRateService.gold24kInrPerGram();
+        return redeemable(account, rate);
+    }
+
+    TreasureRedeemableDTO redeemable(TreasureChestAccount account, MetalRateService.FineRate rate) {
+        BigDecimal balance = money(account.getCurrentBalance());
+        BigDecimal grams = grams4(account.getGoldGramsAccrued());
+        BigDecimal goldValue = grams.multiply(rate.inrPerGram()).setScale(2, RoundingMode.HALF_UP);
+        boolean goldWins = goldValue.compareTo(balance) > 0;
+        BigDecimal value = goldWins ? goldValue : balance;
+
+        TreasureRedeemableDTO dto = new TreasureRedeemableDTO();
+        dto.setAccountId(account.getId());
+        dto.setStatus(account.getStatus());
+        dto.setBalance(balance);
+        dto.setGoldGramsAccrued(grams);
+        dto.setRatePerGram(rate.inrPerGram());
+        dto.setRateIndicative(rate.indicative());
+        dto.setGoldValue(goldValue);
+        dto.setRedeemableValue(value);
+        dto.setBasis(goldWins ? BASIS_GOLD : BASIS_BALANCE);
+        dto.setRedeemable(STATUS_MATURED.equals(account.getStatus()) && value.signum() > 0);
+        return dto;
+    }
+
+    /** The redeemable view for the caller's own account, or for staff with treasure.write. */
+    @Transactional(readOnly = true)
+    public TreasureRedeemableDTO redeemableFor(UUID accountId, String userEmail, boolean staff) {
+        TreasureChestAccount account = treasureChestAccountRepository.findById(accountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+        if (!staff && !owns(account, userEmail)) {
+            throw new EntityNotFoundException("Account not found");
+        }
+        return redeemable(account);
+    }
+
+    /** The user's account when it is MATURED; empty otherwise. */
+    @Transactional(readOnly = true)
+    public Optional<TreasureChestAccount> maturedAccountFor(User user, UUID accountId) {
+        if (user == null || accountId == null) {
+            return Optional.empty();
+        }
+        return treasureChestAccountRepository.findById(accountId)
+                .filter(a -> a.getUser() != null && a.getUser().getId().equals(user.getId()))
+                .filter(a -> STATUS_MATURED.equals(a.getStatus()));
+    }
+
+    /**
+     * Spends {@code amount} of the account against {@code order}, inside the
+     * order's transaction. The row is locked and the redeemable value is
+     * recomputed, so a stale cart cannot overspend. Balance and grams are
+     * reduced in proportion; when nothing worth mentioning is left the plan
+     * becomes REDEEMED, otherwise the rest stays MATURED and redeemable.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public TreasureChestAccount redeem(UUID accountId, BigDecimal amountRaw, Order order) {
+        BigDecimal amount = money(amountRaw);
+        if (amount.signum() <= 0) {
+            throw new IllegalArgumentException("The Treasure amount to redeem must be positive.");
+        }
+        TreasureChestAccount account = treasureChestAccountRepository.findByIdForUpdate(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("The Treasure plan applied to the cart no longer exists."));
+        if (order != null && order.getUser() != null && !owns(account, order.getUser().getEmail())) {
+            throw new IllegalArgumentException("The Treasure plan applied to the cart belongs to another customer.");
+        }
+        if (!STATUS_MATURED.equals(account.getStatus())) {
+            throw new IllegalArgumentException("Only a matured Treasure plan can be redeemed at checkout.");
+        }
+        TreasureRedeemableDTO value = redeemable(account);
+        BigDecimal available = value.getRedeemableValue();
+        if (amount.compareTo(available) > 0) {
+            throw new IllegalArgumentException("Your Treasure plan now covers " + EmailText.inr(available)
+                    + "; please re-apply it and try again.");
+        }
+
+        BigDecimal balance = money(account.getCurrentBalance());
+        BigDecimal grams = grams4(account.getGoldGramsAccrued());
+        BigDecimal fraction = amount.divide(available, 8, RoundingMode.HALF_UP);
+        BigDecimal balancePart = balance.multiply(fraction).setScale(2, RoundingMode.HALF_UP).min(balance);
+        BigDecimal gramsPart = grams.multiply(fraction).setScale(4, RoundingMode.HALF_UP).min(grams);
+        BigDecimal remaining = available.subtract(amount);
+        if (remaining.compareTo(BigDecimal.ONE) < 0) {
+            // Whatever rounding leaves behind is not worth a second checkout.
+            balancePart = balance;
+            gramsPart = grams;
+            account.setStatus(STATUS_REDEEMED);
+        }
+
+        account.setCurrentBalance(balance.subtract(balancePart));
+        account.setGoldGramsAccrued(grams.subtract(gramsPart));
+        account.setRedeemedAmount(money(account.getRedeemedAmount()).add(amount));
+        account.setRedeemedBalance(money(account.getRedeemedBalance()).add(balancePart));
+        account.setRedeemedGrams(grams4(account.getRedeemedGrams()).add(gramsPart));
+        account.setRedeemedOrderId(order == null ? null : order.getId());
+        return treasureChestAccountRepository.save(account);
+    }
+
+    /**
+     * Reverse of {@link #redeem} for a CANCELLED / REFUNDED order: the share
+     * of balance and grams that order consumed goes back and the plan is
+     * MATURED (redeemable) again. Idempotent per order; a missing account is
+     * logged, not fatal to the cancellation.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void restore(Order order) {
+        if (order == null || order.getAppliedTreasureAccountId() == null
+                || order.getTreasureAmount() == null || order.getTreasureAmount().signum() <= 0) {
+            return;
+        }
+        BigDecimal amount = money(order.getTreasureAmount());
+        Optional<TreasureChestAccount> found = treasureChestAccountRepository.findByIdForUpdate(order.getAppliedTreasureAccountId());
+        if (found.isEmpty()) {
+            LOGGER.warning("Order " + order.getOrderNumber() + ": Treasure account " + order.getAppliedTreasureAccountId()
+                    + " no longer exists; nothing restored");
+            return;
+        }
+        TreasureChestAccount account = found.get();
+        BigDecimal redeemed = money(account.getRedeemedAmount());
+        if (redeemed.signum() <= 0) {
+            return; // already restored (or never redeemed)
+        }
+        BigDecimal share = amount.compareTo(redeemed) >= 0 ? BigDecimal.ONE : amount.divide(redeemed, 8, RoundingMode.HALF_UP);
+        BigDecimal balanceBack = money(account.getRedeemedBalance()).multiply(share).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal gramsBack = grams4(account.getRedeemedGrams()).multiply(share).setScale(4, RoundingMode.HALF_UP);
+
+        account.setCurrentBalance(money(account.getCurrentBalance()).add(balanceBack));
+        account.setGoldGramsAccrued(grams4(account.getGoldGramsAccrued()).add(gramsBack));
+        account.setRedeemedAmount(redeemed.subtract(amount).max(BigDecimal.ZERO));
+        account.setRedeemedBalance(money(account.getRedeemedBalance()).subtract(balanceBack).max(BigDecimal.ZERO));
+        account.setRedeemedGrams(grams4(account.getRedeemedGrams()).subtract(gramsBack).max(BigDecimal.ZERO));
+        if (account.getRedeemedAmount().signum() == 0) {
+            account.setRedeemedOrderId(null);
+        }
+        if (STATUS_REDEEMED.equals(account.getStatus())) {
+            account.setStatus(STATUS_MATURED);
+        }
+        treasureChestAccountRepository.save(account);
+    }
+
+    private static boolean owns(TreasureChestAccount account, String userEmail) {
+        return account.getUser() != null && account.getUser().getEmail() != null && userEmail != null
+                && account.getUser().getEmail().equalsIgnoreCase(userEmail);
     }
 
     // ------------------------------------------------------------------
@@ -412,9 +605,46 @@ public class TreasurePlanService {
         dto.setRazorpayOrderId(installment.getRazorpayOrderId());
         dto.setRazorpayPaymentId(installment.getRazorpayPaymentId());
         dto.setPaidAt(installment.getPaidAt());
+        dto.setGoldGrams(installment.getGoldGrams());
+        dto.setRatePerGram(installment.getRatePerGram());
+        dto.setRateIndicative(installment.isRateIndicative());
         dto.setNote(installment.getNote());
         dto.setCreatedAt(installment.getCreatedAt());
         return dto;
+    }
+
+    /**
+     * Adds the rate-dependent figures (today's value, redeemable value) and
+     * the redeemed order number to a mapped account DTO. One rate lookup per
+     * call; the admin list passes its own so the whole page shares one.
+     */
+    public TreasureChestAccountDTO enrich(TreasureChestAccountDTO dto, TreasureChestAccount account,
+                                          MetalRateService.FineRate rate) {
+        if (dto == null || account == null) return dto;
+        TreasureRedeemableDTO value = redeemable(account, rate == null ? metalRateService.gold24kInrPerGram() : rate);
+        dto.setGoldGramsAccrued(value.getGoldGramsAccrued());
+        dto.setRatePerGram(value.getRatePerGram());
+        dto.setRateIndicative(value.isRateIndicative());
+        dto.setGoldValue(value.getGoldValue());
+        dto.setRedeemableValue(STATUS_MATURED.equals(account.getStatus()) || STATUS_REDEEMED.equals(account.getStatus())
+                ? value.getRedeemableValue() : null);
+        dto.setRedeemableBasis(value.getBasis());
+        dto.setRedeemedAmount(account.getRedeemedAmount());
+        dto.setRedeemedOrderId(account.getRedeemedOrderId());
+        if (account.getRedeemedOrderId() != null) {
+            dto.setRedeemedOrderNumber(orderRepository.findById(account.getRedeemedOrderId())
+                    .map(Order::getOrderNumber).orElse(null));
+        }
+        if (account.getUser() != null) {
+            dto.setUserId(account.getUser().getId());
+            dto.setCustomerName(customerName(account));
+            dto.setCustomerEmail(account.getUser().getEmail());
+        }
+        return dto;
+    }
+
+    public MetalRateService.FineRate todayRate() {
+        return metalRateService.gold24kInrPerGram();
     }
 
     // ------------------------------------------------------------------
@@ -459,6 +689,10 @@ public class TreasurePlanService {
         return (value == null ? BigDecimal.ZERO : value).setScale(2, RoundingMode.HALF_UP);
     }
 
+    private static BigDecimal grams4(BigDecimal value) {
+        return (value == null ? BigDecimal.ZERO : value).setScale(4, RoundingMode.HALF_UP);
+    }
+
     private static String optionalText(String value, int maxLength) {
         if (value == null) return null;
         String v = value.trim();
@@ -501,6 +735,9 @@ public class TreasurePlanService {
             }
             Map<String, String> data = baseData(account);
             data.put("bonus", EmailText.inr(bonus));
+            // TODO(notifications): route through service/notification NotificationService.notify(
+            //   NotificationEvent.TREASURE_MATURED, Recipient.of(account.getUser(), account.getId().toString()), data)
+            //   so the customer also gets WhatsApp/SMS; needs a NotificationService field here, which this class's owner adds.
             emailService.sendTemplate("TREASURE_MATURED", to, EmailTemplateSeeder.TREASURE_MATURED, data);
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Treasure account " + account.getId() + ": maturity email could not be sent", e);

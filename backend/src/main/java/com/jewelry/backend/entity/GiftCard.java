@@ -62,4 +62,9 @@ public class GiftCard extends BaseEntity {
     public static final String SOURCE_PURCHASE = "PURCHASE";
     public static final String SOURCE_ADMIN = "ADMIN";
     public static final String SOURCE_EXCHANGE = "EXCHANGE";
+    /** Store credit issued for a returned order (ReturnService). */
+    public static final String SOURCE_RETURN = "RETURN";
+
+    /** The ReturnRequest this card credits; only set when source is RETURN. */
+    private UUID returnRequestId;
 }

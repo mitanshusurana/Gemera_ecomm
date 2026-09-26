@@ -28,6 +28,9 @@ public class OrderCompletionService {
     @Autowired
     InvoiceService invoiceService;
 
+    @Autowired
+    LoyaltyService loyaltyService;
+
     /**
      * If an order exists for {@code razorpayOrderId} and is still
      * PENDING_PAYMENT, marks it PAID, records the payment id and sends the
@@ -57,6 +60,9 @@ public class OrderCompletionService {
         }
         Order saved = orderRepository.save(order);
         LOGGER.info("Order " + saved.getOrderNumber() + " marked PAID for Razorpay order " + razorpayOrderId);
+
+        // Loyalty: points are earned once the money is in (idempotent per order).
+        loyaltyService.earnForOrder(saved);
 
         orderNotificationService.sendOrderConfirmation(saved);
         // The GST invoice is issued after this transaction commits and can

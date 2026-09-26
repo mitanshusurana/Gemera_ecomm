@@ -13,6 +13,8 @@ public interface RepairJobRepository extends JpaRepository<RepairJob, UUID>, Jpa
 
     Optional<RepairJob> findByJobNumber(String jobNumber);
 
+    Optional<RepairJob> findByRazorpayOrderId(String razorpayOrderId);
+
     List<RepairJob> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     @Query("SELECT r.status, COUNT(r) FROM RepairJob r GROUP BY r.status")

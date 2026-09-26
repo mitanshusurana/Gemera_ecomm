@@ -64,4 +64,15 @@ public final class RepairRequests {
     /** {@code PUT /api/v1/admin/repairs/{id}/notes}. */
     public record Notes(@Size(max = 8000) String internalNotes) {
     }
+
+    /**
+     * {@code POST /api/v1/repairs/{jobNumber}/payments/verify}: the three
+     * values Razorpay's checkout handler returns. The order id must be the
+     * one stored on the job.
+     */
+    public record VerifyPayment(
+            @NotBlank @Size(max = 64) String razorpayOrderId,
+            @NotBlank @Size(max = 64) String razorpayPaymentId,
+            @NotBlank @Size(max = 256) String razorpaySignature) {
+    }
 }

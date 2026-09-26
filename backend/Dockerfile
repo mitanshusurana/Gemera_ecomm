@@ -3,7 +3,10 @@ WORKDIR /app
 COPY build.gradle settings.gradle ./
 RUN gradle dependencies --no-daemon || true
 COPY . .
-RUN gradle bootJar -x test --no-daemon
+# The test suite is database-free (H2 under the "test" profile, mocked
+# services, no network), so the image build is the CI gate: a red test
+# stops the image from being published.
+RUN gradle test bootJar --no-daemon
 
 # JRE, not JDK: the runtime needs no compiler or dev tooling.
 FROM eclipse-temurin:21-jre-alpine

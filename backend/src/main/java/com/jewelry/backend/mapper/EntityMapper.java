@@ -26,6 +26,12 @@ public class EntityMapper {
     @Autowired
     private com.jewelry.backend.repository.ErpSyncEventRepository erpSyncEventRepository;
 
+    @Autowired
+    private com.jewelry.backend.repository.OrderRepository orderRepository;
+
+    @Autowired
+    private com.jewelry.backend.repository.ReturnRequestRepository returnRequestRepository;
+
     // --- User ---
     public UserDTO toUserDTO(User user) {
         if (user == null) return null;
@@ -37,11 +43,13 @@ public class EntityMapper {
         dto.setPhone(user.getPhone());
         dto.setRole(user.getRole());
         dto.setLoyaltyPoints(user.getLoyaltyPoints());
+        dto.setReferralCode(user.getReferralCode());
         if (user.getAddresses() != null) {
             dto.setAddresses(user.getAddresses().stream().map(this::toAddressDTO).collect(Collectors.toList()));
         }
         dto.setTotalSpend(java.math.BigDecimal.ZERO);
-        dto.setTier("Gold");
+        // Tier comes from the loyalty ledger (LoyaltyService); callers that show it set it (AdminController).
+        dto.setTier(null);
         return dto;
     }
 
@@ -61,6 +69,9 @@ public class EntityMapper {
         product.setFeatured(dto.getFeatured());
         product.setPublished(dto.getPublished());
         product.setExcludeFromFeeds(dto.getExcludeFromFeeds());
+        if (dto.getReturnable() != null) {
+            product.setReturnable(dto.getReturnable());
+        }
         product.setInternalNotes(dto.getInternalNotes());
 
         product.setSeoTitle(dto.getSeoTitle());
@@ -86,6 +97,8 @@ public class EntityMapper {
         product.setCurrentLocation(dto.getCurrentLocation());
         product.setHsnCode(dto.getHsnCode());
         product.setErpMaterialCode(dto.getErpMaterialCode());
+        // costUpdatedAt is server-stamped in ProductService, never taken from the client.
+        product.setCostPrice(dto.getCostPrice());
         product.setHuid(dto.getHuid());
         product.setBisHallmark(dto.getBisHallmark());
         product.setHallmarkingDate(dto.getHallmarkingDate());
@@ -112,6 +125,16 @@ public class EntityMapper {
                 stone.setPieceCount(stoneDto.getPieceCount());
                 stone.setTotalCaratWeight(stoneDto.getTotalCaratWeight());
                 stone.setSettingType(stoneDto.getSettingType());
+                stone.setCaratWeight(stoneDto.getCaratWeight());
+                stone.setClarity(stoneDto.getClarity());
+                stone.setColour(stoneDto.getColour());
+                stone.setCut(stoneDto.getCut());
+                stone.setCertificateLab(stoneDto.getCertificateLab());
+                stone.setCertificateNumber(stoneDto.getCertificateNumber());
+                stone.setRatePerCarat(stoneDto.getRatePerCarat());
+                stone.setOrigin(stoneDto.getOrigin());
+                stone.setTreatment(stoneDto.getTreatment());
+                stone.setPosition(stoneDto.getPosition());
                 return stone;
             }).collect(Collectors.toList()));
         }
@@ -277,6 +300,7 @@ public class EntityMapper {
         // deliberately not copied here (admin-only, see ProductController).
         dto.setPublished(!Boolean.FALSE.equals(product.getPublished()));
         dto.setExcludeFromFeeds(Boolean.TRUE.equals(product.getExcludeFromFeeds()));
+        dto.setReturnable(!Boolean.FALSE.equals(product.getReturnable()));
 
         dto.setSeoTitle(product.getSeoTitle());
         dto.setSeoDescription(product.getSeoDescription());
@@ -327,6 +351,16 @@ public class EntityMapper {
                 stoneDto.setPieceCount(stone.getPieceCount());
                 stoneDto.setTotalCaratWeight(stone.getTotalCaratWeight());
                 stoneDto.setSettingType(stone.getSettingType());
+                stoneDto.setCaratWeight(stone.getCaratWeight());
+                stoneDto.setClarity(stone.getClarity());
+                stoneDto.setColour(stone.getColour());
+                stoneDto.setCut(stone.getCut());
+                stoneDto.setCertificateLab(stone.getCertificateLab());
+                stoneDto.setCertificateNumber(stone.getCertificateNumber());
+                stoneDto.setRatePerCarat(stone.getRatePerCarat());
+                stoneDto.setOrigin(stone.getOrigin());
+                stoneDto.setTreatment(stone.getTreatment());
+                stoneDto.setPosition(stone.getPosition());
                 return stoneDto;
             }).collect(Collectors.toList()));
         }
@@ -458,8 +492,14 @@ public class EntityMapper {
         java.math.BigDecimal giftCardAmount = cart.getGiftCardAmount() == null
                 ? java.math.BigDecimal.ZERO : cart.getGiftCardAmount();
         dto.setGiftCardAmount(giftCardAmount);
-        dto.setTotalBeforeGiftCard(cart.getTotal() == null
-                ? giftCardAmount : cart.getTotal().add(giftCardAmount));
+        java.math.BigDecimal treasureAmount = cart.getTreasureAmount() == null
+                ? java.math.BigDecimal.ZERO : cart.getTreasureAmount();
+        dto.setAppliedTreasureAccountId(cart.getAppliedTreasureAccountId());
+        dto.setTreasureAmount(treasureAmount);
+        dto.setLoyaltyPointsRedeemed(cart.getLoyaltyPointsRedeemed() == null ? 0 : cart.getLoyaltyPointsRedeemed());
+        dto.setLoyaltyDiscount(cart.getLoyaltyDiscount() == null ? java.math.BigDecimal.ZERO : cart.getLoyaltyDiscount());
+        dto.setTotalBeforeGiftCard((cart.getTotal() == null ? java.math.BigDecimal.ZERO : cart.getTotal())
+                .add(giftCardAmount).add(treasureAmount));
         dto.setGiftWrap(cart.isGiftWrap());
 
         if (cart.getItems() != null) {
@@ -537,6 +577,10 @@ public class EntityMapper {
         dto.setAppliedGiftCard(order.getAppliedGiftCard());
         dto.setGiftCardAmount(order.getGiftCardAmount() == null
                 ? java.math.BigDecimal.ZERO : order.getGiftCardAmount());
+        dto.setAppliedTreasureAccountId(order.getAppliedTreasureAccountId());
+        dto.setTreasureAmount(order.getTreasureAmount() == null ? java.math.BigDecimal.ZERO : order.getTreasureAmount());
+        dto.setLoyaltyPointsRedeemed(order.getLoyaltyPointsRedeemed() == null ? 0 : order.getLoyaltyPointsRedeemed());
+        dto.setLoyaltyDiscount(order.getLoyaltyDiscount() == null ? java.math.BigDecimal.ZERO : order.getLoyaltyDiscount());
         dto.setInternalNotes(order.getInternalNotes());
 
         // Admin order flow: who to contact, what the admin may do next, and
@@ -557,7 +601,14 @@ public class EntityMapper {
         dto.setBuyerPan(order.getBuyerPan());
         dto.setRazorpayRefundId(order.getRazorpayRefundId());
         dto.setRefundedAmount(order.getRefundedAmount());
+        dto.setDeliveredAt(order.getDeliveredAt());
+        if (order.getRfq() != null) {
+            dto.setRfqId(order.getRfq().getId());
+            dto.setRfqNumber(order.getRfq().getRfqNumber());
+        }
         if (order.getId() != null) {
+            dto.setReturnNumbers(returnRequestRepository.findByOrderIdOrderByCreatedAtDesc(order.getId())
+                    .stream().map(ReturnRequest::getRmaNumber).collect(Collectors.toList()));
             invoiceRepository.findByOrderId(order.getId()).ifPresent(invoice -> {
                 dto.setInvoiceNumber(invoice.getInvoiceNumber());
                 dto.setInvoiceDate(invoice.getInvoiceDate());
@@ -578,6 +629,9 @@ public class EntityMapper {
         OrderItemDTO dto = new OrderItemDTO();
         dto.setId(item.getId());
         dto.setProduct(toProductDTO(item.getProduct()));
+        dto.setDescription(item.getDescription() != null && !item.getDescription().isBlank()
+                ? item.getDescription()
+                : (item.getProduct() == null ? null : item.getProduct().getName()));
         dto.setQuantity(item.getQuantity());
         dto.setPrice(item.getPrice());
 
@@ -638,6 +692,16 @@ public class EntityMapper {
 
         if (rfq.getQuotes() != null) {
             dto.setQuotes(rfq.getQuotes().stream().map(this::toRFQQuoteDTO).collect(Collectors.toList()));
+        }
+        dto.setCreatedAt(rfq.getCreatedAt());
+        if (rfq.getId() != null) {
+            java.util.List<Order> orders = orderRepository.findByRfqIdOrderByCreatedAtDesc(rfq.getId());
+            if (!orders.isEmpty()) {
+                Order order = orders.get(0);
+                dto.setOrderId(order.getId());
+                dto.setOrderNumber(order.getOrderNumber());
+                dto.setOrderStatus(order.getStatus());
+            }
         }
         return dto;
     }

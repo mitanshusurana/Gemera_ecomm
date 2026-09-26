@@ -16,6 +16,9 @@ public class TreasureInstallmentDTO {
     private String razorpayOrderId;
     private String razorpayPaymentId;
     private LocalDateTime paidAt;
+    private BigDecimal goldGrams; // 24K grams this installment bought (null before the gram scheme)
+    private BigDecimal ratePerGram;
+    private boolean rateIndicative;
     private String note;
     private LocalDateTime createdAt;
 }

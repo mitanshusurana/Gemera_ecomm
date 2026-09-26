@@ -13,7 +13,8 @@ public class UserDTO {
     private String phone;
     private String role;
     private Integer loyaltyPoints;
+    private String referralCode;
     private List<AddressDTO> addresses;
     private java.math.BigDecimal totalSpend;
-    private String tier;
+    private String tier; // SILVER | GOLD | PLATINUM from lifetime earned points (LoyaltyService)
 }

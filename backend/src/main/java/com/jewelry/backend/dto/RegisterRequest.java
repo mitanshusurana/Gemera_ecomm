@@ -9,4 +9,6 @@ public class RegisterRequest {
     private String firstName;
     private String lastName;
     private String phone;
+    /** Optional: another customer's referral code (LoyaltyService); unknown codes are ignored. */
+    private String referralCode;
 }

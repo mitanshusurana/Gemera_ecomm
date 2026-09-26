@@ -30,6 +30,23 @@ erp:
   base-url: ${ERP_BASE_URL:}
   api-key: ${ERP_API_KEY:}
 
+# Customer messaging beyond e-mail (service/notification). Both default to
+# disabled: sends are skipped and only e-mail goes out. Tokens are never logged.
+whatsapp:
+  # meta | disabled. Meta WhatsApp Cloud API template messages.
+  provider: ${WHATSAPP_PROVIDER:disabled}
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+  access-token: ${WHATSAPP_ACCESS_TOKEN:}
+  default-language: ${WHATSAPP_DEFAULT_LANGUAGE:en}
+sms:
+  # msg91 | http | disabled. msg91 = MSG91 Flow API (authkey header, template_id, sender, mobiles, VAR1..);
+  # http = POST {to, message, senderId} to sms.endpoint with Authorization: Bearer <api-key>.
+  provider: ${SMS_PROVIDER:disabled}
+  api-key: ${SMS_API_KEY:}
+  sender-id: ${SMS_SENDER_ID:}
+  endpoint: ${SMS_ENDPOINT:}
+  template-id: ${SMS_TEMPLATE_ID:}
+
 spring:
   application:
     name: jewelry-backend

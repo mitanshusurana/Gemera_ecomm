@@ -2,10 +2,15 @@ package com.jewelry.backend.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jewelry.backend.dto.CreateRazorpayOrderRequest;
+import com.jewelry.backend.dto.RazorpayOrderResponse;
 import com.jewelry.backend.dto.RepairJobDTO;
 import com.jewelry.backend.dto.RepairJobEventDTO;
+import com.jewelry.backend.dto.RepairPaymentOrderDTO;
 import com.jewelry.backend.dto.RepairRequests;
 import com.jewelry.backend.dto.RepairTrackingDTO;
+import com.jewelry.backend.dto.VerifyPaymentRequest;
+import com.jewelry.backend.entity.Invoice;
 import com.jewelry.backend.entity.RepairJob;
 import com.jewelry.backend.entity.RepairJob.Status;
 import com.jewelry.backend.entity.RepairJobEvent;
@@ -26,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.ArrayList;
@@ -45,6 +51,13 @@ import java.util.UUID;
  * The status machine lives in {@link #TRANSITIONS}; every change writes a
  * {@link RepairJobEvent}. E-mails go through RepairNotificationService and
  * can never fail the request.
+ *
+ * Online payment: once the estimate is approved (and again at READY when a
+ * balance is due) the customer can pay the amount due through Razorpay. The
+ * gateway order is stored on the job; the checkout handler and the webhook
+ * both complete it through {@link #completeOnlinePayment}, idempotently. The
+ * service tax invoice is issued by InvoiceService when the job is delivered
+ * or fully paid, whichever comes first.
  */
 @Service
 public class RepairJobService {
@@ -66,6 +79,9 @@ public class RepairJobService {
     private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {
     };
 
+    /** Statuses in which the customer may pay the amount due online. */
+    private static final Set<Status> PAYABLE = EnumSet.of(Status.APPROVED, Status.IN_PROGRESS, Status.READY, Status.DELIVERED);
+
     @Autowired
     RepairJobRepository repairJobRepository;
 
@@ -80,6 +96,12 @@ public class RepairJobService {
 
     @Autowired
     RepairNotificationService notificationService;
+
+    @Autowired
+    PaymentService paymentService;
+
+    @Autowired
+    InvoiceService invoiceService;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -160,6 +182,131 @@ public class RepairJobService {
         return toTracking(job);
     }
 
+    /** The job as the customer may see it (owner, or job number + phone); 404 otherwise. */
+    @Transactional(readOnly = true)
+    public RepairJob getForCustomer(String jobNumber, String phone, String principalEmail) {
+        return findForCustomer(jobNumber, phone, principalEmail);
+    }
+
+    // ------------------------------------------------------------------
+    // Online payment
+    // ------------------------------------------------------------------
+
+    /** Rupees still owed: bill (final amount, else estimate) less what was paid; null before an estimate exists. */
+    static BigDecimal amountDue(RepairJob job) {
+        BigDecimal billable = InvoiceService.billableAmount(job);
+        if (billable == null) return null;
+        BigDecimal paid = job.getPaidAmount() == null ? BigDecimal.ZERO : job.getPaidAmount();
+        return billable.subtract(paid).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    static boolean canPayOnline(RepairJob job) {
+        BigDecimal due = amountDue(job);
+        return due != null && due.signum() > 0 && PAYABLE.contains(job.getStatus());
+    }
+
+    /**
+     * Creates (or returns the still-open) Razorpay order for the amount due.
+     * The order id and amount are stored on the job so the webhook can match
+     * a payment even if the customer closes the page before verification.
+     */
+    @Transactional
+    public RepairPaymentOrderDTO createPaymentOrder(String jobNumber, String phone, String principalEmail) {
+        RepairJob job = findForCustomer(jobNumber, phone, principalEmail);
+        if (!canPayOnline(job)) {
+            throw new IllegalArgumentException(job.getStatus() == Status.ASSESSED
+                    ? "Please approve the estimate before paying"
+                    : "There is nothing to pay on this job right now");
+        }
+        BigDecimal due = amountDue(job);
+        if (job.getRazorpayOrderId() == null || job.getPaymentDueAmount() == null
+                || job.getPaymentDueAmount().compareTo(due) != 0) {
+            CreateRazorpayOrderRequest request = new CreateRazorpayOrderRequest();
+            request.setAmount(due.movePointRight(2).intValueExact());
+            request.setCurrency("INR");
+            RazorpayOrderResponse created = paymentService.createRazorpayOrder(request);
+            job.setRazorpayOrderId(created.getId());
+            job.setPaymentDueAmount(due);
+            repairJobRepository.save(job);
+        }
+        return new RepairPaymentOrderDTO(job.getJobNumber(), job.getRazorpayOrderId(),
+                due.movePointRight(2).intValueExact(), "INR", due,
+                job.getCustomerName(), job.getEmail(), job.getPhone());
+    }
+
+    /**
+     * Checkout handler result: verifies the Razorpay signature exactly as
+     * OrderService does (PaymentService.verifyPayment) and records the
+     * payment. Idempotent with the webhook: a job whose open order is
+     * already settled is returned unchanged.
+     */
+    @Transactional
+    public RepairTrackingDTO verifyPayment(String jobNumber, String phone, String principalEmail,
+                                           RepairRequests.VerifyPayment request) {
+        RepairJob job = findForCustomer(jobNumber, phone, principalEmail);
+        if (job.getRazorpayOrderId() == null || !job.getRazorpayOrderId().equals(request.razorpayOrderId().trim())) {
+            throw new IllegalArgumentException("This payment does not belong to the job");
+        }
+        if (job.getPaymentDueAmount() == null) {
+            // The webhook completed it first.
+            return toTracking(job);
+        }
+        VerifyPaymentRequest verify = new VerifyPaymentRequest();
+        verify.setOrderId(request.razorpayOrderId().trim());
+        verify.setPaymentId(request.razorpayPaymentId().trim());
+        verify.setPaymentToken(request.razorpaySignature().trim());
+        try {
+            paymentService.verifyPayment(verify);
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("The payment could not be verified. If the amount was debited, "
+                    + "contact the store quoting " + job.getJobNumber() + " and payment " + request.razorpayPaymentId());
+        }
+        completeOnlinePayment(job, request.razorpayPaymentId().trim(), "Customer");
+        return toTracking(job);
+    }
+
+    /**
+     * Webhook path (PaymentWebhookService.handlePaid): completes the job whose
+     * open Razorpay order is {@code razorpayOrderId}. Empty when no job has
+     * that order; the job unchanged when it was already settled.
+     */
+    @Transactional
+    public Optional<RepairJob> markPaidByRazorpayOrder(String razorpayOrderId, String razorpayPaymentId) {
+        if (isBlank(razorpayOrderId)) return Optional.empty();
+        Optional<RepairJob> found = repairJobRepository.findByRazorpayOrderId(razorpayOrderId.trim());
+        if (found.isEmpty()) return Optional.empty();
+        RepairJob job = found.get();
+        if (job.getPaymentDueAmount() != null) {
+            completeOnlinePayment(job, razorpayPaymentId, "System");
+        }
+        return Optional.of(job);
+    }
+
+    /**
+     * Records the open Razorpay order as paid: adds its amount to paidAmount,
+     * fixes the bill at the estimate when staff have not entered a final
+     * amount yet, clears the open order and writes a customer-visible event.
+     * The service invoice follows once the job is fully paid.
+     */
+    private void completeOnlinePayment(RepairJob job, String paymentId, String actor) {
+        BigDecimal amount = job.getPaymentDueAmount();
+        if (amount == null) return;
+        if (job.getFinalAmount() == null && job.getEstimateAmount() != null) {
+            job.setFinalAmount(job.getEstimateAmount());
+        }
+        BigDecimal paid = job.getPaidAmount() == null ? BigDecimal.ZERO : job.getPaidAmount();
+        job.setPaidAmount(paid.add(amount));
+        job.setPaymentMode(RepairJob.PaymentMode.RAZORPAY);
+        job.setPaymentReference(trimToNull(paymentId));
+        job.setPaymentDueAmount(null);
+        repairJobRepository.save(job);
+        addEvent(job, job.getStatus(), "Payment received: " + IndianMoney.rs(amount) + " by Razorpay"
+                + (isBlank(paymentId) ? "" : " (" + paymentId.trim() + ")"), actor, true);
+        if (InvoiceService.isFullyPaid(job)) {
+            invoiceService.issueServiceAfterCommit(job);
+        }
+    }
+
     // ------------------------------------------------------------------
     // Admin side
     // ------------------------------------------------------------------
@@ -223,6 +370,8 @@ public class RepairJobService {
         if (next == Status.ASSESSED && job.getEstimateAmount() != null) notificationService.sendEstimate(job);
         if (next == Status.READY) notificationService.sendReady(job);
         if (next == Status.DELIVERED) notificationService.sendDelivered(job);
+        // The service tax invoice is due at delivery at the latest.
+        if (next == Status.DELIVERED) invoiceService.issueServiceAfterCommit(job);
         return toDTO(job, true);
     }
 
@@ -287,6 +436,7 @@ public class RepairJobService {
         if (job.getPaymentMode() != null) note.append(" by ").append(job.getPaymentMode().name());
         if (job.getPaymentReference() != null) note.append(" (").append(job.getPaymentReference()).append(')');
         addEvent(job, job.getStatus(), note.toString(), actor, false);
+        if (InvoiceService.isFullyPaid(job)) invoiceService.issueServiceAfterCommit(job);
         return toDTO(job, true);
     }
 
@@ -387,6 +537,7 @@ public class RepairJobService {
                 : eventRepository.findByJobIdAndVisibleToCustomerTrueOrderByCreatedAtAsc(job.getId());
         List<String> transitions = TRANSITIONS.getOrDefault(job.getStatus(), Set.of()).stream()
                 .map(Enum::name).sorted().toList();
+        Invoice invoice = invoiceService.findForRepairJob(job.getId()).orElse(null);
         return new RepairJobDTO(
                 job.getId().toString(),
                 job.getJobNumber(),
@@ -410,6 +561,11 @@ public class RepairJobService {
                 job.getPaidAmount(),
                 job.getPaymentMode() == null ? null : job.getPaymentMode().name(),
                 adminView ? job.getPaymentReference() : null,
+                adminView ? job.getRazorpayOrderId() : null,
+                adminView ? job.getPaymentDueAmount() : null,
+                amountDue(job),
+                invoice == null ? null : invoice.getInvoiceNumber(),
+                invoice == null ? null : invoice.getInvoiceDate(),
                 adminView ? job.getAssignedTo() : null,
                 adminView ? job.getInternalNotes() : null,
                 job.getReceivedAt(),
@@ -424,6 +580,7 @@ public class RepairJobService {
     private RepairTrackingDTO toTracking(RepairJob job) {
         List<RepairJobEvent> events = eventRepository.findByJobIdAndVisibleToCustomerTrueOrderByCreatedAtAsc(job.getId());
         String firstName = job.getCustomerName() == null ? "" : job.getCustomerName().trim().split("\\s+")[0];
+        Invoice invoice = invoiceService.findForRepairJob(job.getId()).orElse(null);
         return new RepairTrackingDTO(
                 job.getJobNumber(),
                 firstName,
@@ -438,6 +595,9 @@ public class RepairJobService {
                 job.getPromisedDate(),
                 job.getFinalAmount(),
                 job.getPaidAmount(),
+                amountDue(job),
+                canPayOnline(job),
+                invoice == null ? null : invoice.getInvoiceNumber(),
                 job.getCreatedAt(),
                 events.stream().map(RepairJobService::toEventDTO).toList());
     }

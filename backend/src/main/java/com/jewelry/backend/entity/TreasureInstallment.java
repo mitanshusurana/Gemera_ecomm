@@ -45,6 +45,13 @@ public class TreasureInstallment extends BaseEntity {
 
     private LocalDateTime paidAt;
 
+    // Gram accrual: amount / ratePerGram (24K, INR per gram) on the day the
+    // installment was paid. Null on installments that pre-date the columns.
+    @Column(precision = 12, scale = 4)
+    private BigDecimal goldGrams;
+    private BigDecimal ratePerGram;
+    private boolean rateIndicative;
+
     @Column(columnDefinition = "TEXT")
     private String note;
 }

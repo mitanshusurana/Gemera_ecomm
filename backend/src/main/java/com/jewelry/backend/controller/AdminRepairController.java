@@ -3,8 +3,10 @@ package com.jewelry.backend.controller;
 import com.jewelry.backend.dto.RepairJobDTO;
 import com.jewelry.backend.dto.RepairRequests;
 import com.jewelry.backend.entity.GlobalSetting;
+import com.jewelry.backend.entity.Invoice;
 import com.jewelry.backend.entity.RepairJob;
 import com.jewelry.backend.repository.GlobalSettingRepository;
+import com.jewelry.backend.service.InvoiceService;
 import com.jewelry.backend.service.RepairJobCardRenderer;
 import com.jewelry.backend.service.RepairJobService;
 import com.jewelry.backend.service.RepairNotificationService;
@@ -50,6 +52,9 @@ public class AdminRepairController {
 
     @Autowired
     GlobalSettingRepository globalSettingRepository;
+
+    @Autowired
+    InvoiceService invoiceService;
 
     @GetMapping
     @Operation(summary = "List jobs, newest first, with optional status filter and search (job number, phone, name, email)")
@@ -123,6 +128,25 @@ public class AdminRepairController {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + job.getJobNumber() + "-job-card.pdf\"")
+                .body(pdf);
+    }
+
+    /**
+     * Service tax invoice PDF. Issues it when the job is delivered or fully
+     * paid and none exists yet; 404 (JSON) before that. The method-level
+     * permission replaces the class-level repairs.write, as on orders.
+     */
+    @GetMapping("/{id}/invoice.pdf")
+    @PreAuthorize("@access.has('invoices.read')")
+    @Operation(summary = "Service tax invoice PDF (issued on first request once delivered or fully paid)")
+    public ResponseEntity<byte[]> invoice(@PathVariable UUID id) {
+        RepairJob job = repairJobService.getEntity(id);
+        Invoice invoice = invoiceService.ensureServiceInvoice(job);
+        byte[] pdf = invoiceService.renderPdf(invoice);
+        String filename = invoice.getInvoiceNumber().replace('/', '-') + ".pdf";
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .body(pdf);
     }
 

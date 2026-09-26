@@ -375,6 +375,35 @@ public class GiftCardService {
         return giftCardRepository.save(card);
     }
 
+    /**
+     * Store credit for a returned order (ReturnService, resolution
+     * STORE_CREDIT or EXCHANGE). Same treatment as exchange credit: active at
+     * once, no purchase e-mail (the return-refunded template carries the code).
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public GiftCard issueReturnCredit(UUID returnRequestId, String rmaNumber, BigDecimal amount,
+                                      String recipientName, String recipientEmail, String adminEmail) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("The return value must be above zero before credit can be issued.");
+        }
+        GiftCard card = new GiftCard();
+        card.setInitialAmount(money(amount));
+        card.setCurrency(CURRENCY);
+        card.setRecipientName(requireText(recipientName == null || recipientName.isBlank() ? "Customer" : recipientName, "recipientName", 120));
+        card.setRecipientEmail(recipientEmail == null || recipientEmail.isBlank() ? null
+                : normalizeEmail(recipientEmail, "recipientEmail"));
+        card.setMessage(null);
+        card.setNote("Return " + rmaNumber);
+        card.setTheme(DEFAULT_THEME);
+        card.setIssuedBy(adminEmail);
+        card.setStatus(GiftCard.STATUS_PENDING_PAYMENT);
+        card.setSource(GiftCard.SOURCE_RETURN);
+        card.setReturnRequestId(returnRequestId);
+
+        activate(card);
+        return giftCardRepository.save(card);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public GiftCard disable(UUID id) {
         GiftCard card = giftCardRepository.findById(id)

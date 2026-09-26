@@ -1,5 +1,7 @@
 package com.jewelry.backend.controller;
 
+import com.jewelry.backend.dto.CostPriceImportDTO;
+import com.jewelry.backend.dto.CostPriceImportResultDTO;
 import com.jewelry.backend.dto.ErpCodeMappingDTO;
 import com.jewelry.backend.dto.ErpCodeMappingResultDTO;
 import com.jewelry.backend.dto.IncompleteProductDTO;
@@ -68,5 +70,18 @@ public class AdminInventoryController {
             throw new IllegalArgumentException("At most 5000 rows per request.");
         }
         return ResponseEntity.ok(productService.bulkSetErpMaterialCodes(rows));
+    }
+
+    @PreAuthorize("@access.has('products.write')")
+    @PutMapping("/cost-prices")
+    @Operation(summary = "Bulk set landed cost per unit: body [{sku, costPrice}]; a null cost clears it")
+    public ResponseEntity<CostPriceImportResultDTO> importCostPrices(@RequestBody List<CostPriceImportDTO> rows) {
+        if (rows == null || rows.isEmpty()) {
+            throw new IllegalArgumentException("Send at least one {sku, costPrice} row.");
+        }
+        if (rows.size() > 5000) {
+            throw new IllegalArgumentException("At most 5000 rows per request.");
+        }
+        return ResponseEntity.ok(productService.bulkSetCostPrices(rows));
     }
 }

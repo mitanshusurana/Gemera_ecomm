@@ -9,6 +9,7 @@ import com.jewelry.backend.repository.*;
 import com.jewelry.backend.entity.Wishlist;
 import com.jewelry.backend.entity.Coupon;
 import com.jewelry.backend.entity.GiftCard;
+import com.jewelry.backend.entity.TreasureChestAccount;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,12 @@ public class CartService {
 
     @Autowired
     GiftCardService giftCardService;
+
+    @Autowired
+    TreasurePlanService treasurePlanService;
+
+    @Autowired
+    LoyaltyService loyaltyService;
 
     @Transactional(rollbackFor = Exception.class)
     public Cart getCart(String userEmail) {
@@ -242,6 +249,110 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    /**
+     * Applies the caller's MATURED Treasure plan to the cart. Like the gift
+     * card it is a payment that covers the total after tax (never a
+     * discount); recalculateCart works out how much of it the order needs.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Cart applyTreasure(String userEmail, UUID accountId) {
+        Cart cart = getCart(userEmail);
+        TreasureChestAccount account = treasurePlanService.maturedAccountFor(cart.getUser(), accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Only your own matured Treasure plan can be used at checkout."));
+        if (treasurePlanService.redeemable(account).getRedeemableValue().signum() <= 0) {
+            throw new IllegalArgumentException("This Treasure plan has no balance left to redeem.");
+        }
+        cart.setAppliedTreasureAccountId(account.getId());
+        recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
+        return cartRepository.save(cart);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Cart removeTreasure(String userEmail) {
+        Cart cart = getCart(userEmail);
+        cart.setAppliedTreasureAccountId(null);
+        cart.setTreasureAmount(BigDecimal.ZERO);
+        recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
+        return cartRepository.save(cart);
+    }
+
+    /**
+     * Burns loyalty points as a DISCOUNT (it lowers the taxable value).
+     * The request is capped at the balance and at loyaltyMaxRedeemPct of
+     * the subtotal; the caller is told the cap rather than silently trimmed.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Cart applyPoints(String userEmail, int points) {
+        Cart cart = getCart(userEmail);
+        if (points <= 0) {
+            throw new IllegalArgumentException("Enter the number of points to use.");
+        }
+        int max = loyaltyService.maxRedeemablePoints(cart.getUser(), cart.getSubtotal());
+        if (max <= 0) {
+            throw new IllegalArgumentException(LoyaltyService.balance(cart.getUser()) <= 0
+                    ? "You have no points to use yet."
+                    : "Points cannot be used on this cart.");
+        }
+        if (points > max) {
+            throw new IllegalArgumentException("You can use up to " + max + " points on this order ("
+                    + loyaltyService.maxRedeemPct().stripTrailingZeros().toPlainString() + "% of the subtotal).");
+        }
+        cart.setLoyaltyPointsRedeemed(points);
+        recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
+        return cartRepository.save(cart);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Cart removePoints(String userEmail) {
+        Cart cart = getCart(userEmail);
+        cart.setLoyaltyPointsRedeemed(0);
+        cart.setLoyaltyDiscount(BigDecimal.ZERO);
+        recalculateCart(cart);
+        cart.setAbandonmentEmailSent(false);
+        return cartRepository.save(cart);
+    }
+
+    /** Points the cart could burn right now; for the DTO. */
+    public int loyaltyPointsAvailable(Cart cart) {
+        if (cart == null || cart.getUser() == null) return 0;
+        return loyaltyService.maxRedeemablePoints(cart.getUser(), cart.getSubtotal());
+    }
+
+    public BigDecimal loyaltyPointValue() {
+        return loyaltyService.pointValue();
+    }
+
+    /** GST rate (a fraction, e.g. 0.03) for a product category, as the cart and the invoice apply it. */
+    public BigDecimal taxRateFor(String category) {
+        String key;
+        String fallback;
+        if ("Jewelry".equalsIgnoreCase(category)) {
+            key = "taxRateJewelry";
+            fallback = "0.03";
+        } else if ("Gemstones".equalsIgnoreCase(category)) {
+            key = "taxRateGemstones";
+            fallback = "0.0025";
+        } else {
+            key = "taxRateDefault";
+            fallback = "0.03";
+        }
+        try {
+            return new BigDecimal(globalSettingRepository.findBySettingKey(key).map(s -> s.getSettingValue())
+                    .filter(v -> v != null && !v.isBlank()).orElse(fallback));
+        } catch (NumberFormatException e) {
+            return new BigDecimal(fallback);
+        }
+    }
+
+    /** Shipping for a pre-tax subtotal under the cart rules: free above the threshold, else the standard fee. */
+    public BigDecimal shippingCharge(BigDecimal subtotal) {
+        BigDecimal value = subtotal == null ? BigDecimal.ZERO : subtotal;
+        return value.compareTo(shippingThreshold) > 0 ? BigDecimal.ZERO : standardShippingFee;
+    }
+
     private void recalculateCart(Cart cart) {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (CartItem item : cart.getItems()) {
@@ -276,6 +387,24 @@ public class CartService {
                 cart.setAppliedCoupon(null);
             }
         }
+
+        // Loyalty points: a discount on top of the coupon, re-capped every
+        // time (the subtotal or the balance may have changed since applied).
+        BigDecimal loyaltyDiscount = BigDecimal.ZERO;
+        int pointsRequested = cart.getLoyaltyPointsRedeemed() == null ? 0 : cart.getLoyaltyPointsRedeemed();
+        if (pointsRequested > 0) {
+            int points = Math.min(pointsRequested, loyaltyService.maxRedeemablePoints(cart.getUser(), subtotal));
+            if (points > 0) {
+                loyaltyDiscount = loyaltyService.valueOf(points);
+                BigDecimal room = subtotal.subtract(discount).max(BigDecimal.ZERO);
+                if (loyaltyDiscount.compareTo(room) > 0) {
+                    loyaltyDiscount = room;
+                }
+            }
+            cart.setLoyaltyPointsRedeemed(points);
+        }
+        cart.setLoyaltyDiscount(loyaltyDiscount);
+        discount = discount.add(loyaltyDiscount);
         cart.setDiscount(discount);
 
         // Fetch tax rates
@@ -319,6 +448,22 @@ public class CartService {
         }
         // Money is 2 dp; tax multiplication above can produce more.
         total = total.setScale(2, RoundingMode.HALF_UP);
+
+        // Treasure plan: a matured plan pays the total (after tax) first, up
+        // to its redeemable value today (gold rate protection). A plan that
+        // is no longer the caller's or no longer matured is dropped silently.
+        BigDecimal treasureAmount = BigDecimal.ZERO;
+        if (cart.getAppliedTreasureAccountId() != null) {
+            TreasureChestAccount account = treasurePlanService.maturedAccountFor(cart.getUser(), cart.getAppliedTreasureAccountId()).orElse(null);
+            if (account != null) {
+                BigDecimal value = treasurePlanService.redeemable(account).getRedeemableValue();
+                treasureAmount = value.min(total).max(BigDecimal.ZERO);
+            } else {
+                cart.setAppliedTreasureAccountId(null);
+            }
+        }
+        cart.setTreasureAmount(treasureAmount);
+        total = total.subtract(treasureAmount);
 
         // Gift card: cover as much of the total as the balance allows. The
         // amount still to be paid is what remains. A card that has stopped

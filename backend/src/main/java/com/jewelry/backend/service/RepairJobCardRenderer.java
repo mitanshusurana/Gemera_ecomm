@@ -1,10 +1,17 @@
 package com.jewelry.backend.service;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.jewelry.backend.entity.RepairJob;
 import com.jewelry.backend.util.IndianMoney;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -16,17 +23,26 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Component;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A5 repair job card with OpenPDF (the library InvoicePdfRenderer and
  * CertificateService already use): the store copy on top, a dashed cut line,
- * and a tear-off customer receipt stub with the tracking URL in plain text.
- * Amounts print as "Rs." because the built-in Helvetica has no rupee glyph.
+ * and a tear-off customer receipt stub with the tracking URL as a QR code
+ * (ZXing) and in plain text. Amounts print as "Rs." because the built-in
+ * Helvetica has no rupee glyph.
  */
 @Component
 public class RepairJobCardRenderer {
+
+    private static final Logger LOGGER = Logger.getLogger(RepairJobCardRenderer.class.getName());
+    private static final int QR_PIXELS = 220;
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd MMM yyyy");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
@@ -87,12 +103,31 @@ public class RepairJobCardRenderer {
             document.add(header(branding, "CUSTOMER RECEIPT", job));
             document.add(detailsTable(job, false));
 
-            Paragraph track = new Paragraph();
+            Phrase track = new Phrase();
             track.add(new Phrase("Track this job online: ", LABEL));
             track.add(new Phrase(trackingUrl, BODY_BOLD));
-            track.add(new Phrase("\nEnter the phone number given at the counter. You can approve the estimate from the same page.", SMALL));
-            track.setSpacingBefore(6);
-            document.add(track);
+            track.add(new Phrase("\nScan the code or enter the address. You will be asked for the phone number given at the counter; "
+                    + "the estimate can be approved and paid from the same page.", SMALL));
+
+            PdfPTable trackTable = new PdfPTable(new float[]{78, 22});
+            trackTable.setWidthPercentage(100);
+            trackTable.setSpacingBefore(6);
+            PdfPCell textCell = borderless(track, Element.ALIGN_LEFT);
+            textCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            trackTable.addCell(textCell);
+            Image qr = qrCode(trackingUrl);
+            PdfPCell qrCell;
+            if (qr != null) {
+                qr.scaleToFit(64, 64);
+                qrCell = new PdfPCell(qr, false);
+                qrCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            } else {
+                qrCell = borderless(new Phrase("", SMALL), Element.ALIGN_RIGHT);
+            }
+            qrCell.setBorder(Rectangle.NO_BORDER);
+            qrCell.setPadding(0);
+            trackTable.addCell(qrCell);
+            document.add(trackTable);
 
             document.close();
             return out.toByteArray();
@@ -150,6 +185,23 @@ public class RepairJobCardRenderer {
             }
         }
         return table;
+    }
+
+    /** QR of the tracking URL; null (card still prints) if encoding fails. */
+    private static Image qrCode(String url) {
+        if (isBlank(url)) return null;
+        try {
+            Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
+            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
+            hints.put(EncodeHintType.MARGIN, 1);
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+            BitMatrix matrix = new QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, QR_PIXELS, QR_PIXELS, hints);
+            BufferedImage image = MatrixToImageWriter.toBufferedImage(matrix);
+            return Image.getInstance(image, null);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Job card QR code could not be rendered: " + e.getMessage());
+            return null;
+        }
     }
 
     private static void row(PdfPTable table, String label, String value) {

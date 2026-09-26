@@ -238,6 +238,7 @@ public class ProductService {
         if (product.getFeatured() == null) {
             product.setFeatured(Boolean.FALSE); // column is NOT NULL
         }
+        product.setCostUpdatedAt(product.getCostPrice() != null ? java.time.LocalDateTime.now() : null);
         return productRepository.save(product);
     }
 
@@ -331,6 +332,8 @@ public class ProductService {
             java.util.List<String> ignoredPropertiesList = new java.util.ArrayList<>(java.util.Arrays.asList(getNullPropertyNames(updatedProduct)));
             ignoredPropertiesList.add("stoneDetails");
             ignoredPropertiesList.add("id");
+            ignoredPropertiesList.add("costUpdatedAt"); // server-stamped below
+            java.math.BigDecimal costBefore = existing.getCostPrice();
 
             org.springframework.beans.BeanUtils.copyProperties(updatedProduct, existing, ignoredPropertiesList.toArray(new String[0]));
 
@@ -340,6 +343,12 @@ public class ProductService {
             }
             if (existing.getFeatured() == null) {
                 existing.setFeatured(Boolean.FALSE); // column is NOT NULL
+            }
+            java.math.BigDecimal costAfter = existing.getCostPrice();
+            boolean costChanged = costBefore == null ? costAfter != null
+                    : (costAfter == null || costBefore.compareTo(costAfter) != 0);
+            if (costChanged) {
+                existing.setCostUpdatedAt(java.time.LocalDateTime.now());
             }
 
             // Item-type rules run on the merged record so partial updates are
@@ -425,6 +434,58 @@ public class ProductService {
             }
             result.getRows().add(new com.jewelry.backend.dto.ErpCodeMappingResultDTO.Row(
                     product.getSku(), after, status, product.getName()));
+        }
+        return result;
+    }
+
+    /**
+     * CSV-style SKU to landed cost (PUT /admin/inventory/cost-prices), the
+     * twin of {@link #bulkSetErpMaterialCodes}. A null cost clears the
+     * product's cost; a negative one is INVALID. Every change stamps
+     * costUpdatedAt.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "products", allEntries = true)
+    public com.jewelry.backend.dto.CostPriceImportResultDTO bulkSetCostPrices(
+            List<com.jewelry.backend.dto.CostPriceImportDTO> rows) {
+        com.jewelry.backend.dto.CostPriceImportResultDTO result = new com.jewelry.backend.dto.CostPriceImportResultDTO();
+        if (rows == null) {
+            return result;
+        }
+        for (com.jewelry.backend.dto.CostPriceImportDTO row : rows) {
+            String sku = row == null || row.getSku() == null ? "" : row.getSku().trim();
+            java.math.BigDecimal cost = row == null ? null : row.getCostPrice();
+            if (sku.isEmpty() || (cost != null && cost.signum() < 0)) {
+                result.setInvalid(result.getInvalid() + 1);
+                result.getRows().add(new com.jewelry.backend.dto.CostPriceImportResultDTO.Row(sku, cost, "INVALID", null));
+                continue;
+            }
+            Product product = productRepository.findFirstBySkuIgnoreCase(sku).orElse(null);
+            if (product == null) {
+                result.setNotFound(result.getNotFound() + 1);
+                result.getRows().add(new com.jewelry.backend.dto.CostPriceImportResultDTO.Row(sku, cost, "NOT_FOUND", null));
+                continue;
+            }
+            java.math.BigDecimal before = product.getCostPrice();
+            boolean same = before == null ? cost == null : (cost != null && before.compareTo(cost) == 0);
+            String status;
+            if (same) {
+                status = "UNCHANGED";
+                result.setUnchanged(result.getUnchanged() + 1);
+            } else {
+                product.setCostPrice(cost);
+                product.setCostUpdatedAt(java.time.LocalDateTime.now());
+                productRepository.save(product);
+                if (cost == null) {
+                    status = "CLEARED";
+                    result.setCleared(result.getCleared() + 1);
+                } else {
+                    status = "UPDATED";
+                    result.setUpdated(result.getUpdated() + 1);
+                }
+            }
+            result.getRows().add(new com.jewelry.backend.dto.CostPriceImportResultDTO.Row(
+                    product.getSku(), cost, status, product.getName()));
         }
         return result;
     }

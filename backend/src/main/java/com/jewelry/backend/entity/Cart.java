@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "carts")
@@ -36,6 +37,17 @@ public class Cart extends BaseEntity {
     // Gift card redemption: the applied code and how much of the total it covers.
     private String appliedGiftCard;
     private BigDecimal giftCardAmount = BigDecimal.ZERO;
+
+    // Treasure plan redemption: the matured account and how much of the total
+    // it covers. A payment like the gift card, applied before it.
+    private UUID appliedTreasureAccountId;
+    private BigDecimal treasureAmount = BigDecimal.ZERO;
+
+    // Loyalty points burned on this cart and their rupee value. Unlike the
+    // gift card and treasure this is a DISCOUNT: it lowers the taxable value
+    // and is folded into `discount` by CartService.recalculateCart.
+    private Integer loyaltyPointsRedeemed = 0;
+    private BigDecimal loyaltyDiscount = BigDecimal.ZERO;
 
     private boolean giftWrap;
 

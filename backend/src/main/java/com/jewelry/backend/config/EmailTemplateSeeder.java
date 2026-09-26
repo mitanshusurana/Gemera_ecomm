@@ -36,6 +36,14 @@ public class EmailTemplateSeeder {
     public static final String EXCHANGE_RECEIVED = "exchange-received";
     public static final String EXCHANGE_CREDITED = "exchange-credited";
     public static final String EXCHANGE_REJECTED = "exchange-rejected";
+    public static final String APPOINTMENT_RECEIVED = "appointment-received";
+    public static final String APPOINTMENT_CONFIRMED = "appointment-confirmed";
+    public static final String APPOINTMENT_REMINDER = "appointment-reminder";
+    public static final String APPOINTMENT_CANCELLED = "appointment-cancelled";
+    public static final String TREASURE_INSTALLMENT_DUE = "treasure-installment-due";
+    public static final String RETURN_APPROVED = "return-approved";
+    public static final String RETURN_REJECTED = "return-rejected";
+    public static final String RETURN_REFUNDED = "return-refunded";
 
     private static final String GOLD = "#c9a44c";
     private static final String DARK_GOLD = "#8a6d1f";
@@ -307,7 +315,119 @@ public class EmailTemplateSeeder {
                     <p style="margin:0 0 16px;">If the item is with us it is being returned to you by insured courier, or is ready for collection at the store where you handed it in.</p>
                     <p style="margin:0;">Questions? Reply to this email or visit <a href="{{storefrontUrl}}/contact" style="color:#8a6d1f;">caratloop</a>.</p>
                     """,
-                    List.of("customerName", "storefrontUrl", "requestNumber", "reason")));
+                    List.of("customerName", "storefrontUrl", "requestNumber", "reason")),
+
+            // ----- Appointments and Treasure reminders (service/notification) -----
+            new Seed(APPOINTMENT_RECEIVED,
+                    "We have your appointment request for {{requestedDate}}",
+                    "Appointment requested",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Thank you. We have received your request for a <strong>{{appointmentType}}</strong> on <strong>{{requestedDate}}</strong> ({{storeName}}).</p>
+                    <p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #c9a44c;background:#faf7f0;">{{notes}}</p>
+                    <p style="margin:0 0 16px;">A member of our team will confirm the slot shortly. You can change or cancel the booking any time from <a href="{{storefrontUrl}}/account?tab=orders" style="color:#8a6d1f;">your account</a>.</p>
+                    <p style="margin:0;">Find our address and hours at <a href="{{storefrontUrl}}/stores" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "appointmentType", "requestedDate", "storeName", "notes")),
+
+            new Seed(APPOINTMENT_CONFIRMED,
+                    "Your Caratloop appointment on {{requestedDate}}",
+                    "Appointment confirmed",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Thank you for booking with us. Your <strong>{{appointmentType}}</strong> appointment is set for <strong>{{requestedDate}}</strong> ({{storeName}}){{consultantLine}}.</p>
+                    <p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #c9a44c;background:#faf7f0;">{{notes}}</p>
+                    <p style="margin:0 0 16px;">Our team will have pieces ready for you. If you need to change the time, simply reply to this email or call the store.</p>
+                    <p style="margin:0;">Find our address and hours at <a href="{{storefrontUrl}}/stores" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "appointmentType", "requestedDate", "storeName", "consultantLine", "notes")),
+
+            new Seed(APPOINTMENT_CANCELLED,
+                    "Your Caratloop appointment on {{requestedDate}} was cancelled",
+                    "Appointment cancelled",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Your <strong>{{appointmentType}}</strong> appointment on <strong>{{requestedDate}}</strong> has been cancelled.</p>
+                    <p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #c9a44c;background:#faf7f0;">{{reason}}</p>
+                    <p style="margin:0 0 16px;">We would love to see you another time: <a href="{{storefrontUrl}}/appointments" style="color:#8a6d1f;">book a new slot</a> in a minute.</p>
+                    <p style="margin:0;">Questions? Reply to this email or call the store.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "appointmentType", "requestedDate", "reason")),
+
+            // ----- Returns and exchanges (ReturnService) -----
+            new Seed(RETURN_APPROVED,
+                    "Return {{rmaNumber}} approved",
+                    "Return approved",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Your return request <strong>{{rmaNumber}}</strong> for order <strong>{{orderNumber}}</strong> has been approved.</p>
+                    <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+                      <thead><tr style="color:#8a6d1f;text-transform:uppercase;font-size:12px;letter-spacing:1px;">
+                        <th style="text-align:left;padding:6px 0;border-bottom:1px solid #e3d7b8;">Item</th>
+                        <th style="text-align:center;padding:6px 0;border-bottom:1px solid #e3d7b8;">Qty</th>
+                      </tr></thead>
+                      <tbody>{{itemsHtml}}</tbody>
+                    </table>
+                    <p style="margin:0 0 16px;">Please send the piece back by insured courier, in its original packaging with the certificate, quoting <strong>{{rmaNumber}}</strong> on the parcel, or bring it to any Caratloop store.</p>
+                    <p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #c9a44c;background:#faf7f0;">{{resolutionText}}: <strong>{{refundAmount}}</strong>{{feeText}}</p>
+                    <p style="margin:0;">Follow the return from <a href="{{storefrontUrl}}/account?tab=orders" style="color:#8a6d1f;">your account</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "rmaNumber", "orderNumber", "itemsHtml", "refundAmount", "resolutionText", "feeText")),
+
+            new Seed(RETURN_REJECTED,
+                    "About your return request {{rmaNumber}}",
+                    "Return request",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">We are sorry: we could not accept return request <strong>{{rmaNumber}}</strong> for order <strong>{{orderNumber}}</strong>.</p>
+                    <p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #c9a44c;background:#faf7f0;">{{reason}}</p>
+                    <p style="margin:0 0 16px;">If the piece is already with us it is being returned to you by insured courier.</p>
+                    <p style="margin:0;">Questions? Reply to this email or visit <a href="{{storefrontUrl}}/contact" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "rmaNumber", "orderNumber", "reason")),
+
+            new Seed(RETURN_REFUNDED,
+                    "Return {{rmaNumber}} complete: {{resolutionText}}",
+                    "Return complete",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">We have received the item(s) under return <strong>{{rmaNumber}}</strong> for order <strong>{{orderNumber}}</strong>.</p>
+                    <div style="margin:20px 0;padding:20px;border:1px solid #e3d7b8;border-radius:8px;background:#faf7f0;text-align:center;">
+                      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8a6d1f;">{{resolutionText}}</div>
+                      <div style="font-size:26px;font-weight:bold;margin:8px 0;color:#1c1c1c;">{{refundAmount}}</div>
+                      <div style="font-size:13px;color:#666;">{{detailText}}</div>
+                    </div>
+                    <p style="margin:0;">Thank you for shopping with <a href="{{storefrontUrl}}" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "rmaNumber", "orderNumber", "refundAmount", "resolutionText", "detailText")),
+
+            new Seed(APPOINTMENT_REMINDER,
+                    "Reminder: your Caratloop appointment is tomorrow",
+                    "Appointment reminder",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">A quick reminder that your <strong>{{appointmentType}}</strong> appointment is tomorrow, <strong>{{requestedDate}}</strong>.</p>
+                    <p style="margin:0 0 16px;">If something has come up, reply to this email or call the store and we will find another time.</p>
+                    <p style="margin:0;">Directions and hours: <a href="{{storefrontUrl}}/stores" style="color:#8a6d1f;">caratloop</a>.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "appointmentType", "requestedDate")),
+
+            new Seed(TREASURE_INSTALLMENT_DUE,
+                    "Your Treasure Chest installment of {{amount}} is due on {{dueDate}}",
+                    "Installment due",
+                    """
+                    <p style="margin:0 0 16px;font-size:16px;">Dear {{customerName}},</p>
+                    <p style="margin:0 0 16px;">Installment <strong>{{installmentNumber}} of {{totalInstallments}}</strong> of your {{planName}} plan is due on <strong>{{dueDate}}</strong>.</p>
+                    <table style="border-collapse:collapse;margin:0 0 16px;font-size:14px;">
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Amount due</td><td style="padding:6px 0;"><strong>{{amount}}</strong></td></tr>
+                      <tr><td style="padding:6px 16px 6px 0;color:#666;">Plan balance</td><td style="padding:6px 0;">{{balance}}</td></tr>
+                    </table>
+                    <p style="margin:0 0 20px;text-align:center;">
+                      <a href="{{storefrontUrl}}/treasure" style="display:inline-block;padding:12px 28px;background:#1c1c1c;color:#c9a44c;text-decoration:none;letter-spacing:2px;text-transform:uppercase;font-size:12px;">Pay installment</a>
+                    </p>
+                    <p style="margin:0;font-size:13px;color:#666;">Paying on time keeps your bonus on track. You can also pay in cash at any Caratloop store.</p>
+                    """,
+                    List.of("customerName", "storefrontUrl", "planName", "installmentNumber", "totalInstallments", "amount", "dueDate", "balance")));
 
     /** Create-if-missing by name; existing rows (possibly admin-edited) are left untouched. */
     public void seed() {

@@ -35,6 +35,14 @@ public class Order extends BaseEntity {
     private String appliedGiftCard;
     private BigDecimal giftCardAmount;
 
+    // Treasure plan balance redeemed against this order (a payment, like the
+    // gift card) and the loyalty points burned on it (a discount, already
+    // inside `discount`). Restored when the order is CANCELLED / REFUNDED.
+    private java.util.UUID appliedTreasureAccountId;
+    private BigDecimal treasureAmount;
+    private Integer loyaltyPointsRedeemed;
+    private BigDecimal loyaltyDiscount;
+
     private String status; // PENDING_PAYMENT, PAID, SHIPPED, etc.
     private LocalDate estimatedDelivery;
     private String trackingNumber;
@@ -73,4 +81,12 @@ public class Order extends BaseEntity {
     // the column means "not yet".
     @Column(columnDefinition = "boolean default false")
     private Boolean restocked;
+
+    // The quote this order was created from (RFQService.acceptQuote); null for cart orders.
+    @ManyToOne
+    @JoinColumn(name = "rfq_id")
+    private RFQ rfq;
+
+    // When the order reached DELIVERED; the returns window counts from here.
+    private java.time.LocalDateTime deliveredAt;
 }

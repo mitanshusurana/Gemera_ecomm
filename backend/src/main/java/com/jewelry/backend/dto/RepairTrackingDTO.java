@@ -24,6 +24,12 @@ public record RepairTrackingDTO(
         LocalDate promisedDate,
         BigDecimal finalAmount,
         BigDecimal paidAmount,
+        /** Rupees still owed on the bill (final amount, else the approved estimate); null before an estimate exists. */
+        BigDecimal amountDue,
+        /** True when the customer may settle {@code amountDue} online right now. */
+        boolean canPayOnline,
+        /** Service tax invoice number once issued (DELIVERED or fully paid); null before. */
+        String invoiceNumber,
         LocalDateTime createdAt,
         List<RepairJobEventDTO> events) {
 }

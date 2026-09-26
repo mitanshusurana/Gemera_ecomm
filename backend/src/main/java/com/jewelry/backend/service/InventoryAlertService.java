@@ -62,6 +62,24 @@ public class InventoryAlertService {
     @Autowired
     EmailService emailService;
 
+    @Autowired
+    com.jewelry.backend.service.notification.NotificationService notificationService;
+
+    @Autowired
+    com.jewelry.backend.repository.UserRepository userRepository;
+
+    /** Account holder with their preferences when the e-mail matches a user; otherwise a guest with e-mail only. */
+    private com.jewelry.backend.service.notification.Recipient backInStockRecipient(String email, Product product) {
+        String reference = product.getSku() != null ? product.getSku() : String.valueOf(product.getId());
+        try {
+            return userRepository.findByEmail(email)
+                    .map(u -> com.jewelry.backend.service.notification.Recipient.of(u, reference))
+                    .orElseGet(() -> com.jewelry.backend.service.notification.Recipient.guest("Customer", email, null, reference));
+        } catch (Exception e) {
+            return com.jewelry.backend.service.notification.Recipient.guest("Customer", email, null, reference);
+        }
+    }
+
     @Value("${app.admin.email:}")
     private String adminEmail;
 
@@ -215,8 +233,12 @@ public class InventoryAlertService {
                     data.put("customerName", "Customer");
                     data.put("storefrontUrl", EmailText.trimSlash(frontendUrl));
                     try {
-                        emailService.sendTemplate("BACK_IN_STOCK", subscription.getEmail().trim(),
-                                EmailTemplateSeeder.BACK_IN_STOCK, data);
+                        // E-mail through the seeded template as before; WhatsApp/SMS are added when the
+                        // subscriber has an account with a phone (guests only leave an e-mail address).
+                        notificationService.notify(
+                                com.jewelry.backend.service.notification.NotificationEvent.BACK_IN_STOCK,
+                                backInStockRecipient(subscription.getEmail().trim(), product),
+                                data);
                     } catch (Exception e) {
                         LOGGER.log(Level.WARNING, "Back-in-stock email to " + subscription.getEmail() + " could not be sent", e);
                     }

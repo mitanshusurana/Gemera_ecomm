@@ -42,6 +42,9 @@ public class AuthService {
     @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:4200}")
     String frontendUrl;
 
+    @Autowired
+    LoyaltyService loyaltyService;
+
     @org.springframework.transaction.annotation.Transactional
     public AuthResponse register(RegisterRequest registerRequest) {
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
@@ -55,6 +58,11 @@ public class AuthService {
         user.setLastName(registerRequest.getLastName());
         user.setPhone(registerRequest.getPhone());
         user.setRole("USER");
+
+        // Referral: remember who sent them (the bonus is paid on their first
+        // paid order) and give the newcomer a share code of their own.
+        loyaltyService.findReferrer(registerRequest.getReferralCode()).ifPresent(user::setReferredBy);
+        user.setReferralCode(loyaltyService.generateReferralCode(user));
 
         User savedUser = userRepository.save(user);
 

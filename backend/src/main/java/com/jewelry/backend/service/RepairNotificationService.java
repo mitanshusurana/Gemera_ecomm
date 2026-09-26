@@ -29,6 +29,9 @@ public class RepairNotificationService {
     @Autowired
     EmailService emailService;
 
+    @Autowired
+    com.jewelry.backend.service.notification.NotificationService notificationService;
+
     @Value("${app.frontend-url:http://localhost:4200}")
     private String frontendUrl;
 
@@ -63,11 +66,18 @@ public class RepairNotificationService {
         return EmailText.trimSlash(frontendUrl) + "/repairs/track/" + job.getJobNumber();
     }
 
+    /**
+     * E-mail through the seeded template as before, plus WhatsApp and SMS via
+     * NotificationService. Guests (no account) get the default preferences
+     * with the phone they gave on the form.
+     */
     private void send(RepairJob job, String templateName, String type, Map<String, String> extra) {
         try {
-            String to = job.getEmail();
-            if (to == null || to.isBlank()) {
-                LOGGER.warning("Repair " + job.getJobNumber() + ": no customer email, skipping " + templateName);
+            com.jewelry.backend.service.notification.Recipient recipient =
+                    com.jewelry.backend.service.notification.Recipient.of(
+                            job.getUser(), job.getCustomerName(), job.getEmail(), job.getPhone(), job.getJobNumber());
+            if (!recipient.hasEmail() && !recipient.hasPhone()) {
+                LOGGER.warning("Repair " + job.getJobNumber() + ": no customer email or phone, skipping " + templateName);
                 return;
             }
             Map<String, String> data = new HashMap<>(extra);
@@ -78,9 +88,17 @@ public class RepairNotificationService {
             data.put("itemDescription", EmailText.escape(job.getItemDescription() == null ? "" : job.getItemDescription()));
             data.put("serviceType", serviceLabel(job.getServiceType()));
             data.put("promisedDate", job.getPromisedDate() == null ? "To be confirmed" : job.getPromisedDate().format(DATE));
-            emailService.sendTemplate(type, to, templateName, data);
+            com.jewelry.backend.service.notification.NotificationEvent event =
+                    com.jewelry.backend.service.notification.NotificationEvent.parse(type);
+            if (event == null) {
+                if (recipient.hasEmail()) {
+                    emailService.sendTemplate(type, recipient.email(), templateName, data);
+                }
+                return;
+            }
+            notificationService.notify(event, recipient, data);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Repair " + job.getJobNumber() + ": " + templateName + " email could not be sent", e);
+            LOGGER.log(Level.WARNING, "Repair " + job.getJobNumber() + ": " + templateName + " notification could not be sent", e);
         }
     }
 

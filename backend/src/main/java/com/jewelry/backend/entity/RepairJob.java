@@ -28,7 +28,8 @@ import java.time.LocalDateTime;
 @Table(name = "repair_jobs", indexes = {
         @Index(name = "idx_repair_jobs_job_number", columnList = "job_number", unique = true),
         @Index(name = "idx_repair_jobs_status", columnList = "status"),
-        @Index(name = "idx_repair_jobs_phone", columnList = "phone")
+        @Index(name = "idx_repair_jobs_phone", columnList = "phone"),
+        @Index(name = "idx_repair_jobs_rzp_order", columnList = "razorpay_order_id")
 })
 @Getter
 @Setter
@@ -110,6 +111,18 @@ public class RepairJob extends BaseEntity {
     private PaymentMode paymentMode;
 
     private String paymentReference;
+
+    /**
+     * Razorpay order created for the amount currently due (estimate after
+     * approval, or the balance at READY). Looked up by the payment webhook;
+     * settled once {@code paymentDueAmount} is cleared.
+     */
+    @Column(length = 64)
+    private String razorpayOrderId;
+
+    /** Rupees the open Razorpay order was created for; null once it is paid. */
+    @Column(precision = 14, scale = 2)
+    private BigDecimal paymentDueAmount;
 
     /** Staff member (goldsmith, polisher) the job is with. Free text. */
     private String assignedTo;

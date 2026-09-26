@@ -22,6 +22,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findByOrderNumber(String orderNumber);
     Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
     Optional<Order> findByIdempotencyKey(String idempotencyKey);
+    List<Order> findByRfqIdOrderByCreatedAtDesc(UUID rfqId);
 
     @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.status IN :statuses")
     BigDecimal sumTotalByStatusIn(@Param("statuses") List<String> statuses);

@@ -1,0 +1,59 @@
+# Profile "test": everything the main application.yml reads from the
+# environment gets a dummy value here, and the datasource is an in-memory H2
+# in PostgreSQL mode so the context test needs no database, mail server,
+# object store or price feed. Nothing in this file is a real credential.
+
+app:
+  admin:
+    email: admin@test.local
+    password: test-admin-password
+  frontend-url: http://localhost:4200
+
+razorpay:
+  key_id: ""
+  key_secret: ""
+  webhook_secret: ""
+
+erp:
+  base-url: ""
+  api-key: ""
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:gemera;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        # Column names such as "value", "key" and "year" are keywords in H2;
+        # quoting every identifier keeps the schema creation independent of
+        # H2's reserved-word list. Column definitions ("TEXT") stay unquoted.
+        globally_quoted_identifiers: true
+        globally_quoted_identifiers_skip_column_definitions: true
+  mail:
+    host: localhost
+    port: 2525
+    username: test
+    password: test
+    from: noreply@test.local
+  security:
+    jwt:
+      # Base64 of "test-jwt-secret-key-for-gemera-unit-tests-0123456789" (52 bytes >= 32).
+      secret: dGVzdC1qd3Qtc2VjcmV0LWtleS1mb3ItZ2VtZXJhLXVuaXQtdGVzdHMtMDEyMzQ1Njc4OQ==
+      expiration-ms: 86400000
+
+goldapi:
+  key: test-goldapi-key
+
+cloudflare:
+  r2:
+    access-key: test-access-key
+    secret-key: test-secret-key
+    endpoint: http://localhost:9000
+    bucket: test-bucket
+    public-url: http://localhost:9000/test-bucket

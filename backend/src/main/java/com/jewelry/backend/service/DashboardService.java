@@ -1,15 +1,24 @@
 package com.jewelry.backend.service;
 
 import com.jewelry.backend.dto.DashboardStatsDTO;
+import com.jewelry.backend.repository.AnalyticsRepository;
 import com.jewelry.backend.repository.OrderRepository;
 import com.jewelry.backend.repository.RFQRepository;
 import com.jewelry.backend.repository.UserRepository;
+import com.jewelry.backend.security.StaffPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
+/**
+ * The six counters behind GET /api/v1/admin/dashboard/stats. Every figure is
+ * a database aggregate; the earlier version loaded every order, user and RFQ
+ * into memory to count them. The richer figures live in {@link AnalyticsService}.
+ */
 @Service
 public class DashboardService {
     @Autowired
@@ -21,32 +30,22 @@ public class DashboardService {
     @Autowired
     private RFQRepository rfqRepository;
 
+    @Autowired
+    private AnalyticsRepository analyticsRepository;
+
+    @Transactional(readOnly = true)
     public DashboardStatsDTO getStats() {
         DashboardStatsDTO stats = new DashboardStatsDTO();
 
-        // Calculate total sales (sum of all completed orders)
-        BigDecimal totalSales = orderRepository.findAll().stream()
-                .filter(o -> "COMPLETED".equals(o.getStatus()) || "DELIVERED".equals(o.getStatus()) || "PAID".equals(o.getStatus()) || "PROCESSING".equals(o.getStatus()) || "SHIPPED".equals(o.getStatus()))
-                .map(o -> o.getTotal() != null ? o.getTotal() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        stats.setTotalSales(totalSales);
+        stats.setTotalSales(orderRepository.sumTotalByStatusIn(AnalyticsService.SOLD_STATUSES));
         stats.setTotalOrders(orderRepository.count());
-        stats.setTotalCustomers(userRepository.count());
-        
-        // Count new customers this month
-        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-        long newCustomers = userRepository.findAll().stream()
-                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(startOfMonth))
-                .count();
-        stats.setNewCustomersThisMonth(newCustomers);
+        stats.setTotalCustomers(userRepository.countByRole(StaffPermissions.ROLE_USER));
+
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        stats.setNewCustomersThisMonth(analyticsRepository.countUsersCreatedSince(StaffPermissions.ROLE_USER, startOfMonth));
 
         stats.setTotalRfqs(rfqRepository.count());
-        
-        long unreadRfqs = rfqRepository.findAll().stream()
-                .filter(r -> "PENDING".equals(r.getStatus()) || "NEW".equals(r.getStatus()))
-                .count();
-        stats.setUnreadRfqs(unreadRfqs);
+        stats.setUnreadRfqs(rfqRepository.countByStatusIn(List.of("PENDING", "NEW")));
 
         return stats;
     }

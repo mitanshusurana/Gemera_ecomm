@@ -21,6 +21,9 @@ public class UserService {
     @Autowired
     AddressRepository addressRepository;
 
+    @Autowired
+    LoyaltyService loyaltyService;
+
     public User getUser(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
     }
@@ -35,14 +38,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /** Legacy shape for GET /users/loyalty; the full view is GET /loyalty/me. */
     public Map<String, Object> getLoyalty(String email) {
         User user = getUser(email);
-        int points = user.getLoyaltyPoints() != null ? user.getLoyaltyPoints() : 0;
-        String tier = "SILVER";
-        if (points > 1000) tier = "GOLD";
-        if (points > 5000) tier = "PLATINUM";
+        return Map.of("points", LoyaltyService.balance(user), "tier", loyaltyService.tierOf(user));
+    }
 
-        return Map.of("points", points, "tier", tier);
+    /** SILVER / GOLD / PLATINUM from the customer's lifetime earned points. */
+    public String tierOf(User user) {
+        return loyaltyService.tierOf(user);
     }
 
     @Transactional(rollbackFor = Exception.class)

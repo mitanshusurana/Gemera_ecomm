@@ -40,6 +40,11 @@ public class Product extends BaseEntity {
     // Multi-channel feeds (GROWTH-CONTRACT.md section 2): admin opt-out per product.
     private Boolean excludeFromFeeds;
 
+    // Returns and exchanges: null (rows that pre-date the column) means
+    // returnable; only an explicit false blocks an RMA on this product.
+    @Column(columnDefinition = "boolean default true")
+    private Boolean returnable;
+
     // Counter notes from quick capture; admin-only, never on the public DTO.
     @Column(columnDefinition = "TEXT")
     private String internalNotes;
@@ -104,6 +109,13 @@ public class Product extends BaseEntity {
         String cleaned = erpMaterialCode == null ? null : erpMaterialCode.trim().toUpperCase();
         this.erpMaterialCode = cleaned == null || cleaned.isEmpty() ? null : cleaned;
     }
+
+    // Landed cost per unit including making (docs/BUSINESS_GAPS.md: margin
+    // and dead-stock value). Staff-only: EntityMapper never copies it to the
+    // DTO, ProductController adds it for products.write callers. costUpdatedAt
+    // is stamped by ProductService whenever the cost changes.
+    private BigDecimal costPrice;
+    private java.time.LocalDateTime costUpdatedAt;
 
     private String huid; // HUID (India)
     private Boolean bisHallmark;

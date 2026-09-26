@@ -34,12 +34,22 @@ public class ProductDTO {
     // defaults it to true.
     private Boolean published;
     private Boolean excludeFromFeeds;
+    // Returns: false blocks an RMA on this product; null/true allows one.
+    private Boolean returnable;
 
     // Admin-only: the mapper never fills this, ProductController adds it for
     // ADMIN callers and the create/update paths read it. Hidden when null so
     // public responses do not carry the key at all.
     @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
     private String internalNotes;
+
+    // Staff-only (products.write): landed cost per unit and when it last
+    // changed. The mapper leaves both null; ProductController fills them for
+    // staff so public responses never carry the keys.
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private BigDecimal costPrice;
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private java.time.LocalDateTime costUpdatedAt;
 
     private String seoTitle;
     private String seoDescription;

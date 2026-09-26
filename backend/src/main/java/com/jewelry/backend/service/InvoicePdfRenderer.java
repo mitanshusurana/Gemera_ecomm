@@ -23,9 +23,11 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * Renders an Invoice as an A4 "TAX INVOICE" PDF with OpenPDF, the same
- * library CertificateService already uses. Amounts print as "Rs." because
- * the built-in Helvetica has no rupee glyph and the project ships no
- * Unicode font.
+ * library CertificateService already uses. One renderer for both kinds:
+ * a GOODS invoice (web order, HSN codes, shipping line) and a SERVICE
+ * invoice (repair job, SAC code, GST-inclusive price). Amounts print as
+ * "Rs." because the built-in Helvetica has no rupee glyph and the project
+ * ships no Unicode font.
  */
 @Component
 public class InvoicePdfRenderer {
@@ -48,8 +50,14 @@ public class InvoicePdfRenderer {
 
             Paragraph title = new Paragraph("TAX INVOICE", TITLE);
             title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(10);
+            title.setSpacingAfter(invoice.isService() ? 2 : 10);
             document.add(title);
+            if (invoice.isService()) {
+                Paragraph subtitle = new Paragraph("Supply of services - repair and maintenance of jewellery", BODY);
+                subtitle.setAlignment(Element.ALIGN_CENTER);
+                subtitle.setSpacingAfter(10);
+                document.add(subtitle);
+            }
 
             document.add(headerTable(invoice));
             document.add(partiesTable(invoice));
@@ -63,6 +71,14 @@ public class InvoicePdfRenderer {
             Paragraph payment = new Paragraph("Payment: " + nz(invoice.getPaymentSummary()), BODY);
             payment.setSpacingBefore(4);
             document.add(payment);
+
+            if (invoice.isService()) {
+                Paragraph note = new Paragraph(
+                        "The service charge was quoted inclusive of GST; the taxable value is the quoted amount less the tax shown. "
+                        + "SAC " + serviceSac(invoice) + ": maintenance and repair services of jewellery.", SMALL);
+                note.setSpacingBefore(4);
+                document.add(note);
+            }
 
             Paragraph footer = new Paragraph(
                     "This is a computer-generated invoice; no signature required. E&OE.", SMALL);
@@ -99,7 +115,12 @@ public class InvoicePdfRenderer {
         meta.add(new Phrase(nz(invoice.getInvoiceNumber()) + "\n", BODY_BOLD));
         meta.add(new Phrase("Invoice date: ", BODY));
         meta.add(new Phrase((invoice.getInvoiceDate() == null ? "-" : invoice.getInvoiceDate().format(DATE)) + "\n", BODY_BOLD));
-        if (invoice.getOrder() != null && invoice.getOrder().getOrderNumber() != null) {
+        if (invoice.isService()) {
+            if (invoice.getRepairJob() != null && invoice.getRepairJob().getJobNumber() != null) {
+                meta.add(new Phrase("Job: " + invoice.getRepairJob().getJobNumber() + "\n", BODY));
+                meta.add(new Phrase("Service: " + RepairNotificationService.serviceLabel(invoice.getRepairJob().getServiceType()) + "\n", BODY));
+            }
+        } else if (invoice.getOrder() != null && invoice.getOrder().getOrderNumber() != null) {
             meta.add(new Phrase("Order: " + invoice.getOrder().getOrderNumber() + "\n", BODY));
         }
         meta.add(new Phrase("Place of supply: " + orDash(invoice.getPlaceOfSupply())
@@ -145,8 +166,8 @@ public class InvoicePdfRenderer {
         table.setHeaderRows(1);
 
         head(table, "No");
-        head(table, "Description");
-        head(table, "HSN/SAC");
+        head(table, invoice.isService() ? "Service description" : "Description");
+        head(table, invoice.isService() ? "SAC" : "HSN/SAC");
         head(table, "Qty");
         head(table, "Rate");
         head(table, "Discount");
@@ -246,6 +267,16 @@ public class InvoicePdfRenderer {
         valueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         valueCell.setPadding(3);
         table.addCell(valueCell);
+    }
+
+    /** SAC of the first line of a service invoice, for the footnote. */
+    private static String serviceSac(Invoice invoice) {
+        for (InvoiceLine line : invoice.getLines()) {
+            if (line.getHsnCode() != null && !line.getHsnCode().isBlank()) {
+                return line.getHsnCode();
+            }
+        }
+        return "-";
     }
 
     private static String percent(BigDecimal rate) {

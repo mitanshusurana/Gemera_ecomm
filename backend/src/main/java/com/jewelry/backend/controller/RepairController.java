@@ -1,14 +1,20 @@
 package com.jewelry.backend.controller;
 
 import com.jewelry.backend.dto.RepairJobDTO;
+import com.jewelry.backend.dto.RepairPaymentOrderDTO;
 import com.jewelry.backend.dto.RepairRequests;
 import com.jewelry.backend.dto.RepairTrackingDTO;
+import com.jewelry.backend.entity.Invoice;
+import com.jewelry.backend.entity.RepairJob;
+import com.jewelry.backend.service.InvoiceService;
 import com.jewelry.backend.service.RepairJobService;
 import com.jewelry.backend.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,9 +33,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Customer side of repair and service jobs. Guests may book, track and
- * approve with the job number and phone; signed-in customers also get
- * {@code /mine}. Public paths are opened in SecurityConfig.
+ * Customer side of repair and service jobs. Guests may book, track, approve,
+ * pay and download the service invoice with the job number and phone;
+ * signed-in customers also get {@code /mine}. Public paths are opened in
+ * SecurityConfig.
  */
 @RestController
 @RequestMapping("/api/v1/repairs")
@@ -44,6 +51,9 @@ public class RepairController {
 
     @Autowired
     StorageService storageService;
+
+    @Autowired
+    InvoiceService invoiceService;
 
     @PostMapping("/requests")
     @Operation(summary = "Book a repair or service job (signed in or guest with name, phone and email)")
@@ -72,6 +82,43 @@ public class RepairController {
                                                              @RequestParam(required = false) String phone,
                                                              Principal principal) {
         return ResponseEntity.ok(repairJobService.approveEstimate(jobNumber, phone, principal == null ? null : principal.getName()));
+    }
+
+    @PostMapping("/{jobNumber}/payments/order")
+    @Operation(summary = "Create (or reuse) the Razorpay order for the amount due on an approved job")
+    public ResponseEntity<RepairPaymentOrderDTO> createPaymentOrder(@PathVariable String jobNumber,
+                                                                    @RequestParam(required = false) String phone,
+                                                                    Principal principal) {
+        return ResponseEntity.ok(repairJobService.createPaymentOrder(jobNumber, phone, principal == null ? null : principal.getName()));
+    }
+
+    @PostMapping("/{jobNumber}/payments/verify")
+    @Operation(summary = "Verify the Razorpay signature from the checkout handler and record the payment")
+    public ResponseEntity<RepairTrackingDTO> verifyPayment(@PathVariable String jobNumber,
+                                                           @RequestParam(required = false) String phone,
+                                                           @Valid @RequestBody RepairRequests.VerifyPayment request,
+                                                           Principal principal) {
+        return ResponseEntity.ok(repairJobService.verifyPayment(jobNumber, phone, principal == null ? null : principal.getName(), request));
+    }
+
+    /**
+     * Service tax invoice as PDF. Issued on first request once the job is
+     * delivered or fully paid; 404 (JSON, with "message") before that. No
+     * "produces": that would pin the 404 ProblemDetail to application/pdf.
+     */
+    @GetMapping("/{jobNumber}/invoice")
+    @Operation(summary = "Download the GST tax invoice for the service (owner, or job number + phone)")
+    public ResponseEntity<byte[]> invoice(@PathVariable String jobNumber,
+                                          @RequestParam(required = false) String phone,
+                                          Principal principal) {
+        RepairJob job = repairJobService.getForCustomer(jobNumber, phone, principal == null ? null : principal.getName());
+        Invoice invoice = invoiceService.ensureServiceInvoice(job);
+        byte[] pdf = invoiceService.renderPdf(invoice);
+        String filename = invoice.getInvoiceNumber().replace('/', '-') + ".pdf";
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(pdf);
     }
 
     /**
