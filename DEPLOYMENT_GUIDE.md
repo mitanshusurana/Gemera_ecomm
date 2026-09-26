@@ -120,6 +120,15 @@ Old gold exchange: when the admin credits an exchange request, the store API pos
 customer to `POST /api/v1/integrations/ecommerce/old-gold-purchases`; the customer's credit is a store gift card, and
 the web sale that redeems it carries an `exchange_credit` block so the ERP sets the purchase off against the sale.
 
+Messaging: `WHATSAPP_PROVIDER=meta` with `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN` (templates named
+`caratloop_<event>` must be approved in the WhatsApp Business account; override names per event in admin Settings,
+Messaging), and `SMS_PROVIDER=msg91|http` with `SMS_API_KEY`, `SMS_SENDER_ID`, `SMS_ENDPOINT`, `SMS_TEMPLATE_ID`. Both
+default to disabled; e-mail always sends. Test either channel from the admin Notifications page.
+
+ERP e-invoicing: `EINVOICE_PROVIDER=nic` with the GSP base URL and credentials in `.env.erp` (see
+`projects/erp-backend/app/core/config.py`); use `fake` to exercise the flow without a GSP. TDS and TCS are off until
+`TDS_194Q_ENABLED` / `TCS_206C1H_ENABLED` are set.
+
 Seller details printed on web invoices come from admin Settings (legal name, GSTIN, PAN, address,
 state code, invoice series prefix).
 
