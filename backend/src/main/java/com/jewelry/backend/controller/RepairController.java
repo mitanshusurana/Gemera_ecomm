@@ -107,6 +107,8 @@ public class RepairController {
      * "produces": that would pin the 404 ProblemDetail to application/pdf.
      */
     @GetMapping("/{jobNumber}/invoice")
+    // open-in-view is off; the renderer walks Invoice.repairJob and lines lazily.
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     @Operation(summary = "Download the GST tax invoice for the service (owner, or job number + phone)")
     public ResponseEntity<byte[]> invoice(@PathVariable String jobNumber,
                                           @RequestParam(required = false) String phone,

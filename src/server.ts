@@ -33,12 +33,24 @@ async function initServer() {
       // Import the manifest setter functions (internal APIs)
       const { ɵsetAngularAppManifest, ɵsetAngularAppEngineManifest } = await import('@angular/ssr');
 
-      // Ensure allowedHosts is an array (Angular SSR tries to iterate over it)
-      if (!appEngineManifest.default.allowedHosts) {
-        appEngineManifest.default.allowedHosts = [];
-      }
-      if (!appManifest.default.allowedHosts) {
-        appManifest.default.allowedHosts = [];
+      // Angular SSR 20.3 refuses any request whose Host header is not in
+      // allowedHosts and silently falls back to client-side rendering. The
+      // manifest ships with none, so every production request was rendered
+      // client-side. The list comes from NG_ALLOWED_HOSTS (comma separated,
+      // no scheme or port; "*.example.com" wildcards allowed); localhost is
+      // always included for the container health probe.
+      const allowedHosts = Array.from(new Set([
+        'localhost',
+        '127.0.0.1',
+        ...(process.env['NG_ALLOWED_HOSTS'] ?? '')
+          .split(',')
+          .map((h) => h.trim().toLowerCase())
+          .filter((h) => h.length > 0),
+      ]));
+      appEngineManifest.default.allowedHosts = allowedHosts;
+      appManifest.default.allowedHosts = allowedHosts;
+      if (allowedHosts.length === 2) {
+        console.warn('NG_ALLOWED_HOSTS is not set; only localhost requests will be server-rendered.');
       }
 
       // Set the manifests using the proper SSR API

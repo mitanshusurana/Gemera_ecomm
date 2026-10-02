@@ -100,8 +100,28 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ProblemDetail handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
+        problemDetail.setTitle("Method Not Allowed");
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/method-not-allowed"));
+        return problemDetail;
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ProblemDetail handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "No such endpoint");
+        problemDetail.setTitle("Not Found");
+        problemDetail.setType(URI.create("https://www.caratloop.com/errors/not-found"));
+        return problemDetail;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleException(Exception ex) {
+        // The only place an unexpected failure is seen; without this line the
+        // end-to-end run had to guess at a 500 from the outside.
+        java.util.logging.Logger.getLogger(GlobalExceptionHandler.class.getName())
+                .log(java.util.logging.Level.SEVERE, "Unhandled exception", ex);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error");
         problemDetail.setTitle("Server Error");
         problemDetail.setType(URI.create("https://www.caratloop.com/errors/internal-server-error"));

@@ -138,6 +138,8 @@ public class AdminRepairController {
      */
     @GetMapping("/{id}/invoice.pdf")
     @PreAuthorize("@access.has('invoices.read')")
+    // open-in-view is off; the renderer walks Invoice.repairJob and lines lazily.
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     @Operation(summary = "Service tax invoice PDF (issued on first request once delivered or fully paid)")
     public ResponseEntity<byte[]> invoice(@PathVariable UUID id) {
         RepairJob job = repairJobService.getEntity(id);

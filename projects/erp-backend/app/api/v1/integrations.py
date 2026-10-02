@@ -41,6 +41,7 @@ from __future__ import annotations
 import hmac
 import logging
 import secrets
+import datetime as _dt
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import List, Optional
@@ -152,7 +153,10 @@ class BridgePayment(BaseModel):
     mode: str = "Razorpay"
     reference: Optional[str] = None
     amount: Decimal = Field(gt=0)
-    date: Optional[date] = None
+    # Not "Optional[date]": under postponed annotations the name `date` in
+    # this class body is the field default (None), so the type resolved to
+    # Optional[None] and every dated payment was refused with 422.
+    date: Optional[_dt.date] = None
 
 
 class BridgeExchangeCredit(BaseModel):
@@ -171,7 +175,7 @@ class BridgeAdvanceApplied(BaseModel):
 
 
 class BridgeSaleRequest(BaseModel):
-    external_ref: str = Field(min_length=1, max_length=40)
+    external_ref: str = Field(min_length=1, max_length=64)
     invoice_no: str = Field(min_length=1, max_length=30)
     invoice_date: date
     customer: BridgeCustomer
@@ -188,7 +192,7 @@ class BridgeSaleRequest(BaseModel):
 class BridgeAdvance(BaseModel):
     """An on-account receipt: a Treasure plan installment or any other
     deposit taken before a sale exists."""
-    external_ref: str = Field(min_length=1, max_length=40)
+    external_ref: str = Field(min_length=1, max_length=64)
     customer: BridgeCustomer
     amount: Decimal = Field(gt=0)
     date: date
@@ -198,7 +202,7 @@ class BridgeAdvance(BaseModel):
 
 
 class BridgeOldGoldPurchase(BaseModel):
-    external_ref: str = Field(min_length=1, max_length=40)   # exchange request number
+    external_ref: str = Field(min_length=1, max_length=64)   # exchange request number
     purchase_date: date
     customer: BridgeCustomer
     metal: str = Field(pattern="^(GOLD|SILVER)$")
@@ -212,7 +216,7 @@ class BridgeOldGoldPurchase(BaseModel):
 
 
 class BridgeCreditNoteRequest(BaseModel):
-    external_ref: str = Field(min_length=1, max_length=40)
+    external_ref: str = Field(min_length=1, max_length=64)
     invoice_no: str = Field(min_length=1, max_length=30)
     amount: Decimal = Field(gt=0)
     reason: str = Field(min_length=1)

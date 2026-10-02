@@ -680,7 +680,9 @@ async def create_sales_invoice(
             line = cl["line"]
             mat_res = await db.execute(
                 text("SELECT id FROM caratloop.materials WHERE (id = :mid OR code = :mcode) AND company_id = :cid LIMIT 1"),
-                {"mid": str(line.material_id) if line.material_id else None, "mcode": str(line.material_id), "cid": company_id}
+                # A code (not a UUID) in :mid made asyncpg reject the bind; the
+                # first lookup already guards with _as_uuid, this one did not.
+                {"mid": _as_uuid(line.material_id), "mcode": str(line.material_id) if line.material_id else None, "cid": company_id}
             )
             mat_id = mat_res.scalar()
             if mat_id and loc_id:

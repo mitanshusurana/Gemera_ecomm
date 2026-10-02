@@ -227,3 +227,18 @@ def test_the_pre_check_and_the_posting_agree_on_a_service_invoice():
     exp = expected_totals([ln], Decimal("0"), "08", "08")
     assert exp["cgst"] == booked.cgst_making and exp["sgst"] == booked.sgst_making
     assert booked.cgst_material == 0
+
+
+def test_payment_date_is_a_real_date_and_long_treasure_refs_are_accepted():
+    """Two 422s the end-to-end run hit: BridgePayment.date resolved to
+    Optional[None] under postponed annotations, and Treasure references
+    (TRS-<uuid>-<n>, 42 characters) exceeded the 40-character cap."""
+    import datetime
+    from app.api.v1.integrations import BridgeAdvance, BridgeCustomer, BridgePayment
+
+    pay = BridgePayment(amount="1180", date="2026-09-26", reference="pay_x")
+    assert pay.date == datetime.date(2026, 9, 26)
+    ref = "TRS-123e4567-e89b-12d3-a456-426614174000-12"
+    assert len(ref) > 40
+    adv = BridgeAdvance(external_ref=ref, customer=BridgeCustomer(name="A"), amount="5000", date="2026-09-26")
+    assert adv.external_ref == ref
