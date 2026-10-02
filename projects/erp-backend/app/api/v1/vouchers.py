@@ -678,7 +678,9 @@ async def create_debit_note(payload: DebitNotePayload, request: Request, db: Asy
 async def list_vouchers(type: Optional[str] = None, from_date: Optional[date] = None, to_date: Optional[date] = None, page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     company_id = current_user["company_id"]
-    query = "SELECT id, entry_no, entry_date, entry_type, narration, total_debit, status FROM caratloop.journal_entries WHERE company_id = :cid"
+    query = ("SELECT id, entry_uuid, entry_no, entry_date, entry_type, narration, reference_no, reference_type, "
+             "reference_id, total_debit, total_credit, status, is_reversal, sequence_no "
+             "FROM caratloop.journal_entries WHERE company_id = :cid")
     params = {"cid": company_id}
     if type:
         query += " AND entry_type = :type"
@@ -689,23 +691,134 @@ async def list_vouchers(type: Optional[str] = None, from_date: Optional[date] = 
     if to_date:
         query += " AND entry_date <= :t"
         params["t"] = str(to_date)
-    
+    # Without an ORDER BY the page was whatever the heap gave.
+    query += " ORDER BY entry_date DESC, sequence_no DESC, id DESC"
+
     # Bound the result set. These endpoints previously returned the whole
     # table; the sales register returned every invoice ever raised.
     query = page.apply(query)
     params.update(page.params)
 
     result = await db.execute(text(query), params)
-    return [dict(r) for r in result.mappings().all()]
+    rows = []
+    for r in result.mappings().all():
+        d = dict(r)
+        for k in ("entry_uuid", "reference_id"):
+            if d.get(k) is not None:
+                d[k] = str(d[k])
+        rows.append(d)
+    return rows
+
+
+# Where a voucher came from, for the drill-down from a ledger line to the
+# document behind it. reference_type is what each posting path writes.
+SOURCE_DOCUMENTS = {
+    "SalesInvoice": ("sales_invoice", "/sales?view_id="),
+    "CreditNote": ("sales_invoice", "/sales?view_id="),
+    "PurchaseInvoice": ("purchase_invoice", "/purchases?view_id="),
+    "DebitNote": ("purchase_invoice", "/purchases?view_id="),
+    "FiscalYear": ("fiscal_year", "/fiscal-years"),
+}
+
+
+async def _source_document(db: AsyncSession, company_id, reference_type: Optional[str], reference_id) -> Optional[dict]:
+    if not reference_type or not reference_id:
+        return None
+    kind, href = SOURCE_DOCUMENTS.get(reference_type, (None, None))
+    doc = {"type": reference_type, "id": str(reference_id), "kind": kind, "href": None, "number": None}
+    if kind == "sales_invoice":
+        r = await db.execute(
+            text("SELECT invoice_no, invoice_date, grand_total, amount_paid, payment_status, status "
+                 "FROM caratloop.sales_invoices WHERE id = CAST(:id AS UUID) AND company_id = :cid"),
+            {"id": str(reference_id), "cid": company_id},
+        )
+        row = r.mappings().first()
+        if row:
+            doc.update({"number": row["invoice_no"], "date": str(row["invoice_date"]), "grand_total": row["grand_total"],
+                        "amount_paid": row["amount_paid"], "payment_status": row["payment_status"], "status": row["status"]})
+    elif kind == "purchase_invoice":
+        r = await db.execute(
+            text("SELECT bill_no, bill_date, grand_total, amount_paid, payment_status, status, vendor_inv_no "
+                 "FROM caratloop.purchase_invoices WHERE id = CAST(:id AS UUID) AND company_id = :cid"),
+            {"id": str(reference_id), "cid": company_id},
+        )
+        row = r.mappings().first()
+        if row:
+            doc.update({"number": row["bill_no"], "date": str(row["bill_date"]), "grand_total": row["grand_total"],
+                        "amount_paid": row["amount_paid"], "payment_status": row["payment_status"], "status": row["status"],
+                        "vendor_inv_no": row["vendor_inv_no"]})
+    elif kind == "fiscal_year":
+        r = await db.execute(
+            text("SELECT year_label FROM caratloop.fiscal_years WHERE id = CAST(:id AS UUID) AND company_id = :cid"),
+            {"id": str(reference_id), "cid": company_id},
+        )
+        doc["number"] = r.scalar()
+    if href:
+        doc["href"] = href + (str(reference_id) if kind != "fiscal_year" else "")
+    return doc
+
 
 @router.get("/{id}")
-async def get_voucher(id: UUID, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+async def get_voucher(id: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """One voucher with its lines (account code and name on each) and the
+    document it was posted from.
+
+    journal_entries.id is a BIGINT; the path parameter was typed UUID, so the
+    number every list and ledger carries was refused with 422 and nothing
+    could drill down to a voucher. Both the numeric id and entry_uuid are
+    accepted now.
+    """
     company_id = current_user["company_id"]
-    res = await db.execute(text("SELECT * FROM caratloop.journal_entries WHERE id = :id AND company_id = :cid"), {"id": str(id), "cid": company_id})
+    ident = (id or "").strip()
+    if ident.isdigit():
+        res = await db.execute(
+            text("SELECT * FROM caratloop.journal_entries WHERE id = :id AND company_id = :cid"),
+            {"id": int(ident), "cid": company_id},
+        )
+    else:
+        try:
+            UUID(ident)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="Voucher id must be the numeric journal entry id or its UUID.")
+        res = await db.execute(
+            text("SELECT * FROM caratloop.journal_entries WHERE entry_uuid = CAST(:id AS UUID) AND company_id = :cid"),
+            {"id": ident, "cid": company_id},
+        )
     v = res.mappings().first()
     if not v:
         raise HTTPException(status_code=404, detail="Not found")
-    l_res = await db.execute(text("SELECT * FROM caratloop.journal_entry_lines WHERE journal_entry_id = :je_id"), {"je_id": v['id']})
+    l_res = await db.execute(
+        text("""
+            SELECT jel.*, a.code AS account_code, a.name AS account_name, a.normal_balance,
+                   p.name AS party_name
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.accounts a ON a.id = jel.account_id
+            LEFT JOIN caratloop.parties p ON p.id = jel.party_id
+            WHERE jel.journal_entry_id = :je_id
+            ORDER BY jel.sequence_no, jel.id
+        """),
+        {"je_id": v['id']},
+    )
     vd = dict(v)
-    vd['lines'] = [dict(r) for r in l_res.mappings().all()]
+    for k in ("entry_uuid", "reference_id", "company_id", "fiscal_year_id", "created_by", "cost_center_id"):
+        if vd.get(k) is not None:
+            vd[k] = str(vd[k])
+    if vd.get("ip_address") is not None:
+        vd["ip_address"] = str(vd["ip_address"])
+    lines = []
+    for r in l_res.mappings().all():
+        d = dict(r)
+        for k in ("account_id", "party_id", "cost_center_id", "reconciled_by"):
+            if d.get(k) is not None:
+                d[k] = str(d[k])
+        lines.append(d)
+    vd['lines'] = lines
+    vd['source_document'] = await _source_document(db, company_id, v.get("reference_type"), v.get("reference_id"))
+    if v.get("reversal_of_id"):
+        rev = await db.execute(
+            text("SELECT id, entry_no FROM caratloop.journal_entries WHERE id = :id AND company_id = :cid"),
+            {"id": v["reversal_of_id"], "cid": company_id},
+        )
+        row = rev.mappings().first()
+        vd["reverses"] = dict(row) if row else None
     return vd

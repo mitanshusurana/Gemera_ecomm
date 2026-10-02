@@ -12,6 +12,10 @@ from app.core.config import settings
 from app.core.database import get_db
 from decimal import Decimal
 
+from app.api.v1.ledger import party_balances
+from app.core.balances import OK, WARN, FAIL, INFO, check, side_of, signed_opening
+from app.core.ledger import TOLERANCE
+from app.core.periods import _as_date, load_fiscal_years
 from app.core.money import round_money, to_decimal
 from app.core.roles import CAN_READ_FULL_AUDIT, has_role
 from app.core.security import get_current_user
@@ -89,6 +93,113 @@ async def get_reports_trial_balance(
     return res
 
 
+BALANCE_SHEET_SQL = """
+    SELECT
+        ag.nature,
+        ag.name AS group_name,
+        a.id AS account_id, a.code, a.name AS account_name, a.normal_balance,
+        COALESCE(a.opening_balance, 0) AS opening_balance, a.opening_balance_type,
+        COALESCE(t.dr, 0) AS total_dr, COALESCE(t.cr, 0) AS total_cr
+    FROM caratloop.accounts a
+    JOIN caratloop.account_groups ag ON ag.id = a.group_id
+    -- Postings filtered in a subquery: a date test in a LEFT JOIN's
+    -- ON clause left every line summed regardless of as_of_date.
+    -- 'Opening' journals restate balances already posted and are
+    -- skipped in a from-inception total (app.core.periods).
+    LEFT JOIN (
+        SELECT jel.account_id, SUM(jel.dr_amount) AS dr, SUM(jel.cr_amount) AS cr
+        FROM caratloop.journal_entry_lines jel
+        JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+        WHERE je.company_id = :cid AND je.status = 'Posted'
+          AND je.entry_date <= :as_of_date AND je.entry_type <> 'Opening'
+        GROUP BY jel.account_id
+    ) t ON t.account_id = a.id
+    WHERE a.company_id = :cid AND a.is_active = TRUE
+    ORDER BY ag.nature, ag.name, a.code
+"""
+
+# Profit or loss not yet transferred to Retained Earnings: every P&L
+# posting since inception. A closed year's 'Closing' journal brings its
+# accounts to zero and moves the net into CAP-002, so what remains here is
+# exactly the unclosed years' result and nothing is counted twice.
+UNCLOSED_PL_SQL = """
+    SELECT
+        COALESCE(SUM(CASE WHEN ag.nature = 'Income' THEN jel.cr_amount - jel.dr_amount ELSE 0 END), 0) AS total_income,
+        COALESCE(SUM(CASE WHEN ag.nature = 'Expenses' THEN jel.dr_amount - jel.cr_amount ELSE 0 END), 0) AS total_expenses
+    FROM caratloop.journal_entry_lines jel
+    JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+    JOIN caratloop.accounts a ON a.id = jel.account_id
+    JOIN caratloop.account_groups ag ON ag.id = a.group_id
+    WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of_date
+      AND je.entry_type <> 'Opening'
+"""
+
+
+async def balance_sheet_figures(db: AsyncSession, company_id, as_of_date: date) -> dict:
+    """Balance sheet as Decimals, shared with the reconciliation panel."""
+    result = await db.execute(text(BALANCE_SHEET_SQL), {"as_of_date": as_of_date, "cid": company_id})
+    rows = []
+    for r in result.mappings().all():
+        d = dict(r)
+        d["account_id"] = str(d["account_id"])
+        signed = signed_opening(r) + to_decimal(r["total_dr"]) - to_decimal(r["total_cr"])
+        # Shown on the side its group lives on: assets debit-positive,
+        # liabilities and equity credit-positive. A flipped account (a debtor
+        # in credit) is a negative figure under its own group, which is how
+        # it nets to the right total; the side is spelled out as well.
+        d["balance"] = signed if r["nature"] == "Assets" else -signed
+        d["balance_signed"] = signed
+        d["balance_side"] = side_of(signed)
+        rows.append(d)
+
+    def group_by_nature(nature):
+        return [r for r in rows if r["nature"] == nature]
+
+    assets = group_by_nature("Assets")
+    liabilities = group_by_nature("Liabilities")
+    equity = group_by_nature("Equity")
+
+    pl_res = await db.execute(text(UNCLOSED_PL_SQL), {"cid": company_id, "as_of_date": as_of_date})
+    pl_row = pl_res.mappings().first() or {}
+    total_income = to_decimal(pl_row.get("total_income"))
+    total_expenses = to_decimal(pl_row.get("total_expenses"))
+    # Decimal throughout. This was a float added to Decimal balances, which
+    # raised TypeError and made the whole report answer 500.
+    net_profit = total_income - total_expenses
+
+    equity.append({
+        "code": "CUR-YR-PL",
+        "account_name": "Net Profit / (Loss) not yet transferred to Retained Earnings",
+        "group_name": "Capital & Equity",
+        "nature": "Equity",
+        "balance": net_profit,
+        "balance_signed": -net_profit,
+        "balance_side": side_of(-net_profit),
+    })
+
+    total_assets = sum((to_decimal(r["balance"]) for r in assets), Decimal("0"))
+    total_liabilities = sum((to_decimal(r["balance"]) for r in liabilities), Decimal("0"))
+    total_equity = sum((to_decimal(r["balance"]) for r in equity), Decimal("0"))
+    total_liab_equity = total_liabilities + total_equity
+    difference = total_assets - total_liab_equity
+    return {
+        "assets": assets,
+        "liabilities": liabilities,
+        "equity": equity,
+        "total_assets": total_assets,
+        "total_liabilities": total_liabilities,
+        "total_equity": total_equity,
+        "total_liabilities_and_equity": total_liab_equity,
+        "unclosed_income": total_income,
+        "unclosed_expenses": total_expenses,
+        "net_profit": net_profit,
+        "difference": difference,
+        # The same tolerance as the posting guard; it was "< 1.0", which
+        # would have called a balance sheet out by 99 paise balanced.
+        "is_balanced": abs(difference) <= TOLERANCE,
+    }
+
+
 @router.get("/balance-sheet")
 async def get_balance_sheet(
     as_of_date: Optional[date] = None,
@@ -101,88 +212,24 @@ async def get_balance_sheet(
     elif isinstance(as_of_date, str):
         as_of_date = date.fromisoformat(as_of_date)
 
-    result = await db.execute(
-        text("""
-            SELECT
-                ag.nature,
-                ag.name AS group_name,
-                a.code, a.name AS account_name,
-                CASE
-                    WHEN a.normal_balance = 'D' THEN
-                        COALESCE(a.opening_balance, 0)
-                        + COALESCE(SUM(jel.dr_amount), 0)
-                        - COALESCE(SUM(jel.cr_amount), 0)
-                    ELSE
-                        COALESCE(a.opening_balance, 0)
-                        + COALESCE(SUM(jel.cr_amount), 0)
-                        - COALESCE(SUM(jel.dr_amount), 0)
-                END AS balance
-            FROM caratloop.accounts a
-            JOIN caratloop.account_groups ag ON ag.id = a.group_id
-            -- Postings filtered in a subquery: a date test in a LEFT JOIN's
-            -- ON clause left every line summed regardless of as_of_date.
-            -- 'Opening' journals restate balances already posted and are
-            -- skipped in a from-inception total (app.core.periods).
-            LEFT JOIN (
-                SELECT jel.account_id, jel.dr_amount, jel.cr_amount
-                FROM caratloop.journal_entry_lines jel
-                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
-                WHERE je.company_id = :cid AND je.status = 'Posted'
-                  AND je.entry_date <= :as_of_date AND je.entry_type <> 'Opening'
-            ) jel ON jel.account_id = a.id
-            WHERE a.company_id = :cid AND a.is_active = TRUE
-            GROUP BY ag.nature, ag.name, a.id, a.code, a.name,
-                     a.normal_balance, a.opening_balance
-            ORDER BY ag.nature, ag.name, a.code
-        """),
-        {"as_of_date": as_of_date, "cid": current_user["company_id"]},
-    )
-    rows = [dict(r) for r in result.mappings().all()]
-
-    def group_by_nature(nature, rows):
-        return [r for r in rows if r["nature"] == nature]
-
-    assets = group_by_nature("Assets", rows)
-    liabilities = group_by_nature("Liabilities", rows)
-    equity = group_by_nature("Equity", rows)
-
-    # After computing equity accounts, also compute current year P&L
-    pl_res = await db.execute(text("""
-        SELECT 
-            COALESCE(SUM(CASE WHEN ag.nature = 'Income' THEN jel.cr_amount - jel.dr_amount ELSE 0 END), 0) AS total_income,
-            COALESCE(SUM(CASE WHEN ag.nature = 'Expenses' THEN jel.dr_amount - jel.cr_amount ELSE 0 END), 0) AS total_expenses
-        FROM caratloop.journal_entry_lines jel
-        JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
-        JOIN caratloop.accounts a ON a.id = jel.account_id
-        JOIN caratloop.account_groups ag ON ag.id = a.group_id
-        WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of_date
-    """), {"cid": current_user["company_id"], "as_of_date": as_of_date})
-    pl_row = pl_res.mappings().first()
-    net_profit = float(pl_row['total_income'] or 0) - float(pl_row['total_expenses'] or 0)
-
-    # Add to equity section
-    equity.append({
-        "code": "CUR-YR-PL",
-        "account_name": "Current Year Net Profit / (Loss)",
-        "group_name": "Capital & Equity",
-        "balance": net_profit
-    })
-    
-    total_assets = sum(r["balance"] or 0 for r in assets)
-    total_liab_equity = sum(r["balance"] or 0 for r in liabilities + equity)
-
+    f = await balance_sheet_figures(db, current_user["company_id"], as_of_date)
     return {
         "as_of_date": str(as_of_date),
         "section_44aa": "Balance Sheet",
-        "assets": assets,
-        "liabilities": liabilities,
-        "equity": equity,
-        "total_assets": total_assets,
-        "total_liabilities": sum(r["balance"] or 0 for r in liabilities),
+        "assets": f["assets"],
+        "liabilities": f["liabilities"],
+        "equity": f["equity"],
+        "total_assets": f["total_assets"],
+        "total_liabilities": f["total_liabilities"],
+        "total_equity": f["total_equity"],
+        "net_profit": f["net_profit"],
         "totals": {
-            "total_assets": total_assets,
-            "total_liabilities_and_equity": total_liab_equity,
-            "is_balanced": abs(total_assets - total_liab_equity) < 1.0,
+            "total_assets": f["total_assets"],
+            "total_liabilities": f["total_liabilities"],
+            "total_equity": f["total_equity"],
+            "total_liabilities_and_equity": f["total_liabilities_and_equity"],
+            "difference": f["difference"],
+            "is_balanced": f["is_balanced"],
         },
     }
 
@@ -215,8 +262,33 @@ async def get_dashboard_stats(
         {"cid": cid, "mtd_start": mtd_start, "ytd_start": ytd_start},
     )
     rev_row = rev_res.mappings().first()
-    revenue_mtd = float(rev_row["revenue_mtd"] or 0)
-    revenue_ytd = float(rev_row["revenue_ytd"] or 0)
+    # Gross invoicing (tax included, credit notes ignored): what was billed.
+    invoiced_mtd = float(rev_row["revenue_mtd"] or 0)
+    invoiced_ytd = float(rev_row["revenue_ytd"] or 0)
+
+    # Revenue is what the P&L calls revenue: the income accounts, net of
+    # credit notes and without GST. The tile used to show the invoice grand
+    # totals above, so a month in which every sale was returned still showed
+    # the full sales figure, inflated by the tax on it, and never agreed with
+    # the P&L or with the chart beneath it (which already reads the ledger).
+    pl_res = await db.execute(
+        text("""
+            SELECT
+                COALESCE(SUM(CASE WHEN je.entry_date >= :mtd_start THEN jel.cr_amount - jel.dr_amount ELSE 0 END), 0) AS revenue_mtd,
+                COALESCE(SUM(CASE WHEN je.entry_date >= :ytd_start THEN jel.cr_amount - jel.dr_amount ELSE 0 END), 0) AS revenue_ytd
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            JOIN caratloop.accounts a ON a.id = jel.account_id
+            JOIN caratloop.account_groups ag ON ag.id = a.group_id
+            WHERE je.company_id = :cid AND je.status = 'Posted'
+              AND je.entry_type NOT IN ('Opening', 'Closing')
+              AND ag.nature = 'Income' AND je.entry_date <= :today
+        """),
+        {"cid": cid, "mtd_start": mtd_start, "ytd_start": ytd_start, "today": today},
+    )
+    pl_row = pl_res.mappings().first()
+    revenue_mtd = float(pl_row["revenue_mtd"] or 0)
+    revenue_ytd = float(pl_row["revenue_ytd"] or 0)
 
     # 2. Precious Metals Stock (Total Gold in Grams & Total Valuation)
     gold_res = await db.execute(
@@ -410,6 +482,9 @@ async def get_dashboard_stats(
         "stats": {
             "revenue": revenue_mtd,
             "revenue_ytd": revenue_ytd,
+            "invoiced_mtd": invoiced_mtd,
+            "invoiced_ytd": invoiced_ytd,
+            "revenue_basis": "Income accounts in the ledger: net of credit notes, excluding GST",
             "stock_grams": gold_weight_gm,
             "stock_value": gold_stock_value,
             "pending_orders": pending_orders,
@@ -826,24 +901,61 @@ async def get_outstanding_aging(
 
     is_payables = normalise_party_type_for_aging(party_type) == "Vendor"
 
-    res = await db.execute(
-        text(PAYABLES_AGING if is_payables else RECEIVABLES_AGING),
-        {"cid": cid, "as_of_date": as_of_date},
-    )
-    receivables = [dict(r) for r in res.mappings().all()]
+    # Both sides are read so each row can be reconciled with the party's
+    # ledger: a party's ledger balance is its receivable bills less its
+    # payable bills less whatever sits on account (advances received,
+    # credit notes and receipts not applied to a bill). That remainder is
+    # reported per party as `unadjusted`, so the bill-wise report and the
+    # ledger are always explained against each other instead of silently
+    # disagreeing.
+    recv_res = await db.execute(text(RECEIVABLES_AGING), {"cid": cid, "as_of_date": as_of_date})
+    receivable_rows = {str(r["party_id"]): dict(r) for r in recv_res.mappings().all()}
+    pay_res = await db.execute(text(PAYABLES_AGING), {"cid": cid, "as_of_date": as_of_date})
+    payable_rows = {str(r["party_id"]): dict(r) for r in pay_res.mappings().all()}
+    ledger = {b["party_id"]: b for b in await party_balances(db, cid, as_of_date)}
+
+    rows = []
+    for pid, r in (payable_rows if is_payables else receivable_rows).items():
+        d = dict(r)
+        d["party_id"] = pid
+        for k in ("bucket_0_30", "bucket_31_60", "bucket_61_90", "bucket_over_90", "total_outstanding"):
+            d[k] = to_decimal(d[k])
+        bills_receivable = to_decimal(receivable_rows.get(pid, {}).get("total_outstanding"))
+        bills_payable = to_decimal(payable_rows.get(pid, {}).get("total_outstanding"))
+        bal = ledger.get(pid)
+        ledger_balance = bal["balance_signed"] if bal else Decimal("0")
+        d["bills_receivable"] = bills_receivable
+        d["bills_payable"] = bills_payable
+        d["ledger_balance"] = ledger_balance
+        d["ledger_side"] = side_of(ledger_balance)
+        # Debit-positive: positive means the ledger carries more than the
+        # open bills explain (a debit on account); negative means credit
+        # on account (an advance, an unapplied credit note or receipt).
+        d["unadjusted"] = ledger_balance - (bills_receivable - bills_payable)
+        rows.append(d)
+    rows.sort(key=lambda r: -r["total_outstanding"])
+
+    def total(key):
+        return sum((to_decimal(r[key]) for r in rows), Decimal("0"))
 
     return {
         "as_of_date": str(as_of_date),
         "party_type": "Vendor" if is_payables else "Customer",
         "basis": "purchase_invoices" if is_payables else "sales_invoices",
-        "aging_report": receivables,
+        "aging_report": rows,
         "totals": {
-            "bucket_0_30": sum(float(r["bucket_0_30"]) for r in receivables),
-            "bucket_31_60": sum(float(r["bucket_31_60"]) for r in receivables),
-            "bucket_61_90": sum(float(r["bucket_61_90"]) for r in receivables),
-            "bucket_over_90": sum(float(r["bucket_over_90"]) for r in receivables),
-            "total_outstanding": sum(float(r["total_outstanding"]) for r in receivables),
-        }
+            "bucket_0_30": total("bucket_0_30"),
+            "bucket_31_60": total("bucket_31_60"),
+            "bucket_61_90": total("bucket_61_90"),
+            "bucket_over_90": total("bucket_over_90"),
+            "total_outstanding": total("total_outstanding"),
+            "unadjusted": total("unadjusted"),
+        },
+        "reconciliation": {
+            "bills_receivable": sum((to_decimal(r["total_outstanding"]) for r in receivable_rows.values()), Decimal("0")),
+            "bills_payable": sum((to_decimal(r["total_outstanding"]) for r in payable_rows.values()), Decimal("0")),
+            "ledger_total": sum((b["balance_signed"] for b in ledger.values()), Decimal("0")),
+        },
     }
 
 
@@ -865,41 +977,69 @@ async def get_profit_and_loss(
     elif isinstance(from_date, str):
         from_date = date.fromisoformat(from_date)
 
-    result = await db.execute(
-        text("""
-            SELECT
-                ag.nature, ag.name AS group_name,
-                a.code, a.name AS account_name,
-                COALESCE(SUM(jel.dr_amount), 0) AS total_dr,
-                COALESCE(SUM(jel.cr_amount), 0) AS total_cr
-            FROM caratloop.accounts a
-            JOIN caratloop.account_groups ag ON ag.id = a.group_id
-            LEFT JOIN caratloop.journal_entry_lines jel ON jel.account_id = a.id
-            LEFT JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
-                AND je.status = 'Posted'
-                AND je.entry_date BETWEEN :from_date AND :to_date
-            WHERE a.company_id = :cid AND ag.nature IN ('Income', 'Expenses')
-            GROUP BY ag.nature, ag.name, a.id, a.code, a.name
-            ORDER BY ag.nature, a.code
-        """),
-        {"from_date": from_date, "to_date": to_date, "cid": current_user["company_id"]},
-    )
-    rows = [dict(r) for r in result.mappings().all()]
-    revenue = [r for r in rows if r["nature"] == "Income"]
-    expenses = [r for r in rows if r["nature"] == "Expenses"]
-
-    total_revenue = sum(r["total_cr"] - r["total_dr"] for r in revenue)
-    total_expenses = sum(r["total_dr"] - r["total_cr"] for r in expenses)
-    net_profit = total_revenue - total_expenses
-
+    f = await profit_and_loss_figures(db, current_user["company_id"], from_date, to_date)
     return {
         "from_date": str(from_date),
         "to_date": str(to_date),
+        "revenue": f["revenue"],
+        "expenses": f["expenses"],
+        "total_revenue": f["total_revenue"],
+        "total_expenses": f["total_expenses"],
+        "net_profit": f["net_profit"],
+    }
+
+
+# Filtered in a subquery. The previous shape LEFT JOINed journal_entries
+# with the status and date test in the ON clause: a line whose entry failed
+# the test kept its row (with a NULL entry) and was still summed, so the
+# P&L for any range was the P&L since inception, Draft and all. 'Closing'
+# journals are the year-end transfer to Retained Earnings and are not
+# income or expense of the period.
+PROFIT_LOSS_SQL = """
+    SELECT
+        ag.nature, ag.name AS group_name,
+        a.id AS account_id, a.code, a.name AS account_name,
+        COALESCE(t.dr, 0) AS total_dr,
+        COALESCE(t.cr, 0) AS total_cr
+    FROM caratloop.accounts a
+    JOIN caratloop.account_groups ag ON ag.id = a.group_id
+    LEFT JOIN (
+        SELECT jel.account_id, SUM(jel.dr_amount) AS dr, SUM(jel.cr_amount) AS cr
+        FROM caratloop.journal_entry_lines jel
+        JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+        WHERE je.company_id = :cid AND je.status = 'Posted'
+          AND je.entry_date BETWEEN :from_date AND :to_date
+          AND je.entry_type NOT IN ('Opening', 'Closing')
+        GROUP BY jel.account_id
+    ) t ON t.account_id = a.id
+    WHERE a.company_id = :cid AND ag.nature IN ('Income', 'Expenses')
+    ORDER BY ag.nature, a.code
+"""
+
+
+async def profit_and_loss_figures(db: AsyncSession, company_id, from_date: date, to_date: date) -> dict:
+    result = await db.execute(
+        text(PROFIT_LOSS_SQL),
+        {"from_date": from_date, "to_date": to_date, "cid": company_id},
+    )
+    rows = []
+    for r in result.mappings().all():
+        d = dict(r)
+        d["account_id"] = str(d["account_id"])
+        d["total_dr"] = to_decimal(d["total_dr"])
+        d["total_cr"] = to_decimal(d["total_cr"])
+        d["balance"] = (d["total_cr"] - d["total_dr"]) if d["nature"] == "Income" else (d["total_dr"] - d["total_cr"])
+        rows.append(d)
+    revenue = [r for r in rows if r["nature"] == "Income"]
+    expenses = [r for r in rows if r["nature"] == "Expenses"]
+    total_revenue = sum((r["balance"] for r in revenue), Decimal("0"))
+    total_expenses = sum((r["balance"] for r in expenses), Decimal("0"))
+    return {
         "revenue": revenue,
         "expenses": expenses,
         "total_revenue": total_revenue,
         "total_expenses": total_expenses,
-        "net_profit": net_profit
+        "net_profit": total_revenue - total_expenses,
     }
 
 
@@ -988,3 +1128,500 @@ async def get_stock_register(
     }
 
 
+# ─── Reconciliation panel ────────────────────────────────────────────────────
+#
+# The checks an auditor runs by hand against a set of books, computed from
+# the same tables the reports read, so the owner can see on one screen
+# whether the ledgers agree with each other and with the documents. Each
+# check is an expected figure, an actual figure, the difference and a
+# status: ok, warn (a sub-paisa difference the posting guard tolerates but
+# that should still be traced), fail (a real discrepancy) or info (a figure
+# with no pass/fail meaning of its own).
+
+GST_OUTPUT_COMPONENTS = {
+    "cgst": ("GST-001", "GST-003"),
+    "sgst": ("GST-002", "GST-004"),
+    "igst": ("GST-005", "GST-006"),
+}
+
+
+def _count_check(name: str, label: str, offenders: list, *, detail: str, info: bool = False, **extra) -> dict:
+    row = {
+        "name": name, "label": label,
+        "expected": Decimal("0"), "actual": Decimal(len(offenders)), "difference": Decimal(len(offenders)),
+        "status": INFO if info else (OK if not offenders else FAIL),
+        "detail": detail,
+        "items": offenders[:25],
+        "count": len(offenders),
+    }
+    row.update(extra)
+    return row
+
+
+def _stringify(row: dict, *keys: str) -> dict:
+    d = dict(row)
+    for k in keys:
+        if d.get(k) is not None:
+            d[k] = str(d[k])
+    return d
+
+
+@router.get("/reconciliation")
+async def get_reconciliation(
+    as_of_date: Optional[date] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Live reconciliation of the books as at a date.
+
+    Trial balance, balance sheet against the P&L, GST registers against the
+    postings that should have produced them, stock register against the
+    stock accounts, cash and bank vouchers, documents against their
+    journal entries, bill-wise outstanding against the party ledgers, and
+    the year-end Opening journals. See the module comment above for the
+    status words.
+    """
+    from app.api.v1.accounting import get_trial_balance
+
+    cid = current_user["company_id"]
+    as_of = as_of_date or date.today()
+    if isinstance(as_of, str):
+        as_of = date.fromisoformat(as_of)
+    p = {"cid": cid, "as_of": as_of}
+    checks: list[dict] = []
+
+    # 1. Trial balance ------------------------------------------------------
+    tb = await get_trial_balance(as_of_date=as_of, db=db, current_user=current_user)
+    t = tb["totals"]
+    checks.append(check(
+        "trial_balance_postings", "Trial balance: total debits = total credits of Posted lines",
+        t["total_credit"], t["total_debit"],
+        detail="Every Posted journal line to the date, 'Opening' journals excluded (they restate carried balances).",
+    ))
+    checks.append(check(
+        "trial_balance_closing", "Trial balance: closing debit balances = closing credit balances",
+        t["closing_credit"], t["closing_debit"],
+        detail="Opening balances (on their own side) plus postings, account by account.",
+    ))
+
+    # 2. Every voucher balances and its header agrees with its lines ----------
+    res = await db.execute(
+        text("""
+            SELECT je.id, je.entry_no, je.entry_date, je.entry_type, je.total_debit, je.total_credit,
+                   SUM(jel.dr_amount) AS line_dr, SUM(jel.cr_amount) AS line_cr, COUNT(*) AS line_count
+            FROM caratloop.journal_entries je
+            JOIN caratloop.journal_entry_lines jel ON jel.journal_entry_id = je.id
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of
+            GROUP BY je.id
+            HAVING SUM(jel.dr_amount) <> SUM(jel.cr_amount)
+                OR je.total_debit <> SUM(jel.dr_amount)
+                OR je.total_credit <> SUM(jel.cr_amount)
+                OR COUNT(*) < 2
+            ORDER BY je.entry_date, je.id
+        """),
+        p,
+    )
+    bad = []
+    worst = Decimal("0")
+    for r in res.mappings().all():
+        d = _stringify(r, "entry_date")
+        d["line_difference"] = to_decimal(d["line_dr"]) - to_decimal(d["line_cr"])
+        worst = max(worst, abs(d["line_difference"]),
+                    abs(to_decimal(d["total_debit"]) - to_decimal(d["line_dr"])),
+                    abs(to_decimal(d["total_credit"]) - to_decimal(d["line_cr"])))
+        bad.append(d)
+    row = _count_check(
+        "vouchers_balanced", "Every Posted voucher balances and its header equals its lines", bad,
+        detail="Vouchers whose debit lines differ from their credit lines, whose header totals differ from the lines, or with a single line.",
+    )
+    if bad and worst <= TOLERANCE:
+        row["status"] = WARN
+    checks.append(row)
+
+    # 3. Balance sheet --------------------------------------------------------
+    bs = await balance_sheet_figures(db, cid, as_of)
+    checks.append(check(
+        "balance_sheet", "Balance sheet: assets = liabilities + equity + unclosed P&L",
+        bs["total_liabilities_and_equity"], bs["total_assets"],
+        detail=f"Assets {bs['total_assets']}; liabilities {bs['total_liabilities']}; equity incl. unclosed P&L {bs['total_equity']}.",
+    ))
+
+    # 4. Balance-sheet P&L figure = P&L report for the unclosed span ----------
+    years = await load_fiscal_years(db, cid)
+    open_years = sorted(
+        (y for y in years if not y.get("is_closed") and _as_date(y["start_date"]) <= as_of),
+        key=lambda y: y["start_date"],
+    )
+    pl_from = _as_date(open_years[0]["start_date"]) if open_years else date(1900, 1, 1)
+    pl = await profit_and_loss_figures(db, cid, pl_from, as_of)
+    checks.append(check(
+        "pl_vs_balance_sheet", "P&L report net profit = balance-sheet unclosed P&L",
+        bs["net_profit"], pl["net_profit"],
+        detail=(
+            f"P&L report from {pl_from} (first unclosed fiscal year) to {as_of}; the balance sheet carries "
+            "every P&L posting not yet closed into Retained Earnings."
+        ),
+        pl_from=str(pl_from),
+    ))
+
+    # 5. GST output register vs output-tax postings ---------------------------
+    reg = (await db.execute(
+        text("""
+            SELECT
+                COALESCE(SUM(CASE WHEN is_credit_note THEN -cgst_amount ELSE cgst_amount END), 0) AS cgst,
+                COALESCE(SUM(CASE WHEN is_credit_note THEN -sgst_amount ELSE sgst_amount END), 0) AS sgst,
+                COALESCE(SUM(CASE WHEN is_credit_note THEN -igst_amount ELSE igst_amount END), 0) AS igst,
+                COALESCE(SUM(CASE WHEN is_credit_note THEN -total_tax ELSE total_tax END), 0) AS total
+            FROM caratloop.gst_output_tax_register
+            WHERE company_id = :cid AND invoice_date <= :as_of
+        """), p)).mappings().first()
+    post = await db.execute(
+        text("""
+            SELECT a.code, COALESCE(SUM(jel.cr_amount - jel.dr_amount), 0) AS net_cr
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            JOIN caratloop.accounts a ON a.id = jel.account_id
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of
+              AND je.entry_type IN ('Sales', 'Credit_Note', 'Reversal')
+              AND a.account_type = 'GST_Output'
+            GROUP BY a.code
+        """), p)
+    posted_out = {r["code"]: to_decimal(r["net_cr"]) for r in post.mappings().all()}
+    components = {}
+    for comp, codes in GST_OUTPUT_COMPONENTS.items():
+        components[comp] = {
+            "register": to_decimal(reg[comp]) if reg else Decimal("0"),
+            "posted": sum((posted_out.get(c, Decimal("0")) for c in codes), Decimal("0")),
+            "accounts": list(codes),
+        }
+    posted_total = sum((v["posted"] for v in components.values()), Decimal("0"))
+    checks.append(check(
+        "gst_output_register", "GST output tax register = output tax posted by sales and credit-note vouchers",
+        reg["total"] if reg else Decimal("0"), posted_total,
+        detail=(
+            "Register rows signed (credit notes negative) against the GST-001..006 legs of Sales, Credit_Note "
+            "and Reversal vouchers. Settlement vouchers are on neither side."
+        ),
+        components=components,
+    ))
+    # The account balances themselves, for the record (they move when GST is paid).
+    bal_res = await db.execute(
+        text("""
+            SELECT a.account_type, COALESCE(SUM(jel.cr_amount - jel.dr_amount), 0) AS net_cr
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            JOIN caratloop.accounts a ON a.id = jel.account_id
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_type <> 'Opening'
+              AND je.entry_date <= :as_of
+              AND a.account_type IN ('GST_Output', 'GST_Input', 'GST_RCM')
+            GROUP BY a.account_type
+        """), p)
+    gst_balances = {r["account_type"]: to_decimal(r["net_cr"]) for r in bal_res.mappings().all()}
+
+    # 6. ITC register vs ITC-001..003 postings --------------------------------
+    itc_reg = (await db.execute(
+        text("""
+            SELECT COALESCE(SUM(CASE WHEN is_reversal THEN -total_itc ELSE total_itc END), 0) AS itc
+            FROM caratloop.itc_register
+            WHERE company_id = :cid AND is_eligible = TRUE AND invoice_date <= :as_of
+        """), p)).scalar()
+    itc_post = (await db.execute(
+        text("""
+            SELECT COALESCE(SUM(jel.dr_amount - jel.cr_amount), 0)
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            JOIN caratloop.accounts a ON a.id = jel.account_id
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of
+              AND je.entry_type IN ('Purchase', 'Reversal', 'Debit_Note')
+              AND a.code IN ('ITC-001', 'ITC-002', 'ITC-003')
+        """), p)).scalar()
+    checks.append(check(
+        "itc_register", "ITC register (eligible, net of reversals) = ITC-001..003 posted by purchase vouchers",
+        itc_reg, itc_post,
+        detail="Forward-charge input credit. RCM self-credit (ITC-004) is checked against the RCM register below.",
+    ))
+
+    # 7. RCM register vs RCM-001/002 and ITC-004 postings ---------------------
+    rcm_reg = (await db.execute(
+        text("""
+            SELECT COALESCE(SUM(CASE WHEN is_reversal THEN -total_rcm ELSE total_rcm END), 0) AS rcm
+            FROM caratloop.rcm_liability_register
+            WHERE company_id = :cid AND transaction_date <= :as_of
+        """), p)).scalar()
+    rcm_rows = await db.execute(
+        text("""
+            SELECT a.account_type, COALESCE(SUM(CASE WHEN a.account_type = 'GST_RCM' THEN jel.cr_amount - jel.dr_amount
+                                                     ELSE jel.dr_amount - jel.cr_amount END), 0) AS net
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            JOIN caratloop.accounts a ON a.id = jel.account_id
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of
+              AND je.entry_type IN ('Purchase', 'Reversal', 'Debit_Note')
+              AND (a.account_type = 'GST_RCM' OR a.code = 'ITC-004')
+            GROUP BY a.account_type
+        """), p)
+    rcm_posted = {r["account_type"]: to_decimal(r["net"]) for r in rcm_rows.mappings().all()}
+    checks.append(check(
+        "rcm_register", "RCM liability register = RCM-001/002 posted by purchase vouchers",
+        rcm_reg, rcm_posted.get("GST_RCM", Decimal("0")),
+        detail="Reverse charge on old-gold purchases from unregistered sellers.",
+    ))
+    checks.append(check(
+        "rcm_self_itc", "RCM self-credit booked (ITC-004) = RCM liability register",
+        rcm_reg, rcm_posted.get("GST_Input", Decimal("0")),
+        detail="The credit is booked when the bill posts and becomes claimable once the RCM tax is paid in cash.",
+    ))
+
+    # 8. Stock register vs stock accounts -------------------------------------
+    stock_reg = (await db.execute(
+        text("""
+            SELECT COALESCE(SUM(CASE WHEN direction = 'I' THEN amount ELSE -amount END), 0)
+            FROM caratloop.stock_ledger_entries
+            WHERE company_id = :cid AND entry_date <= :as_of
+        """), p)).scalar()
+    stock_acc = await db.execute(
+        text("""
+            SELECT a.code, a.name, a.normal_balance, COALESCE(a.opening_balance, 0) AS opening_balance,
+                   a.opening_balance_type, COALESCE(t.dr, 0) AS dr, COALESCE(t.cr, 0) AS cr
+            FROM caratloop.accounts a
+            LEFT JOIN (
+                SELECT jel.account_id, SUM(jel.dr_amount) AS dr, SUM(jel.cr_amount) AS cr
+                FROM caratloop.journal_entry_lines jel
+                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+                WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_type <> 'Opening'
+                  AND je.entry_date <= :as_of
+                GROUP BY jel.account_id
+            ) t ON t.account_id = a.id
+            WHERE a.company_id = :cid AND a.account_type = 'Stock_Asset' AND a.is_active = TRUE
+            ORDER BY a.code
+        """), p)
+    stock_accounts = []
+    stock_total = Decimal("0")
+    for r in stock_acc.mappings().all():
+        bal = signed_opening(r) + to_decimal(r["dr"]) - to_decimal(r["cr"])
+        stock_total += bal
+        if bal != 0:
+            stock_accounts.append({"code": r["code"], "name": r["name"], "balance": bal})
+    checks.append(check(
+        "stock_vs_accounts", "Stock register value = stock asset accounts (STK-*)",
+        stock_reg, stock_total,
+        detail="Inward less outward amounts in the stock ledger against the Stock_Asset account balances.",
+        accounts=stock_accounts,
+    ))
+
+    # 9. Cash and bank vouchers ------------------------------------------------
+    cb = await db.execute(
+        text("""
+            SELECT je.id, je.entry_no, je.entry_date, je.entry_type, je.total_debit
+            FROM caratloop.journal_entries je
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of
+              AND je.entry_type IN ('Receipt', 'Payment', 'Contra')
+              AND NOT EXISTS (
+                  SELECT 1 FROM caratloop.journal_entry_lines jel
+                  JOIN caratloop.accounts a ON a.id = jel.account_id
+                  WHERE jel.journal_entry_id = je.id AND a.account_type IN ('Cash', 'Bank')
+              )
+            ORDER BY je.entry_date, je.id
+        """), p)
+    no_cash_leg = [_stringify(r, "entry_date") for r in cb.mappings().all()]
+    cash_bank = await db.execute(
+        text("""
+            SELECT a.code, a.name, a.account_type, a.normal_balance, COALESCE(a.opening_balance, 0) AS opening_balance,
+                   a.opening_balance_type, COALESCE(t.dr, 0) AS dr, COALESCE(t.cr, 0) AS cr
+            FROM caratloop.accounts a
+            LEFT JOIN (
+                SELECT jel.account_id, SUM(jel.dr_amount) AS dr, SUM(jel.cr_amount) AS cr
+                FROM caratloop.journal_entry_lines jel
+                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+                WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_type <> 'Opening'
+                  AND je.entry_date <= :as_of
+                GROUP BY jel.account_id
+            ) t ON t.account_id = a.id
+            WHERE a.company_id = :cid AND a.account_type IN ('Cash', 'Bank') AND a.is_active = TRUE
+            ORDER BY a.account_type, a.code
+        """), p)
+    books = []
+    for r in cash_bank.mappings().all():
+        bal = signed_opening(r) + to_decimal(r["dr"]) - to_decimal(r["cr"])
+        books.append({"code": r["code"], "name": r["name"], "account_type": r["account_type"],
+                      "balance": abs(bal), "side": side_of(bal)})
+    checks.append(_count_check(
+        "cash_bank_vouchers", "Every Receipt / Payment / Contra voucher has a Cash or Bank leg", no_cash_leg,
+        detail="A receipt or payment that moves no cash or bank balance is a journal entry in disguise.",
+        books=books,
+    ))
+
+    # 10. Documents vs journal --------------------------------------------------
+    si_missing = await db.execute(
+        text("""
+            SELECT si.id, si.invoice_no, si.invoice_date, si.grand_total,
+                   je.entry_no, je.total_debit AS journal_total,
+                   COALESCE(pl.party_dr, 0) AS party_debit
+            FROM caratloop.sales_invoices si
+            LEFT JOIN caratloop.journal_entries je
+              ON je.company_id = si.company_id AND je.reference_type = 'SalesInvoice'
+             AND je.reference_id = si.id AND je.entry_type = 'Sales' AND je.status = 'Posted'
+            LEFT JOIN (
+                SELECT jel.journal_entry_id, SUM(jel.dr_amount - jel.cr_amount) AS party_dr
+                FROM caratloop.journal_entry_lines jel WHERE jel.party_id IS NOT NULL
+                GROUP BY jel.journal_entry_id
+            ) pl ON pl.journal_entry_id = je.id
+            WHERE si.company_id = :cid AND si.status NOT IN ('Cancelled', 'Draft') AND si.invoice_date <= :as_of
+              AND (je.id IS NULL OR ABS(COALESCE(pl.party_dr, 0) - si.grand_total) > 0.005)
+            ORDER BY si.invoice_date, si.invoice_no
+        """), p)
+    si_bad = [_stringify(r, "id", "invoice_date") for r in si_missing.mappings().all()]
+    checks.append(_count_check(
+        "sales_invoices_journalled",
+        "Every sales invoice has a Posted Sales voucher debiting the customer for its grand total", si_bad,
+        detail="Posted, non-cancelled invoices without a Sales voucher, or whose customer debit differs from the invoice.",
+    ))
+    pi_missing = await db.execute(
+        text("""
+            SELECT pi.id, pi.bill_no, pi.bill_date, pi.grand_total, COALESCE(pi.tds_amount, 0) AS tds_amount,
+                   je.entry_no, COALESCE(pl.party_cr, 0) AS party_credit
+            FROM caratloop.purchase_invoices pi
+            LEFT JOIN caratloop.journal_entries je
+              ON je.company_id = pi.company_id AND je.reference_type = 'PurchaseInvoice'
+             AND je.reference_id = pi.id AND je.entry_type = 'Purchase' AND je.status = 'Posted'
+            LEFT JOIN (
+                SELECT jel.journal_entry_id, SUM(jel.cr_amount - jel.dr_amount) AS party_cr
+                FROM caratloop.journal_entry_lines jel WHERE jel.party_id IS NOT NULL
+                GROUP BY jel.journal_entry_id
+            ) pl ON pl.journal_entry_id = je.id
+            WHERE pi.company_id = :cid AND pi.status NOT IN ('Cancelled', 'Draft', 'Amended') AND pi.bill_date <= :as_of
+              AND (je.id IS NULL OR ABS(COALESCE(pl.party_cr, 0) - (pi.grand_total - COALESCE(pi.tds_amount, 0))) > 0.005)
+            ORDER BY pi.bill_date, pi.bill_no
+        """), p)
+    pi_bad = [_stringify(r, "id", "bill_date") for r in pi_missing.mappings().all()]
+    checks.append(_count_check(
+        "purchase_bills_journalled",
+        "Every purchase bill has a Posted Purchase voucher crediting the supplier for its total less TDS", pi_bad,
+        detail="Posted bills without a Purchase voucher, or whose supplier credit differs from the bill.",
+    ))
+
+    paid_bad = await db.execute(
+        text("""
+            SELECT 'sales' AS kind, invoice_no AS number, invoice_date AS doc_date, grand_total, amount_paid, payment_status
+            FROM caratloop.sales_invoices
+            WHERE company_id = :cid AND status <> 'Cancelled' AND invoice_date <= :as_of
+              AND (amount_paid < 0 OR amount_paid > grand_total + 0.005
+                   OR (payment_status = 'Paid' AND amount_paid < grand_total - 0.005)
+                   OR (payment_status = 'Unpaid' AND amount_paid > 0.005)
+                   OR (payment_status = 'Partial' AND (amount_paid <= 0 OR amount_paid >= grand_total - 0.005)))
+            UNION ALL
+            SELECT 'purchase', bill_no, bill_date, grand_total, amount_paid, payment_status
+            FROM caratloop.purchase_invoices
+            WHERE company_id = :cid AND status NOT IN ('Cancelled', 'Amended') AND bill_date <= :as_of
+              AND (amount_paid < 0 OR amount_paid > grand_total + 0.005
+                   OR (payment_status = 'Paid' AND amount_paid < grand_total - 0.005)
+                   OR (payment_status = 'Unpaid' AND amount_paid > 0.005)
+                   OR (payment_status = 'Partial' AND (amount_paid <= 0 OR amount_paid >= grand_total - 0.005)))
+            ORDER BY 3, 2
+        """), p)
+    paid_rows = [_stringify(r, "doc_date") for r in paid_bad.mappings().all()]
+    checks.append(_count_check(
+        "payment_status_consistent", "amount_paid lies within each document and agrees with its payment status", paid_rows,
+        detail="0 <= amount_paid <= grand total; Paid / Partial / Unpaid as the amount says.",
+    ))
+
+    cn_bad = await db.execute(
+        text("""
+            SELECT si.id, si.invoice_no, si.grand_total, si.amount_paid, si.payment_status,
+                   SUM(je.total_credit) AS credit_notes
+            FROM caratloop.sales_invoices si
+            JOIN caratloop.journal_entries je
+              ON je.company_id = si.company_id AND je.reference_type = 'CreditNote'
+             AND je.reference_id = si.id AND je.entry_type = 'Credit_Note' AND je.status = 'Posted'
+            WHERE si.company_id = :cid AND si.status <> 'Cancelled' AND je.entry_date <= :as_of
+            GROUP BY si.id
+            HAVING SUM(je.total_credit) > si.grand_total + 0.005
+                OR SUM(je.total_credit) > si.amount_paid + 0.005
+            ORDER BY si.invoice_no
+        """), p)
+    cn_rows = [_stringify(r, "id") for r in cn_bad.mappings().all()]
+    checks.append(_count_check(
+        "credit_notes_applied", "Credit notes against an invoice are within its value and applied to it", cn_rows,
+        detail=(
+            "An invoice whose credit notes exceed its value, or exceed what is recorded as settled on it: "
+            "the ledger has the credit but the bill still shows it outstanding."
+        ),
+    ))
+
+    # 11. Bill-wise outstanding vs party ledgers ------------------------------
+    aging_r = await get_outstanding_aging(as_of_date=as_of, party_type="Customer", db=db, current_user=current_user)
+    recon = aging_r["reconciliation"]
+    bills_net = to_decimal(recon["bills_receivable"]) - to_decimal(recon["bills_payable"])
+    ledger_total = to_decimal(recon["ledger_total"])
+    unadjusted = ledger_total - bills_net
+    on_account = await db.execute(
+        text("""
+            SELECT je.entry_type, COALESCE(SUM(jel.dr_amount - jel.cr_amount), 0) AS net_dr, COUNT(DISTINCT je.id) AS vouchers
+            FROM caratloop.journal_entries je
+            JOIN caratloop.journal_entry_lines jel ON jel.journal_entry_id = je.id
+            JOIN caratloop.parties pa ON pa.account_id = jel.account_id AND pa.company_id = je.company_id
+            WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_date <= :as_of
+              AND je.entry_type IN ('Receipt', 'Payment', 'Journal')
+              AND (je.reference_type IS NULL OR je.reference_type NOT IN ('SalesInvoice', 'PurchaseInvoice'))
+            GROUP BY je.entry_type
+        """), p)
+    on_account_rows = [dict(r) for r in on_account.mappings().all()]
+    checks.append({
+        "name": "outstanding_vs_ledgers",
+        "label": "Bill-wise outstanding vs party ledgers: the difference is what sits on account",
+        "expected": bills_net,
+        "actual": ledger_total,
+        "difference": unadjusted,
+        "status": INFO,
+        "detail": (
+            f"Open sales bills {recon['bills_receivable']} less open purchase bills {recon['bills_payable']} = {bills_net}; "
+            f"party ledgers total {ledger_total} (debit positive). The difference ({unadjusted}) is money on account: "
+            "advances received, receipts and credit notes not applied to a bill. Each party's share is the "
+            "'unadjusted' column of the aging report."
+        ),
+        "on_account_vouchers": on_account_rows,
+    })
+
+    # 12. Opening journals -----------------------------------------------------
+    opn = await db.execute(
+        text("""
+            SELECT je.id, je.entry_no, je.entry_date, je.total_debit, fy.year_label, fy.start_date,
+                   prev.year_label AS previous_year, prev.is_closed AS previous_closed,
+                   (SELECT COUNT(*) FROM caratloop.journal_entries x
+                     WHERE x.company_id = je.company_id AND x.entry_type = 'Opening' AND x.status = 'Posted'
+                       AND x.fiscal_year_id = je.fiscal_year_id) AS openings_in_year
+            FROM caratloop.journal_entries je
+            JOIN caratloop.fiscal_years fy ON fy.id = je.fiscal_year_id
+            LEFT JOIN caratloop.fiscal_years prev
+              ON prev.company_id = fy.company_id AND prev.end_date = fy.start_date - 1
+            WHERE je.company_id = :cid AND je.entry_type = 'Opening' AND je.status = 'Posted'
+            ORDER BY je.entry_date
+        """), {"cid": cid})
+    openings = [_stringify(r, "entry_date", "start_date") for r in opn.mappings().all()]
+    opening_problems = [
+        o for o in openings
+        if not o["previous_closed"] or o["openings_in_year"] > 1 or o["entry_date"] != o["start_date"]
+    ]
+    checks.append(_count_check(
+        "opening_journals", "Opening journals: one per year, dated its first day, previous year closed", opening_problems,
+        detail=(
+            f"{len(openings)} Opening journal(s) on file. Cumulative reports exclude them (the carried balances are "
+            "already in the earlier postings); ledgers show the carried balance as their computed opening row."
+        ),
+        openings=openings,
+    ))
+
+    summary = {
+        "ok": sum(1 for c in checks if c["status"] == OK),
+        "warn": sum(1 for c in checks if c["status"] == WARN),
+        "fail": sum(1 for c in checks if c["status"] == FAIL),
+        "info": sum(1 for c in checks if c["status"] == INFO),
+    }
+    summary["all_ok"] = summary["fail"] == 0 and summary["warn"] == 0
+    return {
+        "as_of_date": str(as_of),
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "summary": summary,
+        "checks": checks,
+        "gst_account_balances": gst_balances,
+    }

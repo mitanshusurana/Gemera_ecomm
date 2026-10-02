@@ -27,7 +27,7 @@ from pydantic import BaseModel
 from app.core.config import settings
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
-from app.core.money import to_decimal
+from app.core.money import round_money, to_decimal
 from app.core.periods import assert_period_open
 from app.tax.purchase_tax import DEFAULT_RCM_RATE, PurchaseLineInput, PurchaseTotals, compute_purchase_totals
 from app.tax.tds_tcs import Withholding, has_valid_pan, tds_on_purchase
@@ -372,8 +372,14 @@ def _line_values(item: PurchaseLineRequest) -> tuple[Decimal, Decimal]:
     qty = to_decimal(item.quantity)
     nw = to_decimal(item.net_weight)
     rate = to_decimal(item.rate)
-    mat_val = (nw * rate) if nw > 0 else (qty * rate)
-    return mat_val, mat_val + to_decimal(item.making_charges)
+    # To the paisa. Money columns are NUMERIC(18,2) and the stock ledger
+    # stores the rounded figure, but the journal's columns are NUMERIC(18,4)
+    # and took the raw product: 8.7020 g x 5880.0005 posted a stock debit of
+    # 51168.0004 against a 51168.00 creditor, so every weight-priced bill was
+    # out by a fraction of a paisa and the stock account never agreed with
+    # the stock register.
+    mat_val = round_money((nw * rate) if nw > 0 else (qty * rate))
+    return mat_val, round_money(mat_val + to_decimal(item.making_charges))
 
 
 async def _post_purchase(

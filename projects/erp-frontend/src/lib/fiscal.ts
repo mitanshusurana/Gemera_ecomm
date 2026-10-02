@@ -55,6 +55,40 @@ export function currentPeriod(on: Date = new Date()): string {
   return `${on.getFullYear()}-${String(on.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/** A date range, as YYYY-MM-DD strings. */
+export interface DateRange {
+  from: string;
+  to: string;
+  /** Where the range came from: the company's active fiscal year, or the calendar fallback. */
+  label: string;
+}
+
+/**
+ * The company's ACTIVE fiscal year as the default ledger range, falling back
+ * to the Indian financial year containing today when the API cannot answer.
+ *
+ * Ledgers and books must open on the year the company is working in, not on
+ * the current month: a statement that starts on the 1st of this month hides
+ * every earlier voucher and shows a running balance that agrees with nothing.
+ * The "to" date is today when today falls inside the year (so future-dated
+ * vouchers do not appear), otherwise the year's last day.
+ */
+export async function activeFiscalYearRange(): Promise<DateRange> {
+  const fallback: DateRange = { from: financialYearStart(), to: today(), label: `FY ${financialYearLabel()} (calendar)` };
+  try {
+    const { fiscalYearsApi } = await import('./api');
+    const res = await fiscalYearsApi.list();
+    const years = res.data?.fiscal_years || [];
+    const active = years.find((y) => y.is_active) || years.find((y) => y.start_date <= today() && today() <= y.end_date);
+    if (!active) return fallback;
+    const t = today();
+    const to = t >= active.start_date && t <= active.end_date ? t : active.end_date;
+    return { from: active.start_date, to, label: `FY ${active.year_label}` };
+  } catch {
+    return fallback;
+  }
+}
+
 /**
  * The period a return is normally being prepared for: the month just gone.
  *

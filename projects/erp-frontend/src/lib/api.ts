@@ -63,6 +63,14 @@ export const vouchersApi = {
   createCreditNote: (data: any) => apiClient.post('/vouchers/credit-note', data),
   createDebitNote: (data: any) => apiClient.post('/vouchers/debit-note', data),
   list: (params: any) => apiClient.get('/vouchers', { params }),
+  /** One voucher with its lines and source document; `id` is the numeric journal id or the entry UUID. */
+  get: (id: string | number) => apiClient.get(`/vouchers/${id}`),
+};
+
+// Reports that the accounting screens reconcile against
+export const reportsApi = {
+  reconciliation: (asOfDate?: string) => apiClient.get('/reports/reconciliation', { params: asOfDate ? { as_of_date: asOfDate } : {} }),
+  outstandingAging: (params: { as_of_date?: string; party_type?: string }) => apiClient.get('/reports/outstanding-aging', { params }),
 };
 
 // Banking APIs

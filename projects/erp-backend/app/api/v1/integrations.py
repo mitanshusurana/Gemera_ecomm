@@ -968,7 +968,7 @@ async def record_ecommerce_credit_note(
     inv_res = await db.execute(
         text(
             "SELECT si.id, si.customer_id, si.fiscal_year_id, si.is_inter_state, si.place_of_supply, "
-            "       si.customer_gstin, si.grand_total, si.taxable_material_value, si.subtotal_other_charges, "
+            "       si.customer_gstin, si.grand_total, si.amount_paid, si.taxable_material_value, si.subtotal_other_charges, "
             "       si.status, p.account_id AS party_account, p.name AS party_name, "
             "       COALESCE((SELECT MAX(l.material_gst_rate) FROM caratloop.sales_invoice_lines l "
             "                 WHERE l.invoice_id = si.id), 3.00) AS material_gst_rate, "
@@ -1084,6 +1084,21 @@ async def record_ecommerce_credit_note(
             },
         )
         await assert_journal_balanced(db, cn_id, context="e-commerce credit note")
+
+        # The note reduces what is outstanding on the invoice, exactly as the
+        # manual credit-note voucher does. This path posted the ledger credit
+        # but never touched the invoice, so a fully credited web sale stayed
+        # 'Unpaid' with its whole value in the aging report while the party
+        # ledger showed nothing owed. Capped at what is still outstanding: a
+        # second note on a partly paid invoice must not push amount_paid past
+        # the bill.
+        outstanding = (to_decimal(inv["grand_total"]) - to_decimal(inv.get("amount_paid") or 0)).quantize(PAISA, ROUND_HALF_UP)
+        settle_amount = min(to_decimal(total).quantize(PAISA, ROUND_HALF_UP), outstanding)
+        if settle_amount > 0:
+            await settle_invoice(
+                db, "sales_invoices", company_id, settle_amount,
+                invoice_id=inv["id"], party_id=inv["customer_id"],
+            )
 
         # The money actually went back to the customer's card or account, so
         # the credit sitting on their ledger is paid out through the bank.

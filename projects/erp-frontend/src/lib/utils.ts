@@ -14,6 +14,20 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+/**
+ * A ledger balance as an absolute amount with its side: "₹2,31,400.00 Cr".
+ *
+ * Internally every balance is signed, debit positive. A credit balance is
+ * never shown as a negative debit: a customer who paid an advance owes
+ * nothing, and "-₹5,000.00" says the opposite of "₹5,000.00 Cr".
+ */
+export function formatBalance(signed: number | string | null | undefined, side?: string | null): string {
+  const n = Number(signed || 0);
+  const resolvedSide = side || (n < 0 ? 'Cr' : 'Dr');
+  if (n === 0) return `${formatCurrency(0)}`;
+  return `${formatCurrency(Math.abs(n))} ${resolvedSide}`;
+}
+
 export function formatWeight(grams: number): string {
   return `${grams.toFixed(3)} gm`;
 }

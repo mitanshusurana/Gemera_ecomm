@@ -49,6 +49,9 @@ class StubResult:
     def fetchall(self):
         return self._rows
 
+    def all(self):
+        return self._rows
+
     def scalar(self):
         if not self._rows:
             return None

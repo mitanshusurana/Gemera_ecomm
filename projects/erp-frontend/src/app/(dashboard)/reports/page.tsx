@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { FileText, Download, ShieldCheck, Loader2, RefreshCw, Calendar, CheckCircle2, AlertTriangle, Layers, Percent, Factory, BookOpen } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import DataTable from '@/components/ui/DataTable';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatBalance } from '@/lib/utils';
 import { apiClient } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
 
@@ -80,11 +80,15 @@ export default function ReportsPage() {
     { header: 'Account Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-white">{item.code}</span> },
     { header: 'Account Name', accessorKey: 'account_name', cell: (item: any) => <span className="font-medium text-white">{item.account_name}</span> },
     { header: 'Group Name', accessorKey: 'group_name', cell: (item: any) => <span className="text-textSecondary text-xs">{item.group_name}</span> },
-    { header: 'Total Debit (₹)', accessorKey: 'total_debit', cell: (item: any) => formatCurrency(item.total_debit || 0) },
-    { header: 'Total Credit (₹)', accessorKey: 'total_credit', cell: (item: any) => formatCurrency(item.total_credit || 0) },
-    { header: 'Net Balance (₹)', accessorKey: 'net_balance', cell: (item: any) => (
-      <span className={`font-semibold ${item.net_balance >= 0 ? 'text-success' : 'text-danger'}`}>
-        {formatCurrency(Math.abs(item.net_balance))} {item.net_balance >= 0 ? 'Dr' : 'Cr'}
+    { header: 'Opening (₹)', accessorKey: 'opening_debit', cell: (item: any) => <span className="font-mono text-textSecondary">{Number(item.opening_debit) || Number(item.opening_credit) ? formatBalance(Number(item.opening_debit || 0) - Number(item.opening_credit || 0)) : '—'}</span> },
+    { header: 'Total Debit (₹)', accessorKey: 'total_debit', cell: (item: any) => <span className="font-mono">{formatCurrency(item.total_debit || 0)}</span> },
+    { header: 'Total Credit (₹)', accessorKey: 'total_credit', cell: (item: any) => <span className="font-mono">{formatCurrency(item.total_credit || 0)}</span> },
+    // Closing balance with its real side. `net_balance` is on the account's
+    // NORMAL side (positive = usual balance), so "net_balance >= 0 ? Dr : Cr"
+    // labelled every GST output and sales balance "Dr".
+    { header: 'Closing Balance (₹)', accessorKey: 'closing_signed', cell: (item: any) => (
+      <span className={`font-semibold font-mono ${item.closing_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>
+        {formatBalance(item.closing_signed ?? 0, item.closing_side)}
       </span>
     )}
   ];
@@ -121,7 +125,12 @@ export default function ReportsPage() {
     { header: '31 - 60 Days (₹)', accessorKey: 'bucket_31_60', cell: (item: any) => formatCurrency(item.bucket_31_60 || 0) },
     { header: '61 - 90 Days (₹)', accessorKey: 'bucket_61_90', cell: (item: any) => formatCurrency(item.bucket_61_90 || 0) },
     { header: '90+ Days Overdue (₹)', accessorKey: 'bucket_over_90', cell: (item: any) => <span className="text-danger font-semibold">{formatCurrency(item.bucket_over_90 || 0)}</span> },
-    { header: 'Total Outstanding', accessorKey: 'total_outstanding', cell: (item: any) => <span className="font-bold text-primary">{formatCurrency(item.total_outstanding || 0)}</span> }
+    { header: 'Open Bills (₹)', accessorKey: 'total_outstanding', cell: (item: any) => <span className="font-bold text-primary">{formatCurrency(item.total_outstanding || 0)}</span> },
+    // The party's ledger balance and what of it the open bills do not
+    // explain (advances, unapplied credit notes and receipts), so the
+    // bill-wise report always reconciles to the ledger on screen.
+    { header: 'Ledger Balance', accessorKey: 'ledger_balance', cell: (item: any) => <span className={`font-mono ${item.ledger_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>{formatBalance(item.ledger_balance ?? 0, item.ledger_side)}</span> },
+    { header: 'Unadjusted (on account)', accessorKey: 'unadjusted', cell: (item: any) => <span className="font-mono text-textSecondary">{Number(item.unadjusted || 0) === 0 ? '—' : formatBalance(item.unadjusted)}</span> },
   ];
 
   return (
@@ -263,8 +272,10 @@ export default function ReportsPage() {
               <div className="flex items-center gap-6">
                 <span className="text-textSecondary">Total Dr: <strong className="text-white font-mono">{formatCurrency(reportData?.total_debit || 0)}</strong></span>
                 <span className="text-textSecondary">Total Cr: <strong className="text-white font-mono">{formatCurrency(reportData?.total_credit || 0)}</strong></span>
+                <span className="text-textSecondary">Closing Dr: <strong className="text-white font-mono">{formatCurrency(reportData?.totals?.closing_debit || 0)}</strong></span>
+                <span className="text-textSecondary">Closing Cr: <strong className="text-white font-mono">{formatCurrency(reportData?.totals?.closing_credit || 0)}</strong></span>
                 <Badge variant={reportData?.is_balanced ? 'success' : 'danger'}>
-                  {reportData?.is_balanced ? 'Balanced (Dr = Cr)' : 'Unbalanced'}
+                  {reportData?.is_balanced ? 'Balanced (Dr = Cr)' : `Unbalanced by ${Number(reportData?.totals?.difference || reportData?.totals?.closing_difference || 0).toFixed(4)}`}
                 </Badge>
               </div>
             </div>
@@ -352,7 +363,9 @@ export default function ReportsPage() {
                           <span className="text-white font-medium">{a.account_name}</span>
                           <span className="text-textSecondary text-xs block">{a.group_name} ({a.code})</span>
                         </div>
-                        <span className="text-white font-mono">{formatCurrency(a.balance || 0)}</span>
+                        <span className={`font-mono ${a.balance_side === 'Cr' ? 'text-rose-300' : 'text-white'}`} title={a.balance_side === 'Cr' ? 'Credit balance on an asset account (shown negative so the sheet balances)' : undefined}>
+                          {formatBalance(a.balance_signed ?? a.balance ?? 0, a.balance_side)}
+                        </span>
                       </div>
                     ))
                   )}
@@ -379,7 +392,7 @@ export default function ReportsPage() {
                             <span className="text-white font-medium">{l.account_name}</span>
                             <span className="text-textSecondary text-xs block">{l.code}</span>
                           </div>
-                          <span className="text-white font-mono">{formatCurrency(l.balance || 0)}</span>
+                          <span className={`font-mono ${l.balance_side === 'Dr' ? 'text-rose-300' : 'text-white'}`}>{formatBalance(l.balance_signed ?? -(l.balance || 0), l.balance_side)}</span>
                         </div>
                       ))
                     )}

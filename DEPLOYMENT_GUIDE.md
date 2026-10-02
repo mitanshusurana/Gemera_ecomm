@@ -96,6 +96,15 @@ Add `--build` to `up` to build the two ERP images from `projects/` instead of pu
 
 `erp-migrate` runs `alembic upgrade head` and the API waits for it. The ERP UI (127.0.0.1:`ERP_UI_PORT`, default 3001) proxies `/api/v1` to the API itself, so the only public route is the UI: add an ERP host name to the same TLS reverse proxy that fronts the admin and API and point it at that port. The API port 8010 stays loopback-only; the storefront bridge reaches it there.
 
+## 3a-ii. Checking the books
+
+The ERP's Accounting page has a Reconcile tab backed by `GET /api/v1/reports/reconciliation`: seventeen checks
+(trial balance, balance sheet, P&L vs balance sheet, GST, ITC and RCM registers vs accounts, stock vs stock
+accounts, every invoice and bill journalled, credit notes applied, outstanding vs ledgers, opening journals).
+Run it after every month's postings; a red row names the vouchers involved. If a database was fed by the
+storefront bridge before 2026-10-02, run `projects/erp-backend/scripts/correct_unapplied_credit_notes_and_stock_rounding.sql`
+once (it applies bridge credit notes to their invoices and rounds purchase lines to the paisa; idempotent, audited).
+
 ## 3b. Storefront to ERP bridge
 
 Every paid web order (or dispatched cash-on-delivery order) is invoiced by the store API in its own

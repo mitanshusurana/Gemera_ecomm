@@ -81,11 +81,11 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard 
-          title="Total Revenue (MTD)" 
-          value={loading ? '...' : formatCurrency(stats.revenue)} 
+        <StatsCard
+          title="Net Revenue (MTD)"
+          value={loading ? '...' : formatCurrency(stats.revenue)}
           icon={<IndianRupee className="w-6 h-6" />}
-          subtitle={`YTD: ${formatCurrency(stats.revenue_ytd)}`}
+          subtitle={`YTD: ${formatCurrency(stats.revenue_ytd)} · income accounts, net of credit notes, ex-GST${(stats as any).invoiced_mtd !== undefined ? ` · invoiced MTD incl. GST ${formatCurrency((stats as any).invoiced_mtd)}` : ''}`}
         />
         <StatsCard 
           title="Precious Metal Stock" 
