@@ -302,10 +302,11 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
                   </p>
                   <p className="text-xs font-mono">A/C No: {company.bank.account_no}</p>
                   <p className="text-xs font-mono">IFSC: {company.bank.ifsc}</p>
+                  {company.bank.upi_id && <p className="text-xs font-mono">UPI: {company.bank.upi_id}</p>}
                 </>
               ) : (
                 <p className="text-xs text-gray-500 italic">
-                  Remittance details not on record. Add the bank account to the company master to print them here.
+                  Remittance details not on record. Add them to the default bank account under Settings to print them here.
                 </p>
               )}
             </div>

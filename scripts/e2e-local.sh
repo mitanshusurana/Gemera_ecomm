@@ -200,7 +200,7 @@ fi
 say "== seeding the ERP's first company and owner (scripts/erp-seed-first-company.sql)"
 if "${ERP_COMPOSE[@]}" exec -T erp-db psql -U caratloop -d caratloop_erp -v ON_ERROR_STOP=1 \
         -v email="$ERP_ADMIN_EMAIL" -v password="$ERP_ADMIN_PASSWORD" \
-        -v company_name=Caratloop -v legal_name="Caratloop Jewels Private Limited" -v gstin=08AAAAA0000A1Z5 \
+        -v company_name=Caratloop -v legal_name="Caratloop Jewels Private Limited" -v gstin=08AAACC1234A1ZI \
         < scripts/erp-seed-first-company.sql >>"$E2E_LOG" 2>&1; then
     pass "ERP seed SQL applied (idempotent)"
 else
@@ -223,9 +223,9 @@ say "== store: admin login, settings, catalogue"
 ATOK="$(store_login "$ADMIN_EMAIL" "$ADMIN_PASSWORD")"
 [ -n "$ATOK" ] && pass "store admin login $ADMIN_EMAIL" || fail "store admin login" "HTTP $CODE $(detail)"
 
-req PUT "$STORE_API/admin/settings" "$ATOK" '{"companyLegalName":"Caratloop Jewels Private Limited","companyGstin":"08AAAAA0000A1Z5","companyPan":"AAAAA0000A","companyAddress":"S149 Mahaveer Nagar, Jaipur 302018","companyStateCode":"08","invoiceSeriesPrefix":"WEB","taxRateJewelry":"0.03","taxRateDefault":"0.03","taxRateRepairService":"0.18","companyPhone":"+91 0000000000","companyEmail":"support@caratloop.local"}'
+req PUT "$STORE_API/admin/settings" "$ATOK" '{"companyLegalName":"Caratloop Jewels Private Limited","companyGstin":"08AAACC1234A1ZI","companyPan":"AAAAA0000A","companyAddress":"S149 Mahaveer Nagar, Jaipur 302018","companyStateCode":"08","invoiceSeriesPrefix":"WEB","taxRateJewelry":"0.03","taxRateDefault":"0.03","taxRateRepairService":"0.18","companyPhone":"+91 0000000000","companyEmail":"support@caratloop.local"}'
 sc="$CODE"; req GET "$STORE_API/admin/settings" "$ATOK"
-if [ "$sc" = "200" ] && [ "$(printf '%s' "$BODY" | py 'd.get("companyGstin")')" = "08AAAAA0000A1Z5" ]; then pass "company settings saved (legal name, GSTIN 08AAAAA0000A1Z5, state 08, WEB prefix, 3% jewellery GST)"; else fail "company settings" "PUT HTTP $sc, GET companyGstin=$(printf '%s' "$BODY" | py 'd.get("companyGstin")')"; fi
+if [ "$sc" = "200" ] && [ "$(printf '%s' "$BODY" | py 'd.get("companyGstin")')" = "08AAACC1234A1ZI" ]; then pass "company settings saved (legal name, GSTIN 08AAACC1234A1ZI, state 08, WEB prefix, 3% jewellery GST)"; else fail "company settings" "PUT HTTP $sc, GET companyGstin=$(printf '%s' "$BODY" | py 'd.get("companyGstin")')"; fi
 
 req POST "$STORE_API/admin/categories" "$ATOK" '{"name":"e2e-jewellery","displayName":"E2E Jewellery","itemType":"JEWELLERY","isActive":true}'
 if [ "$CODE" = "200" ] || [ "$CODE" = "201" ]; then pass "category e2e-jewellery created"; else

@@ -70,6 +70,8 @@ from app.api.v1.vouchers import (
     settle_invoice,
 )
 from app.core.config import settings
+from app.core.company import default_bank_account_id
+from app.core.company import seller_state_code as company_seller_state
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.money import to_decimal
@@ -423,6 +425,27 @@ async def _account_id(db: AsyncSession, company_id: str, code: str) -> Optional[
     return str(acc) if acc else None
 
 
+async def _settlement_account_id(db: AsyncSession, company_id: str) -> Optional[str]:
+    """The ledger online settlements are credited to.
+
+    ECOMMERCE_SETTLEMENT_ACCOUNT_CODE when it is set and names an account of
+    this company; otherwise the account flagged is_default_bank under
+    Settings > Bank & Cash. None only when the company has neither, which the
+    callers log and carry on from (the invoice is still in the books).
+    """
+    code = (settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE or "").strip()
+    if code:
+        found = await _account_id(db, company_id, code)
+        if found:
+            return found
+    return await default_bank_account_id(db, company_id)
+
+
+def _settlement_label() -> str:
+    code = (settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE or "").strip()
+    return f"{code} (or the default bank account)" if code else "the default bank account"
+
+
 async def _find_or_create_customer(
     db: AsyncSession, request: Request, user: dict, company_id: str, customer: BridgeCustomer, external_ref: str
 ) -> str:
@@ -485,11 +508,11 @@ async def _post_receipt_if_due(
     or None when no settlement account is configured (logged, not fatal:
     the invoice is still in the books and the receipt can be entered by
     hand)."""
-    bank_acc = await _account_id(db, company_id, settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE)
+    bank_acc = await _settlement_account_id(db, company_id)
     if not bank_acc:
         logger.warning(
             "Bridge: settlement account %s missing; invoice %s recorded without its receipt",
-            settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE, invoice_no,
+            _settlement_label(), invoice_no,
         )
         return None
     # The shop and this ledger may disagree by paise; a receipt above the
@@ -670,7 +693,7 @@ async def record_ecommerce_sale(
     user = await _service_user(db, company_id)
     invoice_no = payload.invoice_no.strip()
 
-    seller_state = settings.COMPANY_STATE_CODE
+    seller_state = await company_seller_state(db, company_id)
     pos = (payload.place_of_supply or payload.customer.state_code or "").strip() or seller_state
 
     # Already recorded: answer as if we had just done it. If its payment is
@@ -813,12 +836,12 @@ async def record_advance(
     if prior:
         return {"status": "success", "voucher_no": prior, "already_recorded": True}
 
-    bank_acc = await _account_id(db, company_id, settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE)
+    bank_acc = await _settlement_account_id(db, company_id)
     if not bank_acc:
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Settlement account {settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE} is missing from the chart "
+                f"Settlement account {_settlement_label()} is missing from the chart "
                 "of accounts; the advance was not recorded."
             ),
         )
@@ -908,7 +931,7 @@ async def record_old_gold_purchase(
 
     material_code = await _ensure_old_metal_material(db, company_id, user_id, payload.metal)
 
-    seller_state = settings.COMPANY_STATE_CODE
+    seller_state = await company_seller_state(db, company_id)
     pos = (payload.customer.state_code or "").strip() or seller_state
     net = to_decimal(payload.net_weight)
     value = to_decimal(payload.value).quantize(PAISA, ROUND_HALF_UP)
@@ -997,7 +1020,7 @@ async def record_ecommerce_credit_note(
     try:
         material, other, gst, total = split_refund(
             payload.amount, inv["grand_total"], inv["taxable_material_value"],
-            inv["subtotal_other_charges"], settings.COMPANY_STATE_CODE, inv["place_of_supply"],
+            inv["subtotal_other_charges"], await company_seller_state(db, company_id), inv["place_of_supply"],
             inv["material_gst_rate"],
         )
     except ValueError:
@@ -1108,7 +1131,7 @@ async def record_ecommerce_credit_note(
         refund_out = total if payload.refund_paid is None else min(
             to_decimal(payload.refund_paid).quantize(PAISA, ROUND_HALF_UP), total
         )
-        bank_acc = await _account_id(db, company_id, settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE)
+        bank_acc = await _settlement_account_id(db, company_id)
         if bank_acc and refund_out > 0:
             pay_res = await db.execute(
                 text("SELECT 'PAY/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
@@ -1129,7 +1152,7 @@ async def record_ecommerce_credit_note(
         elif refund_out > 0:
             logger.warning(
                 "Bridge: settlement account %s missing; refund for %s booked as a customer credit only",
-                settings.ECOMMERCE_SETTLEMENT_ACCOUNT_CODE, invoice_no,
+                _settlement_label(), invoice_no,
             )
 
         await db.commit()

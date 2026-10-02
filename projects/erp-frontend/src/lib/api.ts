@@ -270,6 +270,120 @@ export const authApi = {
     apiClient.post('/auth/change-password', { current_password, new_password }),
 };
 
+// Company master (Settings > Company). GET for anyone signed in; PATCH is
+// owner/admin. Only the fields sent are written; a GSTIN change re-derives
+// the state and must agree with the PAN.
+export interface CompanyPatch {
+  name?: string | null;
+  legal_name?: string | null;
+  trade_name?: string | null;
+  gstin?: string | null;
+  pan?: string | null;
+  cin?: string | null;
+  tan?: string | null;
+  msme_reg_no?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state_code?: string | null;
+  pincode?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  logo_url?: string | null;
+  fiscal_year_start?: number | null;
+  base_currency?: string | null;
+  bank_name?: string | null;
+  bank_branch?: string | null;
+  bank_account_no?: string | null;
+  bank_ifsc?: string | null;
+  reason?: string;
+}
+
+export const companyApi = {
+  get: () => apiClient.get('/company'),
+  update: (data: CompanyPatch) => apiClient.patch('/company', data),
+};
+
+// Bank and cash ledgers (Settings > Bank & Cash). The default bank is what
+// the tax invoice prints and the storefront bridge settles into.
+export interface BankAccount {
+  id: string;
+  code: string;
+  name: string;
+  account_type: 'Bank' | 'Cash';
+  currency: string;
+  normal_balance: 'D' | 'C';
+  is_active: boolean;
+  is_default_bank: boolean;
+  is_system: boolean;
+  description: string | null;
+  bank_name: string | null;
+  bank_branch: string | null;
+  bank_account_no: string | null;
+  bank_ifsc: string | null;
+  upi_id: string | null;
+  opening_balance: string | number;
+  opening_balance_type: 'D' | 'C' | null;
+  group_code: string;
+  group_name: string;
+  total_dr: string | number;
+  total_cr: string | number;
+  posting_count: number;
+  balance_signed: string | number;
+  balance_abs: string | number;
+  balance_side: string;
+  current_balance: string | number;
+  has_details: boolean;
+}
+
+export interface CreateBankAccountPayload {
+  name: string;
+  account_type?: 'Bank' | 'Cash';
+  bank_name?: string | null;
+  bank_branch?: string | null;
+  bank_account_no?: string | null;
+  bank_ifsc?: string | null;
+  upi_id?: string | null;
+  description?: string | null;
+  opening_balance?: number | string | null;
+  opening_date?: string | null;
+  is_default_bank?: boolean;
+  reason?: string;
+}
+
+export interface UpdateBankAccountPayload {
+  name?: string;
+  bank_name?: string | null;
+  bank_branch?: string | null;
+  bank_account_no?: string | null;
+  bank_ifsc?: string | null;
+  upi_id?: string | null;
+  description?: string | null;
+  is_active?: boolean;
+  is_default_bank?: boolean;
+  reason?: string;
+}
+
+export const bankAccountsApi = {
+  list: (include_inactive = false) =>
+    apiClient.get<{ accounts: BankAccount[]; default_bank_account_id: string | null; account_types: string[] }>(
+      '/accounting/bank-accounts',
+      { params: { include_inactive } },
+    ),
+  create: (data: CreateBankAccountPayload) => apiClient.post<BankAccount>('/accounting/bank-accounts', data),
+  update: (id: string, data: UpdateBankAccountPayload) =>
+    apiClient.patch<BankAccount>(`/accounting/bank-accounts/${id}`, data),
+  makeDefault: (id: string) =>
+    apiClient.post<BankAccount>(`/accounting/bank-accounts/${id}/make-default`, { reason: 'Default bank account changed' }),
+};
+
+// Read-only view of the deployment configuration (owner/admin). Secrets are
+// reduced to booleans server-side; nothing here can be edited from the UI.
+export const settingsApi = {
+  runtime: () => apiClient.get('/settings/runtime'),
+};
+
 export default api;
 
 // Loose gemstone lots and parcels (carats move through the stock ledger)

@@ -67,7 +67,7 @@ file:
 docker compose -f docker-compose.erp.yml --env-file .env.erp exec -T erp-db \
   psql -U caratloop -d caratloop_erp -v ON_ERROR_STOP=1 \
     -v email=erp-admin@example.com -v password='ChangeMe-12345!' \
-    -v company_name=Caratloop -v legal_name='Caratloop Jewels' -v gstin=08AAAAA0000A1Z5 \
+    -v company_name=Caratloop -v legal_name='Caratloop Jewels' -v gstin=08AAACC1234A1ZI \
   < scripts/erp-seed-first-company.sql
 ```
 
@@ -135,12 +135,12 @@ the same steps, with earlier document numbers.
 | 7 | ERP `/health` | PASS |
 | 8 | ERP nginx `/healthz` on :80 and `/api/v1/auth/me` through nginx | PASS |
 | 9 | ERP reachable from the store API container at `host.docker.internal:8010` | PASS after the compose fix below |
-| 10 | ERP seed SQL (company `Caratloop`, GSTIN `08AAAAA0000A1Z5`, owner user) | PASS |
+| 10 | ERP seed SQL (company `Caratloop`, GSTIN `08AAACC1234A1ZI`, owner user) | PASS |
 | 11 | ERP `POST /api/v1/auth/login` | PASS |
 | 12 | ERP `GET /api/v1/auth/me` returns the company | PASS |
 | 13 | ERP `GET /api/v1/accounting/accounts?limit=1000`: 52 accounts (53 once the web customer's debtor account exists), every code the bridge needs present | PASS |
 | 14 | Store admin login (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) | PASS |
-| 15 | `PUT /api/v1/admin/settings`: legal name, GSTIN `08AAAAA0000A1Z5`, PAN, address, state `08`, `WEB` prefix, 3 % jewellery GST, 18 % repair GST | PASS |
+| 15 | `PUT /api/v1/admin/settings`: legal name, GSTIN `08AAACC1234A1ZI`, PAN, address, state `08`, `WEB` prefix, 3 % jewellery GST, 18 % repair GST | PASS |
 | 16 | `POST /api/v1/admin/categories` (`e2e-jewellery`, `JEWELLERY`) | PASS |
 | 17 | `POST /api/v1/products`: E2E Gold Ring, HSN 7113, stock 5, price 25000 | PASS |
 | 18 | `POST /api/v1/auth/register` customer (then login on re-runs) | PASS |

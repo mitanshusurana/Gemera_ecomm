@@ -13,6 +13,7 @@ from app.core.money import to_decimal
 from app.tax.gst_engine import calculate_jewelry_gst, get_return_period
 from app.tax.job_work import JOB_WORK_SAC
 from app.core.config import settings
+from app.core.company import seller_state_code as company_seller_state
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.roles import CAN_AMEND, CAN_POST, require
@@ -504,7 +505,7 @@ async def create_credit_note(payload: CreditNotePayload, request: Request, db: A
         gst = calculate_jewelry_gst(
             material_value=mat_val,
             making_charges=mak_val,
-            seller_state_code=settings.COMPANY_STATE_CODE,
+            seller_state_code=await company_seller_state(db, company_id),
             buyer_state_code=orig["place_of_supply"],
             material_gst_rate=to_decimal(orig["material_gst_rate"]),
         )

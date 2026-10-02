@@ -36,3 +36,7 @@ api_router.include_router(gstr2b.router,      prefix="/gst",       tags=["GSTR-2
 from app.api.v1 import lots, locations  # noqa: E402  (gemstone lots; stock locations and transfers)
 api_router.include_router(lots.router,        prefix="/lots",      tags=["Gemstone Lots [CGST-R56-2]"])
 api_router.include_router(locations.router,   prefix="/stock-locations", tags=["Stock Locations & Transfers [CGST-R56-2]"])
+from app.api.v1 import company, bank_accounts, settings_view  # noqa: E402  (company master; bank & cash ledgers; runtime view)
+api_router.include_router(company.router,     prefix="",           tags=["Company Settings"])
+api_router.include_router(bank_accounts.router, prefix="/accounting", tags=["Bank & Cash Accounts"])
+api_router.include_router(settings_view.router, prefix="",         tags=["Settings"])

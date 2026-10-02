@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   ClipboardList,
   Receipt,
-  Hammer
+  Hammer,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { financialYearLabel } from '@/lib/fiscal';
@@ -75,6 +76,9 @@ const navigation: NavItem[] = [
   { name: 'Audit Trail', href: '/reports', icon: ShieldCheck, group: 'Admin' },
   // Only owners and admins may manage users (app.core.roles.CAN_AMEND).
   { name: 'Users', href: '/users', icon: UserCog, group: 'Admin', roles: ['owner', 'admin'] },
+  // Company master (GSTIN, address, logo), bank & cash accounts, and the
+  // read-only runtime configuration. PATCH endpoints are owner/admin.
+  { name: 'Settings', href: '/settings', icon: Settings, group: 'Admin', roles: ['owner', 'admin'] },
 ];
 
 export default function Sidebar() {

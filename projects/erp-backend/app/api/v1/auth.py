@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from pydantic import BaseModel
 
+from app.core.company import fetch_company, fetch_default_bank_account, public_company
 from app.core.database import get_db, set_audit_context
 from app.core.security import create_access_token, get_current_user
 from app.core.user_policy import password_policy_errors
@@ -208,32 +209,15 @@ async def me(
     not this company. Both are the legal person claiming or charging the tax
     on the document. They come from the company master, here, once per session.
 
-    The bank block is included only when the company has filled it in; the
-    invoice omits it otherwise rather than printing somebody's example digits.
+    The bank block comes from the account flagged is_default_bank under
+    Settings > Bank & Cash, falling back to the company's own bank_* columns;
+    it is included only when one of them is filled in, so the invoice omits
+    it rather than printing somebody's example digits.
     """
-    res = await db.execute(
-        text(
-            "SELECT id, name, legal_name, trade_name, gstin, pan, cin, "
-            "       address_line1, address_line2, city, state_code, state_name, "
-            "       pincode, phone, email, website, logo_url, "
-            "       bank_name, bank_branch, bank_account_no, bank_ifsc "
-            "FROM caratloop.companies WHERE id = :cid"
-        ),
-        {"cid": str(current_user["company_id"])},
-    )
-    company = res.mappings().first()
+    company = await fetch_company(db, current_user["company_id"])
     if company is None:
         raise HTTPException(status_code=404, detail="Company not found for this user")
-
-    c = dict(company)
-    c["id"] = str(c["id"])
-    bank = {
-        "bank_name": c.pop("bank_name"),
-        "bank_branch": c.pop("bank_branch"),
-        "account_no": c.pop("bank_account_no"),
-        "ifsc": c.pop("bank_ifsc"),
-    }
-    c["bank"] = bank if bank["account_no"] and bank["ifsc"] else None
+    c = public_company(company, await fetch_default_bank_account(db, current_user["company_id"]))
 
     return {
         "user": {

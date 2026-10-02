@@ -14,7 +14,7 @@
 --     psql -U caratloop -d caratloop_erp -v ON_ERROR_STOP=1 \
 --       -v email="'erp-admin@example.com'" -v password="'ChangeMe-12345!'" \
 --       -v company_name="'Caratloop'" -v legal_name="'Caratloop Jewels'" \
---       -v gstin="'08AAAAA0000A1Z5'" < scripts/erp-seed-first-company.sql
+--       -v gstin="'08AAACC1234A1ZI'" < scripts/erp-seed-first-company.sql
 --
 -- Idempotent: re-running with the same e-mail does nothing.
 -- Password hashing uses pgcrypto's bcrypt ($2a$), which app/api/v1/auth.py accepts.

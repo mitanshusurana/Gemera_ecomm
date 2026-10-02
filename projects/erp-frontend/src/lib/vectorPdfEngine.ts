@@ -324,7 +324,7 @@ export const generateTaxInvoicePDF = async (invoice: any, action: 'download' | '
     doc.text(`IFSC Code: ${company.bank.ifsc}`, 13, y + 26);
   } else {
     doc.setFont('helvetica', 'italic');
-    doc.text('Remittance details not on record. Add the bank account to the company master.', 13, y + 11);
+    doc.text('Remittance details not on record. Add them to the default bank account under Settings.', 13, y + 11);
     doc.setFont('helvetica', 'normal');
   }
 

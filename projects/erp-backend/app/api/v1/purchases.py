@@ -25,6 +25,7 @@ from sqlalchemy import text
 from pydantic import BaseModel
 
 from app.core.config import settings
+from app.core.company import seller_state_code as company_seller_state
 from app.core.database import get_db, set_audit_context
 from app.core.ledger import assert_journal_balanced
 from app.core.money import round_money, to_decimal
@@ -416,7 +417,8 @@ async def _post_purchase(
                 "was given. It decides whether IGST or CGST+SGST applies."
             ),
         )
-    is_inter_state = pos.strip().zfill(2) != settings.COMPANY_STATE_CODE.strip().zfill(2)
+    # Against the company's own state (its GSTIN), not the deployment default.
+    is_inter_state = pos.strip().zfill(2) != await company_seller_state(db, company_id)
 
     # One tested Decimal implementation for the tax arithmetic.
     priced = await _resolve_line_rates(db, company_id, payload.items)

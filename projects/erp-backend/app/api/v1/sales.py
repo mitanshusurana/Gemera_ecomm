@@ -46,6 +46,8 @@ from app.tax.gst_engine import (
 from app.tax.job_work import JOB_WORK_SAC
 from app.tax.tds_tcs import has_valid_pan, tcs_on_sale
 from app.core.config import settings
+from app.core.company import fetch_company, fetch_default_bank_account, public_company
+from app.core.company import seller_state_code as company_seller_state
 from app.core.tenancy import resolve_default_uom, resolve_fiscal_year, resolve_stock_location
 from app.tax.gstin import is_gstin_shaped
 from app.core.periods import assert_period_open
@@ -268,7 +270,9 @@ async def create_sales_invoice(
                 "or pass place_of_supply explicitly."
             ),
         )
-    seller_state = settings.COMPANY_STATE_CODE
+    # The seller's state is the company's (its GSTIN), not a deployment
+    # setting; the setting is only the fallback for a row without one.
+    seller_state = await company_seller_state(db, company_id)
 
     # Foreign-currency invoices: every line amount arrives in payload.currency
     # and is converted once, here, at the invoice's own rate. The rupee figure
@@ -1222,25 +1226,11 @@ async def get_sales_invoice(
         {"id": str(invoice_id)},
     )
 
-    company = await db.execute(
-        text("""
-            SELECT id, name, legal_name, trade_name, gstin, pan,
-                   address_line1, address_line2, city, state_code, state_name, pincode,
-                   phone, email, bank_name, bank_branch, bank_account_no, bank_ifsc
-            FROM caratloop.companies WHERE id = :cid
-        """),
-        {"cid": cid},
-    )
-    c = dict(company.mappings().first() or {})
-    if c:
-        c["id"] = str(c["id"])
-        bank = {
-            "bank_name": c.pop("bank_name", None),
-            "bank_branch": c.pop("bank_branch", None),
-            "account_no": c.pop("bank_account_no", None),
-            "ifsc": c.pop("bank_ifsc", None),
-        }
-        c["bank"] = bank if bank["account_no"] and bank["ifsc"] else None
+    # Read live from the company master on every call -- a GSTIN or address
+    # amended under Settings is on the next print -- with the remittance block
+    # from the default bank account (app.core.company.bank_block).
+    company_row = await fetch_company(db, cid)
+    c = public_company(company_row, await fetch_default_bank_account(db, cid)) if company_row else {}
 
     out = dict(inv)
     out["id"] = str(out["id"])
@@ -1324,13 +1314,14 @@ async def delete_sales_invoice(
             orig_je_id = orig_je["id"]
             
             # Create new reversing entry
+            # Every JV/ number in this ledger comes from journal_entry_seq; a
+            # separate per-company counter started at 1 here and the first
+            # cancellation collided with the invoice's own JV/<FY>/00001.
             rev_no_res = await db.execute(
-                text("SELECT caratloop.next_document_number(:cid, NULL, 'JournalVoucher')"),
-                {"cid": company_id}
+                text("SELECT 'JV/' || :fy_label || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+                {"fy_label": fy_label},
             )
-            cnt = rev_no_res.scalar()
-            # The financial year was hardcoded to 2026-27 here.
-            rev_vno = f"JV/{fy_label}/{cnt:05d}"
+            rev_vno = rev_no_res.scalar()
             
             # fiscal_year_id, total_debit, total_credit and sequence_no are
             # all NOT NULL, and this statement supplied none of them, so
