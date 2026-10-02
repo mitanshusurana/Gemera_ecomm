@@ -49,6 +49,10 @@ and answers 401 when the secret is unset or the signature does not match. A capt
 PAID (or activates the matching gift card) and sends the confirmation e-mail, so an order completes even when the
 customer closes the browser before the checkout page can confirm it. Retries are safe: an already-PAID order is left alone.
 
+Set `NG_ALLOWED_HOSTS` in `.env.frontend` to the public host names (for example `www.caratloop.com,caratloop.com`):
+Angular SSR refuses to server-render a request whose Host header is not listed and silently falls back to
+client-side rendering, which costs SEO. `localhost` is always allowed for the health probe.
+
 Frontend bundles are built once with placeholder tokens; `env-subst.sh` (storefront) and `admin-env-subst.sh` (admin)
 replace them from the environment when the container starts, so one image serves every environment. The admin container
 exits immediately if `API_URL` is missing.

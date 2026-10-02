@@ -16,3 +16,11 @@ dist
 *.log
 backend/build
 backend/.gradle
+
+# The ERP has its own build contexts (projects/erp-*/Dockerfile); its node_modules,
+# .next and .venv were being shipped into the storefront/admin build context (~800MB).
+**/node_modules
+**/.next
+**/.venv
+projects/erp-backend
+projects/erp-frontend

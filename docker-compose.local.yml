@@ -1,5 +1,12 @@
 # LOCAL: every service built from source, one command.
 # Usage: cp .env.local.example .env.local && edit && docker compose -f docker-compose.local.yml up --build
+#
+# Explicit project name: docker-compose.erp.yml lives in the same directory and
+# would otherwise share the default project ("gemera_ecomm"), so each stack's
+# `up` reported the other's containers as orphans and `down --remove-orphans`
+# would have removed the other stack. Volumes are namespaced by this name too.
+name: caratloop-local
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -26,12 +33,20 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    # The dns: override above stops Docker's internal resolver from answering
+    # host.docker.internal, which ERP_BASE_URL=http://host.docker.internal:8010
+    # (the ERP stack published on the laptop) relies on. host-gateway restores it.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # Every backend variable, including the optional ERP_BASE_URL / ERP_API_KEY
     # for the ERP outbox, is read from this file (same keys as .env.backend.example).
     env_file:
       - .env.local
+    # Host ports are overridable from .env.local (API_PORT, STOREFRONT_PORT,
+    # ADMIN_PORT) so the stack can run beside another project that already
+    # publishes 8080. Keep API_URL in .env.local in step with API_PORT.
     ports:
-      - "8080:8080"
+      - "${API_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,7 +60,7 @@ services:
     env_file:
       - .env.local
     ports:
-      - "4200:4000"
+      - "${STOREFRONT_PORT:-4200}:4000"
     depends_on:
       - backend
 
@@ -58,7 +73,7 @@ services:
     env_file:
       - .env.local
     ports:
-      - "4300:80"
+      - "${ADMIN_PORT:-4300}:80"
     depends_on:
       - backend
 

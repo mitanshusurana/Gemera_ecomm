@@ -81,3 +81,6 @@ backend/backend_server.log
 nginx/certs/
 nginx/acme/
 nginx/tls/*.conf
+
+# scripts/e2e-local.sh scratch directory
+scripts/.e2e-tmp.*

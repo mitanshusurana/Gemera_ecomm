@@ -47,7 +47,7 @@ services:
     container_name: caratloop_erp_migrate
     restart: "no"
     environment:
-      SYNC_DATABASE_URL: postgresql://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
+      SYNC_DATABASE_URL: postgresql+psycopg2://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
       TZ: Asia/Kolkata
     command: ["alembic", "upgrade", "head"]
     depends_on:
@@ -63,7 +63,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
-      SYNC_DATABASE_URL: postgresql://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
+      SYNC_DATABASE_URL: postgresql+psycopg2://caratloop:${POSTGRES_PASSWORD_URLENC:?set POSTGRES_PASSWORD_URLENC}@erp-db:5432/caratloop_erp
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
