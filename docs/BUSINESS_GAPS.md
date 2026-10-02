@@ -60,7 +60,11 @@ Closed in the September 2026 passes: everything marked Done in bold above, the E
 a 370-plus test suite for the store API that the image build runs, 900-plus offline tests for the ERP,
 and a scripted end-to-end run of the whole stack in Docker (`scripts/e2e-local.sh`, `docs/E2E_RUN.md`).
 
+Verified end to end on 2026-10-02: `scripts/e2e-local.sh` runs both stacks from source and drives order,
+invoice, ERP sync, return with store credit, repair with service invoice, old-gold exchange and Treasure
+installment through the real APIs; 41 of 41 steps pass (`docs/E2E_RUN.md`).
+
 Still open:
 
 1. Lifetime exchange valuation at today's metal rate for returns (the RMA values items at the invoice price).
-2. A live end-to-end run on the production VMs with a real payment, refund, exchange and repair.
+2. The same run against the production VMs with a real Razorpay payment and refund.

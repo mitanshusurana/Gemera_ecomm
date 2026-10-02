@@ -12,9 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-# greenlet: SQLAlchemy >= 2.1 no longer installs it, but sqlalchemy.ext.asyncio
-# needs it (requirements.txt pins sqlalchemy without the [asyncio] extra).
-RUN pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt "greenlet>=3.0"
+RUN pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
 
 
 # ─── Runtime stage ────────────────────────────────────────────────────────────
@@ -30,7 +28,7 @@ WORKDIR /app
 
 COPY --from=build /wheels /wheels
 COPY requirements.txt .
-RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt "greenlet>=3.0" \
+RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt \
     && rm -rf /wheels
 
 COPY . .
