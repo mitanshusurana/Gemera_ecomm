@@ -13,7 +13,7 @@ the VMs pull them without logging into GHCR.
 |---|---|---|---|
 | Core VM | `docker-compose.backend.yml` | PostgreSQL, API, admin SPA | 8080 (API), 81 (admin) |
 | Storefront VM | `docker-compose.frontend.yml` | SSR storefront | 80 |
-| Core VM | `docker-compose.erp.yml` | ERP PostgreSQL, ERP API, ERP UI, nginx | 80, 443 (ERP nginx) |
+| Core VM | `docker-compose.erp.yml` | ERP PostgreSQL, ERP API, ERP UI | none (loopback 3001 UI, 8010 API; proxy the UI) |
 | Laptop | `docker-compose.local.yml` | everything from source | 5432 (localhost only), 8080, 4200, 4300 |
 
 PostgreSQL is not published on the Core VM; connect through an SSH tunnel:
@@ -94,10 +94,7 @@ curl -fsS http://127.0.0.1:8010/health
 
 Add `--build` to `up` to build the two ERP images from `projects/` instead of pulling them.
 
-`erp-migrate` runs `alembic upgrade head` and the API waits for it. `erp-nginx` (`nginx/erp.conf`) is the public
-entry point: it proxies `/api/` to the ERP API, everything else to the ERP UI, rate-limits the login endpoint and
-blocks the OpenAPI docs. It serves plain HTTP on 80 until you follow `nginx/TLS.md` to issue a certificate and
-enable the 443 listener. Set `CORS_ORIGINS` to the JSON list of origins the UI is served from.
+`erp-migrate` runs `alembic upgrade head` and the API waits for it. The ERP UI (127.0.0.1:`ERP_UI_PORT`, default 3001) proxies `/api/v1` to the API itself, so the only public route is the UI: add an ERP host name to the same TLS reverse proxy that fronts the admin and API and point it at that port. The API port 8010 stays loopback-only; the storefront bridge reaches it there.
 
 ## 3b. Storefront to ERP bridge
 
@@ -107,7 +104,7 @@ credit note and the refund payment. Configuration:
 
 | Where | Variable | Value |
 |---|---|---|
-| `.env.backend` | `ERP_BASE_URL` | The ERP API origin as seen from the Core VM, e.g. `http://127.0.0.1:8010` or the ERP nginx URL |
+| `.env.backend` | `ERP_BASE_URL` | The ERP API origin as seen from the Core VM, e.g. `http://127.0.0.1:8010` |
 | `.env.backend` | `ERP_API_KEY` | A long random secret |
 | `.env.erp` | `ECOMMERCE_API_KEY` | The same secret |
 | `.env.erp` | `ECOMMERCE_SETTLEMENT_ACCOUNT_CODE` | Ledger code of the bank account Razorpay settles into (default `BNK-001`) |

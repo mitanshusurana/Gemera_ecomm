@@ -15,7 +15,7 @@
 # stacks stay up so the ports below can be inspected afterwards:
 #   store   API http://localhost:8080  storefront http://localhost:4200  admin http://localhost:4300  Postgres 127.0.0.1:5432
 #           (host ports follow API_PORT / STOREFRONT_PORT / ADMIN_PORT in .env.local)
-#   ERP     API http://127.0.0.1:8010  UI http://127.0.0.1:3001  nginx http://localhost:80  Postgres 127.0.0.1:5433
+#   ERP     API http://127.0.0.1:8010  UI http://127.0.0.1:3001  Postgres 127.0.0.1:5433
 #
 # The full log of every request goes to $E2E_LOG (default: scripts/e2e-local.log, gitignored via *.log).
 
@@ -181,13 +181,13 @@ c="$(curl -s -m 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$STOREFRONT_
 c="$(curl -s -m 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$ADMIN_PORT/")"; [ "$c" = "200" ] && pass "admin SPA answers on :$ADMIN_PORT" || fail "admin SPA on :$ADMIN_PORT" "HTTP $c"
 
 if [ "$E2E_SKIP_BUILD" != "1" ]; then
-    say "== building and starting the ERP stack (Postgres 5433, alembic, API 8010, UI 3001, nginx 80/443)"
+    say "== building and starting the ERP stack (Postgres 5433, alembic, API 8010, UI 3001)"
     if "${ERP_COMPOSE[@]}" up -d --build >>"$E2E_LOG" 2>&1; then pass "ERP stack: docker compose up -d --build"; else fail "ERP stack: docker compose up -d --build" "$(docker logs caratloop_erp_migrate 2>&1 | tail -2 | tr '\n' ' ')"; fi
 else
     skip "ERP stack build (E2E_SKIP_BUILD=1)"
 fi
 if wait_http "$ERP_HEALTH" 180; then pass "ERP API health $ERP_HEALTH"; else fail "ERP API health" "$(docker logs caratloop_erp_backend 2>&1 | tail -2 | tr '\n' ' ')"; fi
-c="$(curl -s -m 10 -o /dev/null -w '%{http_code}' http://127.0.0.1/healthz)"; [ "$c" = "200" ] && pass "ERP nginx answers on :80" || fail "ERP nginx on :80" "HTTP $c"
+c="$(curl -s -m 10 -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/v1/auth/me)"; { [ "$c" = "401" ] || [ "$c" = "403" ]; } && pass "ERP UI answers on :3001 and proxies /api/v1 to the API" || fail "ERP UI proxy on :3001" "HTTP $c (expected 401/403 from the API)"
 if docker exec jewelry-backend-local curl -s -m 5 -o /dev/null -w '%{http_code}' "$ERP_BASE_URL/health" 2>/dev/null | grep -q 200; then
     pass "ERP reachable from the store API container at $ERP_BASE_URL"
 else
@@ -391,7 +391,7 @@ fi
 say "== scanning container logs for ERROR / SEVERE / stack traces since the run started"
 BENIGN='Razorpay is not configured|MailSendException|MailConnectException|UnknownHostException: smtp|Failed to send email|Could not connect to SMTP|GET /health'
 logsum=""; bad=0
-for cname in jewelry-backend-local jewelry-frontend-local jewelry-admin-local caratloop_erp_backend caratloop_erp_frontend caratloop_erp_nginx caratloop_erp_migrate; do
+for cname in jewelry-backend-local jewelry-frontend-local jewelry-admin-local caratloop_erp_backend caratloop_erp_frontend caratloop_erp_migrate; do
     n="$(docker logs "$cname" 2>&1 | grep -E 'ERROR|SEVERE|Traceback|Exception:' | grep -vE "$BENIGN" | grep -cE 'ERROR|SEVERE|Traceback|Exception:')"
     logsum="$logsum $cname=$n"; [ "${n:-0}" -gt 0 ] && bad=$((bad+n))
 done
@@ -406,6 +406,6 @@ docker logs caratloop_erp_backend 2>&1 | grep -E 'ERROR|Traceback|Error' | grep 
 # ---------------------------------------------------------------------------
 printf '\n%-5s %-4s %s\n' RESULT '#' STEP
 for r in "${RESULTS[@]}"; do IFS='|' read -r s n name det <<<"$r"; printf '%-5s %-4s %s%s\n' "$s" "$n" "$name" "${det:+  -- $det}"; done
-printf '\n%d step(s) failed. Stacks left running: store API :%s, storefront :%s, admin :%s, Postgres 127.0.0.1:5432; ERP API 127.0.0.1:8010, ERP UI 127.0.0.1:3001, ERP nginx :80/:443, ERP Postgres 127.0.0.1:5433\n' "$FAILS" "$API_PORT" "$STOREFRONT_PORT" "$ADMIN_PORT"
+printf '\n%d step(s) failed. Stacks left running: store API :%s, storefront :%s, admin :%s, Postgres 127.0.0.1:5432; ERP API 127.0.0.1:8010, ERP UI 127.0.0.1:3001, ERP Postgres 127.0.0.1:5433\n' "$FAILS" "$API_PORT" "$STOREFRONT_PORT" "$ADMIN_PORT"
 rm -rf "$TMP"
 exit $(( FAILS > 99 ? 99 : FAILS ))
