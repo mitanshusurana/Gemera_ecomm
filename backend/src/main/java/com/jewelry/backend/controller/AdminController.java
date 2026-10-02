@@ -11,7 +11,6 @@ import com.jewelry.backend.repository.OrderRepository;
 import com.jewelry.backend.repository.RFQRepository;
 import com.jewelry.backend.repository.GlobalSettingRepository;
 import com.jewelry.backend.repository.AuditLogRepository;
-import com.jewelry.backend.service.MetalPriceService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -51,8 +50,6 @@ public class AdminController {
     @Autowired
     EntityMapper entityMapper;
 
-    @Autowired
-    MetalPriceService metalPriceService;
 
     @Autowired
     com.jewelry.backend.service.UserService userService;
@@ -91,13 +88,6 @@ public class AdminController {
         ));
     }
 
-    @GetMapping("/market/prices")
-    @PreAuthorize("@access.has('dashboard.read')")
-    @Operation(summary = "Get Live Market Prices for Dashboard")
-    public ResponseEntity<Map<String, Object>> getMarketPrices() {
-        Map<String, Object> prices = metalPriceService.getMetalPricesWithMeta();
-        return ResponseEntity.ok(prices);
-    }
 
     @GetMapping("/settings")
     @PreAuthorize("@access.has('settings.read')")
