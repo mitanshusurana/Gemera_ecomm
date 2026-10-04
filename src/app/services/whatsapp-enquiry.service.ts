@@ -55,10 +55,16 @@ export class WhatsappEnquiryService {
   /** Current router URL as a signal so OnPush buttons re-render on navigation. */
   private readonly routeUrl = signal<string>('/');
 
-  /** Business number, digits only, from admin settings with the build-time fallback. */
+  /**
+   * Business number, digits only, from admin settings with the build-time
+   * fallback. wa.me needs the country code; the admin saved a bare ten-digit
+   * Indian mobile number and every link pointed at an unknown number, so a
+   * ten-digit value starting 6-9 gets India's 91 prepended.
+   */
   readonly number = computed(() => {
     const raw = this.settingService.settings()['whatsappNumber'] || environment.whatsappNumber || '';
-    return String(raw).replace(/\D/g, '');
+    const digits = String(raw).replace(/\D/g, '');
+    return /^[6-9]\d{9}$/.test(digits) ? `91${digits}` : digits;
   });
 
   constructor() {
