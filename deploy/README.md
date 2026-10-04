@@ -55,6 +55,21 @@ deploy/deploy.sh core opc@129.159.18.63 ~/.ssh/core.key
 deploy/deploy.sh edge opc@68.233.96.36  ~/.ssh/edge.key
 ```
 
+## Backups
+
+`bootstrap.sh` installs `deploy/backup.sh` as a cron job at 02:30 IST on each VM. It writes a compressed
+`pg_dump` of every PostgreSQL container into `~/caratloop/backups/<container>/`, saves the stack's env files
+as `env-<stamp>.tgz` beside them (the secrets live nowhere else), keeps 14 days, and mirrors the directory to
+the other VM when `BACKUP_PEER=opc@<other-ip>` is set in `~/caratloop/backup.env`. For the mirror, bootstrap
+generates `~/.ssh/backup_peer` and prints its public key; add that key to the other VM's
+`~/.ssh/authorized_keys`. Logs: `~/caratloop/backup.log` and `backup.cron.log`.
+
+Restore a dump into the running container:
+
+```bash
+gunzip -c ~/caratloop/backups/jewelry-postgres/jewelry-postgres-<stamp>.sql.gz   | sudo docker exec -i jewelry-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
 ## Memory on the free-tier VMs
 
 Oracle Linux boots these 1 GB VMs with `crashkernel=1G-64G:448M`, reserving 448 MB for kdump, so only about
