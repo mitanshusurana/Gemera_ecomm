@@ -51,12 +51,36 @@ public class ProductController {
     com.jewelry.backend.security.AccessService access;
 
     /**
-     * Cost price and its timestamp are staff-only (products.write): the mapper
-     * leaves them null so cart, order and wishlist responses never carry them;
-     * only the product endpoints here add them for staff callers.
+     * Business-internal product data is staff-only. The mapper leaves it null
+     * so cart, order, wishlist and anonymous product responses never carry it
+     * (the storefront used to list supplier, location and consignment terms
+     * under "Additional Specifications"); only the product endpoints here add
+     * it back for signed-in staff. Cost price additionally needs products.write.
      */
     private ProductDTO withStaffFields(ProductDTO dto, Product product) {
-        if (dto != null && product != null && access.has("products.write")) {
+        if (dto == null || product == null) {
+            return dto;
+        }
+        if (access.isStaff()) {
+            dto.setExcludeFromFeeds(Boolean.TRUE.equals(product.getExcludeFromFeeds()));
+            dto.setInventoryOwnership(product.getInventoryOwnership());
+            dto.setSupplierName(product.getSupplierName());
+            dto.setReturnDueDate(product.getReturnDueDate());
+            dto.setCommissionPercentage(product.getCommissionPercentage());
+            dto.setCurrentLocation(product.getCurrentLocation());
+            dto.setErpMaterialCode(product.getErpMaterialCode());
+            dto.setStockStatus(product.getStockStatus());
+            dto.setPurchaseDate(product.getPurchaseDate());
+            dto.setSupplierCode(product.getSupplierCode());
+            dto.setAcquisitionCost(product.getAcquisitionCost());
+            dto.setYieldEstimate(product.getYieldEstimate());
+            dto.setWastageLog(product.getWastageLog());
+            dto.setManufacturingStage(product.getManufacturingStage());
+            dto.setReorderPointAlert(product.getReorderPointAlert());
+            dto.setVendorInformation(product.getVendorInformation());
+            dto.setMinOrderQuantity(product.getMinOrderQuantity());
+        }
+        if (access.has("products.write")) {
             dto.setCostPrice(product.getCostPrice());
             dto.setCostUpdatedAt(product.getCostUpdatedAt());
         }
