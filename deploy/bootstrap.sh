@@ -13,6 +13,7 @@ role="${1:?usage: bootstrap.sh core|edge}"
 [[ "$role" == core || "$role" == edge ]] || { echo "role must be core or edge" >&2; exit 2; }
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo="$(cd "$here/.." && pwd)"
+ROOT_DIR="$repo"
 stack="$here/$role"
 
 say() { printf '\n== %s\n' "$*"; }
@@ -128,5 +129,18 @@ else
     echo "   still to fill by hand: .env.frontend API_URL/SSR_API_URL/NG_ALLOWED_HOSTS/RAZORPAY_KEY; .env.erp ECOMMERCE_API_KEY must equal ERP_API_KEY on the core VM"
 fi
 chmod 600 .env .env.* 2>/dev/null || true
+
+say "Nightly backup (02:30 IST, see deploy/backup.sh)"
+chmod +x "$here/backup.sh"
+command -v rsync >/dev/null || sudo dnf -y -q install rsync >/dev/null 2>&1 || true
+# BACKUP_PEER mirrors the dumps to the other VM; set it in ~/caratloop/backup.env
+# as  BACKUP_PEER=opc@<other-ip>  and put that host's ~/.ssh/backup_peer.pub into
+# this user's authorized_keys there (bootstrap prints the key below).
+[[ -f "$HOME/.ssh/backup_peer" ]] || ssh-keygen -q -t ed25519 -N "" -C "caratloop-backup-$(hostname)" -f "$HOME/.ssh/backup_peer"
+[[ -f "$ROOT_DIR/backup.env" ]] || printf '# BACKUP_PEER=opc@<other-vm-ip>\n# KEEP_DAYS=14\n' > "$ROOT_DIR/backup.env"
+cron_line="30 2 * * * . $ROOT_DIR/backup.env 2>/dev/null; TZ=Asia/Kolkata bash $here/backup.sh >> $ROOT_DIR/backup.cron.log 2>&1"
+( crontab -l 2>/dev/null | grep -v 'deploy/backup.sh' || true; echo "$cron_line" ) | crontab -
+echo "   cron: $(crontab -l | grep -c 'deploy/backup.sh') entry; mirror key (add to the other VM's authorized_keys):"
+echo "   $(cat "$HOME/.ssh/backup_peer.pub")"
 
 say "Done. Next: edit the env files, then  docker compose pull && docker compose up -d  in $stack"
