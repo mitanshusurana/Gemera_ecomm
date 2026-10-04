@@ -1,0 +1,15 @@
+# Caddy obtains and renews certificates itself (Let's Encrypt, ZeroSSL fallback).
+# Host names come from .env through the environment; see docker-compose.yml.
+{
+	email {$ACME_EMAIL}
+}
+
+{$API_HOST} {
+	encode zstd gzip
+	reverse_proxy backend:8080
+}
+
+{$ADMIN_HOST} {
+	encode zstd gzip
+	reverse_proxy admin:80
+}
