@@ -34,6 +34,17 @@ creates the env files from the examples with generated secrets. It then stops: e
 
 and run the same `deploy.sh` line again without `--bootstrap`.
 
+**ERP first user.** Nothing in the ERP creates its first company or owner; `ADMIN_EMAIL` / `ADMIN_PASSWORD` in
+`.env.erp` are only validated, not applied. After the edge stack is up, seed once (idempotent) on the edge VM:
+
+```bash
+cd ~/caratloop/deploy/edge
+em=$(grep -E '^ADMIN_EMAIL=' .env.erp | cut -d= -f2-); pw=$(grep -E '^ADMIN_PASSWORD=' .env.erp | cut -d= -f2-)
+sudo docker compose exec -T erp-db psql -U caratloop -d caratloop_erp -v ON_ERROR_STOP=1   -v email="$em" -v password="$pw" -v company_name=Caratloop -v legal_name="Caratloop Jewels" -v gstin=""   < ~/caratloop/erp-seed-first-company.sql     # copy scripts/erp-seed-first-company.sql there first
+```
+
+Then sign in and fill the company GSTIN and address under Settings.
+
 To keep the data of an earlier deployment, set `POSTGRES_VOLUME` (core) or `ERP_POSTGRES_VOLUME` (edge) in
 `.env` to the existing volume name before the first `up`.
 

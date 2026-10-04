@@ -18,6 +18,7 @@ echo "== copying deploy tree to $target:$remote"
 ssh "${ssh_opts[@]}" "$target" "mkdir -p $remote/deploy/$role"
 scp -q "${ssh_opts[@]}" .env.backend.example .env.frontend.example .env.erp.example "$target:$remote/"
 scp -q "${ssh_opts[@]}" deploy/bootstrap.sh "$target:$remote/deploy/"
+[[ "$role" == edge ]] && scp -q "${ssh_opts[@]}" scripts/erp-seed-first-company.sql "$target:$remote/"
 scp -q "${ssh_opts[@]}" "deploy/$role/docker-compose.yml" "deploy/$role/Caddyfile" "deploy/$role/env.example" "$target:$remote/deploy/$role/"
 
 if [[ "$bootstrap" == "--bootstrap" ]]; then
