@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/header';
 import { FooterComponent } from './components/footer';
@@ -8,6 +8,7 @@ import { WhatsappButtonComponent } from './components/whatsapp-button';
 import { routeAnimations } from './app.animations';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CookieConsentComponent } from './components/cookie-consent';
+import { WhatsappEnquiryService } from './services/whatsapp-enquiry.service';
 
 @Component({
   selector: 'app-root',
@@ -36,6 +37,8 @@ export class App {
   organizationSchema: SafeHtml;
 
   constructor(private sanitizer: DomSanitizer) {
+    // Remember utm_source / referrer of the first page so WhatsApp enquiries say where the shopper came from.
+    inject(WhatsappEnquiryService).rememberArrival();
     const schema = {
       "@context": "https://schema.org",
       "@type": "Organization",

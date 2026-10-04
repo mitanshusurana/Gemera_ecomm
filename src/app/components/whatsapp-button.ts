@@ -1,5 +1,5 @@
-import { Component, Input, ChangeDetectionStrategy, OnInit, ChangeDetectorRef } from "@angular/core";
-import { SettingService } from '../services/setting.service';
+import { Component, Input, ChangeDetectionStrategy, inject } from "@angular/core";
+import { WhatsappEnquiryService } from '../services/whatsapp-enquiry.service';
 import { CommonModule } from "@angular/common";
 import { environment } from "../../environments/environment";
 
@@ -33,7 +33,7 @@ import { environment } from "../../environments/environment";
         class="absolute right-0 bottom-16 bg-[#1d1d1f] text-white px-4 py-2 rounded-[12px] whitespace-normal max-w-[200px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
       >
         <p class="text-sm font-semibold">Chat with us!</p>
-        <p class="text-xs text-[#a1a1a6]">{{ phoneNumber }}</p>
+        <p class="text-xs text-[#a1a1a6]">+{{ phoneNumber }}</p>
         <div
           class="absolute bottom-0 right-4 w-2 h-2 bg-[#1d1d1f] transform rotate-45 translate-y-1"
         ></div>
@@ -85,28 +85,26 @@ import { environment } from "../../environments/environment";
     </div>
   `,
 })
-export class WhatsappButtonComponent implements OnInit {
-  @Input() phoneNumber: string = environment.whatsappNumber;
-  @Input() message: string =
-    "Hello! I would like to inquire about your products.";
+export class WhatsappButtonComponent {
+  private wa = inject(WhatsappEnquiryService);
+
+  /**
+   * A fixed opener for callers that want one. Left unset, the message follows
+   * the page: product name, SKU, price and link on a product page, the order
+   * number on the confirmation page, otherwise the page URL, always with the
+   * "via website · <source>" tag (see WhatsappEnquiryService).
+   */
+  @Input() message: string | null = null;
   @Input() showContactCard: boolean = false;
 
-  constructor(private settingService: SettingService, private cdr: ChangeDetectorRef) {}
-
-  ngOnInit() {
-    this.settingService.getSettings().subscribe({
-      next: (data: any) => {
-        if (data && data.whatsappNumber) {
-          this.phoneNumber = data.whatsappNumber;
-          this.cdr.markForCheck();
-        }
-      }
-    });
+  get phoneNumber(): string {
+    return this.wa.number() || environment.whatsappNumber;
   }
 
   get whatsappLink(): string {
-    const cleanNumber = this.phoneNumber ? this.phoneNumber.replace(/\D/g, "") : '';
-    const encodedMessage = encodeURIComponent(this.message);
-    return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+    if (this.message) {
+      return `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(this.message)}`;
+    }
+    return this.wa.currentLink();
   }
 }

@@ -1,4 +1,5 @@
 import { Component, OnInit, signal, computed, ChangeDetectionStrategy, PLATFORM_ID, inject } from "@angular/core";
+import { WhatsappEnquiryService } from '../services/whatsapp-enquiry.service';
 import { CommonModule, NgOptimizedImage, isPlatformBrowser } from "@angular/common";
 import { RouterLink, ActivatedRoute } from "@angular/router";
 import { OrderService } from "../services/order.service";
@@ -367,7 +368,12 @@ import { environment } from "../../environments/environment";
 export class OrderConfirmationComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   private authService = inject(AuthService);
-  whatsappUrl = `https://wa.me/${environment.whatsappNumber}`;
+  private wa = inject(WhatsappEnquiryService);
+
+  /** Opens the shop's WhatsApp with the order number in the message. */
+  get whatsappUrl(): string {
+    return this.wa.link({ kind: 'order', orderNumber: this.orderNumber(), url: this.wa.currentUrl() });
+  }
 
   /**
    * Growth contract, section 3: one optional line for signed-in customers who

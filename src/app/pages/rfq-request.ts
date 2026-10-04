@@ -1,4 +1,5 @@
 import { Component, signal, inject, computed, effect, OnInit, PLATFORM_ID } from "@angular/core";
+import { WhatsappEnquiryService } from '../services/whatsapp-enquiry.service';
 import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink, Router } from "@angular/router";
@@ -480,7 +481,7 @@ import { environment } from "../../environments/environment";
                 <div>
                   <p class="text-xs uppercase tracking-wider text-[#7a7a7a] mb-1">WhatsApp</p>
                   <a
-                    [href]="'https://wa.me/' + env.whatsappNumber"
+                    [href]="wa.link({ kind: 'page', title: 'Custom design request', url: wa.currentUrl() })"
                     target="_blank"
                     rel="noopener"
                     class="text-[#D4AF37] hover:underline font-semibold"
@@ -497,6 +498,7 @@ import { environment } from "../../environments/environment";
   `,
 })
 export class RFQRequestComponent implements OnInit {
+  wa = inject(WhatsappEnquiryService);
   env = environment;
 
   private authService = inject(AuthService);

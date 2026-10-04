@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { WhatsappEnquiryService } from '../services/whatsapp-enquiry.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SettingService } from '../services/setting.service';
 import { InquiryService } from '../services/inquiry.service';
@@ -141,10 +142,13 @@ export class ContactComponent implements OnInit {
    * WhatsApp link from configuration. It was hardcoded to the placeholder
    * 1234567890, so the concierge button went to a stranger.
    */
+  private wa = inject(WhatsappEnquiryService);
+
   whatsappLink(): string | null {
     const raw = this.settings?.whatsapp || this.env.whatsappNumber || '';
     const digits = String(raw).replace(/[^0-9]/g, '');
-    return digits ? `https://wa.me/${digits}` : null;
+    // Message names the contact page and the visit source; see WhatsappEnquiryService.
+    return digits ? this.wa.link({ kind: 'page', title: 'Contact', url: this.wa.currentUrl() }) : null;
   }
 
   invalid(control: string): boolean {
