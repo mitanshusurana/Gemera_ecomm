@@ -307,20 +307,20 @@ public class EntityMapper {
         dto.setStock(product.getStock());
         dto.setVideoUrl(product.getVideoUrl());
         dto.setFeatured(Boolean.TRUE.equals(product.getFeatured()));
-        // Null means published (rows older than the column); internalNotes is
-        // deliberately not copied here (admin-only, see ProductController).
+        // Null means published (rows older than the column). internalNotes, cost
+        // price and every other business-internal field (supplier, acquisition
+        // cost, consignment terms, location, ERP code, reorder alerts, ...) are
+        // deliberately NOT copied here: this mapper also builds cart, wishlist and
+        // order responses, and the storefront was listing them under
+        // "Additional Specifications". ProductController.withStaffFields adds
+        // them for staff callers of the product endpoints.
         dto.setPublished(!Boolean.FALSE.equals(product.getPublished()));
-        dto.setExcludeFromFeeds(Boolean.TRUE.equals(product.getExcludeFromFeeds()));
         dto.setReturnable(!Boolean.FALSE.equals(product.getReturnable()));
 
         dto.setSeoTitle(product.getSeoTitle());
         dto.setSeoDescription(product.getSeoDescription());
         dto.setOgImage(product.getOgImage());
 
-        dto.setInventoryOwnership(product.getInventoryOwnership());
-        dto.setSupplierName(product.getSupplierName());
-        dto.setReturnDueDate(product.getReturnDueDate());
-        dto.setCommissionPercentage(product.getCommissionPercentage());
         dto.setSeoQualifiers(product.getSeoQualifiers() != null ? new java.util.ArrayList<>(product.getSeoQualifiers()) : null);
         dto.setOccasionKeywords(product.getOccasionKeywords() != null ? new java.util.ArrayList<>(product.getOccasionKeywords()) : null);
 
@@ -333,9 +333,7 @@ public class EntityMapper {
         dto.setGrossWeight(product.getGrossWeight());
         dto.setTotalCaratWeight(product.getTotalCaratWeight());
         dto.setDimensions(product.getDimensions());
-        dto.setCurrentLocation(product.getCurrentLocation());
         dto.setHsnCode(product.getHsnCode());
-        dto.setErpMaterialCode(product.getErpMaterialCode());
         dto.setHuid(product.getHuid());
         dto.setBisHallmark(product.getBisHallmark());
         dto.setHallmarkingDate(product.getHallmarkingDate());
@@ -401,7 +399,6 @@ public class EntityMapper {
         dto.setTablePercentage(product.getTablePercentage());
         dto.setDepthPercentage(product.getDepthPercentage());
         dto.setOriginProvenance(product.getOriginProvenance());
-        dto.setStockStatus(product.getStockStatus());
 
         // 3. Spiritual Idols
         dto.setSubjectDeityName(product.getSubjectDeityName());
@@ -421,14 +418,8 @@ public class EntityMapper {
         dto.setMineOrigin(product.getMineOrigin());
         dto.setRoughMaterial(product.getRoughMaterial());
         dto.setRoughWeight(product.getRoughWeight());
-        dto.setPurchaseDate(product.getPurchaseDate());
-        dto.setSupplierCode(product.getSupplierCode());
-        dto.setAcquisitionCost(product.getAcquisitionCost());
         dto.setMatrixParentRock(product.getMatrixParentRock());
         dto.setCrystalMorphology(product.getCrystalMorphology());
-        dto.setYieldEstimate(product.getYieldEstimate());
-        dto.setWastageLog(product.getWastageLog());
-        dto.setManufacturingStage(product.getManufacturingStage());
 
         // 5. Components
         dto.setComponentType(product.getComponentType());
@@ -437,11 +428,8 @@ public class EntityMapper {
         dto.setQuantityPcs(product.getQuantityPcs());
         dto.setWeightPerPiece(product.getWeightPerPiece());
         dto.setTotalWeight(product.getTotalWeight());
-        dto.setReorderPointAlert(product.getReorderPointAlert());
         dto.setBeadStyle(product.getBeadStyle());
         dto.setLayoutPattern(product.getLayoutPattern());
-        dto.setVendorInformation(product.getVendorInformation());
-        dto.setMinOrderQuantity(product.getMinOrderQuantity());
 
         // 6. Sale mode, lots, strands, carvings. Rows created before the column
         // existed have a null saleMode; the contract default is PER_PIECE.

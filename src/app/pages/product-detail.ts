@@ -58,6 +58,12 @@ import { CategoryLabelService } from '../services/category-label.service';
  * from the "Additional Specifications" catch-all only while that block shows,
  * so nothing the API sends is ever silently dropped.
  */
+// Rows the "Gemological grading" block renders; hidden from the catch-all
+// while that block shows, otherwise Species, Variety, Shape... appeared twice.
+const GEM_KEYS = ['gemGrade', 'species', 'variety', 'shape', 'cut', 'caratWeight', 'colorHue', 'colorTone',
+  'colorSaturation', 'colorTradeTerm', 'clarity', 'measurements', 'treatmentStatus', 'labReportNumber',
+  'certificateLab', 'certificateImage', 'polish', 'symmetry', 'fluorescence', 'girdle', 'culet',
+  'tablePercentage', 'depthPercentage', 'originProvenance', 'mineOrigin'];
 const LOT_KEYS = ['pieceCount', 'lotTotalCaratWeight', 'averagePieceWeight', 'sizeRange', 'calibrated', 'lotNumber'];
 const ROUGH_KEYS = ['roughMaterial', 'roughWeight', 'pieceCount', 'lotTotalCaratWeight', 'sizeRange', 'lotNumber',
   'mineOrigin', 'matrixParentRock', 'crystalMorphology', 'manufacturingStage'];
@@ -1707,6 +1713,12 @@ export class ProductDetailComponent
     const p = this.product();
     return !!(p?.componentType || p?.quantityPcs || p?.weightPerPiece || p?.totalWeight);
   });
+  /** Same condition as the gemological block's *ngIf in the template. */
+  hasGemBlock = computed(() => {
+    const p = this.product();
+    return !!(p?.caratWeight || p?.clarity || p?.cut || p?.species || p?.originProvenance || p?.gemGrade);
+  });
+
   hasLotBlock = computed(() => {
     const p = this.product();
     if (!p || this.hasRoughBlock() || this.hasComponentBlock() || this.hasStrandBlock()) return false;
@@ -1838,6 +1850,48 @@ export class ProductDetailComponent
       'huid',
       'rating',
       'certifications',
+      // Catalogue flags and pricing inputs. They are facts about how the shop
+      // runs the listing, not about the piece, and the price breakdown already
+      // has its own panel. "Featured: No", "Published: Yes" and "Pricing Mode:
+      // FIXED" were showing to customers.
+      'featured',
+      'published',
+      'excludeFromFeeds',
+      'returnable',
+      'calibrated',
+      'pricingMode',
+      'pricingMetal',
+      'pricingPurity',
+      'pricingNetWeightGrams',
+      'makingChargeType',
+      'makingChargeValue',
+      'wastagePct',
+      'stoneValue',
+      'otherCharges',
+      'metalRateUsed',
+      'pricedAt',
+      'priceBreakdown',
+      // Business-internal data. The API no longer sends these to shoppers; the
+      // list stays as a second line of defence.
+      'costPrice',
+      'costUpdatedAt',
+      'internalNotes',
+      'supplierName',
+      'supplierCode',
+      'returnDueDate',
+      'commissionPercentage',
+      'currentLocation',
+      'erpMaterialCode',
+      'purchaseDate',
+      'acquisitionCost',
+      'yieldEstimate',
+      'wastageLog',
+      'manufacturingStage',
+      'reorderPointAlert',
+      'vendorInformation',
+      'minOrderQuantity',
+      'hsnCode',
+      ...(this.hasGemBlock() ? GEM_KEYS : []),
       // Rendered as dedicated rows in Master Specifications
       'saleMode',
       'unitPrice',
@@ -1859,7 +1913,8 @@ export class ProductDetailComponent
         !ignoredKeys.includes(key) &&
         value !== null &&
         value !== undefined &&
-        value !== ''
+        value !== '' &&
+        value !== false
       ) {
         // Ignore empty arrays or empty objects
         if (Array.isArray(value) && value.length === 0) return;
