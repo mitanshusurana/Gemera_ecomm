@@ -83,14 +83,16 @@ def root_bill_no(bill_no: str) -> str:
     return _AMEND_SUFFIX.sub("", bill_no or "")
 
 
-def next_amendment_bill_no(bill_no: str, existing_amendments: int) -> str:
+def next_amendment_bill_no(bill_no: str, highest_suffix: int) -> str:
     """The bill number for the next amendment in a chain.
 
     Suffixes count from the ROOT bill, so amending '/A1' yields '/A2' rather
-    than '/A1/A1'; ``existing_amendments`` is how many bills already carry the
-    root with a suffix.
+    than '/A1/A1'; ``highest_suffix`` is the largest ``/A<n>`` already on a
+    bill with this root (0 when none). It is the highest existing number, not
+    a count of rows: a count drifts from the real numbers as soon as one row
+    is missing, and the next bill then collides with uq_purchase_bill_no.
     """
-    return f"{root_bill_no(bill_no)}/A{int(existing_amendments) + 1}"
+    return f"{root_bill_no(bill_no)}/A{int(highest_suffix) + 1}"
 
 
 async def _post_rcm_liability(
@@ -1019,11 +1021,18 @@ async def update_purchase_invoice(
         fy = await resolve_fiscal_year(db, company_id)
         supplier = await _load_supplier(db, company_id, payload.supplier_id)
 
-        count_res = await db.execute(
-            text("SELECT COUNT(*) FROM caratloop.purchase_invoices WHERE company_id = :cid AND bill_no LIKE :pattern"),
+        # Next suffix = highest existing suffix + 1, read from the bill numbers
+        # themselves so it is always in the same number space as the unique
+        # constraint. The FOR UPDATE on the original above serialises two
+        # amendments of the same bill.
+        suffix_res = await db.execute(
+            text(
+                "SELECT COALESCE(MAX(CAST(SUBSTRING(bill_no FROM '/A([0-9]+)$') AS INTEGER)), 0) "
+                "FROM caratloop.purchase_invoices WHERE company_id = :cid AND bill_no LIKE :pattern"
+            ),
             {"cid": company_id, "pattern": root_bill_no(original["bill_no"]) + "/A%"},
         )
-        new_bill_no = next_amendment_bill_no(original["bill_no"], count_res.scalar() or 0)
+        new_bill_no = next_amendment_bill_no(original["bill_no"], suffix_res.scalar() or 0)
 
         reversed_rows = await _reverse_purchase(
             db, company_id=company_id, user_id=user_id, original=original, reason=payload.reason,
