@@ -53,10 +53,31 @@ if ! swapon --show --noheadings | grep -q .; then
     sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
     grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
 fi
-sudo sysctl -qw vm.swappiness=60 vm.overcommit_memory=1
-echo 'vm.swappiness=60' | sudo tee /etc/sysctl.d/90-caratloop.conf >/dev/null
-echo 'vm.overcommit_memory=1' | sudo tee -a /etc/sysctl.d/90-caratloop.conf >/dev/null
+# Low swappiness keeps the JVM and Node heaps resident and evicts page cache
+# first; with the default (60) the store API was swapped out while 250 MB of
+# cache sat idle and every request took half a minute.
+sudo sysctl -qw vm.swappiness=10 vm.vfs_cache_pressure=200 vm.overcommit_memory=1
+printf 'vm.swappiness=10
+vm.vfs_cache_pressure=200
+vm.overcommit_memory=1
+' | sudo tee /etc/sysctl.d/90-caratloop.conf >/dev/null
 swapon --show
+
+say "Crash kernel"
+# Oracle Linux reserves 448 MB of a 1 GB VM for kdump (crashkernel=...), which is
+# why `free` shows ~500 MB. Nothing here needs crash dumps; removing the
+# reservation nearly doubles usable memory. Takes effect at the next reboot.
+if grep -q "crashkernel=" /proc/cmdline; then
+    sudo systemctl disable --now kdump >/dev/null 2>&1 || true
+    args="$(sudo grubby --info=DEFAULT | grep -o 'crashkernel=[^ "]*' | head -1)"
+    [[ -n "$args" ]] && sudo grubby --update-kernel=ALL --remove-args="$args"
+    sudo grubby --update-kernel=ALL --remove-args="crash_kexec_post_notifiers" || true
+    echo "   crashkernel reservation removed from the boot arguments: REBOOT to reclaim the memory"
+else
+    echo "   none reserved"
+fi
+# Performance Co-Pilot agents (pmcd, pmlogger, pmie) cost ~40 MB and are not used.
+sudo systemctl disable --now pmcd pmlogger pmie pmie_farm pmlogger_farm >/dev/null 2>&1 || true
 
 say "Firewall (ssh, 80, 443 only)"
 sudo systemctl enable --now firewalld >/dev/null

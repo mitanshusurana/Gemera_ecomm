@@ -44,6 +44,14 @@ deploy/deploy.sh core opc@129.159.18.63 ~/.ssh/core.key
 deploy/deploy.sh edge opc@68.233.96.36  ~/.ssh/edge.key
 ```
 
+## Memory on the free-tier VMs
+
+Oracle Linux boots these 1 GB VMs with `crashkernel=1G-64G:448M`, reserving 448 MB for kdump, so only about
+500 MB is usable. `bootstrap.sh` disables kdump and removes the boot argument; **reboot once after the first
+bootstrap** to get the memory back (`sudo systemctl reboot`). It also sets `vm.swappiness=10`: with the
+default the JVM was swapped out in favour of page cache and the store API took 13 minutes to start and
+30 seconds per request.
+
 ## Memory budget
 
 | Service | Cap | Note |
