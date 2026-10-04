@@ -1,0 +1,23 @@
+# Caddy obtains and renews certificates itself (Let's Encrypt, ZeroSSL fallback).
+# Host names come from .env through the environment; see docker-compose.yml.
+{
+	email {$ACME_EMAIL}
+}
+
+# One or several storefront hosts, comma separated (www and apex).
+{$STORE_HOSTS} {
+	encode zstd gzip
+	reverse_proxy frontend:4000
+}
+
+# The ERP UI, with the ERP API underneath it on the same origin. The storefront
+# bridge on the core VM posts to https://<ERP_HOST>/api/v1/integrations/...
+{$ERP_HOST} {
+	encode zstd gzip
+	handle /api/v1/* {
+		reverse_proxy erp-backend:8000
+	}
+	handle {
+		reverse_proxy erp-frontend:3000
+	}
+}

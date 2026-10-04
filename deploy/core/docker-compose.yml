@@ -1,0 +1,90 @@
+# CORE VM: store API, its PostgreSQL, the admin SPA, Caddy for HTTPS.
+# Sized for an Oracle free-tier VM that shows ~500 MB of RAM plus a swap file:
+# every service carries a memory cap and the JVM a heap cap, so one runaway
+# process cannot take the box down.
+#
+#   .env          host names, ACME e-mail, volume name (interpolated below; not secret)
+#   .env.backend  API, database and admin configuration (see ../../.env.backend.example)
+#
+#   docker compose pull && docker compose up -d
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: jewelry-postgres
+    restart: unless-stopped
+    env_file: [.env.backend]
+    # Small box: a 32 MB buffer cache and 40 connections are plenty for one API.
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=40",
+              "-c", "work_mem=2MB", "-c", "maintenance_work_mem=32MB"]
+    expose: ["5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 160m
+    logging: &log
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-backend:latest}
+    container_name: jewelry-backend
+    restart: unless-stopped
+    env_file: [.env.backend]
+    environment:
+      # Without -Xmx the JVM takes a quarter of host RAM and then grows; Serial GC
+      # and a single compiler tier keep the footprint on a 2-vCPU box small.
+      JAVA_TOOL_OPTIONS: >-
+        -Xms64m -Xmx300m -Xss512k -XX:MaxMetaspaceSize=128m
+        -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=48m
+      # Caddy terminates TLS; Spring builds redirect and reset URLs from X-Forwarded-*.
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      TZ: Asia/Kolkata
+    expose: ["8080"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 560m
+    logging: *log
+
+  admin:
+    image: ${ADMIN_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-admin:latest}
+    container_name: jewelry-admin
+    restart: unless-stopped
+    # Reads API_URL and STOREFRONT_URL (public URLs) from the same env file.
+    env_file: [.env.backend]
+    expose: ["80"]
+    depends_on: [backend]
+    mem_limit: 48m
+    logging: *log
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caratloop-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_HOST: ${API_HOST:?set API_HOST in .env}
+      ADMIN_HOST: ${ADMIN_HOST:?set ADMIN_HOST in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [backend, admin]
+    mem_limit: 96m
+    logging: *log
+
+volumes:
+  postgres_data:
+    # Point POSTGRES_VOLUME at an existing volume to keep its data (for example the
+    # one left by an earlier deployment); otherwise a fresh volume is created.
+    name: ${POSTGRES_VOLUME:-caratloop_core_postgres_data}
+  caddy_data:
+  caddy_config:

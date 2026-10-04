@@ -9,6 +9,11 @@ the VMs pull them without logging into GHCR.
 
 ## 1. Topology
 
+**Oracle free-tier VMs (current production):** `deploy/README.md` describes the two-VM layout actually in use, with
+one compose stack per VM under `deploy/core` (store API, PostgreSQL, admin, Caddy) and `deploy/edge` (storefront, ERP,
+Caddy), memory caps for the 500 MB boxes, automatic HTTPS and the `deploy/deploy.sh` push script. The compose files in
+the repository root below remain the generic single-purpose definitions.
+
 | Host | Compose file | Runs | Public ports |
 |---|---|---|---|
 | Core VM | `docker-compose.backend.yml` | PostgreSQL, API, admin SPA | 8080 (API), 81 (admin) |

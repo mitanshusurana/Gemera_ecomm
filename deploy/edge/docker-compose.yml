@@ -1,0 +1,119 @@
+# EDGE VM: SSR storefront, the ERP stack, Caddy for HTTPS.
+# Sized for an Oracle free-tier VM that shows ~500 MB of RAM plus a swap file:
+# memory caps on every service, one uvicorn worker, Node heaps capped.
+#
+#   .env           host names, ACME e-mail, ERP database password (interpolated below)
+#   .env.frontend  storefront configuration (see ../../.env.frontend.example)
+#   .env.erp       ERP configuration (see ../../.env.erp.example)
+#
+#   docker compose pull && docker compose up -d
+services:
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-frontend:latest}
+    container_name: jewelry-frontend
+    restart: unless-stopped
+    env_file: [.env.frontend]
+    environment:
+      NODE_OPTIONS: --max-old-space-size=160
+      TZ: Asia/Kolkata
+    expose: ["4000"]
+    mem_limit: 260m
+    logging: &log
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  erp-db:
+    image: postgres:16-alpine
+    container_name: caratloop_erp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: caratloop
+      POSTGRES_PASSWORD: ${ERP_POSTGRES_PASSWORD:?set ERP_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: caratloop_erp
+      TZ: Asia/Kolkata
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=40",
+              "-c", "work_mem=2MB", "-c", "maintenance_work_mem=32MB"]
+    expose: ["5432"]
+    volumes:
+      - erp_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U caratloop -d caratloop_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 160m
+    logging: *log
+
+  erp-migrate:
+    image: ${ERP_BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-erp-backend:latest}
+    container_name: caratloop_erp_migrate
+    restart: "no"
+    env_file: [.env.erp]
+    environment:
+      SYNC_DATABASE_URL: postgresql+psycopg2://caratloop:${ERP_POSTGRES_PASSWORD_URLENC:?set ERP_POSTGRES_PASSWORD_URLENC in .env}@erp-db:5432/caratloop_erp
+      TZ: Asia/Kolkata
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      erp-db:
+        condition: service_healthy
+    mem_limit: 200m
+    logging: *log
+
+  erp-backend:
+    image: ${ERP_BACKEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-erp-backend:latest}
+    container_name: caratloop_erp_backend
+    restart: unless-stopped
+    env_file: [.env.erp]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://caratloop:${ERP_POSTGRES_PASSWORD_URLENC:?set ERP_POSTGRES_PASSWORD_URLENC in .env}@erp-db:5432/caratloop_erp
+      SYNC_DATABASE_URL: postgresql+psycopg2://caratloop:${ERP_POSTGRES_PASSWORD_URLENC:?set ERP_POSTGRES_PASSWORD_URLENC in .env}@erp-db:5432/caratloop_erp
+      ENVIRONMENT: production
+      TZ: Asia/Kolkata
+    # The image default is four workers (~150 MB each); one is right for this box.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    expose: ["8000"]
+    depends_on:
+      erp-db:
+        condition: service_healthy
+      erp-migrate:
+        condition: service_completed_successfully
+    mem_limit: 260m
+    logging: *log
+
+  erp-frontend:
+    image: ${ERP_FRONTEND_IMAGE:-ghcr.io/mitanshusurana/gemera_ecomm-erp-frontend:latest}
+    container_name: caratloop_erp_frontend
+    restart: unless-stopped
+    environment:
+      NODE_OPTIONS: --max-old-space-size=128
+      TZ: Asia/Kolkata
+    expose: ["3000"]
+    depends_on: [erp-backend]
+    mem_limit: 200m
+    logging: *log
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caratloop-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      STORE_HOSTS: ${STORE_HOSTS:?set STORE_HOSTS in .env}
+      ERP_HOST: ${ERP_HOST:?set ERP_HOST in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [frontend, erp-frontend]
+    mem_limit: 96m
+    logging: *log
+
+volumes:
+  erp_postgres_data:
+    name: ${ERP_POSTGRES_VOLUME:-caratloop_erp_postgres_data}
+  caddy_data:
+  caddy_config:
