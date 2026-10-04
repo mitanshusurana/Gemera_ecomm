@@ -289,12 +289,26 @@ export class MetalRatesComponent implements OnInit {
     });
   }
 
+  /**
+   * The duty and premium inputs are type="number", so ngModel writes numbers
+   * (or null when cleared) into `settings` even though it is typed as strings.
+   * Calling .trim() on a number threw inside this getter, the exception
+   * surfaced from saveSettings() and the template, and the Save button did
+   * nothing: no request, no toast. Always go through a string here.
+   */
+  private settingText(key: MetalRateSettingKey): string {
+    const v = this.settings[key] as unknown;
+    return v === null || v === undefined ? '' : String(v).trim();
+  }
+
   get settingsProblem(): string | null {
-    const duty = Number(this.settings.metalRateDutyPct);
-    const premium = Number(this.settings.metalRatePremiumPct);
-    const hour = this.settings.metalRateAutoLockHour.trim();
-    if (this.settings.metalRateDutyPct.trim() === '' || !isFinite(duty) || duty < 0 || duty > 100) return 'Duty must be a percentage between 0 and 100.';
-    if (this.settings.metalRatePremiumPct.trim() === '' || !isFinite(premium) || premium < -100 || premium > 100) return 'Premium must be a percentage between -100 and 100.';
+    const dutyText = this.settingText('metalRateDutyPct');
+    const premiumText = this.settingText('metalRatePremiumPct');
+    const hour = this.settingText('metalRateAutoLockHour');
+    const duty = Number(dutyText);
+    const premium = Number(premiumText);
+    if (dutyText === '' || !isFinite(duty) || duty < 0 || duty > 100) return 'Duty must be a percentage between 0 and 100.';
+    if (premiumText === '' || !isFinite(premium) || premium < -100 || premium > 100) return 'Premium must be a percentage between -100 and 100.';
     if (hour !== '' && !/^([01]?\d|2[0-3])$/.test(hour)) return 'Auto-lock hour must be 0-23, or blank for manual locking.';
     return null;
   }
@@ -306,10 +320,10 @@ export class MetalRatesComponent implements OnInit {
     }
     this.savingSettings = true;
     const payload: Record<string, string> = {
-      metalRateProvider: this.settings.metalRateProvider,
-      metalRateDutyPct: String(Number(this.settings.metalRateDutyPct)),
-      metalRatePremiumPct: String(Number(this.settings.metalRatePremiumPct)),
-      metalRateAutoLockHour: this.settings.metalRateAutoLockHour.trim(),
+      metalRateProvider: this.settingText('metalRateProvider'),
+      metalRateDutyPct: String(Number(this.settingText('metalRateDutyPct'))),
+      metalRatePremiumPct: String(Number(this.settingText('metalRatePremiumPct'))),
+      metalRateAutoLockHour: this.settingText('metalRateAutoLockHour'),
     };
     this.settingService.updateSettings(payload).subscribe({
       next: () => {
