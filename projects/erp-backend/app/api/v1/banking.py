@@ -26,7 +26,6 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, R
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from pydantic import BaseModel
-import openpyxl
 
 from app.core.database import get_db, set_audit_context
 from app.core.money import round_money, to_decimal
@@ -34,6 +33,7 @@ from app.core.pagination import Page, paginate
 from app.core.periods import assert_period_open
 from app.core.roles import CAN_POST, require
 from app.core.security import get_current_user
+from app.services.bank_statement_parser import UnsupportedStatement, parse_statement
 
 router = APIRouter(tags=["Banking & BRS"])
 
@@ -109,13 +109,28 @@ async def import_statement(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """Import a bank statement export (SBI/HDFC/ICICI text, CSV or .xlsx).
+
+    Parsing lives in app.services.bank_statement_parser: the first real upload
+    was SBI's tab-separated "xls", which openpyxl rejected with a 500. Lines
+    already present for the account (same date, amounts, balance and
+    description) are skipped, so re-uploading an overlapping statement is safe.
+    """
     target_acc = bank_account_id or account_id
     if not target_acc:
         raise HTTPException(status_code=400, detail="Bank account ID is required")
     company_id = current_user["company_id"]
     content = await file.read()
-    wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
-    sheet = wb.active
+    try:
+        parsed = parse_statement(content, file.filename or "")
+    except UnsupportedStatement as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not parsed.lines:
+        raise HTTPException(
+            status_code=400,
+            detail="The file has a transaction table but no rows with a date in it; "
+                   "check that the statement period contains transactions.",
+        )
 
     # The table is created by migration 0001. Creating it here raced on
     # concurrent imports, was invisible to migration tooling, and declared a
@@ -124,51 +139,46 @@ async def import_statement(
     batch_id_res = await db.execute(text("SELECT gen_random_uuid()"))
     batch_id = batch_id_res.scalar()
 
-    count = 0
-    header_found = False
-    col_map = {}
-
-    for row in sheet.iter_rows(values_only=True):
-        if not header_found:
-            row_strs = [str(c).strip() if c else "" for c in row]
-            if any("date" in s.lower() for s in row_strs) or "Txn Date" in row_strs:
-                header_found = True
-                for i, col_name in enumerate(row_strs):
-                    col_map[col_name] = i
+    imported = 0
+    duplicates = 0
+    for line in parsed.lines:
+        params = {
+            "cid": str(company_id), "acc": str(target_acc), "batch": batch_id,
+            "td": line.txn_date, "vd": line.value_date, "desc": line.description, "ref": line.ref_no,
+            "dr": line.debit, "cr": line.credit, "bal": line.balance,
+        }
+        dup = await db.execute(
+            text("""
+                SELECT 1 FROM caratloop.bank_statement_lines
+                WHERE company_id = CAST(:cid AS UUID) AND bank_account_id = CAST(:acc AS UUID)
+                  AND txn_date = :td AND debit = :dr AND credit = :cr AND balance = :bal
+                  AND COALESCE(description, '') = :desc
+                LIMIT 1
+            """),
+            params,
+        )
+        if dup.scalar():
+            duplicates += 1
             continue
-
-        txn_date_val = row[col_map.get("Txn Date", 0)] if "Txn Date" in col_map else row[0]
-        if not txn_date_val:
-            continue
-
-        if isinstance(txn_date_val, datetime):
-            txn_date = txn_date_val.date()
-        elif isinstance(txn_date_val, str):
-            try:
-                txn_date = date.fromisoformat(txn_date_val[:10])
-            except Exception:
-                txn_date = date.today()
-        else:
-            txn_date = date.today()
-
-        desc = str(row[col_map.get("Description", 1)] if "Description" in col_map else row[1] if len(row) > 1 else "")[:500]
-        ref_no = str(row[col_map.get("Ref No./Cheque No.", 2)] if "Ref No./Cheque No." in col_map else row[2] if len(row) > 2 else "")[:100]
-        debit = to_decimal(row[col_map.get("Debit", 3)] or 0) if len(row) > 3 else Decimal("0")
-        credit = to_decimal(row[col_map.get("Credit", 4)] or 0) if len(row) > 4 else Decimal("0")
-        bal = to_decimal(row[col_map.get("Balance", 5)] or 0) if len(row) > 5 else Decimal("0")
-
         await db.execute(
             text("""
                 INSERT INTO caratloop.bank_statement_lines
                 (company_id, bank_account_id, import_batch_id, txn_date, value_date, description, ref_no, debit, credit, balance)
                 VALUES (CAST(:cid AS UUID), CAST(:acc AS UUID), :batch, :td, :vd, :desc, :ref, :dr, :cr, :bal)
             """),
-            {"cid": str(company_id), "acc": str(target_acc), "batch": batch_id, "td": txn_date, "vd": txn_date, "desc": desc, "ref": ref_no, "dr": debit, "cr": credit, "bal": bal}
+            params,
         )
-        count += 1
+        imported += 1
 
     await db.commit()
-    return {"status": "success", "imported_rows": count, "batch_id": str(batch_id)}
+    return {
+        "status": "success",
+        "imported_rows": imported,
+        "duplicate_rows_skipped": duplicates,
+        "non_transaction_rows_skipped": parsed.skipped_rows,
+        "format": parsed.format,
+        "batch_id": str(batch_id),
+    }
 
 
 async def _first_bank_account(db: AsyncSession, company_id) -> Optional[str]:

@@ -79,8 +79,9 @@ export default function BankingPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('bank_account_id', selectedAccount);
-      await bankingApi.importStatement(formData);
-      alert('Bank statement imported successfully!');
+      const res = await bankingApi.importStatement(formData);
+      const d = res.data || {};
+      alert(`Imported ${d.imported_rows ?? 0} transaction(s)` + (d.duplicate_rows_skipped ? `, skipped ${d.duplicate_rows_skipped} already imported` : '') + '.');
       setFile(null);
       fetchReconciliation();
     } catch (err: any) {
@@ -250,12 +251,12 @@ export default function BankingPage() {
       <div className="glass-card p-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-surface/50">
         <div>
           <h3 className="text-lg font-bold text-white mb-1">Import Statement (SBI / HDFC / ICICI Format)</h3>
-          <p className="text-sm text-textSecondary">Upload Excel statement file (.xlsx / .csv) exported from internet banking portal.</p>
+          <p className="text-sm text-textSecondary">Upload the statement exported from internet banking: Excel (.xlsx), CSV, or the tab-separated "xls" that SBI and other banks download. Rows already imported for this account are skipped.</p>
         </div>
         <div className="flex items-center gap-3">
           <input 
             type="file" 
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls,.csv,.txt,.tsv"
             className="text-xs text-textSecondary file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20" 
             onChange={(e) => setFile(e.target.files?.[0] || null)} 
           />
