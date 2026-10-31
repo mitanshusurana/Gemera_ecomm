@@ -77,6 +77,13 @@ if grep -q "crashkernel=" /proc/cmdline; then
 else
     echo "   none reserved"
 fi
+# dnf-makecache (the hourly package-cache refresh) grew to ~520 MB on the 1 GB
+# edge VM, triggered the OOM killer four times in a day and finally froze the
+# box (2026-10-10). Nothing here needs a warm package cache.
+sudo systemctl disable --now dnf-makecache.timer >/dev/null 2>&1 || true
+sudo systemctl mask dnf-makecache.timer dnf-makecache.service >/dev/null 2>&1 || true
+# Keep the journal across reboots so a freeze can be diagnosed afterwards.
+sudo mkdir -p /var/log/journal && sudo systemctl restart systemd-journald
 # Performance Co-Pilot agents (pmcd, pmlogger, pmie) cost ~40 MB and are not used.
 sudo systemctl disable --now pmcd pmlogger pmie pmie_farm pmlogger_farm >/dev/null 2>&1 || true
 
