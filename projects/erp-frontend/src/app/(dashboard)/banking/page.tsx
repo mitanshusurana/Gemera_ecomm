@@ -7,12 +7,44 @@ import Modal from '@/components/ui/Modal';
 import { FileUp, Landmark, CheckCircle, Clock, Check, X, Printer, ArrowRightLeft, AlertCircle, Loader2, Link2Off } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
-import { previousPeriod } from '@/lib/fiscal';
+import { financialYearStart, isoDate, today } from '@/lib/fiscal';
+
+/** Period presets for the reconciliation screen; "custom" keeps whatever the two date boxes hold. */
+type RangePreset = 'this_month' | 'last_month' | 'last_3_months' | 'this_fy' | 'custom';
+
+function rangeFor(preset: RangePreset): { from: string; to: string } {
+  const now = new Date();
+  const first = (y: number, m: number) => isoDate(new Date(y, m, 1));
+  const last = (y: number, m: number) => isoDate(new Date(y, m + 1, 0));
+  switch (preset) {
+    case 'this_month':
+      return { from: first(now.getFullYear(), now.getMonth()), to: today() };
+    case 'last_month':
+      return { from: first(now.getFullYear(), now.getMonth() - 1), to: last(now.getFullYear(), now.getMonth() - 1) };
+    case 'last_3_months':
+      return { from: first(now.getFullYear(), now.getMonth() - 2), to: today() };
+    case 'this_fy':
+    default:
+      return { from: financialYearStart(now), to: today() };
+  }
+}
 
 export default function BankingPage() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedAccount, setSelectedAccount] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(previousPeriod());
+  // Default to the financial year to date: a statement covers months, and a
+  // single-month filter hid everything else (picking just a year showed the
+  // current month only).
+  const [preset, setPreset] = useState<RangePreset>('this_fy');
+  const [range, setRange] = useState(() => rangeFor('this_fy'));
+  const choosePreset = (p: RangePreset) => {
+    setPreset(p);
+    if (p !== 'custom') setRange(rangeFor(p));
+  };
+  const editRange = (key: 'from' | 'to', value: string) => {
+    setPreset('custom');
+    setRange((r) => ({ ...r, [key]: value }));
+  };
   const [unreconciled, setUnreconciled] = useState<any[]>([]);
   const [statementEntries, setStatementEntries] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
@@ -48,7 +80,7 @@ export default function BankingPage() {
     if (!selectedAccount) return;
     try {
       setLoading(true);
-      const res = await bankingApi.getReconciliation({ account_id: selectedAccount, month: selectedMonth });
+      const res = await bankingApi.getReconciliation({ account_id: selectedAccount, date_from: range.from, date_to: range.to });
       const bEntries = res.data?.book_entries || res.data?.books_entries || [];
       const sEntries = res.data?.bank_entries || res.data?.statement_entries || [];
       setUnreconciled(bEntries);
@@ -67,7 +99,7 @@ export default function BankingPage() {
 
   useEffect(() => {
     fetchReconciliation();
-  }, [selectedAccount, selectedMonth]);
+  }, [selectedAccount, range.from, range.to]);
 
   const handleImport = async () => {
     if (!file || !selectedAccount) {
@@ -147,7 +179,7 @@ export default function BankingPage() {
     setLoadingBrs(true);
     setIsBrsModalOpen(true);
     try {
-      const res = await bankingApi.getBrsReport({ account_id: selectedAccount, month: selectedMonth });
+      const res = await bankingApi.getBrsReport({ account_id: selectedAccount, as_of_date: range.to });
       setBrsReport(res.data);
     } catch (err: any) {
       console.error('Failed to load BRS report:', err);
@@ -184,11 +216,34 @@ export default function BankingPage() {
               <option key={a.id} value={a.id}>{a.name} ({a.code})</option>
             ))}
           </select>
-          <input 
-            type="month" 
+          <select
             className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
-            value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(e.target.value)} 
+            value={preset}
+            onChange={(e) => choosePreset(e.target.value as RangePreset)}
+            aria-label="Period"
+          >
+            <option value="this_month">This month</option>
+            <option value="last_month">Last month</option>
+            <option value="last_3_months">Last 3 months</option>
+            <option value="this_fy">This financial year</option>
+            <option value="custom">Custom range</option>
+          </select>
+          <input
+            type="date"
+            className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
+            value={range.from}
+            max={range.to}
+            onChange={(e) => editRange('from', e.target.value)}
+            aria-label="From date"
+          />
+          <span className="text-textSecondary text-sm">to</span>
+          <input
+            type="date"
+            className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
+            value={range.to}
+            min={range.from}
+            onChange={(e) => editRange('to', e.target.value)}
+            aria-label="To date"
           />
         </div>
       </div>
@@ -392,7 +447,7 @@ export default function BankingPage() {
       {/* Matched pairs: what has been reconciled this month, and the way back */}
       <div className="glass-card">
         <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
-          <h3 className="font-bold text-white">Matched Pairs — {selectedMonth}</h3>
+          <h3 className="font-bold text-white">Matched Pairs — {range.from} to {range.to}</h3>
           <Badge variant={matches.length > 0 ? 'success' : 'default'}>{matches.length} Matched</Badge>
         </div>
         <div className="overflow-x-auto p-4">
