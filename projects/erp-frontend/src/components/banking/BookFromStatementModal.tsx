@@ -80,8 +80,11 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
       .catch(() => setAccounts([]));
   }, [line, bankAccountId]);
 
-  // Open invoices of the chosen party (receipts settle sales invoices; the
-  // endpoint returns what is open for the party either way).
+  // Open invoices of the chosen party. The endpoint answers
+  // { sales_invoices: [...], purchase_invoices: [...] }: a receipt settles a
+  // sales invoice, a payment a purchase bill. Reading the whole object as a
+  // list crashed the page ("v.map is not a function") as soon as a party was
+  // chosen.
   useEffect(() => {
     if (!partyId) {
       setOpenInvoices([]);
@@ -89,9 +92,12 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
     }
     apiClient
       .get(`/vouchers/open-invoices/${partyId}`)
-      .then((res) => setOpenInvoices(res.data?.invoices || res.data || []))
+      .then((res) => {
+        const list = isCredit ? res.data?.sales_invoices : res.data?.purchase_invoices;
+        setOpenInvoices(Array.isArray(list) ? list : []);
+      })
       .catch(() => setOpenInvoices([]));
-  }, [partyId]);
+  }, [partyId, isCredit]);
 
   const filteredAccounts = useMemo(() => {
     const q = accountQuery.trim().toLowerCase();
@@ -173,7 +179,8 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
                   <option value="">{!partyId ? 'Choose the party first' : openInvoices.length === 0 ? 'No open invoices' : 'On account (no invoice)'}</option>
                   {openInvoices.map((inv: any) => (
                     <option key={inv.id} value={inv.id}>
-                      {inv.invoice_no || inv.bill_no} · due {formatCurrency(Number(inv.outstanding ?? inv.balance ?? inv.grand_total ?? 0))}
+                      {inv.invoice_no} · {inv.invoice_date} · {formatCurrency(Number(inv.grand_total ?? 0))}
+                      {inv.payment_status ? ` (${inv.payment_status})` : ''}
                     </option>
                   ))}
                 </select>
