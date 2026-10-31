@@ -78,12 +78,46 @@ def compute_brs(
 
 
 def _month_bounds(month: Optional[str]) -> tuple[date, date]:
+    """First and last day of ``month`` ("YYYY-MM"), of the whole year for a bare
+    "YYYY", or of the current month when unset or malformed."""
     today = date.today()
     y, m = today.year, today.month
-    if month and "-" in month:
-        parts = month.split("-")
-        y, m = int(parts[0]), int(parts[1])
+    if month:
+        parts = month.strip().split("-")
+        try:
+            if len(parts) == 1 and len(parts[0]) == 4:
+                y = int(parts[0])
+                return date(y, 1, 1), date(y, 12, 31)
+            if len(parts) >= 2:
+                y, m = int(parts[0]), int(parts[1])
+        except ValueError:
+            y, m = today.year, today.month
+        if not 1 <= m <= 12:
+            y, m = today.year, today.month
     return date(y, m, 1), date(y, m, calendar.monthrange(y, m)[1])
+
+
+def _period_bounds(month: Optional[str], date_from: Optional[str], date_to: Optional[str]) -> tuple[date, date]:
+    """The reconciliation window.
+
+    ``date_from`` / ``date_to`` (YYYY-MM-DD) win and may be given singly: an
+    open start reaches back to 2000-01-01, an open end runs to today. Without
+    them the legacy ``month`` applies ("YYYY-MM", or "YYYY" for a whole year:
+    picking just a year in the UI used to be read as the current month, so
+    the other eleven months vanished). A reversed range is swapped, not
+    rejected, since the browser's two date boxes are easy to fill in either
+    order.
+    """
+    if date_from or date_to:
+        try:
+            start_d = date.fromisoformat(date_from) if date_from else date(2000, 1, 1)
+            end_d = date.fromisoformat(date_to) if date_to else date.today()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="date_from and date_to must be YYYY-MM-DD")
+        if start_d > end_d:
+            start_d, end_d = end_d, start_d
+        return start_d, end_d
+    return _month_bounds(month)
 
 
 @router.get("/accounts")
@@ -194,17 +228,23 @@ async def _first_bank_account(db: AsyncSession, company_id) -> Optional[str]:
 async def get_reconciliation(
     account_id: Optional[str] = None,
     month: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Unmatched book lines, unmatched statement lines, and the month's matches."""
+    """Unmatched book lines, unmatched statement lines, and the period's matches.
+
+    The period is ``date_from``..``date_to`` when given, else ``month``
+    (see _period_bounds).
+    """
     company_id = current_user["company_id"]
+    start_d, end_d = _period_bounds(month, date_from, date_to)
     if not account_id:
         account_id = await _first_bank_account(db, company_id)
         if not account_id:
-            return {"book_entries": [], "bank_entries": [], "matches": [], "summary": {"unreconciled_count": 0}}
-
-    start_d, end_d = _month_bounds(month)
+            return {"book_entries": [], "bank_entries": [], "matches": [], "summary": {"unreconciled_count": 0},
+                    "date_from": start_d.isoformat(), "date_to": end_d.isoformat()}
 
     book_res = await db.execute(
         text("""
@@ -255,6 +295,8 @@ async def get_reconciliation(
     return {
         "account_id": str(account_id),
         "month": f"{start_d.year}-{start_d.month:02d}",
+        "date_from": start_d.isoformat(),
+        "date_to": end_d.isoformat(),
         "book_entries": book_entries,
         "bank_entries": bank_entries,
         "matches": matches,
