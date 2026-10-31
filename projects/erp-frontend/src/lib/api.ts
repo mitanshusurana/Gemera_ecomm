@@ -81,6 +81,10 @@ export const bankingApi = {
   matchEntries: (data: any) => apiClient.post('/banking/reconciliation/match', data),
   unmatchEntries: (data: { match_id?: string; bank_entry_id?: string }) => apiClient.post('/banking/reconciliation/unmatch', data),
   getBrsReport: (params: any) => apiClient.get('/banking/reconciliation/report', { params }),
+  /** Statement lines and book lines that agree on amount within a few days. */
+  getSuggestions: (params: any) => apiClient.get('/banking/reconciliation/suggestions', { params }),
+  /** Post a Receipt/Payment for an unreconciled statement line and match it in one go. */
+  bookStatementLine: (lineId: string, data: any) => apiClient.post(`/banking/statement/${lineId}/book`, data),
 };
 
 // Fiscal years: period lock and year-end closing (owner/admin for mutations)

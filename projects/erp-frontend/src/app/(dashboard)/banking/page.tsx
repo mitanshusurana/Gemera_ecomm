@@ -7,6 +7,7 @@ import Modal from '@/components/ui/Modal';
 import { FileUp, Landmark, CheckCircle, Clock, Check, X, Printer, ArrowRightLeft, AlertCircle, Loader2, Link2Off } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
+import BookFromStatementModal, { StatementLineForBooking } from '@/components/banking/BookFromStatementModal';
 import { financialYearStart, isoDate, today } from '@/lib/fiscal';
 
 /** Period presets for the reconciliation screen; "custom" keeps whatever the two date boxes hold. */
@@ -57,6 +58,10 @@ export default function BankingPage() {
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const [selectedStmtId, setSelectedStmtId] = useState<string | null>(null);
   const [matching, setMatching] = useState(false);
+  // Booking a voucher straight from a statement line, and amount-based suggestions.
+  const [bookingLine, setBookingLine] = useState<StatementLineForBooking | null>(null);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [applyingSuggestion, setApplyingSuggestion] = useState<string | null>(null);
 
   // BRS Report Modal
   const [isBrsModalOpen, setIsBrsModalOpen] = useState(false);
@@ -81,6 +86,9 @@ export default function BankingPage() {
     try {
       setLoading(true);
       const res = await bankingApi.getReconciliation({ account_id: selectedAccount, date_from: range.from, date_to: range.to });
+      bankingApi.getSuggestions({ account_id: selectedAccount, date_from: range.from, date_to: range.to })
+        .then((s) => setSuggestions(s.data?.suggestions || []))
+        .catch(() => setSuggestions([]));
       const bEntries = res.data?.book_entries || res.data?.books_entries || [];
       const sEntries = res.data?.bank_entries || res.data?.statement_entries || [];
       setUnreconciled(bEntries);
@@ -121,6 +129,45 @@ export default function BankingPage() {
     } finally {
       setImporting(false);
     }
+  };
+
+  const applySuggestion = async (sug: any) => {
+    setApplyingSuggestion(sug.bank_entry_id);
+    try {
+      await bankingApi.matchEntries({ book_entry_id: sug.book_entry_id, bank_entry_id: sug.bank_entry_id });
+      await fetchReconciliation();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to match the suggested pair');
+    } finally {
+      setApplyingSuggestion(null);
+    }
+  };
+
+  const applyAllSuggestions = async () => {
+    if (suggestions.length === 0) return;
+    if (!confirm(`Match all ${suggestions.length} suggested pair(s)?`)) return;
+    setApplyingSuggestion('all');
+    let done = 0;
+    try {
+      for (const sug of suggestions) {
+        try {
+          await bankingApi.matchEntries({ book_entry_id: sug.book_entry_id, bank_entry_id: sug.bank_entry_id });
+          done += 1;
+        } catch {
+          /* keep going; the pair stays visible for a manual look */
+        }
+      }
+      alert(`Matched ${done} of ${suggestions.length} suggested pair(s).`);
+      await fetchReconciliation();
+    } finally {
+      setApplyingSuggestion(null);
+    }
+  };
+
+  const handleBooked = async (result: any) => {
+    setBookingLine(null);
+    alert(`${result.entry_type} ${result.voucher_no} posted for ${result.contra} and matched to the statement line.`);
+    await fetchReconciliation();
   };
 
   const handleMatchSelected = async () => {
@@ -407,7 +454,7 @@ export default function BankingPage() {
                 {loading ? (
                   <tr><td colSpan={4} className="py-12 text-center text-textSecondary">Loading statement lines...</td></tr>
                 ) : statementEntries.length === 0 ? (
-                  <tr><td colSpan={4} className="py-12 text-center text-textSecondary">No imported statement entries found. Upload an Excel file above.</td></tr>
+                  <tr><td colSpan={4} className="py-12 text-center text-textSecondary">No unreconciled statement lines in this period. Import a statement above, or widen the date range.</td></tr>
                 ) : statementEntries.map((row, i) => {
                   const rowId = row.id || String(i);
                   const isSelected = selectedStmtId === rowId;
@@ -434,6 +481,13 @@ export default function BankingPage() {
                         >
                           {isSelected ? 'Selected' : 'Match'}
                         </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setBookingLine(row); }}
+                            title="Post a Receipt/Payment for this line and match it"
+                            className="ml-1 px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-white transition-colors"
+                          >
+                            Book
+                          </button>
                       </td>
                     </tr>
                   );
@@ -444,6 +498,73 @@ export default function BankingPage() {
         </div>
       </div>
       
+      {/* Suggested matches: statement and book lines that already agree on amount within a few days */}
+      {suggestions.length > 0 && (
+        <div className="glass-card">
+          <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-white">Suggested matches</h3>
+              <p className="text-xs text-textSecondary mt-0.5">Same amount, same direction, within 5 days. Review and match in one click.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="default">{suggestions.length} Suggested</Badge>
+              <button
+                onClick={applyAllSuggestions}
+                disabled={applyingSuggestion !== null}
+                className="px-3 py-1.5 rounded-md bg-primary text-black text-xs font-semibold disabled:opacity-60"
+              >
+                {applyingSuggestion === 'all' ? 'Matching…' : 'Match all'}
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto p-4">
+            <table className="w-full text-left text-sm">
+              <thead className="text-textSecondary border-b border-border">
+                <tr>
+                  <th className="pb-3 font-medium">Statement line</th>
+                  <th className="pb-3 font-medium">Book entry</th>
+                  <th className="pb-3 font-medium text-right">Amount (₹)</th>
+                  <th className="pb-3 font-medium text-center">Gap</th>
+                  <th className="pb-3 font-medium text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {suggestions.map((s) => (
+                  <tr key={s.bank_entry_id} className="hover:bg-white/5">
+                    <td className="py-3 text-xs">
+                      <span className="text-white">{s.bank_date}</span>
+                      <span className="text-textSecondary block truncate max-w-[260px]" title={s.description}>{s.description}</span>
+                    </td>
+                    <td className="py-3 text-xs">
+                      <span className="text-white">{s.book_entry_no}</span>
+                      <span className="text-textSecondary block">{s.book_date}{s.book_narration ? ` · ${s.book_narration}` : ''}</span>
+                    </td>
+                    <td className="py-3 text-right font-mono text-xs text-white">{formatCurrency(Number(s.amount))}</td>
+                    <td className="py-3 text-center text-xs text-textSecondary">{s.days_apart === 0 ? 'same day' : `${s.days_apart} d`}</td>
+                    <td className="py-3 text-center">
+                      <button
+                        onClick={() => applySuggestion(s)}
+                        disabled={applyingSuggestion !== null}
+                        className="px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-white disabled:opacity-60"
+                      >
+                        {applyingSuggestion === s.bank_entry_id ? '…' : 'Match'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <BookFromStatementModal
+        line={bookingLine}
+        bankAccountId={selectedAccount}
+        onClose={() => setBookingLine(null)}
+        onBooked={handleBooked}
+      />
+
       {/* Matched pairs: what has been reconciled this month, and the way back */}
       <div className="glass-card">
         <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
