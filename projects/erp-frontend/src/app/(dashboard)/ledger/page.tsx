@@ -143,7 +143,7 @@ export default function LedgerPage() {
         <div id="printable-voucher" className="printable-area glass-card">
           <div className="p-6 border-b border-border bg-surface/50 flex flex-wrap justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white">{partyDetails?.name} {partyDetails?.trade_name ? `(${partyDetails.trade_name})` : ''}</h2>
+              <h2 className="text-xl font-bold text-white">{partyDetails?.trade_name || partyDetails?.name} {partyDetails?.trade_name && partyDetails?.trade_name !== partyDetails?.name ? `(${partyDetails.name})` : ''}</h2>
               <div className="flex flex-wrap gap-6 mt-2 text-sm text-textSecondary font-mono">
                 <span>GSTIN: {partyDetails?.gstin || 'N/A'}</span>
                 {partyDetails?.pan && <span>PAN: {partyDetails.pan}</span>}

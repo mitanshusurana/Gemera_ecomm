@@ -313,9 +313,9 @@ export default function PartiesPage() {
                     <tr key={party.id} className="hover:bg-white/5 transition-colors">
                       <td className="py-4 text-textSecondary font-mono">{party.code}</td>
                       <td className="py-4 font-medium text-white">
-                        <div>{party.name}</div>
+                        <div>{party.trade_name || party.name}</div>
                         {party.trade_name && party.trade_name !== party.name && (
-                          <div className="text-xs text-textSecondary">{party.trade_name}</div>
+                          <div className="text-xs text-textSecondary">Legal: {party.name}</div>
                         )}
                       </td>
                       <td className="py-4 font-mono text-xs">

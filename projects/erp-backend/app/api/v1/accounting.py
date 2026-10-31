@@ -349,6 +349,22 @@ async def get_journal_entries(
     return {"entries": entries}
 
 
+@router.get("/account-groups")
+async def list_account_groups(page: Page = Depends(paginate), db: AsyncSession = Depends(get_db),
+                              current_user: dict = Depends(get_current_user)):
+    """The company's account groups (code, name, nature, parent), for pickers that create accounts."""
+    query = """
+        SELECT g.id, g.code, g.name, g.nature, p.code AS parent_code
+        FROM caratloop.account_groups g
+        LEFT JOIN caratloop.account_groups p ON p.id = g.parent_id
+        WHERE g.company_id = :cid
+        ORDER BY g.nature, COALESCE(p.name, g.name), g.name
+    """
+    params = {"cid": current_user["company_id"], **page.params}
+    res = await db.execute(text(page.apply(query)), params)
+    return {"groups": [dict(r) for r in res.mappings().all()]}
+
+
 @router.get("/accounts")
 async def list_accounts(
     nature: Optional[str] = None,
