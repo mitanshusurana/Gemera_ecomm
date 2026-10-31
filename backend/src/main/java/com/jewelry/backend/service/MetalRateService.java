@@ -368,7 +368,14 @@ public class MetalRateService {
             return node == null || !node.isObject() ? Optional.empty() : Optional.of(node);
         } catch (Exception e) {
             LOGGER.log(Level.FINE, "Metal rate fetch failed: " + url, e);
-            LOGGER.warning("Metal rate fetch failed for " + url + ": " + e.getClass().getSimpleName());
+            // Name the root cause: "ResourceAccessException" alone hid three weeks of
+            // UnknownHostException behind a DNS quirk.
+            Throwable root = e;
+            while (root.getCause() != null && root.getCause() != root) {
+                root = root.getCause();
+            }
+            LOGGER.warning("Metal rate fetch failed for " + url + ": " + e.getClass().getSimpleName()
+                    + (root == e ? "" : " caused by " + root.getClass().getSimpleName()) + ": " + root.getMessage());
             return Optional.empty();
         }
     }

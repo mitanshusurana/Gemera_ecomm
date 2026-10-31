@@ -46,6 +46,12 @@ services:
       JAVA_TOOL_OPTIONS: >-
         -Xms64m -Xmx300m -Xss512k -XX:MaxMetaspaceSize=128m
         -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=48m
+        -Djava.net.preferIPv4Stack=true
+      # preferIPv4Stack: the Oracle VCN resolver answers NXDOMAIN to the AAAA query
+      # for some hosts that do exist (api.gold-api.com), and Alpine's musl then
+      # fails the whole dual-stack lookup, so the JVM got UnknownHostException on
+      # every metal-rate fetch while curl (IPv4 only) worked. IPv4-only lookups
+      # sidestep it; the box has no public IPv6 anyway.
       # Caddy terminates TLS; Spring builds redirect and reset URLs from X-Forwarded-*.
       SERVER_FORWARD_HEADERS_STRATEGY: framework
       TZ: Asia/Kolkata
