@@ -19,7 +19,7 @@ resets both sides. The report is arithmetic over what is actually matched:
 import io
 import calendar
 from uuid import UUID
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
@@ -34,6 +34,7 @@ from app.core.periods import assert_period_open
 from app.core.roles import CAN_POST, require
 from app.core.security import get_current_user
 from app.services.bank_statement_parser import UnsupportedStatement, parse_statement
+from app.api.v1.vouchers import get_fy, post_journal, settle_invoice
 
 router = APIRouter(tags=["Banking & BRS"])
 
@@ -118,6 +119,115 @@ def _period_bounds(month: Optional[str], date_from: Optional[str], date_to: Opti
             start_d, end_d = end_d, start_d
         return start_d, end_d
     return _month_bounds(month)
+
+
+
+class BookFromStatementPayload(BaseModel):
+    """Post a voucher for an unreconciled statement line and match it.
+
+    Exactly one of ``party_id`` (customer or supplier: a Receipt or Payment on
+    the party's ledger, optionally settling one of its invoices) or
+    ``contra_account_id`` (any other ledger: bank charges, interest, owner's
+    capital, a direct expense) must be given.
+    """
+    party_id: Optional[UUID] = None
+    contra_account_id: Optional[UUID] = None
+    invoice_id: Optional[UUID] = None
+    reference_no: Optional[str] = None
+    narration: Optional[str] = None
+    payment_mode: Optional[str] = "NEFT"
+    reason: str = "Booked from bank statement"
+
+
+def _booking_plan(debit, credit) -> tuple[str, str, Decimal]:
+    """(entry_type, voucher prefix, amount) for a statement line.
+
+    Money into the bank (statement credit) is a Receipt: Dr bank, Cr contra.
+    Money out (statement debit) is a Payment: Dr contra, Cr bank. A line with
+    both or neither cannot be booked as one voucher.
+    """
+    dr = to_decimal(debit or 0)
+    cr = to_decimal(credit or 0)
+    if cr > 0 and dr == 0:
+        return "Receipt", "REC", cr
+    if dr > 0 and cr == 0:
+        return "Payment", "PAY", dr
+    raise HTTPException(status_code=422, detail="The statement line must have either a debit or a credit amount, not both or neither.")
+
+
+def _pair_suggestions(bank_lines: list[dict], book_lines: list[dict], max_days: int = 5) -> list[dict]:
+    """Greedy one-to-one pairing of statement and book lines by equal amount
+    and nearest date. A statement credit matches a book debit on the bank
+    account (money came in) and vice versa. Pure, for tests."""
+    used_book: set = set()
+    out = []
+    for bl in sorted(bank_lines, key=lambda r: r["txn_date"]):
+        cr = to_decimal(bl.get("credit") or 0)
+        dr = to_decimal(bl.get("debit") or 0)
+        if cr > 0:
+            want = ("dr_amount", cr)
+        elif dr > 0:
+            want = ("cr_amount", dr)
+        else:
+            continue
+        best = None
+        for jl in book_lines:
+            if jl["id"] in used_book or to_decimal(jl.get(want[0]) or 0) != want[1]:
+                continue
+            gap = abs((jl["entry_date"] - bl["txn_date"]).days)
+            if gap <= max_days and (best is None or gap < best[0]):
+                best = (gap, jl)
+        if best:
+            used_book.add(best[1]["id"])
+            out.append({
+                "bank_entry_id": str(bl["id"]), "book_entry_id": best[1]["id"],
+                "amount": want[1], "days_apart": best[0],
+                "bank_date": bl["txn_date"], "book_date": best[1]["entry_date"],
+                "description": bl.get("description"), "book_entry_no": best[1].get("entry_no"),
+                "book_narration": best[1].get("narration"),
+            })
+    return out
+
+
+async def _record_match(db, company_id, user_id, book_line_id, bank_line_id, bank_account_id, entry_uuid) -> str:
+    """The three writes that pair a book line with a statement line.
+
+    Used by the manual match and by booking-from-statement so both leave the
+    same trail: the statement line points at the book line, the book line is
+    flagged, and reconciliation_matches holds the pair.
+    """
+    bank_res = await db.execute(
+        text("""
+            UPDATE caratloop.bank_statement_lines
+            SET is_reconciled = TRUE, reconciled_at = NOW(), reconciled_entry_line_id = :book_id
+            WHERE id = CAST(:bank_id AS UUID) AND company_id = CAST(:cid AS UUID)
+              AND bank_account_id = CAST(:acc AS UUID)
+              AND NOT is_reconciled
+            RETURNING bank_account_id
+        """),
+        {"cid": str(company_id), "bank_id": str(bank_line_id), "book_id": book_line_id, "acc": str(bank_account_id)}
+    )
+    if bank_res.scalar() is None:
+        raise HTTPException(status_code=404, detail="Bank statement line not found for this account, or already reconciled")
+    await db.execute(
+        text("""
+            UPDATE caratloop.journal_entry_lines
+            SET is_reconciled = TRUE, reconciled_at = NOW(), reconciled_by = CAST(:uid AS UUID)
+            WHERE id = :book_id
+        """),
+        {"book_id": book_line_id, "uid": str(user_id)}
+    )
+    m_res = await db.execute(
+        text("""
+            INSERT INTO caratloop.reconciliation_matches
+                (company_id, book_entry_id, book_entry_line_id, bank_entry_id, bank_account_id, matched_by)
+            VALUES (CAST(:cid AS UUID), :entry_uuid, :book_id, CAST(:bank_id AS UUID), CAST(:acc AS UUID), CAST(:uid AS UUID))
+            RETURNING id
+        """),
+        {"cid": str(company_id), "entry_uuid": entry_uuid, "book_id": book_line_id,
+         "bank_id": str(bank_line_id), "acc": str(bank_account_id), "uid": str(user_id)}
+    )
+    return str(m_res.scalar())
 
 
 @router.get("/accounts")
@@ -339,43 +449,9 @@ async def match_entries(payload: MatchPayload, request: Request, db: AsyncSessio
         # belongs to, so a locked year refuses it like any other posting.
         await assert_period_open(db, company_id, book["entry_date"], what="The book entry being reconciled")
 
-        # Bank line first, and only if it is ours and in the same account:
-        # otherwise the book line would be flagged reconciled against a
-        # statement line that never changed.
-        bank_res = await db.execute(
-            text("""
-                UPDATE caratloop.bank_statement_lines
-                SET is_reconciled = TRUE, reconciled_at = NOW(), reconciled_entry_line_id = :book_id
-                WHERE id = CAST(:bank_id AS UUID) AND company_id = CAST(:cid AS UUID)
-                  AND bank_account_id = CAST(:acc AS UUID)
-                  AND NOT is_reconciled
-                RETURNING bank_account_id
-            """),
-            {"cid": str(company_id), "bank_id": str(payload.bank_entry_id), "book_id": payload.book_entry_id, "acc": str(book["account_id"])}
+        match_id = await _record_match(
+            db, company_id, user_id, payload.book_entry_id, payload.bank_entry_id, book["account_id"], book["entry_uuid"],
         )
-        bank_acc = bank_res.scalar()
-        if bank_acc is None:
-            raise HTTPException(status_code=404, detail="Bank statement line not found for this account, or already reconciled")
-
-        await db.execute(
-            text("""
-                UPDATE caratloop.journal_entry_lines
-                SET is_reconciled = TRUE, reconciled_at = NOW(), reconciled_by = CAST(:uid AS UUID)
-                WHERE id = :book_id
-            """),
-            {"book_id": payload.book_entry_id, "uid": str(user_id)}
-        )
-        m_res = await db.execute(
-            text("""
-                INSERT INTO caratloop.reconciliation_matches
-                    (company_id, book_entry_id, book_entry_line_id, bank_entry_id, bank_account_id, matched_by)
-                VALUES (CAST(:cid AS UUID), :entry_uuid, :book_id, CAST(:bank_id AS UUID), CAST(:acc AS UUID), CAST(:uid AS UUID))
-                RETURNING id
-            """),
-            {"cid": str(company_id), "entry_uuid": book["entry_uuid"], "book_id": payload.book_entry_id,
-             "bank_id": str(payload.bank_entry_id), "acc": str(bank_acc), "uid": str(user_id)}
-        )
-        match_id = m_res.scalar()
         await db.commit()
         return {"status": "success", "message": "Entries reconciled successfully", "match_id": str(match_id)}
     except HTTPException:
@@ -384,6 +460,172 @@ async def match_entries(payload: MatchPayload, request: Request, db: AsyncSessio
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail="Reconciliation match failed. Nothing was saved.") from e
+
+
+
+@router.post("/statement/{line_id}/book", dependencies=[Depends(require(*CAN_POST))])
+async def book_from_statement(line_id: UUID, payload: BookFromStatementPayload, request: Request,
+                              db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """Post a Receipt or Payment voucher for an unreconciled statement line and match the two.
+
+    Reconciling by hand meant leaving this screen, keying the voucher with the
+    same date and amount, coming back and pairing it. This does all of it from
+    the statement line: direction and amount come from the line, the contra
+    ledger from the payload, the voucher is numbered and balanced through the
+    same path as the voucher screens, and the pair is recorded.
+    """
+    company_id = current_user["company_id"]
+    user_id = str(current_user["id"])
+    ip = request.client.host if request.client else "0.0.0.0"
+    session_id = current_user.get("session_id", "0")
+    await set_audit_context(db, user_id, session_id, ip, payload.reason)
+    if bool(payload.party_id) == bool(payload.contra_account_id):
+        raise HTTPException(status_code=422, detail="Give either party_id or contra_account_id.")
+    try:
+        line_res = await db.execute(
+            text("""
+                SELECT id, bank_account_id, txn_date, debit, credit, description, ref_no, is_reconciled
+                FROM caratloop.bank_statement_lines
+                WHERE id = CAST(:lid AS UUID) AND company_id = CAST(:cid AS UUID)
+                FOR UPDATE
+            """),
+            {"lid": str(line_id), "cid": str(company_id)},
+        )
+        line = line_res.mappings().first()
+        if line is None:
+            raise HTTPException(status_code=404, detail="Statement line not found")
+        if line["is_reconciled"]:
+            raise HTTPException(status_code=409, detail="That statement line is already reconciled.")
+
+        entry_type, prefix, amount = _booking_plan(line["debit"], line["credit"])
+        await assert_period_open(db, company_id, line["txn_date"], what="The statement line being booked")
+
+        if payload.party_id:
+            p_res = await db.execute(
+                text("SELECT account_id, name FROM caratloop.parties WHERE id = CAST(:pid AS UUID) AND company_id = CAST(:cid AS UUID)"),
+                {"pid": str(payload.party_id), "cid": str(company_id)},
+            )
+            party = p_res.mappings().first()
+            if party is None:
+                raise HTTPException(status_code=404, detail="Party not found")
+            contra_acc = party["account_id"]
+            contra_name = party["name"]
+        else:
+            a_res = await db.execute(
+                text("SELECT id, name FROM caratloop.accounts WHERE id = CAST(:aid AS UUID) AND company_id = CAST(:cid AS UUID) AND is_active = TRUE"),
+                {"aid": str(payload.contra_account_id), "cid": str(company_id)},
+            )
+            acc = a_res.mappings().first()
+            if acc is None:
+                raise HTTPException(status_code=404, detail="Ledger account not found")
+            contra_acc = acc["id"]
+            contra_name = acc["name"]
+        if str(contra_acc) == str(line["bank_account_id"]):
+            raise HTTPException(status_code=422, detail="The contra ledger cannot be the bank account itself; use a contra voucher for transfers.")
+
+        fy = await get_fy(db, company_id)
+        no_res = await db.execute(
+            text("SELECT :prefix || '/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+            {"prefix": prefix, "fy": fy["year_label"]},
+        )
+        vno = no_res.scalar()
+
+        inv_id = None
+        if payload.party_id and (payload.invoice_id or (payload.reference_no or "").strip()):
+            inv_id = await settle_invoice(
+                db, "sales_invoices" if entry_type == "Receipt" else "purchase_invoices", str(company_id), amount,
+                invoice_id=payload.invoice_id, reference_no=payload.reference_no, party_id=payload.party_id,
+            )
+
+        narration = (payload.narration or "").strip() or f"{entry_type} per bank statement: {(line['description'] or '')[:160]}".strip()
+        reference_no = (payload.reference_no or line["ref_no"] or "")[:100] or None
+        bank_acc = str(line["bank_account_id"])
+        if entry_type == "Receipt":
+            lines = [{"acc": bank_acc, "dr": amount, "cr": Decimal("0"), "narr": narration},
+                     {"acc": str(contra_acc), "dr": Decimal("0"), "cr": amount, "narr": narration}]
+        else:
+            lines = [{"acc": str(contra_acc), "dr": amount, "cr": Decimal("0"), "narr": narration},
+                     {"acc": bank_acc, "dr": Decimal("0"), "cr": amount, "narr": narration}]
+        je_id = await post_journal(
+            db, str(company_id), str(fy["id"]), vno, line["txn_date"], entry_type, narration, reference_no, amount,
+            user_id, ip, session_id, lines,
+            ref_type=(f"{entry_type}Voucher" if inv_id else "BankStatementLine"),
+            ref_id=(inv_id if inv_id else line["id"]),
+        )
+
+        jl_res = await db.execute(
+            text("""
+                SELECT jel.id, je.entry_uuid
+                FROM caratloop.journal_entry_lines jel
+                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+                WHERE jel.journal_entry_id = :je AND jel.account_id = CAST(:acc AS UUID)
+                ORDER BY jel.sequence_no LIMIT 1
+            """),
+            {"je": je_id, "acc": bank_acc},
+        )
+        jl = jl_res.mappings().first()
+        if jl is None:
+            raise HTTPException(status_code=500, detail="The voucher posted but its bank line could not be found; nothing was saved.")
+        match_id = await _record_match(db, company_id, user_id, jl["id"], line["id"], bank_acc, jl["entry_uuid"])
+
+        await db.commit()
+        return {
+            "status": "success", "entry_type": entry_type, "voucher_no": vno, "journal_entry_id": str(je_id),
+            "amount": str(amount), "contra": contra_name, "match_id": match_id,
+            "settled_invoice_id": str(inv_id) if inv_id else None,
+        }
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Booking from the statement failed. Nothing was saved.") from e
+
+
+@router.get("/reconciliation/suggestions")
+async def reconciliation_suggestions(
+    account_id: Optional[str] = None,
+    month: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    max_days: int = 5,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Unreconciled statement and book lines that agree on amount within ``max_days``.
+
+    Book lines are drawn from a window ``max_days`` wider than the statement
+    window, so a cheque booked on the 30th that cleared on the 2nd is found.
+    """
+    company_id = current_user["company_id"]
+    start_d, end_d = _period_bounds(month, date_from, date_to)
+    if not account_id:
+        account_id = await _first_bank_account(db, company_id)
+        if not account_id:
+            return {"suggestions": []}
+    pad = timedelta(days=max(0, min(max_days, 31)))
+    bank_res = await db.execute(
+        text("""
+            SELECT id, txn_date, description, ref_no, debit, credit
+            FROM caratloop.bank_statement_lines
+            WHERE bank_account_id = CAST(:acc AS UUID) AND company_id = CAST(:cid AS UUID)
+              AND txn_date BETWEEN :start_d AND :end_d AND NOT is_reconciled
+        """),
+        {"acc": str(account_id), "cid": str(company_id), "start_d": start_d, "end_d": end_d},
+    )
+    book_res = await db.execute(
+        text("""
+            SELECT jel.id, je.entry_date, je.entry_no, jel.dr_amount, jel.cr_amount, jel.narration
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            WHERE jel.account_id = CAST(:acc AS UUID) AND je.company_id = CAST(:cid AS UUID)
+              AND je.status = 'Posted' AND NOT COALESCE(jel.is_reconciled, FALSE)
+              AND je.entry_date BETWEEN :start_d AND :end_d
+        """),
+        {"acc": str(account_id), "cid": str(company_id), "start_d": start_d - pad, "end_d": end_d + pad},
+    )
+    pairs = _pair_suggestions([dict(r) for r in bank_res.mappings().all()], [dict(r) for r in book_res.mappings().all()], pad.days)
+    return {"account_id": str(account_id), "date_from": start_d.isoformat(), "date_to": end_d.isoformat(), "suggestions": pairs}
 
 
 @router.post("/reconciliation/unmatch", dependencies=[Depends(require(*CAN_POST))])
