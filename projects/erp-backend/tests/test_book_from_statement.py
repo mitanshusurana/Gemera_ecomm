@@ -84,3 +84,12 @@ def test_bank_and_contra_can_never_be_the_same_account():
 def test_suggestions_endpoint_widens_the_book_window_by_the_day_tolerance():
     body = SRC.split('@router.get("/reconciliation/suggestions")')[1]
     assert "start_d - pad" in body and "end_d + pad" in body
+
+
+def test_booking_reference_fits_the_column_and_failures_are_logged():
+    """journal_entries.reference_no is varchar(50). A 66-character SBI reference
+    produced "value too long" and a 500 with nothing in the application log."""
+    body = SRC.split('@router.post("/statement/{line_id}/book"')[1].split("@router.get")[0]
+    assert "reference_no = full_ref[:50] or None" in body
+    assert "[:100]" not in body
+    assert 'logger.exception("Booking from statement line %s failed", line_id)' in body

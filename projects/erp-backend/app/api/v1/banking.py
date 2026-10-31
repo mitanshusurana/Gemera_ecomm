@@ -17,6 +17,7 @@ resets both sides. The report is arithmetic over what is actually matched:
   = difference, reported as it is
 """
 import io
+import logging
 import calendar
 from uuid import UUID
 from datetime import date, datetime, timedelta
@@ -35,6 +36,8 @@ from app.core.roles import CAN_POST, require
 from app.core.security import get_current_user
 from app.services.bank_statement_parser import UnsupportedStatement, parse_statement
 from app.api.v1.vouchers import get_fy, post_journal, settle_invoice
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Banking & BRS"])
 
@@ -538,7 +541,12 @@ async def book_from_statement(line_id: UUID, payload: BookFromStatementPayload, 
             )
 
         narration = (payload.narration or "").strip() or f"{entry_type} per bank statement: {(line['description'] or '')[:160]}".strip()
-        reference_no = (payload.reference_no or line["ref_no"] or "")[:100] or None
+        if len(full_ref := (payload.reference_no or line["ref_no"] or "").strip()) > 50 and full_ref not in narration:
+            narration = f"{narration} [ref {full_ref[:200]}]"
+        # journal_entries.reference_no is varchar(50); SBI references such as
+        # "TRANSFER FROM 1234567890 / <name>" run past that and the INSERT
+        # failed with "value too long". The narration keeps the full text.
+        reference_no = full_ref[:50] or None
         bank_acc = str(line["bank_account_id"])
         if entry_type == "Receipt":
             lines = [{"acc": bank_acc, "dr": amount, "cr": Decimal("0"), "narr": narration},
@@ -579,6 +587,10 @@ async def book_from_statement(line_id: UUID, payload: BookFromStatementPayload, 
         raise
     except Exception as e:
         await db.rollback()
+        # The three 500s on 2026-10-31 left no trace in the log; the cause
+        # (a 66-character reference against a varchar(50)) had to be dug out
+        # of the Postgres log instead.
+        logger.exception("Booking from statement line %s failed", line_id)
         raise HTTPException(status_code=500, detail="Booking from the statement failed. Nothing was saved.") from e
 
 
