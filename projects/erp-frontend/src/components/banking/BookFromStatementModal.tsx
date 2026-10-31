@@ -57,6 +57,68 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Inline ledger-account creation: the chart ships with no admin/overhead
+  // accounts (rent, bank charges, salaries, suspense...), and leaving the
+  // reconciliation screen to add one was a dead end.
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [groups, setGroups] = useState<Array<{ code: string; name: string; nature?: string }>>([]);
+  const [newAccName, setNewAccName] = useState('');
+  const [newAccGroup, setNewAccGroup] = useState('ADMIN_EXP');
+  const [newAccCode, setNewAccCode] = useState('');
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  const suggestCode = (name: string, group: string) => {
+    const prefix = ({ ADMIN_EXP: 'EXP', FIN_CHG: 'FIN', SELLING: 'SEL', MFG_EXP: 'MFG', OTH_INC: 'OTH', CA: 'CA', LIAB: 'LIA', PROV: 'PRV', FA: 'FA', LOANS: 'LN', EQUITY: 'CAP', DUTIES_TAXES: 'TAX' } as Record<string, string>)[group] || 'ACC';
+    const slug = name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 12);
+    return slug ? `${prefix}-${slug}` : '';
+  };
+
+  const startCreateAccount = () => {
+    setNewAccName(accountQuery.trim());
+    setNewAccGroup('ADMIN_EXP');
+    setNewAccCode(suggestCode(accountQuery.trim(), 'ADMIN_EXP'));
+    setCreatingAccount(true);
+    setError(null);
+    if (groups.length === 0) {
+      apiClient.get('/accounting/account-groups').then((res) => setGroups(res.data?.groups || [])).catch(() => setGroups([]));
+    }
+  };
+
+  const saveAccount = async () => {
+    const name = newAccName.trim();
+    if (!name) {
+      setError('Enter the account name.');
+      return;
+    }
+    setSavingAccount(true);
+    setError(null);
+    try {
+      const group = groups.find((g) => g.code === newAccGroup);
+      const nature = (group?.nature || 'Expenses').toLowerCase();
+      // Expenses and assets normally carry a debit balance; income, liabilities and equity a credit one.
+      const nb = nature.startsWith('exp') || nature.startsWith('asset') ? 'D' : 'C';
+      const res = await apiClient.post('/accounting/accounts', {
+        code: (newAccCode.trim() || suggestCode(name, newAccGroup)).toUpperCase(),
+        name,
+        group_code: newAccGroup,
+        normal_balance: nb,
+        opening_balance: 0,
+        opening_balance_type: nb,
+        reason: 'Created while booking a bank statement line',
+      });
+      const created: Account = { id: res.data?.id || res.data?.account?.id, code: (newAccCode || suggestCode(name, newAccGroup)).toUpperCase(), name, group_name: group?.name, nature: group?.nature };
+      if (!created.id) throw new Error('no id returned');
+      setAccounts((prev) => [created, ...prev]);
+      setAccountId(created.id);
+      setAccountQuery('');
+      setCreatingAccount(false);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Could not create the account.');
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
   // Reset per line.
   useEffect(() => {
     if (!line) return;
@@ -189,14 +251,37 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
           ) : (
             <div>
               <label className="block text-xs text-textSecondary mb-1">Ledger account</label>
-              <input className={`${inputCls} mb-2`} placeholder="Search by code, name or group" value={accountQuery} onChange={(e) => setAccountQuery(e.target.value)} />
-              <select className={inputCls} size={6} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-                {filteredAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.code} · {a.name}{a.group_name ? ` (${a.group_name})` : ''}
-                  </option>
-                ))}
-              </select>
+              {creatingAccount ? (
+                <div className="space-y-2 rounded-md border border-border p-3">
+                  <div className="text-sm font-semibold text-white">New ledger account</div>
+                  <input className={inputCls} placeholder="Account name, e.g. Rent, Bank Charges, Suspense" value={newAccName} onChange={(e) => { setNewAccName(e.target.value); setNewAccCode(suggestCode(e.target.value, newAccGroup)); }} />
+                  <select className={inputCls} value={newAccGroup} onChange={(e) => { setNewAccGroup(e.target.value); setNewAccCode(suggestCode(newAccName, e.target.value)); }}>
+                    {(groups.length ? groups : [{ code: 'ADMIN_EXP', name: 'Admin & Overhead', nature: 'Expenses' }]).map((g) => (
+                      <option key={g.code} value={g.code}>{g.name}{g.nature ? ` · ${g.nature}` : ''}</option>
+                    ))}
+                  </select>
+                  <input className={inputCls} placeholder="Code" value={newAccCode} onChange={(e) => setNewAccCode(e.target.value)} />
+                  <p className="text-xs text-textSecondary">Rent, salaries, electricity → Admin &amp; Overhead. Bank charges, interest paid → Finance Charges. Unidentified receipts or payments → a Suspense account under Current Assets, to be moved once known.</p>
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setCreatingAccount(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-white">Back</button>
+                    <button type="button" onClick={saveAccount} disabled={savingAccount} className="px-3 py-1.5 rounded-md bg-primary text-black text-xs font-semibold disabled:opacity-60">{savingAccount ? 'Saving…' : 'Create and select'}</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <input className={`${inputCls} mb-2`} placeholder="Search by code, name or group" value={accountQuery} onChange={(e) => setAccountQuery(e.target.value)} />
+                  <select className={inputCls} size={6} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                    {filteredAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.code} · {a.name}{a.group_name ? ` (${a.group_name})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={startCreateAccount} className="mt-2 text-xs text-primary hover:underline">
+                    + Create a new ledger account{accountQuery.trim() ? ` “${accountQuery.trim()}”` : ''}
+                  </button>
+                </>
+              )}
             </div>
           )}
 

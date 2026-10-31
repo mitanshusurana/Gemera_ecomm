@@ -390,7 +390,7 @@ async def create_party(
                 "cid": company_id,
                 "group_code": acc_group_code,
                 "code": f"ACC-{party_code}",
-                "name": payload.name,
+                "name": (payload.trade_name or "").strip() or payload.name,
                 "acc_type": "Debtor" if is_debtor else "Creditor",
                 "nb": "D" if is_debtor else "C",
                 "gstin": payload.gstin,
@@ -419,7 +419,7 @@ async def create_party(
                     "cid": company_id,
                     "group_code": acc_group_code,
                     "code": f"ACC-{party_code}",
-                    "name": payload.name,
+                    "name": (payload.trade_name or "").strip() or payload.name,
                     "acc_type": "Debtor" if is_debtor else "Creditor",
                     "nb": "D" if is_debtor else "C",
                     "gstin": payload.gstin,
@@ -534,10 +534,12 @@ async def list_parties(
             placeholders.append("'Both'")
         query += " AND p.party_type IN (" + ", ".join(placeholders) + ")"
     if q:
-        query += " AND (p.name ILIKE :q OR p.party_code ILIKE :q OR p.gstin ILIKE :q)"
+        # Trade name first: the business knows "G Star Gems" by that name and so
+        # does the bank statement; the legal name is what the GST portal holds.
+        query += " AND (p.trade_name ILIKE :q OR p.name ILIKE :q OR p.party_code ILIKE :q OR p.gstin ILIKE :q)"
         params["q"] = f"%{q}%"
 
-    query += " ORDER BY p.name LIMIT :limit"
+    query += " ORDER BY COALESCE(NULLIF(p.trade_name, ''), p.name) LIMIT :limit"
 
     result = await db.execute(text(query), params)
     return [dict(r) for r in result.mappings().all()]
@@ -605,6 +607,19 @@ async def update_party(
             result = await db.execute(text(query), params)
             if not result.scalar():
                 raise HTTPException(status_code=404, detail="Party not found")
+            # The ledger account follows the party: a rename here used to leave
+            # the chart of accounts showing the old (legal) name.
+            if any(f.startswith(("name =", "trade_name =")) for f in update_fields):
+                await db.execute(
+                    text("""
+                        UPDATE caratloop.accounts a
+                        SET name = COALESCE(NULLIF(p.trade_name, ''), p.name)
+                        FROM caratloop.parties p
+                        WHERE p.id = :id AND p.company_id = :cid AND a.id = p.account_id AND a.company_id = :cid
+                    """),
+                    {"id": str(id), "cid": company_id},
+                )
+
             await db.commit()
 
         return {"status": "success"}
