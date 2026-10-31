@@ -23,4 +23,7 @@ EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3     CMD curl -fsS http://127.0.0.1:8080/actuator/health || exit 1
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# IPv4-only name resolution: on Alpine (musl) a resolver that answers NXDOMAIN
+# to the AAAA query of an existing host (seen with api.gold-api.com behind the
+# Oracle VCN resolver) makes every dual-stack lookup fail with UnknownHostException.
+ENTRYPOINT ["java", "-Djava.net.preferIPv4Stack=true", "-jar", "app.jar"]

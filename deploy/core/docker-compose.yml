@@ -7,6 +7,11 @@
 #   .env.backend  API, database and admin configuration (see ../../.env.backend.example)
 #
 #   docker compose pull && docker compose up -d
+# Memory: mem_limit is RAM, memswap_limit is RAM + swap. The sum of the caps
+# stays under the 945 MB the box has, and swap per container is bounded, so a
+# leaking or oversized process is OOM-killed and restarted by Docker instead of
+# dragging the whole machine into swap thrash (which froze the edge VM on
+# 2026-10-10 and needed a console reboot).
 services:
   postgres:
     image: postgres:15-alpine
@@ -24,7 +29,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    mem_limit: 160m
+    mem_limit: 128m
+    memswap_limit: 192m
     logging: &log
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -40,6 +46,12 @@ services:
       JAVA_TOOL_OPTIONS: >-
         -Xms64m -Xmx300m -Xss512k -XX:MaxMetaspaceSize=128m
         -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=48m
+        -Djava.net.preferIPv4Stack=true
+      # preferIPv4Stack: the Oracle VCN resolver answers NXDOMAIN to the AAAA query
+      # for some hosts that do exist (api.gold-api.com), and Alpine's musl then
+      # fails the whole dual-stack lookup, so the JVM got UnknownHostException on
+      # every metal-rate fetch while curl (IPv4 only) worked. IPv4-only lookups
+      # sidestep it; the box has no public IPv6 anyway.
       # Caddy terminates TLS; Spring builds redirect and reset URLs from X-Forwarded-*.
       SERVER_FORWARD_HEADERS_STRATEGY: framework
       TZ: Asia/Kolkata
@@ -47,7 +59,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    mem_limit: 560m
+    mem_limit: 520m
+    memswap_limit: 680m
     logging: *log
 
   admin:
@@ -58,7 +71,8 @@ services:
     env_file: [.env.backend]
     expose: ["80"]
     depends_on: [backend]
-    mem_limit: 48m
+    mem_limit: 32m
+    memswap_limit: 48m
     logging: *log
 
   caddy:
@@ -78,7 +92,8 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on: [backend, admin]
-    mem_limit: 96m
+    mem_limit: 64m
+    memswap_limit: 96m
     logging: *log
 
 volumes:

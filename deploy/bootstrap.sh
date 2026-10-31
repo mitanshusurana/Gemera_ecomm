@@ -77,6 +77,13 @@ if grep -q "crashkernel=" /proc/cmdline; then
 else
     echo "   none reserved"
 fi
+# dnf-makecache (the hourly package-cache refresh) grew to ~520 MB on the 1 GB
+# edge VM, triggered the OOM killer four times in a day and finally froze the
+# box (2026-10-10). Nothing here needs a warm package cache.
+sudo systemctl disable --now dnf-makecache.timer >/dev/null 2>&1 || true
+sudo systemctl mask dnf-makecache.timer dnf-makecache.service >/dev/null 2>&1 || true
+# Keep the journal across reboots so a freeze can be diagnosed afterwards.
+sudo mkdir -p /var/log/journal && sudo systemctl restart systemd-journald
 # Performance Co-Pilot agents (pmcd, pmlogger, pmie) cost ~40 MB and are not used.
 sudo systemctl disable --now pmcd pmlogger pmie pmie_farm pmlogger_farm >/dev/null 2>&1 || true
 
@@ -138,7 +145,8 @@ command -v rsync >/dev/null || sudo dnf -y -q install rsync >/dev/null 2>&1 || t
 # this user's authorized_keys there (bootstrap prints the key below).
 [[ -f "$HOME/.ssh/backup_peer" ]] || ssh-keygen -q -t ed25519 -N "" -C "caratloop-backup-$(hostname)" -f "$HOME/.ssh/backup_peer"
 [[ -f "$ROOT_DIR/backup.env" ]] || printf '# BACKUP_PEER=opc@<other-vm-ip>\n# KEEP_DAYS=14\n' > "$ROOT_DIR/backup.env"
-cron_line="30 2 * * * . $ROOT_DIR/backup.env 2>/dev/null; TZ=Asia/Kolkata bash $here/backup.sh >> $ROOT_DIR/backup.cron.log 2>&1"
+# crond runs on the VM clock (UTC); 21:00 UTC is 02:30 IST. The earlier "30 2" fired at 08:00 IST.
+cron_line="0 21 * * * . $ROOT_DIR/backup.env 2>/dev/null; TZ=Asia/Kolkata bash $here/backup.sh >> $ROOT_DIR/backup.cron.log 2>&1"
 ( crontab -l 2>/dev/null | grep -v 'deploy/backup.sh' || true; echo "$cron_line" ) | crontab -
 echo "   cron: $(crontab -l | grep -c 'deploy/backup.sh') entry; mirror key (add to the other VM's authorized_keys):"
 echo "   $(cat "$HOME/.ssh/backup_peer.pub")"
