@@ -7,6 +7,8 @@ import { formatCurrency } from '@/lib/utils';
 import { Download, FileJson, FileSpreadsheet, Loader2, Calendar, ShieldCheck, AlertCircle, FileText, FileUp, GitCompareArrows } from 'lucide-react';
 import { apiClient, gstr2bApi } from '@/lib/api';
 import { previousPeriod } from '@/lib/fiscal';
+import Modal from '@/components/ui/Modal';
+import PartySelect from '@/components/ui/PartySelect';
 
 const BUCKETS: { key: string; title: string; note: string; variant: 'success' | 'warning' | 'danger' | 'info' }[] = [
   { key: 'Matched', title: 'Matched', note: 'Supplier filed; the credit is claimable under s.16(2)(aa).', variant: 'success' },
@@ -31,6 +33,39 @@ export default function GSTPage() {
   const [gstr2bFile, setGstr2bFile] = useState<File | null>(null);
   const [gstr2bBusy, setGstr2bBusy] = useState<'import' | 'reconcile' | null>(null);
   const [gstr2bMessage, setGstr2bMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  // Book the bill behind a 2B row the books lack.
+  const [createBillRow, setCreateBillRow] = useState<any | null>(null);
+  const [serviceItems, setServiceItems] = useState<any[]>([]);
+  const [billItemId, setBillItemId] = useState('');
+  const [billSupplierId, setBillSupplierId] = useState('');
+  const [billDescription, setBillDescription] = useState('');
+  const [billBusy, setBillBusy] = useState(false);
+  const openCreateBill = (row: any) => {
+    setCreateBillRow(row);
+    setBillItemId('');
+    setBillSupplierId('');
+    setBillDescription('');
+    if (serviceItems.length === 0) {
+      apiClient.get('/inventory/items', { params: { category: 'Service', limit: 500 } })
+        .then((res) => setServiceItems(Array.isArray(res.data) ? res.data : res.data?.materials || res.data?.items || []))
+        .catch(() => setServiceItems([]));
+    }
+  };
+  const submitCreateBill = async () => {
+    if (!createBillRow || !billItemId) { setGstr2bMessage({ kind: 'err', text: 'Choose the service/expense item the bill is for.' }); return; }
+    setBillBusy(true);
+    try {
+      const res = await gstr2bApi.createBill(createBillRow.id, { material_id: billItemId, supplier_id: billSupplierId || undefined, description: billDescription || undefined });
+      const d = res.data;
+      setGstr2bMessage({ kind: 'ok', text: `Booked ${d.bill_no} at ${d.gst_rate}% GST${d.supplier_created ? ' (supplier created from the GSTIN)' : ''}; ${d.match_status === 'Matched' ? 'matched to the 2B row' : d.match_note}.` });
+      setCreateBillRow(null);
+      fetchGstData();
+    } catch (err: any) {
+      setGstr2bMessage({ kind: 'err', text: errorText(err, 'Could not book the bill') });
+    } finally {
+      setBillBusy(false);
+    }
+  };
 
   const tabs = ['Output Tax', 'ITC Register', 'RCM Register', 'GSTR-1 Staging', 'GSTR-3B Summary', 'GSTR-2B'];
 
@@ -361,6 +396,7 @@ export default function GSTPage() {
                           <th className="px-3 py-2 text-right">CGST</th>
                           <th className="px-3 py-2 text-right">SGST</th>
                           {b.key === 'Mismatch' && <th className="px-3 py-2">Difference</th>}
+                          {b.key === 'Missing_In_Books' && <th className="px-3 py-2">Action</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -378,6 +414,11 @@ export default function GSTPage() {
                             <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(fromBooks ? r.cgst_credit : r.cgst) || 0)}</td>
                             <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(fromBooks ? r.sgst_credit : r.sgst) || 0)}</td>
                             {b.key === 'Mismatch' && <td className="px-3 py-2 text-warning">{r.match_note}</td>}
+                            {b.key === 'Missing_In_Books' && (
+                              <td className="px-3 py-2">
+                                <button onClick={() => openCreateBill(r)} className="px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-white">Create bill</button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -386,6 +427,37 @@ export default function GSTPage() {
                 </div>
               );
             })}
+            {createBillRow && (
+              <Modal isOpen={!!createBillRow} onClose={() => setCreateBillRow(null)} title={`Book bill ${createBillRow.invoice_no} from GSTR-2B`}>
+                <div className="space-y-4 text-sm">
+                  <div className="rounded-lg border border-border bg-surface/60 p-3">
+                    <div className="text-white">{createBillRow.supplier_name || createBillRow.supplier_gstin}</div>
+                    <div className="text-textSecondary text-xs font-mono mt-0.5">{createBillRow.supplier_gstin} · {createBillRow.invoice_date}</div>
+                    <div className="text-textSecondary text-xs mt-1">Taxable {formatCurrency(Number(createBillRow.taxable || 0))} · IGST {formatCurrency(Number(createBillRow.igst || 0))} · CGST {formatCurrency(Number(createBillRow.cgst || 0))} · SGST {formatCurrency(Number(createBillRow.sgst || 0))}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-textSecondary mb-1">Service / expense item *</label>
+                    <select className="w-full bg-background border border-border rounded-md px-3 py-2 text-white" value={billItemId} onChange={(e) => setBillItemId(e.target.value)}>
+                      <option value="">Select item...</option>
+                      {serviceItems.map((m: any) => <option key={m.id} value={m.id}>{m.code} · {m.name}</option>)}
+                    </select>
+                    <p className="text-[11px] text-textSecondary mt-1">No item for this expense yet? Inventory → New Item → category “Service / expense”, with its expense ledger.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-textSecondary mb-1">Supplier (optional: by default the party with this GSTIN, created if missing)</label>
+                    <PartySelect value={billSupplierId} onChange={(id) => setBillSupplierId(id)} partyType="Supplier" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-textSecondary mb-1">Description</label>
+                    <input className="w-full bg-background border border-border rounded-md px-3 py-2 text-white" value={billDescription} onChange={(e) => setBillDescription(e.target.value)} placeholder="e.g. Shop rent October 2026" />
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <button onClick={() => setCreateBillRow(null)} className="px-4 py-2 rounded-md border border-border text-textSecondary hover:text-white text-sm">Cancel</button>
+                    <button onClick={submitCreateBill} disabled={billBusy} className="px-4 py-2 rounded-md bg-primary text-black font-semibold text-sm disabled:opacity-60">{billBusy ? 'Posting…' : 'Post bill and match'}</button>
+                  </div>
+                </div>
+              </Modal>
+            )}
           </div>
         ) : activeTab === 'GSTR-1 Staging' ? (
           <div className="space-y-6">

@@ -23,6 +23,7 @@ interface LineItem {
   purity: number;
   rate: number;
   making_charges: number;
+  is_service?: boolean;
 }
 
 const INDIAN_STATES = [
@@ -307,7 +308,12 @@ export default function PurchasesPage() {
           description: stockItem.name,
           hsn_code: stockItem.hsn_code,
           unit: stockItem.unit || 'gm',
-          gst_rate: rateVal
+          gst_rate: rateVal,
+          // A service (rent, fees) has no weight: the rate is the bill's taxable amount.
+          is_service: String(stockItem.category || '').toLowerCase() === 'service',
+          gross_weight: String(stockItem.category || '').toLowerCase() === 'service' ? 0 : item.gross_weight,
+          net_weight: String(stockItem.category || '').toLowerCase() === 'service' ? 0 : item.net_weight,
+          quantity: String(stockItem.category || '').toLowerCase() === 'service' ? 1 : item.quantity
         };
       }
       return item;
@@ -777,6 +783,7 @@ export default function PurchasesPage() {
                               placeholder="1.0"
                             />
                           </div>
+                          {!item.is_service && (
                           <div>
                             <label className="text-[11px] text-textSecondary">Gross Wt ({item.unit || 'gm'})</label>
                             <input 
@@ -787,6 +794,8 @@ export default function PurchasesPage() {
                               placeholder="Optional"
                             />
                           </div>
+                          )}
+                          {!item.is_service && (
                           <div>
                             <label className="text-[11px] text-textSecondary">Net Wt ({item.unit || 'gm'})</label>
                             <input 
@@ -797,8 +806,9 @@ export default function PurchasesPage() {
                               placeholder="Optional"
                             />
                           </div>
+                          )}
                           <div>
-                            <label className="text-[11px] text-textSecondary">Rate / {netWt > 0 ? (item.unit || 'gm') : (item.unit || 'Pcs')} (₹) *</label>
+                            <label className="text-[11px] text-textSecondary">{item.is_service ? 'Taxable amount (₹) *' : `Rate / ${netWt > 0 ? (item.unit || 'gm') : (item.unit || 'Pcs')} (₹) *`}</label>
                             <input 
                               type="number" 
                               value={item.rate || ''}

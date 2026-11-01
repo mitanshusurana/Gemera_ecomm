@@ -10,6 +10,9 @@ from __future__ import annotations
 
 import json
 import logging
+from decimal import Decimal
+from typing import Optional
+from uuid import UUID
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -18,6 +21,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pydantic import BaseModel
 from app.core.database import get_db, set_audit_context
 from app.core.money import to_decimal
 from app.core.roles import CAN_POST, require
@@ -35,6 +39,38 @@ from app.tax.gstr2b import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["GSTR-2B Reconciliation [s.16(2)(aa)]"])
+
+
+class CreateBillFromEntry(BaseModel):
+    """Book the purchase bill a supplier reported in GSTR-2B that the books lack.
+
+    ``material_id`` is the service/expense item the bill is for (rent,
+    electricity, professional fees...). ``supplier_id`` may be omitted: the
+    party with the row's GSTIN is used, and when none exists a Supplier is
+    created from the GSTIN and the name the portal reported.
+    """
+    material_id: UUID
+    supplier_id: Optional[UUID] = None
+    description: Optional[str] = None
+    reason: str = "Purchase bill booked from GSTR-2B"
+
+
+_GST_RATES = (Decimal("0"), Decimal("0.1"), Decimal("0.25"), Decimal("1"), Decimal("1.5"), Decimal("3"),
+              Decimal("5"), Decimal("12"), Decimal("18"), Decimal("28"))
+
+
+def rate_from_2b(taxable, igst, cgst, sgst) -> Decimal:
+    """The GST rate a 2B row implies, snapped to a statutory rate when the
+    portal's rounded tax amounts land within 0.05 of one; otherwise the exact
+    ratio to two decimals (a bill can carry lines at several rates)."""
+    base = to_decimal(taxable)
+    if base <= 0:
+        return Decimal("0")
+    exact = (to_decimal(igst) + to_decimal(cgst) + to_decimal(sgst)) * 100 / base
+    for r in _GST_RATES:
+        if abs(exact - r) <= Decimal("0.05"):
+            return r
+    return exact.quantize(Decimal("0.01"))
 
 
 def _period_ok(period: str) -> str:
@@ -263,6 +299,147 @@ def _bucket(rows: list[dict], *, taxable_key="taxable", igst_key="igst", cgst_ke
         "total_tax": igst + cgst + sgst,
         "rows": rows,
     }
+
+
+@router.post("/gstr2b/entries/{entry_id}/create-bill", dependencies=[Depends(require(*CAN_POST))])
+async def create_bill_from_entry(
+    entry_id: int,
+    payload: CreateBillFromEntry,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Post the purchase bill behind an "in 2B, not in books" row and mark it matched.
+
+    The bill takes the supplier's invoice number, date, taxable value and
+    tax from the 2B row, as one line of the chosen service/expense item, and
+    goes through the same posting as a bill keyed by hand (journal, ITC
+    register, outstanding). The ITC row it creates is then paired with the
+    2B row, so the next reconcile run sees a match instead of a gap.
+    """
+    from app.api.v1.purchases import (  # local: purchases imports nothing from here
+        CreatePurchaseInvoiceRequest, PurchaseLineRequest, _load_supplier, _post_purchase,
+    )
+    from app.api.v1.parties import CreatePartyRequest, create_party
+    from app.core.periods import assert_period_open
+    from app.core.tenancy import resolve_fiscal_year
+
+    company_id = current_user["company_id"]
+    user_id = str(current_user["id"])
+    ip = request.client.host if request.client else "0.0.0.0"
+    await set_audit_context(db, user_id, current_user.get("session_id", "0"), ip, payload.reason)
+    try:
+        e_res = await db.execute(
+            text("""
+                SELECT id, supplier_gstin, supplier_name, invoice_no, invoice_date, taxable, igst, cgst, sgst,
+                       place_of_supply, is_reverse_charge, match_status, matched_itc_id
+                FROM caratloop.gstr2b_entries WHERE id = :id AND company_id = :cid FOR UPDATE
+            """),
+            {"id": entry_id, "cid": company_id},
+        )
+        entry = e_res.mappings().first()
+        if entry is None:
+            raise HTTPException(status_code=404, detail="GSTR-2B row not found")
+        if entry["matched_itc_id"] is not None or entry["match_status"] in (MATCHED, MISMATCH):
+            raise HTTPException(status_code=409, detail="This 2B row is already paired with a bill in the books.")
+        if entry["invoice_date"] is None:
+            raise HTTPException(status_code=422, detail="The 2B row carries no invoice date; book this bill from the Purchases screen.")
+        taxable = to_decimal(entry["taxable"])
+        if taxable <= 0:
+            raise HTTPException(status_code=422, detail="The 2B row has no taxable value.")
+
+        # Supplier: given, else by GSTIN, else created from the portal's details.
+        supplier_id = payload.supplier_id
+        if not supplier_id:
+            p_res = await db.execute(
+                text("SELECT id FROM caratloop.parties WHERE company_id = :cid AND upper(gstin) = upper(:g) ORDER BY created_at LIMIT 1"),
+                {"cid": company_id, "g": entry["supplier_gstin"]},
+            )
+            supplier_id = p_res.scalar()
+        created_party = False
+        if not supplier_id:
+            name = (entry["supplier_name"] or "").strip() or f"Supplier {entry['supplier_gstin']}"
+            created = await create_party(
+                CreatePartyRequest(party_type="Supplier", name=name, trade_name=name, gstin=entry["supplier_gstin"],
+                                   gst_reg_type="Regular", reason=payload.reason),
+                request, db, current_user,
+            )
+            supplier_id = created.get("id") if isinstance(created, dict) else None
+            if not supplier_id:
+                raise HTTPException(status_code=500, detail="Supplier could not be created from the GSTIN.")
+            created_party = True
+
+        m_res = await db.execute(
+            text("SELECT id, name, hsn_code, category FROM caratloop.materials WHERE id = CAST(:mid AS UUID) AND company_id = :cid AND is_active = TRUE"),
+            {"mid": str(payload.material_id), "cid": company_id},
+        )
+        material = m_res.mappings().first()
+        if material is None:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        rate = rate_from_2b(taxable, entry["igst"], entry["cgst"], entry["sgst"])
+        description = (payload.description or "").strip() or f"{material['name']} — {entry['supplier_name'] or entry['supplier_gstin']} inv {entry['invoice_no']}"
+        bill = CreatePurchaseInvoiceRequest(
+            supplier_id=supplier_id,
+            invoice_date=entry["invoice_date"],
+            supplier_invoice_no=str(entry["invoice_no"])[:50],
+            vendor_invoice_date=entry["invoice_date"],
+            place_of_supply=entry["place_of_supply"] or None,
+            items=[PurchaseLineRequest(
+                material_id=str(material["id"]), description=description[:200], quantity=1.0,
+                gross_weight=0.0, net_weight=0.0, purity=1.0, rate=float(taxable), making_charges=0.0,
+                hsn_code=material["hsn_code"] or "9997", gst_rate=float(rate),
+            )],
+            is_rcm=bool(entry["is_reverse_charge"]),
+            reason=payload.reason,
+        )
+        await assert_period_open(db, company_id, bill.invoice_date, what="This purchase bill")
+        fy = await resolve_fiscal_year(db, company_id)
+        supplier = await _load_supplier(db, company_id, bill.supplier_id)
+        if bill.place_of_supply is None:
+            bill.place_of_supply = supplier.get("state_code") or (entry["supplier_gstin"] or "")[:2] or None
+        no_res = await db.execute(
+            text("SELECT 'PI/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+            {"fy": fy["year_label"]},
+        )
+        bill_no = no_res.scalar()
+        posted = await _post_purchase(db, company_id=company_id, user_id=user_id, fy=fy, payload=bill, supplier=supplier, bill_no=bill_no)
+        invoice_id = posted["invoice_id"]
+
+        # Pair the ITC row the posting wrote with this 2B row.
+        itc_res = await db.execute(
+            text("SELECT id, igst_credit, cgst_credit, sgst_credit FROM caratloop.itc_register "
+                 "WHERE company_id = :cid AND invoice_id = CAST(:inv AS UUID) AND NOT is_reversal ORDER BY id DESC LIMIT 1"),
+            {"cid": company_id, "inv": str(invoice_id)},
+        )
+        itc = itc_res.mappings().first()
+        status, note = MATCHED, None
+        if itc is not None:
+            diff = abs(to_decimal(itc["igst_credit"]) + to_decimal(itc["cgst_credit"]) + to_decimal(itc["sgst_credit"])
+                       - to_decimal(entry["igst"]) - to_decimal(entry["cgst"]) - to_decimal(entry["sgst"]))
+            if diff > Decimal("1"):
+                status, note = MISMATCH, f"Tax differs by {diff} between the 2B row and the posted bill"
+            await db.execute(
+                text("UPDATE caratloop.itc_register SET gstr2b_matched = TRUE, gstr2b_match_date = CURRENT_DATE WHERE id = :id AND company_id = :cid"),
+                {"id": int(itc["id"]), "cid": company_id},
+            )
+        await db.execute(
+            text("UPDATE caratloop.gstr2b_entries SET match_status = :st, matched_itc_id = :itc, match_note = :note, reconciled_at = NOW() "
+                 "WHERE id = :id AND company_id = :cid"),
+            {"st": status, "itc": int(itc["id"]) if itc else None, "note": note, "id": entry_id, "cid": company_id},
+        )
+        await db.commit()
+        return {
+            "status": "success", "bill_no": bill_no, "invoice_id": str(invoice_id), "supplier_id": str(supplier_id),
+            "supplier_created": created_party, "gst_rate": str(rate), "match_status": status, "match_note": note,
+        }
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.exception("Creating a bill from GSTR-2B row %s failed", entry_id)
+        raise HTTPException(status_code=500, detail="Creating the bill failed. Nothing was saved.") from e
 
 
 @router.get("/gstr2b/summary")
