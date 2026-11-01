@@ -14,6 +14,7 @@ export interface StockItem {
   gst_tax_rate: number;
   material_gst_rate: number;
   current_stock?: number;
+  category?: string;
 }
 
 interface ItemSelectProps {
@@ -74,7 +75,8 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
           hsn_code: i.hsn_code || '71131910',
           gst_tax_rate: rateVal,
           material_gst_rate: rateVal,
-          current_stock: i.current_stock ?? 0
+          current_stock: i.current_stock ?? 0,
+        category: i.category
         };
         setSelectedItem(formatted);
         onChange(formatted.id, formatted);
@@ -95,7 +97,8 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
               hsn_code: match.hsn_code || '71131910',
               gst_tax_rate: rateVal,
               material_gst_rate: rateVal,
-              current_stock: match.current_stock ?? 0
+              current_stock: match.current_stock ?? 0,
+              category: match.category
             };
             setSelectedItem(formatted);
             onChange(formatted.id, formatted);
@@ -124,7 +127,8 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
             hsn_code: i.hsn_code || '71131910',
             gst_tax_rate: Number(i.gst_tax_rate ?? i.material_gst_rate ?? 3.0),
             material_gst_rate: Number(i.gst_tax_rate ?? i.material_gst_rate ?? 3.0),
-            current_stock: i.current_stock ?? 0
+            current_stock: i.current_stock ?? 0,
+          category: i.category
           })));
         }
       } catch (err) {

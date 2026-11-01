@@ -32,6 +32,14 @@ export default function InventoryPage() {
     opening_qty: 0,
     purity_standard: ''
   });
+  // Expense ledgers for a Service item (the purchase line debits this account).
+  const [expenseAccounts, setExpenseAccounts] = useState<any[]>([]);
+  const [expenseAccountId, setExpenseAccountId] = useState('');
+  useEffect(() => {
+    apiClient.get('/accounting/accounts', { params: { nature: 'Expenses', limit: 1000 } })
+      .then((res) => setExpenseAccounts(res.data?.accounts || []))
+      .catch(() => setExpenseAccounts([]));
+  }, []);
 
   const fetchInventoryData = async () => {
     setLoading(true);
@@ -128,6 +136,7 @@ export default function InventoryPage() {
         });
       } else {
         await apiClient.post('/inventory/items', {
+        expense_account_id: formData.category === 'Service' ? (expenseAccountId || undefined) : undefined,
           code: formData.code,
           name: formData.name,
           category: formData.category,
@@ -298,6 +307,7 @@ export default function InventoryPage() {
                     <option value="Consumable">Consumable</option>
                     <option value="Finished_Good">Finished Good</option>
                     <option value="Other">Other</option>
+                    <option value="Service">Service / expense (rent, electricity, fees)</option>
                   </select>
                 </div>
 
@@ -318,6 +328,16 @@ export default function InventoryPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                {formData.category === 'Service' && (
+                  <div className="col-span-2">
+                    <label className="block text-sm text-textSecondary mb-1">Expense ledger (debited by each bill) *</label>
+                    <select className="w-full bg-background border border-border rounded-md px-3 py-2 text-white" value={expenseAccountId} onChange={(e) => setExpenseAccountId(e.target.value)}>
+                      <option value="">Select expense ledger...</option>
+                      {expenseAccounts.map((a: any) => <option key={a.id} value={a.id}>{a.code} · {a.name} ({a.group_name})</option>)}
+                    </select>
+                    <p className="text-[11px] text-textSecondary mt-1">For a service the HSN field holds the SAC (rent 997212, electricity 996912, professional fees 998311).</p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm text-textSecondary mb-1">HSN Code *</label>
                   <input 

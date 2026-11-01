@@ -149,6 +149,9 @@ export const gstr2bApi = {
   },
   reconcile: (period: string) => apiClient.post(`/gst/gstr2b/reconcile?period=${encodeURIComponent(period)}`),
   summary: (period: string) => apiClient.get('/gst/gstr2b/summary', { params: { period } }),
+  /** Post the purchase bill behind an "in 2B, not in books" row and pair the two. */
+  createBill: (entryId: number, data: { material_id: string; supplier_id?: string; description?: string }) =>
+    apiClient.post(`/gst/gstr2b/entries/${entryId}/create-bill`, data),
 };
 
 // Books APIs

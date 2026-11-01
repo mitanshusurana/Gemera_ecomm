@@ -37,6 +37,11 @@ class CreateItemRequest(BaseModel):
     # A hallmark is a fact about a specific piece, stated by whoever assayed it.
     purity_standard: Optional[str] = None
     opening_qty: float = 0.0
+    # Category "Service": an expense bought on a bill (rent, electricity,
+    # professional fees, making charges). Never stocked; a purchase line
+    # debits this ledger account, and the GST on the bill reaches the ITC
+    # register like any other purchase. hsn_code then holds the SAC.
+    expense_account_id: Optional[UUID] = None
     reason: str = "Stock item creation"
 
 class UpdateItemRequest(BaseModel):
@@ -44,6 +49,7 @@ class UpdateItemRequest(BaseModel):
     category: Optional[str] = None
     hsn_code: Optional[str] = None
     gst_tax_rate: Optional[float] = None
+    expense_account_id: Optional[UUID] = None
     reason: str = "Stock item update"
 
 
@@ -230,6 +236,19 @@ async def create_item(
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
 
     try:
+        is_service = str(payload.category or "").strip().lower() == "service"
+        expense_acc = None
+        if is_service:
+            if not payload.expense_account_id:
+                raise HTTPException(status_code=422, detail="A service item needs the expense ledger it is booked to (e.g. Shop Rent).")
+            acc_res = await db.execute(
+                text("SELECT id FROM caratloop.accounts WHERE id = CAST(:aid AS UUID) AND company_id = :cid AND is_active = TRUE"),
+                {"aid": str(payload.expense_account_id), "cid": company_id},
+            )
+            expense_acc = acc_res.scalar()
+            if not expense_acc:
+                raise HTTPException(status_code=404, detail="Expense ledger account not found")
+
         # Fetch uom_id
         uom_id = await resolve_uom(db, payload.uom)
 
@@ -292,6 +311,18 @@ async def create_item(
         }
         stk_code = category_stock_map.get(payload.category, 'STK-008')
 
+        if is_service:
+            # A purchase line of a service debits the material's stock account
+            # (see purchases._resolve_material); for a service that is the
+            # expense ledger. No stock, no sales account.
+            await db.execute(
+                text("UPDATE caratloop.materials SET stock_account_id = :sid, purchase_account_id = :sid, "
+                     "is_raw_material = FALSE, is_finished_good = FALSE WHERE id = :mid"),
+                {"sid": str(expense_acc), "mid": item_id},
+            )
+            await db.commit()
+            return {"status": "success", "id": str(item_id), "code": payload.code}
+
         stk_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = :code AND company_id = :cid LIMIT 1"), {"code": stk_code, "cid": company_id})
         sal_res = await db.execute(text("SELECT id FROM caratloop.accounts WHERE code = 'SAL-001' AND company_id = :cid LIMIT 1"), {"cid": company_id})
         stk_id = stk_res.scalar()
@@ -340,6 +371,16 @@ async def update_item(
                 update_fields.append(f"{field} = :{field}")
                 params[field] = value
 
+        if payload.expense_account_id is not None:
+            acc_res = await db.execute(
+                text("SELECT id FROM caratloop.accounts WHERE id = CAST(:aid AS UUID) AND company_id = :cid AND is_active = TRUE"),
+                {"aid": str(payload.expense_account_id), "cid": company_id},
+            )
+            if not acc_res.scalar():
+                raise HTTPException(status_code=404, detail="Expense ledger account not found")
+            update_fields.append("stock_account_id = CAST(:expense_account_id AS UUID)")
+            update_fields.append("purchase_account_id = CAST(:expense_account_id AS UUID)")
+            params["expense_account_id"] = str(payload.expense_account_id)
         if update_fields:
             query = f"UPDATE caratloop.materials SET {', '.join(update_fields)} WHERE id = :id AND company_id = :cid RETURNING id"
             result = await db.execute(text(query), params)
