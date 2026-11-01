@@ -62,11 +62,23 @@ export default function AccountingPage() {
   const [isNewAccModalOpen, setIsNewAccModalOpen] = useState(false);
   const [newAccCode, setNewAccCode] = useState('');
   const [newAccName, setNewAccName] = useState('');
-  const [newAccNature, setNewAccNature] = useState('Assets');
-  const [newAccGroup, setNewAccGroup] = useState('Current Assets');
+  // Real account groups (code, name, nature) for the create and edit forms.
+  const [accountGroups, setAccountGroups] = useState<Array<{ code: string; name: string; nature: string }>>([]);
+  const [newAccGroup, setNewAccGroup] = useState('ADMIN_EXP');
+  // Edit (rename / move group) modal
+  const [editAcc, setEditAcc] = useState<any | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editGroup, setEditGroup] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [newAccNormalBalance, setNewAccNormalBalance] = useState('D');
   const [newAccOpeningBal, setNewAccOpeningBal] = useState('0');
   const [isCreatingAcc, setIsCreatingAcc] = useState(false);
+
+  useEffect(() => {
+    apiClient.get('/accounting/account-groups', { params: { limit: 100 } })
+      .then((res) => setAccountGroups(res.data?.groups || []))
+      .catch(() => setAccountGroups([]));
+  }, []);
 
   useEffect(() => {
     // The whole chart, not the first page of it: the default page is 100 rows.
@@ -238,6 +250,7 @@ export default function AccountingPage() {
       </button>
     )},
     { header: 'Action', accessorKey: 'actions', cell: (item: any) => (
+      <>
       <button
         onClick={() => {
           setSelectedAccForOb(item);
@@ -249,6 +262,13 @@ export default function AccountingPage() {
       >
         Edit Opening Bal
       </button>
+      <button
+        onClick={() => { setEditAcc(item); setEditName(item.name || ''); setEditGroup(item.group_code || ''); }}
+        className="ml-1 px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs transition-colors"
+      >
+        Edit
+      </button>
+      </>
     )},
   ];
 
@@ -589,6 +609,54 @@ export default function AccountingPage() {
 
       <VoucherModal voucherId={voucherId} onClose={() => setVoucherId(null)} />
 
+      {/* Edit account: rename or move to another group */}
+      {editAcc && (
+        <Modal isOpen={!!editAcc} onClose={() => setEditAcc(null)} title={`Edit account: ${editAcc.code}`}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-textSecondary mb-1 font-medium">Name</label>
+              <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white" />
+            </div>
+            <div>
+              <label className="block text-xs text-textSecondary mb-1 font-medium">Group</label>
+              <select value={editGroup} onChange={(e) => setEditGroup(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white">
+                {accountGroups.map((g) => (
+                  <option key={g.code} value={g.code}>{g.name} · {g.nature}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setEditAcc(null)} className="px-4 py-2 rounded-lg border border-border text-textSecondary hover:text-white text-sm">Cancel</button>
+              <button
+                disabled={isSavingEdit}
+                onClick={async () => {
+                  setIsSavingEdit(true);
+                  try {
+                    const g = accountGroups.find((x) => x.code === editGroup);
+                    const n = (g?.nature || '').toLowerCase();
+                    await apiClient.patch(`/accounting/accounts/${editAcc.id}`, {
+                      name: editName,
+                      group_code: editGroup || undefined,
+                      normal_balance: g ? (n.startsWith('exp') || n.startsWith('asset') ? 'D' : 'C') : undefined,
+                      reason: 'Account renamed or moved',
+                    });
+                    setEditAcc(null);
+                    fetchData();
+                  } catch (err: any) {
+                    alert(err.response?.data?.detail || 'Could not update the account');
+                  } finally {
+                    setIsSavingEdit(false);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-primary text-black font-semibold text-sm disabled:opacity-60"
+              >
+                {isSavingEdit ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Opening Balance Modal */}
       {isOpeningModalOpen && selectedAccForOb && (
         <Modal isOpen={isOpeningModalOpen} onClose={() => setIsOpeningModalOpen(false)} title={`Set Opening Balance: ${selectedAccForOb.name}`}>
@@ -661,18 +729,23 @@ export default function AccountingPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-textSecondary mb-1 font-medium">Account Nature</label>
+                <label className="block text-xs text-textSecondary mb-1 font-medium">Account Group</label>
                 <select
-                  value={newAccNature}
-                  onChange={(e) => setNewAccNature(e.target.value)}
+                  value={newAccGroup}
+                  onChange={(e) => {
+                    setNewAccGroup(e.target.value);
+                    const g = accountGroups.find((x) => x.code === e.target.value);
+                    const n = (g?.nature || '').toLowerCase();
+                    // Expenses and assets normally carry a debit balance; income, liabilities and equity a credit one.
+                    setNewAccNormalBalance(n.startsWith('exp') || n.startsWith('asset') ? 'D' : 'C');
+                  }}
                   className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white"
                 >
-                  <option value="Assets">Assets</option>
-                  <option value="Liabilities">Liabilities</option>
-                  <option value="Expenses">Expenses</option>
-                  <option value="Income">Income / Revenue</option>
-                  <option value="Equity">Capital & Equity</option>
+                  {accountGroups.map((g) => (
+                    <option key={g.code} value={g.code}>{g.name} · {g.nature}</option>
+                  ))}
                 </select>
+                <p className="text-[11px] text-textSecondary mt-1">Rent, salaries, electricity → Admin &amp; Overhead. Bank charges → Finance Charges. Suspense → Current Assets.</p>
               </div>
               <div>
                 <label className="block text-xs text-textSecondary mb-1 font-medium">Normal Balance</label>
