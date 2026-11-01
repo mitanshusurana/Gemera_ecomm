@@ -34,6 +34,16 @@ class BatchOpeningBalancesRequest(BaseModel):
     balances: List[OpeningBalanceItem]
     reason: str = "Opening balances initialization"
 
+class UpdateAccountRequest(BaseModel):
+    """Rename an account or move it to another group; balances are untouched."""
+    name: Optional[str] = None
+    group_id: Optional[UUID] = None
+    group_code: Optional[str] = None
+    normal_balance: Optional[str] = None  # 'D' or 'C'
+    description: Optional[str] = None
+    reason: str = "Account updated"
+
+
 class CreateAccountRequest(BaseModel):
     code: str
     name: str
@@ -445,15 +455,14 @@ async def create_account(
                 {"code": payload.group_code, "cid": company_id}
             )
             group_id = g_res.scalar()
+        # No silent fallback: this used to file the account under whichever
+        # group the database returned first (Current Assets), which is how a
+        # "Shop Rent" account ended up as an asset.
         if not group_id:
-            g_res = await db.execute(
-                text("SELECT id FROM caratloop.account_groups WHERE company_id = :cid LIMIT 1"),
-                {"cid": company_id}
+            raise HTTPException(
+                status_code=400,
+                detail="Account group not found. Choose one of the company's account groups (GET /accounting/account-groups).",
             )
-            group_id = g_res.scalar()
-
-        if not group_id:
-            raise HTTPException(status_code=400, detail="Account group not found.")
 
         acc_res = await db.execute(
             text("""
@@ -494,6 +503,62 @@ async def create_account(
             status_code=500,
             detail="Failed to create account. The operation was rolled back and nothing was saved.",
         ) from e
+
+
+@router.patch("/accounts/{account_id}", dependencies=[Depends(require(*CAN_AMEND))])
+async def update_account(
+    account_id: UUID,
+    payload: UpdateAccountRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Rename an account or move it to another group (e.g. a rent account
+    created under Current Assets by mistake). Postings are not touched; the
+    reports regroup on the next read."""
+    user_id = str(current_user["id"])
+    company_id = current_user["company_id"]
+    ip_address = request.client.host if request.client else "0.0.0.0"
+    session_id = current_user.get("session_id", "0")
+    await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
+    try:
+        sets, params = [], {"id": str(account_id), "cid": company_id}
+        if payload.name is not None and payload.name.strip():
+            sets.append("name = :name"); params["name"] = payload.name.strip()
+        if payload.description is not None:
+            sets.append("description = :description"); params["description"] = payload.description
+        if payload.normal_balance is not None:
+            if payload.normal_balance not in ("D", "C"):
+                raise HTTPException(status_code=422, detail="normal_balance must be 'D' or 'C'")
+            sets.append("normal_balance = :nb"); params["nb"] = payload.normal_balance
+        group_id = payload.group_id
+        if not group_id and payload.group_code:
+            g_res = await db.execute(
+                text("SELECT id FROM caratloop.account_groups WHERE (code = :code OR name = :code) AND company_id = :cid LIMIT 1"),
+                {"code": payload.group_code, "cid": company_id},
+            )
+            group_id = g_res.scalar()
+            if not group_id:
+                raise HTTPException(status_code=400, detail="Account group not found.")
+        if group_id:
+            sets.append("group_id = CAST(:gid AS UUID)"); params["gid"] = str(group_id)
+        if not sets:
+            raise HTTPException(status_code=422, detail="Nothing to update.")
+        res = await db.execute(
+            text("UPDATE caratloop.accounts SET " + ", ".join(sets) + " WHERE id = :id AND company_id = :cid RETURNING id"),
+            params,
+        )
+        if not res.scalar():
+            raise HTTPException(status_code=404, detail="Account not found")
+        await db.commit()
+        return {"status": "success", "account_id": str(account_id)}
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.exception("Failed to update account")
+        raise HTTPException(status_code=500, detail="Failed to update the account. Nothing was saved.") from e
 
 
 @router.patch("/accounts/{account_id}/opening-balance", dependencies=[Depends(require(*CAN_AMEND))])
