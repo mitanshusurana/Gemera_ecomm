@@ -156,14 +156,18 @@ chmod +x "$here/healthwatch.py" 2>/dev/null || true
 # alerts.env: SMTP + recipient. On the core VM it is derived from the store
 # API's env once; the edge VM copies it from the core VM over the backup key,
 # so both machines can mail an alert about the other.
+# backup.env names the other VM (BACKUP_PEER); the cron sources it, so must we.
+[[ -f "$ROOT_DIR/backup.env" ]] && . "$ROOT_DIR/backup.env"
 if [[ ! -f "$ROOT_DIR/alerts.env" ]]; then
     if [[ "$role" == core && -f "$stack/.env.backend" ]]; then
         python3 - "$stack/.env.backend" "$ROOT_DIR/alerts.env" <<'PY'
 import sys, re
 src, dst = sys.argv[1:]
 kv = {}
-for line in open(src, encoding="utf-8", errors="replace"):
-    m = re.match(r"\s*([A-Z_]+)\s*=\s*(.*)$", line)
+# Split on LF only: the live .env.backend had "MAIL_PASSWORD=<CR><password>" and
+# universal newlines turned the CR into a line break, so the password read as empty.
+for line in open(src, encoding="utf-8", errors="replace", newline="\n"):
+    m = re.match(r"\s*([A-Z_]+)\s*=\s*(.*)$", line.replace("\r", "").rstrip("\n"))
     if m: kv[m.group(1)] = m.group(2).strip()
 out = {
     "ALERT_TO": kv.get("ADMIN_EMAIL", ""),
