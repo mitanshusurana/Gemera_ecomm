@@ -44,9 +44,19 @@ router = APIRouter(tags=["Banking & BRS"])
 class MatchPayload(BaseModel):
     # journal_entry_lines.id is a BIGINT; the reconciliation screen sends the
     # id it was given by GET /reconciliation, which is that integer.
-    book_entry_id: int
+    # ``book_entry_ids`` pairs several book lines with one statement line
+    # (one transfer settling three bills); their amounts must add up to the
+    # line's amount within a rupee. ``book_entry_id`` remains for one line.
+    book_entry_id: Optional[int] = None
+    book_entry_ids: Optional[list[int]] = None
     bank_entry_id: UUID
     reason: str = "Bank reconciliation match"
+
+    def line_ids(self) -> list[int]:
+        ids = list(self.book_entry_ids or [])
+        if self.book_entry_id is not None and self.book_entry_id not in ids:
+            ids.insert(0, self.book_entry_id)
+        return ids
 
 class UnmatchPayload(BaseModel):
     match_id: Optional[UUID] = None
@@ -192,13 +202,8 @@ def _pair_suggestions(bank_lines: list[dict], book_lines: list[dict], max_days: 
     return out
 
 
-async def _record_match(db, company_id, user_id, book_line_id, bank_line_id, bank_account_id, entry_uuid) -> str:
-    """The three writes that pair a book line with a statement line.
-
-    Used by the manual match and by booking-from-statement so both leave the
-    same trail: the statement line points at the book line, the book line is
-    flagged, and reconciliation_matches holds the pair.
-    """
+async def _flag_bank_line(db, company_id, bank_line_id, bank_account_id, first_book_line_id) -> None:
+    """Mark the statement line reconciled, pointing at (the first of) its book line(s)."""
     bank_res = await db.execute(
         text("""
             UPDATE caratloop.bank_statement_lines
@@ -208,10 +213,23 @@ async def _record_match(db, company_id, user_id, book_line_id, bank_line_id, ban
               AND NOT is_reconciled
             RETURNING bank_account_id
         """),
-        {"cid": str(company_id), "bank_id": str(bank_line_id), "book_id": book_line_id, "acc": str(bank_account_id)}
+        {"cid": str(company_id), "bank_id": str(bank_line_id), "book_id": first_book_line_id, "acc": str(bank_account_id)}
     )
     if bank_res.scalar() is None:
         raise HTTPException(status_code=404, detail="Bank statement line not found for this account, or already reconciled")
+
+
+async def _record_match(db, company_id, user_id, book_line_id, bank_line_id, bank_account_id, entry_uuid, *, flag_bank: bool = True) -> str:
+    """The writes that pair a book line with a statement line.
+
+    Used by the manual match (one or several book lines) and by
+    booking-from-statement so all leave the same trail: the statement line
+    points at the (first) book line, each book line is flagged, and
+    reconciliation_matches holds one row per pair. With ``flag_bank`` False
+    the caller flags the statement line itself after the last pair.
+    """
+    if flag_bank:
+        await _flag_bank_line(db, company_id, bank_line_id, bank_account_id, book_line_id)
     await db.execute(
         text("""
             UPDATE caratloop.journal_entry_lines
@@ -432,31 +450,60 @@ async def match_entries(payload: MatchPayload, request: Request, db: AsyncSessio
         # The book entry was addressed by id alone, so any caller could mark
         # any company's journal line as reconciled. journal_entry_lines
         # carries no company_id; ownership is on the parent journal entry.
-        owner_res = await db.execute(
-            text("""
-                SELECT jel.id, jel.account_id, jel.is_reconciled, je.entry_date, je.entry_uuid
-                FROM caratloop.journal_entry_lines jel
-                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
-                WHERE jel.id = :book_id AND je.company_id = CAST(:cid AS UUID)
-                LIMIT 1
-            """),
-            {"book_id": payload.book_entry_id, "cid": str(company_id)}
-        )
-        book = owner_res.mappings().first()
-        if book is None:
-            raise HTTPException(status_code=404, detail="Book entry not found")
-        if book["is_reconciled"]:
-            raise HTTPException(status_code=409, detail="That book entry is already reconciled; unmatch it first.")
+        line_ids = payload.line_ids()
+        if not line_ids:
+            raise HTTPException(status_code=422, detail="book_entry_id or book_entry_ids is required")
+        books = []
+        for lid in line_ids:
+            owner_res = await db.execute(
+                text("""
+                    SELECT jel.id, jel.account_id, jel.is_reconciled, jel.dr_amount, jel.cr_amount, je.entry_date, je.entry_uuid
+                    FROM caratloop.journal_entry_lines jel
+                    JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+                    WHERE jel.id = :book_id AND je.company_id = CAST(:cid AS UUID)
+                    LIMIT 1
+                """),
+                {"book_id": lid, "cid": str(company_id)}
+            )
+            book = owner_res.mappings().first()
+            if book is None:
+                raise HTTPException(status_code=404, detail=f"Book entry {lid} not found")
+            if book["is_reconciled"]:
+                raise HTTPException(status_code=409, detail=f"Book entry {lid} is already reconciled; unmatch it first.")
+            # Reconciling changes the audited state of an entry in the period it
+            # belongs to, so a locked year refuses it like any other posting.
+            await assert_period_open(db, company_id, book["entry_date"], what="The book entry being reconciled")
+            books.append(book)
+        if len({str(b["account_id"]) for b in books}) != 1:
+            raise HTTPException(status_code=422, detail="All book entries in one match must be on the same bank account.")
+        account_id = books[0]["account_id"]
 
-        # Reconciling changes the audited state of an entry in the period it
-        # belongs to, so a locked year refuses it like any other posting.
-        await assert_period_open(db, company_id, book["entry_date"], what="The book entry being reconciled")
+        if len(books) > 1:
+            # Several book lines against one statement line: amounts must agree.
+            line_res = await db.execute(
+                text("SELECT debit, credit FROM caratloop.bank_statement_lines WHERE id = CAST(:bid AS UUID) AND company_id = CAST(:cid AS UUID) AND bank_account_id = CAST(:acc AS UUID)"),
+                {"bid": str(payload.bank_entry_id), "cid": str(company_id), "acc": str(account_id)},
+            )
+            line = line_res.mappings().first()
+            if line is None:
+                raise HTTPException(status_code=404, detail="Bank statement line not found for this account")
+            bank_amt = to_decimal(line["credit"]) if to_decimal(line["credit"]) > 0 else to_decimal(line["debit"])
+            book_sum = sum((to_decimal(b["dr_amount"]) if to_decimal(line["credit"]) > 0 else to_decimal(b["cr_amount"])) for b in books)
+            if abs(book_sum - bank_amt) > Decimal("1"):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"The selected book entries add up to {book_sum}, but the statement line is {bank_amt}.",
+                )
 
-        match_id = await _record_match(
-            db, company_id, user_id, payload.book_entry_id, payload.bank_entry_id, book["account_id"], book["entry_uuid"],
-        )
+        match_ids = []
+        for i, book in enumerate(books):
+            match_ids.append(await _record_match(
+                db, company_id, user_id, int(book["id"]), payload.bank_entry_id, account_id, book["entry_uuid"], flag_bank=False,
+            ))
+        await _flag_bank_line(db, company_id, payload.bank_entry_id, account_id, int(books[0]["id"]))
+        match_id = match_ids[0]
         await db.commit()
-        return {"status": "success", "message": "Entries reconciled successfully", "match_id": str(match_id)}
+        return {"status": "success", "message": "Entries reconciled successfully", "match_id": str(match_id), "match_ids": match_ids}
     except HTTPException:
         await db.rollback()
         raise
@@ -655,13 +702,15 @@ async def unmatch_entries(payload: UnmatchPayload, request: Request, db: AsyncSe
                 FROM caratloop.reconciliation_matches m
                 JOIN caratloop.bank_statement_lines b ON b.id = m.bank_entry_id
                 WHERE m.company_id = CAST(:cid AS UUID)
-                  AND (m.id = CAST(:mid AS UUID) OR m.bank_entry_id = CAST(:bid AS UUID))
-                LIMIT 1
+                  AND (m.bank_entry_id = CAST(:bid AS UUID)
+                       OR m.bank_entry_id = (SELECT bank_entry_id FROM caratloop.reconciliation_matches WHERE id = CAST(:mid AS UUID)))
+                ORDER BY m.matched_at
             """),
             {"cid": str(company_id), "mid": str(payload.match_id) if payload.match_id else None,
              "bid": str(payload.bank_entry_id) if payload.bank_entry_id else None}
         )
-        m = res.mappings().first()
+        pairs = [dict(r) for r in res.mappings().all()]
+        m = pairs[0] if pairs else None
         if m is None:
             # A line reconciled before matches were stored: fall back to the
             # link on the statement line itself.
@@ -684,21 +733,23 @@ async def unmatch_entries(payload: UnmatchPayload, request: Request, db: AsyncSe
             """),
             {"bid": str(m["bank_entry_id"]), "cid": str(company_id)}
         )
-        if m["book_line_id"] is not None:
-            await db.execute(
-                text("""
-                    UPDATE caratloop.journal_entry_lines jel
-                    SET is_reconciled = FALSE, reconciled_at = NULL, reconciled_by = NULL
-                    FROM caratloop.journal_entries je
-                    WHERE je.id = jel.journal_entry_id AND jel.id = :book_id AND je.company_id = CAST(:cid AS UUID)
-                """),
-                {"book_id": int(m["book_line_id"]), "cid": str(company_id)}
-            )
-        if m["id"] is not None:
-            await db.execute(
-                text("DELETE FROM caratloop.reconciliation_matches WHERE id = CAST(:mid AS UUID) AND company_id = CAST(:cid AS UUID)"),
-                {"mid": str(m["id"]), "cid": str(company_id)}
-            )
+        # Every pair of this statement line goes back (a split match has several).
+        for pair in (pairs or [m]):
+            if pair["book_line_id"] is not None:
+                await db.execute(
+                    text("""
+                        UPDATE caratloop.journal_entry_lines jel
+                        SET is_reconciled = FALSE, reconciled_at = NULL, reconciled_by = NULL
+                        FROM caratloop.journal_entries je
+                        WHERE je.id = jel.journal_entry_id AND jel.id = :book_id AND je.company_id = CAST(:cid AS UUID)
+                    """),
+                    {"book_id": int(pair["book_line_id"]), "cid": str(company_id)}
+                )
+            if pair["id"] is not None:
+                await db.execute(
+                    text("DELETE FROM caratloop.reconciliation_matches WHERE id = CAST(:mid AS UUID) AND company_id = CAST(:cid AS UUID)"),
+                    {"mid": str(pair["id"]), "cid": str(company_id)}
+                )
         await db.commit()
         return {"status": "success", "message": "Match removed"}
     except HTTPException:

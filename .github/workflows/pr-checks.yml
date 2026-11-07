@@ -1,0 +1,70 @@
+name: PR checks
+
+# Fast feedback on pull requests. The image build (docker-build-push.yml)
+# runs only on main, so until now a broken PR was found after merging. These
+# jobs run the ERP test suite and the three TypeScript type-checks, which
+# together catch almost everything that has broken a build so far.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  erp-backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/erp-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: projects/erp-backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: pip install pytest pglast
+      - run: python -m pytest -q --ignore=tests/test_migrations_integration.py
+
+  typescript:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: storefront
+            dir: .
+            cmd: npx tsc --noEmit -p tsconfig.app.json
+          - name: admin
+            dir: .
+            cmd: npx tsc --noEmit -p projects/admin/tsconfig.app.json
+          - name: erp-frontend
+            dir: projects/erp-frontend
+            cmd: npx tsc --noEmit -p tsconfig.json
+    name: tsc (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.dir == '.' && 'package-lock.json' || 'projects/erp-frontend/package-lock.json' }}
+      - run: npm ci
+        working-directory: ${{ matrix.dir }}
+      - run: ${{ matrix.cmd }}
+        working-directory: ${{ matrix.dir }}
+
+  backend-image:
+    # The Spring Boot image build runs the Java test suite; building without
+    # pushing proves a PR compiles and passes before it reaches main.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Download, FileText, Trash2, X, Printer, Eye, Edit3, MapPin, Calculator, Upload, CheckCircle2, FileImage, AlertCircle, Search, Calendar } from 'lucide-react';
+import { Plus, Download, FileText, Trash2, X, Printer, Eye, Edit3, MapPin, Calculator, Upload, CheckCircle2, FileImage, AlertCircle, Search, Calendar, Copy } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
@@ -97,6 +97,11 @@ export default function PurchasesPage() {
   // When opened from GST → GSTR-2B → Create bill: the row being booked, so the
   // form is prefilled and the period is reconciled right after posting.
   const [from2b, setFrom2b] = useState<any | null>(null);
+  // TDS under a section other than the automatic 194Q (rent 194I, fees
+  // 194J, contractors 194C, commission 194H): the amount is deducted from
+  // what the supplier is owed and credited to TDS Payable s.<section>.
+  const [tdsSection, setTdsSection] = useState('');
+  const [tdsRate, setTdsRate] = useState<number>(0);
   const [items, setItems] = useState<LineItem[]>([
     { id: 1, material_id: '', description: '', hsn_code: '71131910', unit: 'gm', gst_rate: 0, quantity: 1, gross_weight: 0, net_weight: 0, purity: 1.0, rate: 0, making_charges: 0 }
   ]);
@@ -157,6 +162,8 @@ export default function PurchasesPage() {
     setVendorInvoiceDate(new Date().toISOString().split('T')[0]);
     setInvoiceDate(new Date().toISOString().split('T')[0]);
     setIsRcm(false);
+    setTdsSection('');
+    setTdsRate(0);
     setPlaceOfSupply('08');
     setAttachmentUrl('');
     setItems([
@@ -251,6 +258,10 @@ export default function PurchasesPage() {
       setVendorInvoiceDate(inv.vendor_invoice_date || inv.bill_date);
       setInvoiceDate(inv.bill_date);
       setIsRcm(Boolean(inv.is_rcm_applicable));
+      // 194Q is applied automatically from the supplier's flags; any other
+      // section was an override on the bill and is carried into the form.
+      if (inv.tds_section && inv.tds_section !== '194Q') { setTdsSection(inv.tds_section); setTdsRate(Number(inv.tds_rate) || 0); }
+      else { setTdsSection(''); setTdsRate(0); }
       setPlaceOfSupply(inv.place_of_supply || '08');
       setAttachmentUrl(inv.attachment_url || '');
       
@@ -286,6 +297,19 @@ export default function PurchasesPage() {
     } catch (err) {
       console.error('Failed to load purchase voucher for edit:', err);
     }
+  };
+
+  // Repeat: the same supplier, items and rates as an earlier bill (a
+  // monthly rent or a standing supplier), dated today, with a blank
+  // supplier invoice number, posted as a NEW bill.
+  const openRepeatDrawer = async (id: string) => {
+    await openEditDrawer(id);
+    const today = new Date().toISOString().split('T')[0];
+    setEditingInvoiceId(null);
+    setSupplierInvoiceNo('');
+    setVendorInvoiceDate(today);
+    setInvoiceDate(today);
+    setAttachmentUrl('');
   };
 
   const openDetailedView = async (id: string) => {
@@ -421,6 +445,7 @@ export default function PurchasesPage() {
         place_of_supply: placeOfSupply,
         attachment_url: attachmentUrl,
         is_rcm: isRcm,
+        tds_override: tdsSection && tdsRate > 0 ? { section: tdsSection, rate_pct: Number(tdsRate) } : undefined,
         items: validItems.map(i => ({
           material_id: i.material_id,
           description: i.description,
@@ -619,6 +644,15 @@ export default function PurchasesPage() {
                               <Edit3 className="w-3.5 h-3.5 text-primary" /> Amend
                             </button>
                           )}
+                          {!isHistory && (
+                            <button
+                              onClick={() => openRepeatDrawer(inv.id)}
+                              title="Repeat: a new bill with the same supplier and lines, dated today (monthly rent, standing supplier)"
+                              className="px-2 py-1 bg-white/10 text-white border border-border rounded hover:bg-white/20 text-xs font-medium flex items-center gap-1"
+                            >
+                              <Copy className="w-3.5 h-3.5 text-primary" /> Repeat
+                            </button>
+                          )}
                           <button 
                             onClick={() => openDetailedView(inv.id)}
                             className="px-2 py-1 bg-primary/20 text-primary border border-primary/30 rounded hover:bg-primary/30 text-xs font-medium flex items-center gap-1"
@@ -774,6 +808,43 @@ export default function PurchasesPage() {
                   />
                   <span className="text-xs text-white font-medium">Old Gold / RCM Purchase (Reverse Charge Mechanism - Notif 13/2017)</span>
                 </label>
+              </div>
+
+              {/* TDS on services: rent, professional fees, contractors, commission */}
+              <div className="p-3 bg-white/5 border border-border rounded-lg space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="text-xs text-white font-medium">TDS to deduct</label>
+                  <select
+                    value={tdsSection}
+                    onChange={(e) => {
+                      const sec = e.target.value;
+                      setTdsSection(sec);
+                      const def: Record<string, number> = { '194I': 10, '194J': 10, '194C': 1, '194H': 2 };
+                      setTdsRate(sec in def ? def[sec] : 0);
+                    }}
+                    className="px-2 py-1.5 bg-surface border border-border rounded text-xs text-white"
+                  >
+                    <option value="">None / automatic (s.194Q on goods, per supplier flags)</option>
+                    <option value="194I">194I — Rent (land, building, furniture)</option>
+                    <option value="194J">194J — Professional / technical fees</option>
+                    <option value="194C">194C — Contractor / job work</option>
+                    <option value="194H">194H — Commission / brokerage</option>
+                  </select>
+                  {tdsSection && (
+                    <label className="flex items-center gap-1 text-xs text-textSecondary">
+                      Rate %
+                      <input type="number" min={0} max={30} step={0.01} value={tdsRate}
+                        onChange={(e) => setTdsRate(Number(e.target.value))}
+                        className="w-20 px-2 py-1 bg-surface border border-border rounded text-xs text-white text-right" />
+                    </label>
+                  )}
+                  {tdsSection && tdsRate > 0 && (
+                    <span className="text-xs text-textSecondary">
+                      Deduct <span className="font-mono text-white">{formatCurrency(totalTaxableSubtotal * tdsRate / 100)}</span> on the taxable value; pay the supplier <span className="font-mono text-white">{formatCurrency(grandTotal - totalTaxableSubtotal * tdsRate / 100)}</span>
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-textSecondary">Thresholds (₹2.4 lakh a year for rent, ₹30,000 for fees) are your call: leave this at None below them. The deduction is credited to TDS Payable s.&lt;section&gt;, created on first use, and the supplier is credited net.</p>
               </div>
 
               {/* Items Section */}

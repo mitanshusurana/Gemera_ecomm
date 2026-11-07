@@ -78,7 +78,9 @@ export const bankingApi = {
   getAccounts: () => apiClient.get('/banking/accounts'),
   importStatement: (formData: FormData) => apiClient.post('/banking/statement/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getReconciliation: (params: any) => apiClient.get('/banking/reconciliation', { params }),
-  matchEntries: (data: any) => apiClient.post('/banking/reconciliation/match', data),
+  /** One statement line against one book line (`book_entry_id`) or several (`book_entry_ids`, amounts must add up). */
+  matchEntries: (data: { book_entry_id?: string | number; book_entry_ids?: (string | number)[]; bank_entry_id: string }) =>
+    apiClient.post('/banking/reconciliation/match', data),
   unmatchEntries: (data: { match_id?: string; bank_entry_id?: string }) => apiClient.post('/banking/reconciliation/unmatch', data),
   getBrsReport: (params: any) => apiClient.get('/banking/reconciliation/report', { params }),
   /** Statement lines and book lines that agree on amount within a few days. */

@@ -75,7 +75,42 @@ class CreatePurchaseInvoiceRequest(BaseModel):
     attachment_url: Optional[str] = None
     items: List[PurchaseLineRequest]
     is_rcm: bool = False
+    # TDS under a section other than 194Q (rent 194I, professional fees 194J,
+    # contractors 194C, commission 194H): the operator states the section and
+    # rate; the amount is rate % of the taxable value, credited to the
+    # section's payable account (TDS-<section>, created if missing) and
+    # deducted from what the supplier is owed. Thresholds are the operator's
+    # call, as they depend on the payer's status and the year's total.
+    tds_override: Optional["TdsOverride"] = None
     reason: str = "Purchase invoice creation"
+
+
+class TdsOverride(BaseModel):
+    section: str
+    rate_pct: float
+
+
+CreatePurchaseInvoiceRequest.model_rebuild()
+
+
+async def next_bill_no(db: AsyncSession, company_id, fy_label: str) -> str:
+    """PI/<FY>/<n>: the highest number already used in the year plus one.
+
+    The number used to come from journal_entry_seq, shared with every
+    voucher and stock entry, so bill numbers had gaps the auditor would ask
+    about. A per-company advisory lock serialises concurrent bills; the
+    series stays contiguous from wherever it stands today.
+    """
+    await db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"bill:{company_id}:{fy_label}"})
+    res = await db.execute(
+        text("""
+            SELECT COALESCE(MAX(CAST(SUBSTRING(bill_no FROM '^PI/[^/]+/([0-9]+)') AS INTEGER)), 0) + 1
+            FROM caratloop.purchase_invoices
+            WHERE company_id = :cid AND bill_no LIKE :pattern
+        """),
+        {"cid": company_id, "pattern": f"PI/{fy_label}/%"},
+    )
+    return f"PI/{fy_label}/{int(res.scalar() or 1):05d}"
 
 
 def root_bill_no(bill_no: str) -> str:
@@ -441,9 +476,16 @@ async def _post_purchase(
     # threshold. grand_total stays the bill's face value; the supplier's
     # credit is grand_total less the TDS, and the TDS is credited to the
     # payable account until it is deposited.
-    tds = await _compute_tds(
-        db, company_id=company_id, fiscal_year_id=fy["id"], supplier=supplier, taxable_value=taxable,
-    )
+    if payload.tds_override and payload.tds_override.rate_pct > 0:
+        section = "".join(ch for ch in payload.tds_override.section.upper() if ch.isalnum())[:12] or "194Q"
+        rate = to_decimal(payload.tds_override.rate_pct)
+        tds = Withholding(section=section, base=taxable, rate=rate, amount=round_money(taxable * rate / 100))
+        if not tds.applies:
+            tds = None
+    else:
+        tds = await _compute_tds(
+            db, company_id=company_id, fiscal_year_id=fy["id"], supplier=supplier, taxable_value=taxable,
+        )
     tds_amount = tds.amount if tds else to_decimal(0)
 
     carried = to_decimal(carried_amount_paid)
@@ -652,20 +694,38 @@ async def _post_purchase(
     seq += 1
 
     if tds_amount > 0:
-        tds_ins = await db.execute(
+        tds_code = f"TDS-{tds.section}"
+        tds_acc = await db.execute(
+            text("SELECT id FROM caratloop.accounts WHERE code = :code AND company_id = :cid LIMIT 1"),
+            {"code": tds_code, "cid": company_id},
+        )
+        tds_acc_id = tds_acc.scalar()
+        if tds_acc_id is None:
+            # TDS-194Q is seeded by migration 0007; the other sections' payable
+            # accounts are created on first use under Duties & Taxes.
+            created = await db.execute(
+                text("""
+                    INSERT INTO caratloop.accounts (company_id, group_id, code, name, account_type, normal_balance, currency, created_by)
+                    SELECT :cid, g.id, :code, :name, 'Other', 'C', 'INR', CAST(:cb AS UUID)
+                    FROM caratloop.account_groups g WHERE g.company_id = :cid AND g.code = 'DUTIES_TAXES' LIMIT 1
+                    RETURNING id
+                """),
+                {"cid": company_id, "code": tds_code, "name": f"TDS Payable s.{tds.section}", "cb": user_id},
+            )
+            tds_acc_id = created.scalar()
+        if tds_acc_id is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Chart of accounts is missing '{tds_code}' (TDS payable) and the Duties & Taxes group to create it under. No data was saved.",
+            )
+        await db.execute(
             text(
                 "INSERT INTO caratloop.journal_entry_lines "
                 "(journal_entry_id, sequence_no, account_id, dr_amount, cr_amount, narration) "
-                "SELECT :jid, :seq, a.id, 0, :cr, 'TDS deducted — s.194Q' "
-                "FROM caratloop.accounts a WHERE a.code = 'TDS-194Q' AND a.company_id = :cid"
+                "VALUES (:jid, :seq, CAST(:acc AS UUID), 0, :cr, :narr)"
             ),
-            {"jid": je_id, "seq": seq, "cr": tds_amount, "cid": company_id},
+            {"jid": je_id, "seq": seq, "acc": str(tds_acc_id), "cr": tds_amount, "narr": f"TDS deducted — s.{tds.section}"},
         )
-        if tds_ins.rowcount == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Chart of accounts is missing 'TDS-194Q' (TDS payable). Run migration 0007 or create it. No data was saved.",
-            )
         seq += 1
 
     if totals.rcm_applicable and (rcm_cgst + rcm_sgst) > 0:
@@ -933,11 +993,7 @@ async def create_purchase_invoice(
         fy = await resolve_fiscal_year(db, company_id)
         supplier = await _load_supplier(db, company_id, payload.supplier_id)
 
-        bill_no_res = await db.execute(
-            text("SELECT 'PI/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
-            {"fy": fy['year_label']}
-        )
-        bill_no = bill_no_res.scalar()
+        bill_no = await next_bill_no(db, company_id, fy["year_label"])
 
         posted = await _post_purchase(
             db, company_id=company_id, user_id=user_id, fy=fy, payload=payload,

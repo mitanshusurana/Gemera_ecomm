@@ -373,9 +373,19 @@ export default function GSTPage() {
                           <tr key={r.id} className="hover:bg-white/5">
                             <td className="px-3 py-2 font-mono text-primary">{r.supplier_gstin || r.vendor_gstin}</td>
                             <td className="px-3 py-2 text-white">{r.supplier_name || r.vendor_name || r.books?.vendor_name || '—'}</td>
-                            <td className="px-3 py-2 font-mono text-white">{r.invoice_no}</td>
+                            <td className="px-3 py-2 font-mono text-white">
+                              {fromBooks && r.invoice_id
+                                ? <button className="underline hover:text-primary" title="Open this bill" onClick={() => router.push(`/purchases?view_id=${r.invoice_id}`)}>{r.invoice_no}</button>
+                                : r.invoice_no}
+                            </td>
                             <td className="px-3 py-2 text-textSecondary">{r.invoice_date || '—'}</td>
-                            {!fromBooks && <td className="px-3 py-2 font-mono text-textSecondary">{r.books?.bill_no || '—'}</td>}
+                            {!fromBooks && (
+                              <td className="px-3 py-2 font-mono text-textSecondary">
+                                {r.books?.invoice_id
+                                  ? <button className="underline hover:text-white" title="Open this bill" onClick={() => router.push(`/purchases?view_id=${r.books.invoice_id}`)}>{r.books.bill_no}</button>
+                                  : (r.books?.bill_no || '—')}
+                              </td>
+                            )}
                             <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(r.taxable || 0))}</td>
                             <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(fromBooks ? r.igst_credit : r.igst) || 0)}</td>
                             <td className="px-3 py-2 text-right font-mono">{formatCurrency(Number(fromBooks ? r.cgst_credit : r.cgst) || 0)}</td>
