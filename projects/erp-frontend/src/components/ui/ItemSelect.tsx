@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, Package } from 'lucide-react';
+import { Search, X, Loader2, Package, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { itemsApi } from '@/lib/api';
+import { itemsApi, apiClient } from '@/lib/api';
 
 export interface StockItem {
   id: string;
@@ -30,6 +30,72 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<StockItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
+
+  // Inline creation: a purchase bill often needs an item that does not exist
+  // yet (a new gemstone line, or a service such as rent or electricity).
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newCode, setNewCode] = useState('');
+  const [newCategory, setNewCategory] = useState('Other');
+  const [newUom, setNewUom] = useState('pcs');
+  const [newHsn, setNewHsn] = useState('');
+  const [newRate, setNewRate] = useState('3');
+  const [newExpenseAccount, setNewExpenseAccount] = useState('');
+  const [expenseAccounts, setExpenseAccounts] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const startCreate = () => {
+    const name = query.trim();
+    setNewName(name);
+    setNewCode(name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 20));
+    setNewCategory('Other');
+    setNewUom('pcs');
+    setNewHsn('');
+    setNewRate('3');
+    setNewExpenseAccount('');
+    setCreateError(null);
+    setCreating(true);
+    if (expenseAccounts.length === 0) {
+      apiClient.get('/accounting/accounts', { params: { nature: 'Expenses', limit: 1000 } })
+        .then((res) => setExpenseAccounts(res.data?.accounts || []))
+        .catch(() => setExpenseAccounts([]));
+    }
+  };
+
+  const saveNew = async () => {
+    const name = newName.trim();
+    if (!name) { setCreateError('Enter the item name.'); return; }
+    if (newCategory === 'Service' && !newExpenseAccount) { setCreateError('Choose the expense ledger this service is booked to.'); return; }
+    if (!newHsn.trim()) { setCreateError(newCategory === 'Service' ? 'Enter the SAC (e.g. 997212 for rent).' : 'Enter the HSN code.'); return; }
+    setSaving(true);
+    setCreateError(null);
+    try {
+      const res = await itemsApi.create({
+        code: (newCode.trim() || name).toUpperCase(),
+        name,
+        category: newCategory,
+        uom: newCategory === 'Service' ? 'pcs' : newUom,
+        hsn_code: newHsn.trim(),
+        gst_tax_rate: Number(newRate) || 0,
+        expense_account_id: newCategory === 'Service' ? newExpenseAccount : undefined,
+        reason: 'Created from the item picker',
+      });
+      const created: StockItem = {
+        id: res.data?.id, code: (newCode.trim() || name).toUpperCase(), name,
+        unit: newCategory === 'Service' ? 'pcs' : newUom, hsn_code: newHsn.trim(),
+        gst_tax_rate: Number(newRate) || 0, material_gst_rate: Number(newRate) || 0, current_stock: 0, category: newCategory,
+      };
+      if (!created.id) throw new Error('no id');
+      setOptions((prev) => [created, ...prev]);
+      setCreating(false);
+      handleSelect(created);
+    } catch (err: any) {
+      setCreateError(err.response?.data?.detail || 'Could not create the item.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -198,7 +264,38 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
 
           {isOpen && (
             <div className="absolute z-50 left-0 right-0 mt-1 bg-[#18181C] border border-border rounded-md shadow-xl max-h-60 overflow-y-auto">
-              {loading && options.length === 0 ? (
+              {creating ? (
+                <div className="p-3 space-y-2 text-sm" onMouseDown={(e) => e.stopPropagation()}>
+                  <div className="font-semibold text-white">New item</div>
+                  <input className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" value={newCategory} onChange={(e) => { setNewCategory(e.target.value); if (e.target.value === 'Service') setNewRate('18'); }}>
+                      {['Gold', 'Silver', 'Diamond', 'Ruby', 'Emerald', 'Sapphire', 'Other_Gem', 'Consumable', 'Finished_Good', 'Other', 'Service'].map((c) => (
+                        <option key={c} value={c}>{c === 'Service' ? 'Service / expense' : c.replace('_', ' ')}</option>
+                      ))}
+                    </select>
+                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder="Code" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
+                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder={newCategory === 'Service' ? 'SAC (997212 rent)' : 'HSN (7103 gems)'} value={newHsn} onChange={(e) => setNewHsn(e.target.value)} />
+                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder="GST %" value={newRate} onChange={(e) => setNewRate(e.target.value)} />
+                    {newCategory !== 'Service' && (
+                      <select className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" value={newUom} onChange={(e) => setNewUom(e.target.value)}>
+                        {['pcs', 'gm', 'ct', 'kg'].map((x) => <option key={x} value={x}>{x}</option>)}
+                      </select>
+                    )}
+                  </div>
+                  {newCategory === 'Service' && (
+                    <select className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-white" value={newExpenseAccount} onChange={(e) => setNewExpenseAccount(e.target.value)}>
+                      <option value="">Expense ledger this service is booked to...</option>
+                      {expenseAccounts.map((a: any) => <option key={a.id} value={a.id}>{a.code} · {a.name} ({a.group_name})</option>)}
+                    </select>
+                  )}
+                  {createError && <p className="text-xs text-danger">{createError}</p>}
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setCreating(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-white">Back</button>
+                    <button type="button" onClick={saveNew} disabled={saving} className="px-3 py-1.5 rounded-md bg-primary text-black text-xs font-semibold disabled:opacity-60">{saving ? 'Saving…' : 'Create and select'}</button>
+                  </div>
+                </div>
+              ) : loading && options.length === 0 ? (
                 <div className="p-3 text-sm text-textSecondary flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-primary" /> Searching stock items...
                 </div>
@@ -228,6 +325,11 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
                     </li>
                   ))}
                 </ul>
+              )}
+              {!creating && (
+                <button type="button" onClick={startCreate} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-white/5 border-t border-border">
+                  <Plus className="w-4 h-4" /> Create new item{query.trim() ? ` “${query.trim()}”` : ''}
+                </button>
               )}
             </div>
           )}
