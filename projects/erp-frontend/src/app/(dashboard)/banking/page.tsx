@@ -55,7 +55,13 @@ export default function BankingPage() {
   const [importing, setImporting] = useState(false);
 
   // Selected Row for Matching
-  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  // Several book lines may be ticked for one statement line (one transfer
+  // settling three bills); the API checks that their amounts add up.
+  const [selectedBookIds, setSelectedBookIds] = useState<string[]>([]);
+  const selectedBookId = selectedBookIds[0] ?? null;
+  const setSelectedBookId = (id: string | null) => setSelectedBookIds(id ? [id] : []);
+  const toggleBookId = (id: string) =>
+    setSelectedBookIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   const [selectedStmtId, setSelectedStmtId] = useState<string | null>(null);
   const [matching, setMatching] = useState(false);
   // Booking a voucher straight from a statement line, and amount-based suggestions.
@@ -171,10 +177,14 @@ export default function BankingPage() {
   };
 
   const handleMatchSelected = async () => {
-    if (!selectedBookId || !selectedStmtId) return;
+    if (selectedBookIds.length === 0 || !selectedStmtId) return;
     setMatching(true);
     try {
-      await bankingApi.matchEntries({ book_entry_id: selectedBookId, bank_entry_id: selectedStmtId });
+      await bankingApi.matchEntries(
+        selectedBookIds.length === 1
+          ? { book_entry_id: selectedBookIds[0], bank_entry_id: selectedStmtId }
+          : { book_entry_ids: selectedBookIds, bank_entry_id: selectedStmtId },
+      );
       alert('Entries reconciled successfully!');
       setSelectedBookId(null);
       setSelectedStmtId(null);
@@ -326,7 +336,7 @@ export default function BankingPage() {
         <div className="p-4 bg-primary/10 border border-primary/30 rounded-xl flex items-center justify-between">
           <div className="text-xs text-white flex items-center gap-2">
             <span className="font-semibold text-primary">Pair Matching Active:</span>
-            <span>Book Entry: {selectedBookId ? '✓ Selected' : 'Pending Selection'}</span>
+            <span>Book Entries: {selectedBookIds.length > 0 ? `✓ ${selectedBookIds.length} selected` : 'Pending Selection'}</span>
             <span>|</span>
             <span>Statement Entry: {selectedStmtId ? '✓ Selected' : 'Pending Selection'}</span>
           </div>
@@ -339,11 +349,11 @@ export default function BankingPage() {
             </button>
             <button 
               onClick={handleMatchSelected}
-              disabled={!selectedBookId || !selectedStmtId || matching}
+              disabled={selectedBookIds.length === 0 || !selectedStmtId || matching}
               className="px-4 py-1.5 bg-primary text-black font-semibold rounded text-xs hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1"
             >
               {matching && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Reconcile Selected Pair
+              {selectedBookIds.length > 1 ? `Reconcile ${selectedBookIds.length} entries against the line` : 'Reconcile Selected Pair'}
             </button>
           </div>
         </div>
@@ -399,7 +409,7 @@ export default function BankingPage() {
                 ) : unreconciled.length === 0 ? (
                   <tr><td colSpan={5} className="py-12 text-center text-textSecondary">All book transactions reconciled!</td></tr>
                 ) : unreconciled.map((row, i) => {
-                  const isSelected = selectedBookId === (row.id || String(i));
+                  const isSelected = selectedBookIds.includes(row.id || String(i));
                   const amt = Number(row.dr_amount || row.debit || (row.type === 'Dr' ? row.amount : row.cr_amount || row.credit || row.amount || 0));
                   const isDr = Number(row.dr_amount || row.debit) > 0 || row.type === 'Dr';
                   const rowId = row.id || String(i);
@@ -407,7 +417,8 @@ export default function BankingPage() {
                   return (
                     <tr 
                       key={i} 
-                      onClick={() => setSelectedBookId(isSelected ? null : rowId)}
+                      onClick={() => toggleBookId(rowId)}
+                      title="Click to select; click more rows to match several book entries against one statement line"
                       className={`cursor-pointer transition-colors ${isSelected ? 'bg-primary/20 border-l-4 border-primary' : 'hover:bg-white/5'}`}
                     >
                       <td className="py-3 text-white text-xs">{row.date || row.entry_date}</td>
