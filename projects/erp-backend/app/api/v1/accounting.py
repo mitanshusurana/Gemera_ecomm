@@ -41,6 +41,10 @@ class UpdateAccountRequest(BaseModel):
     group_code: Optional[str] = None
     normal_balance: Optional[str] = None  # 'D' or 'C'
     description: Optional[str] = None
+    # False hides an unused account from the chart and the pickers. An
+    # account with postings or an opening balance cannot be deactivated,
+    # and one that receives a posting later shows again regardless.
+    is_active: Optional[bool] = None
     reason: str = "Account updated"
 
 
@@ -107,7 +111,8 @@ async def get_trial_balance(
                   AND je.entry_type <> 'Opening'
                 GROUP BY jel.account_id
             ) t ON t.account_id = a.id
-            WHERE a.company_id = :cid AND a.is_active = TRUE
+            WHERE a.company_id = :cid
+              AND (a.is_active = TRUE OR t.account_id IS NOT NULL OR COALESCE(a.opening_balance, 0) <> 0)
             ORDER BY ag.name, a.code
         """),
         {"as_of_date": as_of_date, "cid": current_user["company_id"]},
@@ -379,6 +384,7 @@ async def list_account_groups(page: Page = Depends(paginate), db: AsyncSession =
 async def list_accounts(
     nature: Optional[str] = None,
     group_id: Optional[UUID] = None,
+    include_inactive: bool = False,
     page: Page = Depends(paginate),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -401,9 +407,13 @@ async def list_accounts(
             WHERE je.company_id = :cid AND je.status = 'Posted' AND je.entry_type <> 'Opening'
             GROUP BY jel.account_id
         ) t ON t.account_id = a.id
-        WHERE a.company_id = :cid AND a.is_active = TRUE
+        WHERE a.company_id = :cid
     """
     params = {"cid": current_user["company_id"]}
+    if not include_inactive:
+        # A deactivated account that still carries postings or an opening
+        # balance is part of the books and stays visible.
+        query += " AND (a.is_active = TRUE OR t.account_id IS NOT NULL OR COALESCE(a.opening_balance, 0) <> 0)"
     if nature:
         query += " AND ag.nature = :nature"
         params["nature"] = nature
@@ -542,6 +552,28 @@ async def update_account(
                 raise HTTPException(status_code=400, detail="Account group not found.")
         if group_id:
             sets.append("group_id = CAST(:gid AS UUID)"); params["gid"] = str(group_id)
+        if payload.is_active is not None:
+            if not payload.is_active:
+                used = await db.execute(
+                    text("""
+                        SELECT a.code, COALESCE(a.opening_balance, 0) AS ob,
+                               EXISTS (SELECT 1 FROM caratloop.journal_entry_lines jel WHERE jel.account_id = a.id) AS has_postings,
+                               EXISTS (SELECT 1 FROM caratloop.parties p WHERE p.account_id = a.id) AS has_party,
+                               EXISTS (SELECT 1 FROM caratloop.materials m WHERE m.stock_account_id = a.id OR m.purchase_account_id = a.id OR m.sales_account_id = a.id) AS has_item
+                        FROM caratloop.accounts a WHERE a.id = :id AND a.company_id = :cid
+                    """),
+                    {"id": str(account_id), "cid": company_id},
+                )
+                u = used.mappings().first()
+                if u is None:
+                    raise HTTPException(status_code=404, detail="Account not found")
+                if u["has_postings"] or to_decimal(u["ob"]) != 0:
+                    raise HTTPException(status_code=409, detail=f"{u['code']} has postings or an opening balance; it stays in the books. Rename or move it instead.")
+                if u["has_party"]:
+                    raise HTTPException(status_code=409, detail=f"{u['code']} is a party's ledger account; deactivate the party instead.")
+                if u["has_item"]:
+                    raise HTTPException(status_code=409, detail=f"{u['code']} is linked to a stock or service item; change the item's ledger first.")
+            sets.append("is_active = :active"); params["active"] = bool(payload.is_active)
         if not sets:
             raise HTTPException(status_code=422, detail="Nothing to update.")
         res = await db.execute(

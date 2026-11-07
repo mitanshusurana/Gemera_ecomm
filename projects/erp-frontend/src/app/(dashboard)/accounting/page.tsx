@@ -26,6 +26,9 @@ export default function AccountingPage() {
   const [jeData, setJeData] = useState<any[]>([]);
   const [cashbook, setCashbook] = useState<any>(null);
   const [coaData, setCoaData] = useState<any[]>([]);
+  // Chart of accounts: deactivated accounts (unused seeded ledgers) are hidden
+  // unless asked for; one with postings is always shown by the API.
+  const [showInactive, setShowInactive] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Default range: the company's active fiscal year, not the current month.
@@ -107,7 +110,7 @@ export default function AccountingPage() {
         const res = await apiClient.get('/books/cashbook', { params: { from_date: range.from, to_date: range.to } });
         setCashbook(res.data);
       } else if (activeTab === 'Chart of Accounts & Opening Balances') {
-        const res = await apiClient.get('/accounting/accounts', { params: { limit: 1000 } });
+        const res = await apiClient.get('/accounting/accounts', { params: { limit: 1000, include_inactive: showInactive } });
         setCoaData(res.data?.accounts || []);
       } else if (activeTab === 'Reconcile') {
         setReconLoading(true);
@@ -121,7 +124,7 @@ export default function AccountingPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, asOfDate, range.from, range.to]);
+  }, [activeTab, asOfDate, range.from, range.to, showInactive]);
 
   useEffect(() => {
     if (!rangeReady && (activeTab === 'Journal Entries' || activeTab === 'Cash Book')) return;
@@ -228,7 +231,9 @@ export default function AccountingPage() {
 
   const coaColumns = [
     { header: 'Account Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-primary font-bold">{item.code}</span> },
-    { header: 'Account Name', accessorKey: 'name', cell: (item: any) => <span className="text-white font-medium">{item.name}</span> },
+    { header: 'Account Name', accessorKey: 'name', cell: (item: any) => (
+      <span className="text-white font-medium">{item.name}{item.is_active === false && <Badge variant="default" className="ml-2">Inactive</Badge>}</span>
+    ) },
     { header: 'Account Group', accessorKey: 'group_name', cell: (item: any) => item.group_name },
     { header: 'Nature', accessorKey: 'nature', cell: (item: any) => (
       <Badge variant={item.nature === 'Assets' ? 'success' : item.nature === 'Liabilities' ? 'warning' : item.nature === 'Income' ? 'info' : 'danger'}>
@@ -267,6 +272,22 @@ export default function AccountingPage() {
         className="ml-1 px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs transition-colors"
       >
         Edit
+      </button>
+      <button
+        onClick={async () => {
+          const deactivating = item.is_active !== false;
+          if (deactivating && !confirm(`Hide ${item.code} ${item.name} from the chart and the pickers? It can be shown again any time, and comes back on its own if anything is posted to it.`)) return;
+          try {
+            await apiClient.patch(`/accounting/accounts/${item.id}`, { is_active: !deactivating, reason: deactivating ? 'Account deactivated (unused)' : 'Account reactivated' });
+            fetchData();
+          } catch (err: any) {
+            alert(err.response?.data?.detail || 'Could not change the account');
+          }
+        }}
+        title={item.is_active === false ? 'Show this account again' : 'Hide an unused account; refused if it has postings, an opening balance, a party or an item'}
+        className="ml-1 px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs transition-colors"
+      >
+        {item.is_active === false ? 'Reactivate' : 'Deactivate'}
       </button>
       </>
     )},
@@ -595,7 +616,13 @@ export default function AccountingPage() {
 
         {activeTab === 'Chart of Accounts & Opening Balances' && (
           <div className="space-y-4">
-            <p className="text-xs text-textSecondary">Complete Chart of Accounts with opening balances (on their own side) and current balances. Click a balance to open the ledger.</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-textSecondary">Complete Chart of Accounts with opening balances (on their own side) and current balances. Click a balance to open the ledger.</p>
+              <label className="flex items-center gap-2 text-xs text-textSecondary cursor-pointer">
+                <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="rounded border-border bg-surface text-primary w-3.5 h-3.5" />
+                Show inactive accounts
+              </label>
+            </div>
             {loading ? (
               <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
             ) : (
