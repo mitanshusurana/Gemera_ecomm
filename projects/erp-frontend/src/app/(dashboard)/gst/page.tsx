@@ -40,11 +40,29 @@ export default function GSTPage() {
   const [billSupplierId, setBillSupplierId] = useState('');
   const [billDescription, setBillDescription] = useState('');
   const [billBusy, setBillBusy] = useState(false);
+  // Party matched by the row's GSTIN ('none' when nothing matches), and a
+  // signal that opens the picker's inline create form prefilled from the row.
+  const [billSupplierMatch, setBillSupplierMatch] = useState<any | 'none' | null>(null);
+  const [openPartyCreate, setOpenPartyCreate] = useState(0);
   const openCreateBill = (row: any) => {
     setCreateBillRow(row);
     setBillItemId('');
     setBillSupplierId('');
     setBillDescription('');
+    setBillSupplierMatch(null);
+    const gstin = String(row.supplier_gstin || '').toUpperCase();
+    apiClient.get('/parties', { params: { q: gstin, limit: 10 } })
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        const hit = list.find((x: any) => String(x.gstin || '').toUpperCase() === gstin);
+        if (hit) {
+          setBillSupplierMatch(hit);
+          setBillSupplierId(hit.id);
+        } else {
+          setBillSupplierMatch('none');
+        }
+      })
+      .catch(() => setBillSupplierMatch('none'));
     if (serviceItems.length === 0) {
       apiClient.get('/inventory/items', { params: { category: 'Service', limit: 500 } })
         .then((res) => setServiceItems(Array.isArray(res.data) ? res.data : res.data?.materials || res.data?.items || []))
@@ -53,6 +71,7 @@ export default function GSTPage() {
   };
   const submitCreateBill = async () => {
     if (!createBillRow || !billItemId) { setGstr2bMessage({ kind: 'err', text: 'Choose the service/expense item the bill is for.' }); return; }
+    if (!billSupplierId) { setGstr2bMessage({ kind: 'err', text: 'Select or create the supplier first.' }); return; }
     setBillBusy(true);
     try {
       const res = await gstr2bApi.createBill(createBillRow.id, { material_id: billItemId, supplier_id: billSupplierId || undefined, description: billDescription || undefined });
@@ -444,8 +463,28 @@ export default function GSTPage() {
                     <p className="text-[11px] text-textSecondary mt-1">No item for this expense yet? Inventory → New Item → category “Service / expense”, with its expense ledger.</p>
                   </div>
                   <div>
-                    <label className="block text-xs text-textSecondary mb-1">Supplier (optional: by default the party with this GSTIN, created if missing)</label>
-                    <PartySelect value={billSupplierId} onChange={(id) => setBillSupplierId(id)} partyType="Supplier" />
+                    <label className="block text-xs text-textSecondary mb-1">Supplier</label>
+                    {billSupplierMatch === null ? (
+                      <p className="text-xs text-textSecondary">Looking up the party for {createBillRow.supplier_gstin}…</p>
+                    ) : billSupplierMatch === 'none' && !billSupplierId ? (
+                      <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs space-y-2">
+                        <p className="text-warning">No party in the books has GSTIN {createBillRow.supplier_gstin}. Create it from the portal's details, then post the bill.</p>
+                        <button type="button" onClick={() => setOpenPartyCreate((n) => n + 1)} className="px-3 py-1.5 rounded-md bg-primary text-black font-semibold">
+                          Create party “{createBillRow.supplier_name || createBillRow.supplier_gstin}”
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-success mb-1">Matched by GSTIN: {(billSupplierMatch?.trade_name || billSupplierMatch?.name) || 'selected party'}</p>
+                    )}
+                    <div className={billSupplierMatch === null ? 'hidden' : 'mt-2'}>
+                      <PartySelect
+                        value={billSupplierId}
+                        onChange={(id) => setBillSupplierId(id)}
+                        partyType="Supplier"
+                        createDefaults={{ gstin: createBillRow.supplier_gstin, tradeName: createBillRow.supplier_name || '', stateCode: String(createBillRow.supplier_gstin || '').slice(0, 2) }}
+                        openCreateSignal={openPartyCreate}
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs text-textSecondary mb-1">Description</label>

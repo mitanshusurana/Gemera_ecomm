@@ -34,6 +34,10 @@ interface PartySelectProps {
   placeholder?: string;
   /** Hide the inline "create" offer (defaults to shown). */
   allowCreate?: boolean;
+  /** Values to prefill in the inline create form (e.g. a GSTIN and name from a GSTR-2B row). */
+  createDefaults?: { gstin?: string; tradeName?: string; legalName?: string; stateCode?: string };
+  /** Bump this number to open the inline create form programmatically. */
+  openCreateSignal?: number;
 }
 
 function toParty(p: any): Party {
@@ -58,7 +62,7 @@ const STATES: Array<[string, string]> = [
   ['02', 'Himachal Pradesh'], ['01', 'Jammu & Kashmir'], ['18', 'Assam'], ['30', 'Goa'],
 ];
 
-export default function PartySelect({ value, onChange, partyType, types, placeholder = 'Search party...', allowCreate = true }: PartySelectProps) {
+export default function PartySelect({ value, onChange, partyType, types, placeholder = 'Search party...', allowCreate = true, createDefaults, openCreateSignal }: PartySelectProps) {
   const typeFilter = types && types.length ? types.join(',') : undefined;
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -156,14 +160,22 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
 
   const startCreate = () => {
     setNewType(partyType || 'Customer');
-    setNewTrade(query.trim());
-    setNewLegal('');
-    setNewGstin('');
-    setNewState('08');
+    setNewTrade(createDefaults?.tradeName || query.trim());
+    setNewLegal(createDefaults?.legalName || '');
+    setNewGstin((createDefaults?.gstin || '').toUpperCase());
+    setNewState(createDefaults?.stateCode || (createDefaults?.gstin ? createDefaults.gstin.slice(0, 2) : '08'));
     setNewPhone('');
     setCreateError(null);
     setCreating(true);
+    setIsOpen(true);
   };
+
+  // A parent (e.g. the GSTR-2B "create bill" modal) can open the create form
+  // with the supplier's GSTIN and name already filled in.
+  useEffect(() => {
+    if (openCreateSignal && openCreateSignal > 0 && !selectedParty) startCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openCreateSignal]);
 
   // GSTIN lookup fills the legal name, trade name and state from the GST portal.
   const lookupGstin = async () => {
