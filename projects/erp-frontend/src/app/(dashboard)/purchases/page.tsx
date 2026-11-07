@@ -6,7 +6,7 @@ import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
 import { formatCurrency } from '@/lib/utils';
-import { apiClient } from '@/lib/api';
+import { apiClient, gstr2bApi } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
 import { useCompany, stateLabel, addressLine } from '@/lib/company';
 
@@ -94,6 +94,9 @@ export default function PurchasesPage() {
   const [isRcm, setIsRcm] = useState(false);
   const [placeOfSupply, setPlaceOfSupply] = useState('08');
   const [attachmentUrl, setAttachmentUrl] = useState('');
+  // When opened from GST → GSTR-2B → Create bill: the row being booked, so the
+  // form is prefilled and the period is reconciled right after posting.
+  const [from2b, setFrom2b] = useState<any | null>(null);
   const [items, setItems] = useState<LineItem[]>([
     { id: 1, material_id: '', description: '', hsn_code: '71131910', unit: 'gm', gst_rate: 0, quantity: 1, gross_weight: 0, net_weight: 0, purity: 1.0, rate: 0, making_charges: 0 }
   ]);
@@ -200,6 +203,25 @@ export default function PurchasesPage() {
 
     return () => { active = false; };
   }, [supplierId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const id = new URLSearchParams(window.location.search).get('from2b');
+    if (!id) return;
+    gstr2bApi.getEntry(Number(id)).then((res) => {
+      const e = res.data;
+      resetForm();
+      setFrom2b(e);
+      if (e.party_id) setSupplierId(e.party_id);
+      setSupplierInvoiceNo(e.invoice_no || '');
+      if (e.invoice_date) { setVendorInvoiceDate(e.invoice_date); setInvoiceDate(e.invoice_date); }
+      setPlaceOfSupply(e.place_of_supply || String(e.supplier_gstin || '').slice(0, 2) || '08');
+      setIsRcm(!!e.is_reverse_charge);
+      setItems([{ id: 1, material_id: '', description: '', hsn_code: '', unit: 'pcs', gst_rate: Number(e.implied_gst_rate || 0), quantity: 1, gross_weight: 0, net_weight: 0, purity: 1.0, rate: Number(e.taxable || 0), making_charges: 0 }]);
+      setIsDrawerOpen(true);
+    }).catch((err) => alert(err.response?.data?.detail || 'Could not load the GSTR-2B row'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openNewDrawer = () => {
     resetForm();
@@ -419,7 +441,18 @@ export default function PurchasesPage() {
         alert(res.data?.message || `Bill reversed and re-posted as ${res.data?.bill_no || 'a new number'}.`);
       } else {
         await apiClient.post('/purchases/invoices', payload);
-        alert('Purchase invoice recorded successfully!');
+        if (from2b) {
+          try {
+            const rec = await gstr2bApi.reconcile(String(from2b.return_period || '').replace(/^(\d{4})(\d{2})$/, '$1-$2'));
+            alert(`Purchase invoice recorded and GSTR-2B ${from2b.return_period} reconciled: ${rec.data?.matched ?? '?'} matched.`);
+          } catch {
+            alert('Purchase invoice recorded. Run Reconcile on the GSTR-2B tab to pair it with the portal row.');
+          }
+          setFrom2b(null);
+          window.history.replaceState(null, '', '/purchases');
+        } else {
+          alert('Purchase invoice recorded successfully!');
+        }
       }
 
       setIsDrawerOpen(false);
@@ -624,10 +657,18 @@ export default function PurchasesPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {from2b && (
+                <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs text-white">
+                  From GSTR-2B {from2b.return_period}: {from2b.supplier_name || from2b.supplier_gstin}, invoice {from2b.invoice_no} dated {from2b.invoice_date}, taxable {formatCurrency(Number(from2b.taxable || 0))} at {from2b.implied_gst_rate}% GST.
+                  {!from2b.party_id && <span className="block mt-1 text-warning">No party has this GSTIN yet: use “Create new party” in the supplier box below (details prefilled).</span>}
+                  <span className="block mt-1 text-textSecondary">Pick the item(s) for the line; weights and rate as on the supplier's invoice. After posting, the period is reconciled automatically.</span>
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-xs text-textSecondary font-medium">Select Supplier (Sundry Creditors) *</label>
                 <PartySelect 
                   partyType="Supplier" 
+                  createDefaults={from2b ? { gstin: from2b.supplier_gstin, tradeName: from2b.supplier_name || '', stateCode: String(from2b.supplier_gstin || '').slice(0, 2) } : undefined}
                   value={supplierId}
                   onChange={(id, partyObj) => {
                     setSupplierId(id);

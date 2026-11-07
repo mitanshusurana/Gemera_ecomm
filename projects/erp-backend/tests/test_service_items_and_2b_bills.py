@@ -47,3 +47,10 @@ def test_bill_from_2b_goes_through_the_purchase_posting_and_pairs_the_rows():
     assert "SET gstr2b_matched = TRUE" in body
     assert "already paired with a bill in the books" in body
     assert "FOR UPDATE" in body
+
+
+def test_a_2b_row_can_be_read_for_prefilling_the_purchase_form():
+    assert '@router.get("/gstr2b/entries/{entry_id}")' in G2B
+    body = G2B.split('@router.get("/gstr2b/entries/{entry_id}")')[1].split("@router.")[0]
+    assert "upper(gstin) = upper(g.supplier_gstin)" in body      # party matched by GSTIN
+    assert 'out["implied_gst_rate"]' in body

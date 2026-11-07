@@ -301,6 +301,35 @@ def _bucket(rows: list[dict], *, taxable_key="taxable", igst_key="igst", cgst_ke
     }
 
 
+@router.get("/gstr2b/entries/{entry_id}")
+async def get_gstr2b_entry(entry_id: int, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """One imported 2B row, plus the party in the books with its GSTIN (if any)
+    and the GST rate its amounts imply: what the purchase form prefills from."""
+    company_id = current_user["company_id"]
+    res = await db.execute(
+        text("""
+            SELECT g.id, g.return_period, g.supplier_gstin, g.supplier_name, g.invoice_no, g.invoice_date,
+                   g.invoice_value, g.place_of_supply, g.is_reverse_charge, g.itc_available,
+                   g.taxable, g.igst, g.cgst, g.sgst, g.cess, g.match_status, g.matched_itc_id,
+                   p.id AS party_id, COALESCE(NULLIF(p.trade_name, ''), p.name) AS party_name
+            FROM caratloop.gstr2b_entries g
+            LEFT JOIN LATERAL (
+                SELECT id, name, trade_name FROM caratloop.parties
+                WHERE company_id = g.company_id AND upper(gstin) = upper(g.supplier_gstin)
+                ORDER BY created_at LIMIT 1
+            ) p ON TRUE
+            WHERE g.id = :id AND g.company_id = :cid
+        """),
+        {"id": entry_id, "cid": company_id},
+    )
+    row = res.mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="GSTR-2B row not found")
+    out = dict(row)
+    out["implied_gst_rate"] = str(rate_from_2b(row["taxable"], row["igst"], row["cgst"], row["sgst"]))
+    return out
+
+
 @router.post("/gstr2b/entries/{entry_id}/create-bill", dependencies=[Depends(require(*CAN_POST))])
 async def create_bill_from_entry(
     entry_id: int,
