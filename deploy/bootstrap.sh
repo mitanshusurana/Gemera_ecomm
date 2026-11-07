@@ -146,9 +146,46 @@ command -v rsync >/dev/null || sudo dnf -y -q install rsync >/dev/null 2>&1 || t
 [[ -f "$HOME/.ssh/backup_peer" ]] || ssh-keygen -q -t ed25519 -N "" -C "caratloop-backup-$(hostname)" -f "$HOME/.ssh/backup_peer"
 [[ -f "$ROOT_DIR/backup.env" ]] || printf '# BACKUP_PEER=opc@<other-vm-ip>\n# KEEP_DAYS=14\n' > "$ROOT_DIR/backup.env"
 # crond runs on the VM clock (UTC); 21:00 UTC is 02:30 IST. The earlier "30 2" fired at 08:00 IST.
-cron_line="0 21 * * * . $ROOT_DIR/backup.env 2>/dev/null; TZ=Asia/Kolkata bash $here/backup.sh >> $ROOT_DIR/backup.cron.log 2>&1"
+cron_line="0 21 * * * . $ROOT_DIR/backup.env 2>/dev/null; . $ROOT_DIR/alerts.env 2>/dev/null; export BACKUP_PEER KEEP_DAYS BACKUP_PASSPHRASE SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM ALERT_TO; TZ=Asia/Kolkata bash $here/backup.sh >> $ROOT_DIR/backup.cron.log 2>&1"
 ( crontab -l 2>/dev/null | grep -v 'deploy/backup.sh' || true; echo "$cron_line" ) | crontab -
 echo "   cron: $(crontab -l | grep -c 'deploy/backup.sh') entry; mirror key (add to the other VM's authorized_keys):"
 echo "   $(cat "$HOME/.ssh/backup_peer.pub")"
+
+say "Health alerts (every 5 min, see deploy/healthwatch.py)"
+chmod +x "$here/healthwatch.py" 2>/dev/null || true
+# alerts.env: SMTP + recipient. On the core VM it is derived from the store
+# API's env once; the edge VM copies it from the core VM over the backup key,
+# so both machines can mail an alert about the other.
+if [[ ! -f "$ROOT_DIR/alerts.env" ]]; then
+    if [[ "$role" == core && -f "$stack/.env.backend" ]]; then
+        python3 - "$stack/.env.backend" "$ROOT_DIR/alerts.env" <<'PY'
+import sys, re
+src, dst = sys.argv[1:]
+kv = {}
+for line in open(src, encoding="utf-8", errors="replace"):
+    m = re.match(r"\s*([A-Z_]+)\s*=\s*(.*)$", line)
+    if m: kv[m.group(1)] = m.group(2).strip()
+out = {
+    "ALERT_TO": kv.get("ADMIN_EMAIL", ""),
+    "SMTP_HOST": kv.get("MAIL_HOST", ""), "SMTP_PORT": kv.get("MAIL_PORT", "587"),
+    "SMTP_USER": kv.get("MAIL_USERNAME", ""), "SMTP_PASS": kv.get("MAIL_PASSWORD", ""),
+    "SMTP_FROM": kv.get("MAIL_FROM", kv.get("MAIL_USERNAME", "")),
+    "BACKUP_PASSPHRASE": "",
+}
+open(dst, "w", encoding="utf-8").write("".join(f"{k}={v}\n" for k, v in out.items()))
+PY
+        chmod 600 "$ROOT_DIR/alerts.env"
+        echo "   alerts.env derived from .env.backend (set BACKUP_PASSPHRASE to e-mail encrypted backup copies)"
+    elif [[ -n "${BACKUP_PEER:-}" && -f "$HOME/.ssh/backup_peer" ]]; then
+        scp -q -i "$HOME/.ssh/backup_peer" -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$BACKUP_PEER:caratloop/alerts.env" "$ROOT_DIR/alerts.env" \
+            && chmod 600 "$ROOT_DIR/alerts.env" && echo "   alerts.env copied from $BACKUP_PEER" \
+            || echo "   alerts.env not copied; create it by hand (see deploy/healthwatch.py)"
+    else
+        echo "   alerts.env missing: create it by hand (see deploy/healthwatch.py)"
+    fi
+fi
+hw_line="*/5 * * * * python3 $here/healthwatch.py >> $ROOT_DIR/healthwatch.cron.log 2>&1"
+( crontab -l 2>/dev/null | grep -v 'deploy/healthwatch.py' || true; echo "$hw_line" ) | crontab -
+echo "   cron: $(crontab -l | grep -c 'deploy/healthwatch.py') healthwatch entry"
 
 say "Done. Next: edit the env files, then  docker compose pull && docker compose up -d  in $stack"

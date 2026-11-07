@@ -55,6 +55,14 @@ deploy/deploy.sh core opc@129.159.18.63 ~/.ssh/core.key
 deploy/deploy.sh edge opc@68.233.96.36  ~/.ssh/edge.key
 ```
 
+## Health alerts
+
+`bootstrap.sh` installs `deploy/healthwatch.py` as a cron job every five minutes on each VM. It fetches the four
+public URLs and e-mails `ALERT_TO` (from `~/caratloop/alerts.env`) after two consecutive failures, and again on
+recovery. Both VMs run it, so a frozen machine is reported by the other one. On the core VM `alerts.env` is derived
+from `.env.backend` (the store API's SMTP settings and admin e-mail); the edge VM copies it from the core VM over the
+backup key.
+
 ## Backups
 
 `bootstrap.sh` installs `deploy/backup.sh` as a cron job at 02:30 IST on each VM. It writes a compressed
@@ -62,7 +70,9 @@ deploy/deploy.sh edge opc@68.233.96.36  ~/.ssh/edge.key
 as `env-<stamp>.tgz` beside them (the secrets live nowhere else), keeps 14 days, and mirrors the directory to
 the other VM when `BACKUP_PEER=opc@<other-ip>` is set in `~/caratloop/backup.env`. For the mirror, bootstrap
 generates `~/.ssh/backup_peer` and prints its public key; add that key to the other VM's
-`~/.ssh/authorized_keys`. Logs: `~/caratloop/backup.log` and `backup.cron.log`.
+`~/.ssh/authorized_keys`. With `BACKUP_PASSPHRASE` set in `alerts.env`, the night's dumps are also AES-256 encrypted and e-mailed to
+`ALERT_TO`: an off-site copy that survives losing both VMs (decrypt with `openssl enc -d -aes-256-cbc -pbkdf2`).
+Logs: `~/caratloop/backup.log` and `backup.cron.log`.
 
 Restore a dump into the running container:
 
