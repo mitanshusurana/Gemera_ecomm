@@ -8,8 +8,6 @@ import { formatCurrency } from '@/lib/utils';
 import { Download, FileJson, FileSpreadsheet, Loader2, Calendar, ShieldCheck, AlertCircle, FileText, FileUp, GitCompareArrows } from 'lucide-react';
 import { apiClient, gstr2bApi } from '@/lib/api';
 import { previousPeriod } from '@/lib/fiscal';
-import Modal from '@/components/ui/Modal';
-import PartySelect from '@/components/ui/PartySelect';
 
 const BUCKETS: { key: string; title: string; note: string; variant: 'success' | 'warning' | 'danger' | 'info' }[] = [
   { key: 'Matched', title: 'Matched', note: 'Supplier filed; the credit is claimable under s.16(2)(aa).', variant: 'success' },
