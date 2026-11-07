@@ -177,3 +177,33 @@ def test_gstr3b_json_tolerates_empty_period():
     doc = build_gstr3b_json("2026-09", None, None, None)
     assert doc["sup_details"]["isup_rev"]["txval"] == 0.0
     assert all(v == 0.0 for v in doc["itc_elg"]["itc_avl"][0].values() if isinstance(v, float))
+
+
+
+def test_portal_version_1_file_with_flat_invoice_totals_and_dt_dates():
+    """The GST portal's GSTR-2B (version 1.0) puts txval/igst/cgst/sgst and the
+    date ("dt") directly on each invoice, with no items[]. The first real
+    upload imported two bills as zero with no date."""
+    doc = {
+        "data": {
+            "rtnprd": "032026", "gstin": "08AAAAA0000A1Z5", "version": "1.0",
+            "docdata": {"b2b": [{
+                "ctin": "08BBBBB1111B1Z6", "trdnm": "EXAMPLE ENTERPRISES", "supprd": "032026", "supfildt": "13-04-2026",
+                "inv": [
+                    {"inum": "288", "dt": "05-03-2026", "val": 8030, "txval": 8010, "cgst": 10.01, "sgst": 10.01,
+                     "igst": 0, "cess": 0, "pos": "08", "rev": "N", "itcavl": "Y", "typ": "R", "imsStatus": "N"},
+                    {"inum": "293", "dt": "12-03-2026", "val": 8270, "txval": 8249.5, "cgst": 10.31, "sgst": 10.31,
+                     "igst": 0, "cess": 0, "pos": "08", "rev": "N", "itcavl": "Y", "typ": "R"},
+                ],
+            }]},
+        },
+        "chksum": "x",
+    }
+    period, invoices = parse_gstr2b(doc)
+    assert period == "2026-03"
+    assert [i.invoice_no for i in invoices] == ["288", "293"]
+    first, second = invoices
+    assert first.invoice_date == date(2026, 3, 5)
+    assert first.taxable == Decimal("8010.00") and first.cgst == Decimal("10.01") and first.sgst == Decimal("10.01")
+    assert first.invoice_value == Decimal("8030.00") and first.place_of_supply == "08" and first.itc_available
+    assert second.invoice_date == date(2026, 3, 12) and second.taxable == Decimal("8249.50")

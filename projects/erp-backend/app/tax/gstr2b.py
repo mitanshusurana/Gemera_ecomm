@@ -131,6 +131,15 @@ def parse_gstr2b(doc: Any) -> tuple[Optional[str], list[B2BInvoice]]:
                 cgst += to_decimal(det.get("cgst", det.get("camt")))
                 sgst += to_decimal(det.get("sgst", det.get("samt")))
                 cess += to_decimal(det.get("cess", det.get("csamt")))
+            if not items:
+                # The portal's GSTR-2B "version 1.0" file carries one set of
+                # totals per invoice (txval, igst, cgst, sgst, cess) with no
+                # items[]; reading only items[] imported every bill as zero.
+                taxable = to_decimal(inv.get("txval"))
+                igst = to_decimal(inv.get("igst", inv.get("iamt")))
+                cgst = to_decimal(inv.get("cgst", inv.get("camt")))
+                sgst = to_decimal(inv.get("sgst", inv.get("samt")))
+                cess = to_decimal(inv.get("cess", inv.get("csamt")))
             inum = str(inv.get("inum") or "").strip()
             if not gstin or not inum:
                 continue
@@ -138,7 +147,8 @@ def parse_gstr2b(doc: Any) -> tuple[Optional[str], list[B2BInvoice]]:
                 supplier_gstin=gstin,
                 supplier_name=str(name)[:200] if name else None,
                 invoice_no=inum[:50],
-                invoice_date=_parse_date(inv.get("idt")),
+                # "idt" in the older files, "dt" in version 1.0
+                invoice_date=_parse_date(inv.get("idt") or inv.get("dt")),
                 invoice_value=round_money(inv.get("val")),
                 place_of_supply=(str(inv.get("pos")).zfill(2) if inv.get("pos") not in (None, "") else None),
                 reverse_charge=_yes(inv.get("rev")),
