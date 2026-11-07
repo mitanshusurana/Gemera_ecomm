@@ -43,7 +43,7 @@ def test_bill_from_2b_goes_through_the_purchase_posting_and_pairs_the_rows():
     assert '@router.post("/gstr2b/entries/{entry_id}/create-bill"' in G2B
     body = G2B.split('@router.post("/gstr2b/entries/{entry_id}/create-bill"')[1].split("@router.")[0]
     assert "_post_purchase(" in body
-    assert "LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')" in body
+    assert "next_bill_no(db, company_id, fy" in body     # the gapless PI/ series, same as the purchase screen
     assert "SET gstr2b_matched = TRUE" in body
     assert "already paired with a bill in the books" in body
     assert "FOR UPDATE" in body

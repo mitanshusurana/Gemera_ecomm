@@ -184,7 +184,7 @@ _LIVE_ITC = """
 """
 
 _ITC_COLUMNS = """
-    SELECT ir.id, ir.return_period, ir.invoice_date, ir.vendor_id, p.name AS vendor_name,
+    SELECT ir.id, ir.return_period, ir.invoice_date, ir.vendor_id, ir.invoice_id, p.name AS vendor_name,
            COALESCE(NULLIF(ir.vendor_gstin, ''), p.gstin) AS vendor_gstin,
            COALESCE(pi.vendor_inv_no, ir.vendor_invoice_no) AS invoice_no,
            pi.bill_no, pi.subtotal_value AS taxable,
@@ -347,7 +347,7 @@ async def create_bill_from_entry(
     2B row, so the next reconcile run sees a match instead of a gap.
     """
     from app.api.v1.purchases import (  # local: purchases imports nothing from here
-        CreatePurchaseInvoiceRequest, PurchaseLineRequest, _load_supplier, _post_purchase,
+        CreatePurchaseInvoiceRequest, PurchaseLineRequest, _load_supplier, _post_purchase, next_bill_no,
     )
     from app.api.v1.parties import CreatePartyRequest, create_party
     from app.core.periods import assert_period_open
@@ -427,11 +427,7 @@ async def create_bill_from_entry(
         supplier = await _load_supplier(db, company_id, bill.supplier_id)
         if bill.place_of_supply is None:
             bill.place_of_supply = supplier.get("state_code") or (entry["supplier_gstin"] or "")[:2] or None
-        no_res = await db.execute(
-            text("SELECT 'PI/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
-            {"fy": fy["year_label"]},
-        )
-        bill_no = no_res.scalar()
+        bill_no = await next_bill_no(db, company_id, fy["year_label"])
         posted = await _post_purchase(db, company_id=company_id, user_id=user_id, fy=fy, payload=bill, supplier=supplier, bill_no=bill_no)
         invoice_id = posted["invoice_id"]
 
@@ -505,7 +501,8 @@ async def gstr2b_summary(
         b = books.get(int(r["matched_itc_id"])) if r.get("matched_itc_id") is not None else None
         out = dict(r)
         out["books"] = (
-            {"bill_no": b["bill_no"], "invoice_no": b["invoice_no"], "taxable": b["taxable"],
+            {"bill_no": b["bill_no"], "invoice_id": str(b["invoice_id"]) if b.get("invoice_id") else None,
+             "invoice_no": b["invoice_no"], "taxable": b["taxable"],
              "igst": b["igst_credit"], "cgst": b["cgst_credit"], "sgst": b["sgst_credit"], "vendor_name": b["vendor_name"]}
             if b else None
         )

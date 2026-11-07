@@ -32,8 +32,11 @@ SEQ = "NEXTVAL('caratloop.journal_entry_seq')"
 
 # Prefixes that appear as journal_entries.entry_no across the application.
 # 'CN/' is excluded: it is also the credit-note document number
-# (gst_output_tax_register.cn_no), which is not a journal number.
-JOURNAL_PREFIXES = ("JV/", "PUR/", "PI/", "REV/", "REC/", "PAY/")
+# (gst_output_tax_register.cn_no), which is not a journal number. 'PI/' is
+# the purchase bill's document number (purchase_invoices.bill_no); its
+# journal is numbered PUR/ from the sequence, and the bill series is gapless
+# by design (purchases.next_bill_no), so it is not a journal number either.
+JOURNAL_PREFIXES = ("JV/", "PUR/", "REV/", "REC/", "PAY/")
 
 # A SQL literal that starts an entry number, e.g.  SELECT 'JV/' || :fy || ...
 SQL_PREFIX_RE = re.compile(

@@ -194,7 +194,12 @@ def test_the_journal_legs_name_the_seeded_codes():
     sales = io.open(ROOT / "app" / "api" / "v1" / "sales.py", encoding="utf-8").read()
     purchases = io.open(ROOT / "app" / "api" / "v1" / "purchases.py", encoding="utf-8").read()
     assert '"TCS-206C"' in sales
-    assert "a.code = 'TDS-194Q'" in purchases
+    # The payable account is TDS-<section>: TDS-194Q (seeded) for goods, and
+    # TDS-194I / 194J / 194C / 194H created on first use for a bill posted
+    # with a tds_override.
+    assert 'tds_code = f"TDS-{tds.section}"' in purchases
+    assert "TDS Payable s.{tds.section}" in purchases
+    assert "g.code = 'DUTIES_TAXES'" in purchases
     # The supplier is credited net of the TDS. Create and amend share one
     # posting routine (_post_purchase) since the amend path became
     # reverse-and-repost, so the leg appears once.
