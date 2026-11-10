@@ -51,6 +51,7 @@ from app.core.company import seller_state_code as company_seller_state
 from app.core.tenancy import resolve_default_uom, resolve_fiscal_year, resolve_stock_location
 from app.tax.gstin import is_gstin_shaped
 from app.core.periods import assert_period_open
+from app.core.terms import due_date_for
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,10 @@ class CreateSalesInvoiceRequest(BaseModel):
     place_of_supply: Optional[str] = None
     lines: List[InvoiceLineRequest]
     payment_terms: Optional[str] = "Immediate"
+    # 'Immediate', 'Net 7/15/30/45/60' or 'Custom'. The due date follows from
+    # the terms unless one is sent (Custom); it drives the overdue split on
+    # the dashboard and the reminders.
+    due_date: Optional[date] = None
     narration: Optional[str] = None
     reason: str = "Sales invoice creation"
     # Set only by the e-commerce bridge: the storefront has already issued the
@@ -282,6 +287,10 @@ async def create_sales_invoice(
     # [MCA-11g] Set audit context
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
     await assert_period_open(db, company_id, payload.invoice_date, what="This sales invoice")
+    try:
+        invoice_due_date = due_date_for(payload.invoice_date, payload.payment_terms, payload.due_date)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail="The due date cannot be before the invoice date.") from e
 
     # ─── Compute line-level GST ───────────────────────────────────────────────
     total_material = Decimal("0")
@@ -532,7 +541,7 @@ async def create_sales_invoice(
                     cgst_material, sgst_material, cgst_making, sgst_making,
                     total_gst, grand_total,
                     tcs_section, tcs_rate, tcs_base, tcs_amount,
-                    payment_terms,
+                    payment_terms, due_date,
                     narration, status, created_by
                 ) VALUES (
                     :cid, :fyid, :inv_no, :inv_date, :inv_type,
@@ -547,7 +556,7 @@ async def create_sales_invoice(
                     :cgst_mat, :sgst_mat, :cgst_mak, :sgst_mak,
                     :total_gst, :grand_total,
                     :tcs_section, :tcs_rate, :tcs_base, :tcs_amount,
-                    :payment_terms,
+                    :payment_terms, :due_date,
                     :narration, 'Posted', :created_by
                 )
                 RETURNING id
@@ -589,6 +598,7 @@ async def create_sales_invoice(
                 "tcs_base": tcs.base if tcs else None,
                 "tcs_amount": tcs_amount,
                 "payment_terms": payload.payment_terms,
+                "due_date": invoice_due_date,
                 "narration": payload.narration,
                 "created_by": user_id,
             },

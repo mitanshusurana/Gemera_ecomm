@@ -43,3 +43,5 @@ api_router.include_router(settings_view.router, prefix="",         tags=["Settin
 from app.api.v1 import insights  # noqa: E402  (business overview, analysis reports, global search)
 api_router.include_router(insights.router,        prefix="/reports", tags=["Business Overview & Analysis"])
 api_router.include_router(insights.search_router, prefix="",         tags=["Search"])
+from app.api.v1 import expenses  # noqa: E402  (running costs paid from cash or bank)
+api_router.include_router(expenses.router,    prefix="/expenses",  tags=["Expenses"])
