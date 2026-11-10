@@ -5,6 +5,7 @@ import { Plus, Search, Filter, Loader2, X, Edit, History, ArrowUpRight, ArrowDow
 import DataTable from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
+import { useQuickCreate } from '@/lib/quickCreate';
 import { apiClient, locationsApi, StockLocation } from '@/lib/api';
 
 export default function InventoryPage() {
@@ -107,6 +108,14 @@ export default function InventoryPage() {
     });
     setIsDrawerOpen(true);
   };
+
+  useQuickCreate(handleOpenNewItem);   // header "+" → Stock item
+  // /inventory?item=<id> from the search box opens that item's stock ledger.
+  useEffect(() => {
+    const item = new URLSearchParams(window.location.search).get('item');
+    if (item) openItemLedger(item);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleEditItem = (item: any) => {
     setEditingItem(item);

@@ -21,8 +21,8 @@ export default function StatsCard({ title, value, icon, trend, trendLabel, subti
       {/* Subtle background glow */}
       <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-500"></div>
       
-      <div className="flex items-start justify-between relative z-10">
-        <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3 relative z-10">
+        <div className="space-y-4 min-w-0">
           <p className="text-sm font-medium text-textSecondary uppercase tracking-wider">{title}</p>
           <h4 className="text-3xl font-playfair font-semibold text-white">{value}</h4>
 

@@ -10,6 +10,7 @@ import TaxInvoicePrint from '@/components/print/TaxInvoicePrint';
 import EInvoicePanel, { eInvoiceBadge } from '@/components/einvoice/EInvoicePanel';
 import PartySelect from '@/components/ui/PartySelect';
 import { formatCurrency } from '@/lib/utils';
+import { useQuickCreate } from '@/lib/quickCreate';
 import { apiClient } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
 
@@ -54,6 +55,13 @@ export default function SalesPage() {
   useEffect(() => {
     fetchSalesData();
   }, [fromDate, toDate, selectedCustomerId, searchQuery]);
+
+  // Header "+" → Sales invoice, and /sales?q=<invoice no> from the search box.
+  useQuickCreate(() => setIsModalOpen(true));
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearchQuery(q);
+  }, []);
 
   // The register row has no lines. Fetch the invoice proper before printing;
   // if that fails, print the row and let the component say the lines are

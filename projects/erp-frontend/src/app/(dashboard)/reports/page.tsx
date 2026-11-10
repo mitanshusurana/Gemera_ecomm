@@ -5,8 +5,18 @@ import { FileText, Download, ShieldCheck, Loader2, RefreshCw, Calendar, CheckCir
 import Badge from '@/components/ui/Badge';
 import DataTable from '@/components/ui/DataTable';
 import { formatCurrency, formatBalance } from '@/lib/utils';
-import { apiClient } from '@/lib/api';
+import { apiClient, insightsApi, AnalysisReport } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
+
+// Owner's analysis reports (who buys, what sells, where the money goes),
+// served by /reports/analysis for a date range.
+const ANALYSIS: Record<string, AnalysisReport> = {
+  'Sales by Customer': 'sales_by_customer',
+  'Sales by Item': 'sales_by_item',
+  'Purchases by Vendor': 'purchases_by_vendor',
+  'Purchases by Item': 'purchases_by_item',
+  'Expenses by Category': 'expenses_by_account',
+};
 
 export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState('Trial Balance');
@@ -31,6 +41,11 @@ export default function ReportsPage() {
     { id: 'TDS/TCS Register', name: 'TDS / TCS Register [s.194Q, s.206C(1H)]', desc: 'Tax deducted on purchases and collected on sales, per document with PAN — Form 26Q / 27EQ feed' },
     { id: 'Age-Wise Outstanding', name: 'Age-Wise Aging [S44AA]', desc: 'Receivables & Payables aging breakdown (0-30, 31-60, 61-90, 90+ days)' },
     { id: 'Audit Trail Log', name: 'Audit Trail Log [MCA-11g]', desc: 'Immutable database change history with sequence numbers & row hashes' },
+    { id: 'Sales by Customer', name: 'Sales by Customer', desc: 'Who buys: invoices, taxable value, GST, total and what is still unpaid, per customer' },
+    { id: 'Sales by Item', name: 'Sales by Item', desc: 'What sells: quantity, net weight and value per item or product' },
+    { id: 'Purchases by Vendor', name: 'Purchases by Vendor', desc: 'Whom you buy from: bills, taxable value, GST, total and what is still payable' },
+    { id: 'Purchases by Item', name: 'Purchases by Item', desc: 'What you buy: quantity, weight and value per item, services included' },
+    { id: 'Expenses by Category', name: 'Expenses by Category', desc: 'Where the money goes: each expense ledger for the period, largest first' },
   ];
 
   const fetchReport = async () => {
@@ -63,6 +78,9 @@ export default function ReportsPage() {
       } else if (selectedReport === 'Audit Trail Log') {
         const res = await apiClient.get(`/reports/audit-trail?from_date=${fromDate}&to_date=${toDate}`);
         setReportData(res.data);
+      } else if (ANALYSIS[selectedReport]) {
+        const res = await insightsApi.analysis(ANALYSIS[selectedReport], fromDate, toDate);
+        setReportData(res.data);
       }
     } catch (err) {
       console.error('Error fetching report:', err);
@@ -74,6 +92,52 @@ export default function ReportsPage() {
   useEffect(() => {
     fetchReport();
   }, [selectedReport, asOfDate, fromDate, toDate, monthYear, tdsKind]);
+
+  // /reports?report=expenses_by_account (the dashboard's "All expenses" link).
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('report');
+    const id = Object.keys(ANALYSIS).find((k) => ANALYSIS[k] === wanted);
+    if (id) setSelectedReport(id);
+  }, []);
+
+  const num = (v: any, digits = 2) => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: digits });
+  const partyAnalysisColumns = [
+    { header: selectedReport === 'Purchases by Vendor' ? 'Vendor' : 'Customer', accessorKey: 'name', cell: (item: any) => (
+      <span>
+        <span className="block font-medium text-white">{item.name}</span>
+        <span className="block font-mono text-[11px] text-textSecondary">{item.gstin || 'Unregistered'}</span>
+      </span>
+    ) },
+    { header: selectedReport === 'Purchases by Vendor' ? 'Bills' : 'Invoices', accessorKey: 'documents', cell: (item: any) => num(item.documents, 0) },
+    { header: 'Taxable (₹)', accessorKey: 'taxable', cell: (item: any) => <span className="font-mono">{formatCurrency(item.taxable || 0)}</span> },
+    { header: 'GST (₹)', accessorKey: 'gst', cell: (item: any) => <span className="font-mono">{formatCurrency(item.gst || 0)}</span> },
+    { header: 'Total (₹)', accessorKey: 'total', cell: (item: any) => <span className="font-mono font-semibold text-primary">{formatCurrency(item.total || 0)}</span> },
+    { header: selectedReport === 'Purchases by Vendor' ? 'Unpaid (₹)' : 'Outstanding (₹)', accessorKey: 'outstanding', cell: (item: any) => <span className="font-mono text-textSecondary">{formatCurrency(item.outstanding || 0)}</span> },
+  ];
+  const itemAnalysisColumns = [
+    { header: 'Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-xs text-textSecondary">{item.code || '—'}</span> },
+    { header: 'Item', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-white">{item.name}</span> },
+    { header: 'Category', accessorKey: 'category', cell: (item: any) => item.category || '—' },
+    { header: selectedReport === 'Purchases by Item' ? 'Bills' : 'Invoices', accessorKey: 'documents', cell: (item: any) => num(item.documents, 0) },
+    { header: 'Quantity', accessorKey: 'quantity', cell: (item: any) => num(item.quantity, 3) },
+    { header: 'Net Weight (gm)', accessorKey: 'net_weight', cell: (item: any) => num(item.net_weight, 3) },
+    { header: 'Taxable (₹)', accessorKey: 'taxable', cell: (item: any) => <span className="font-mono">{formatCurrency(item.taxable || 0)}</span> },
+    { header: 'Total (₹)', accessorKey: 'total', cell: (item: any) => <span className="font-mono font-semibold text-primary">{formatCurrency(item.total || 0)}</span> },
+  ];
+  const expenseAnalysisColumns = [
+    { header: 'Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-xs text-textSecondary">{item.code}</span> },
+    { header: 'Expense Ledger', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-white">{item.name}</span> },
+    { header: 'Group', accessorKey: 'group_name', cell: (item: any) => item.group_name },
+    { header: 'Vouchers', accessorKey: 'documents', cell: (item: any) => num(item.documents, 0) },
+    { header: 'Amount (₹)', accessorKey: 'total', cell: (item: any) => <span className="font-mono font-semibold text-primary">{formatCurrency(item.total || 0)}</span> },
+    { header: 'Share', accessorKey: 'share', cell: (item: any) => {
+      const all = Number(reportData?.totals?.total || 0);
+      return <span className="text-textSecondary text-xs">{all > 0 ? `${((Number(item.total || 0) / all) * 100).toFixed(1)}%` : '—'}</span>;
+    } },
+  ];
+  const analysisColumns = selectedReport === 'Expenses by Category' ? expenseAnalysisColumns
+    : (selectedReport === 'Sales by Item' || selectedReport === 'Purchases by Item') ? itemAnalysisColumns
+    : partyAnalysisColumns;
 
   // Column definitions for different statutory tables
   const trialColumns = [
@@ -186,7 +250,7 @@ export default function ReportsPage() {
           <div>
             <h2 className="text-xl font-playfair font-bold text-white">{selectedReport} Report</h2>
             <p className="text-xs text-textSecondary">
-              Statutory Mercantile Format • Generated on {new Date().toLocaleDateString('en-IN')}
+              {ANALYSIS[selectedReport] ? 'Management report' : 'Statutory Mercantile Format'} • Generated on {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
 
@@ -216,7 +280,7 @@ export default function ReportsPage() {
               </div>
             )}
 
-            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'TDS/TCS Register' || selectedReport === 'Audit Trail Log') && (
+            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'TDS/TCS Register' || selectedReport === 'Audit Trail Log' || !!ANALYSIS[selectedReport]) && (
               <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
                 <Calendar className="w-3.5 h-3.5 text-textSecondary" />
                 <span className="text-textSecondary">From:</span>
@@ -695,6 +759,20 @@ export default function ReportsPage() {
             <div className="bg-surface border border-border rounded-xl p-4 flex justify-between items-center text-sm">
               <span className="font-semibold text-white">Total Outstanding Receivables:</span>
               <span className="text-primary font-mono font-bold text-lg">{formatCurrency(reportData?.totals?.total_outstanding || 0)}</span>
+            </div>
+          </div>
+        ) : ANALYSIS[selectedReport] ? (
+          /* 9. Analysis: sales by customer / item, purchases by vendor / item, expenses by category */
+          <div className="space-y-4">
+            <DataTable columns={analysisColumns} data={reportData?.rows || []} />
+            <div className="bg-surface border border-border rounded-xl p-4 flex flex-col md:flex-row justify-between md:items-center text-sm gap-3">
+              <span className="text-xs text-textSecondary max-w-2xl">{reportData?.note}</span>
+              <div className="flex items-center gap-6">
+                {reportData?.totals?.taxable !== undefined && (
+                  <span className="text-textSecondary">Taxable: <strong className="text-white font-mono">{formatCurrency(reportData.totals.taxable || 0)}</strong></span>
+                )}
+                <span className="text-textSecondary">Total: <strong className="text-primary font-mono text-lg">{formatCurrency(reportData?.totals?.total || 0)}</strong></span>
+              </div>
             </div>
           </div>
         ) : (

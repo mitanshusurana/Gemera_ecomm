@@ -5,6 +5,7 @@ import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, Search, Filter, AlertCircle, Loader2, Upload, FileText, CheckCircle2, ShieldCheck, UserCheck, CreditCard, Building, X, Eye, Download, ExternalLink } from 'lucide-react';
 import { partiesApi } from '@/lib/api';
+import { useQuickCreate } from '@/lib/quickCreate';
 
 export default function PartiesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -171,6 +172,8 @@ export default function PartiesPage() {
     });
     setIsDrawerOpen(true);
   };
+
+  useQuickCreate(() => handleNewParty());   // header "+" → Party
 
   const handleEditParty = (party: any) => {
     setEditingPartyId(party.id);
