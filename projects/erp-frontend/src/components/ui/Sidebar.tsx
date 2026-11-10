@@ -52,6 +52,7 @@ const navigation: NavItem[] = [
   { name: 'Manufacturing', href: '/manufacturing', icon: Factory, group: 'Operations' },
   { name: 'Sales', href: '/sales', icon: ShoppingCart, group: 'Operations' },
   { name: 'Purchases', href: '/purchases', icon: ShoppingBag, group: 'Operations' },
+  { name: 'Expenses', href: '/expenses', icon: Receipt, group: 'Operations' },
   { name: 'Memos (Jangad)', href: '/memos', icon: ClipboardList, group: 'Operations' },
   { name: 'Job Work', href: '/job-work', icon: Hammer, group: 'Operations' },
   { name: 'Receipt', href: '/vouchers/receipt', icon: ArrowDownLeft, group: 'Vouchers' },
