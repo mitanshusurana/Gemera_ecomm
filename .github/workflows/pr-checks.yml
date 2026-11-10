@@ -32,14 +32,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # The root package has a peer-dependency conflict (angularx-qrcode
+          # asks for a newer Angular); the image builds install with
+          # --legacy-peer-deps, so the check must too.
           - name: storefront
             dir: .
+            install: npm ci --legacy-peer-deps
             cmd: npx tsc --noEmit -p tsconfig.app.json
           - name: admin
             dir: .
+            install: npm ci --legacy-peer-deps
             cmd: npx tsc --noEmit -p projects/admin/tsconfig.app.json
           - name: erp-frontend
             dir: projects/erp-frontend
+            install: npm ci
             cmd: npx tsc --noEmit -p tsconfig.json
     name: tsc (${{ matrix.name }})
     steps:
@@ -49,7 +55,7 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: ${{ matrix.dir == '.' && 'package-lock.json' || 'projects/erp-frontend/package-lock.json' }}
-      - run: npm ci
+      - run: ${{ matrix.install }}
         working-directory: ${{ matrix.dir }}
       - run: ${{ matrix.cmd }}
         working-directory: ${{ matrix.dir }}
