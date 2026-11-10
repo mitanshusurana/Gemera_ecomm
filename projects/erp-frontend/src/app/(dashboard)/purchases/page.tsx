@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQuickCreate } from '@/lib/quickCreate';
 import { Plus, Download, FileText, Trash2, X, Printer, Eye, Edit3, MapPin, Calculator, Upload, CheckCircle2, FileImage, AlertCircle, Search, Calendar, Copy } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
@@ -234,6 +235,7 @@ export default function PurchasesPage() {
     resetForm();
     setIsDrawerOpen(true);
   };
+  useQuickCreate(openNewDrawer);   // header "+" → Purchase bill
 
   const openEditDrawer = async (id: string) => {
     try {

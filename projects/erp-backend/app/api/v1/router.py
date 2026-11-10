@@ -40,3 +40,6 @@ from app.api.v1 import company, bank_accounts, settings_view  # noqa: E402  (com
 api_router.include_router(company.router,     prefix="",           tags=["Company Settings"])
 api_router.include_router(bank_accounts.router, prefix="/accounting", tags=["Bank & Cash Accounts"])
 api_router.include_router(settings_view.router, prefix="",         tags=["Settings"])
+from app.api.v1 import insights  # noqa: E402  (business overview, analysis reports, global search)
+api_router.include_router(insights.router,        prefix="/reports", tags=["Business Overview & Analysis"])
+api_router.include_router(insights.search_router, prefix="",         tags=["Search"])

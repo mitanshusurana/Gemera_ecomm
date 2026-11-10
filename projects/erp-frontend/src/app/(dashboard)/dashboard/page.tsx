@@ -9,6 +9,7 @@ import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api';
+import MoneyOverview from '@/components/dashboard/MoneyOverview';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -71,7 +73,7 @@ export default function DashboardPage() {
           <p className="text-textSecondary mt-1">Real-time enterprise metrics, live inventory valuation, and GST compliance overview.</p>
         </div>
         <button
-          onClick={fetchDashboardData}
+          onClick={() => { setRefreshKey((k) => k + 1); fetchDashboardData(); }}
           className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg text-textSecondary hover:text-white hover:border-primary transition-colors text-sm"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -79,8 +81,11 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Receivables, payables, cash, cash flow, top expenses */}
+      <MoneyOverview refreshKey={refreshKey} />
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6">
         <StatsCard
           title="Net Revenue (MTD)"
           value={loading ? '...' : formatCurrency(stats.revenue)}

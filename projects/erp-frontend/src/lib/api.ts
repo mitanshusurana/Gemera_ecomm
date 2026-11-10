@@ -73,6 +73,27 @@ export const reportsApi = {
   outstandingAging: (params: { as_of_date?: string; party_type?: string }) => apiClient.get('/reports/outstanding-aging', { params }),
 };
 
+// Business overview, analysis reports and global search (app/api/v1/insights.py)
+export interface Dues { total: number; current: number; overdue: number; open_count: number; overdue_count: number }
+export interface BusinessOverview {
+  as_of: string;
+  fy_start: string;
+  receivables: Dues;
+  payables: Dues;
+  cash_bank: { total: number; accounts: { id: string; code: string; name: string; account_type: string; balance: number }[] };
+  cash_flow: { opening: number; incoming: number; outgoing: number; closing: number; months: { name: string; month: string; incoming: number; outgoing: number }[] };
+  income_expense: { income: number; expenses: number; net: number };
+  top_expenses: { total: number; rows: { account_id: string; code: string; name: string; group_name: string; amount: number }[] };
+}
+export type AnalysisReport = 'sales_by_customer' | 'sales_by_item' | 'purchases_by_vendor' | 'purchases_by_item' | 'expenses_by_account';
+export interface SearchHit { kind: string; id: string; title: string; subtitle: string; href: string; voucher_id?: number }
+export const insightsApi = {
+  overview: () => apiClient.get<BusinessOverview>('/reports/business-overview'),
+  analysis: (report: AnalysisReport, from_date: string, to_date: string) =>
+    apiClient.get('/reports/analysis', { params: { report, from_date, to_date } }),
+  search: (q: string) => apiClient.get<{ q: string; results: SearchHit[] }>('/search', { params: { q } }),
+};
+
 // Banking APIs
 export const bankingApi = {
   getAccounts: () => apiClient.get('/banking/accounts'),
