@@ -28,7 +28,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
           </div>
 
           <!-- 4-Step Apple Pill Progress Indicator -->
-          <div class="flex items-center space-x-2 sm:space-x-3 text-xs overflow-x-auto hide-scrollbar max-w-full py-1">
+          <div class="flex items-center space-x-2 sm:space-x-3 text-xs overflow-x-auto hide-scrollbar max-w-full py-1" aria-label="Design steps">
             
             <!-- Step 1: Category -->
             <button
@@ -38,7 +38,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
               [class.border-[#1d1d1f]]="builder.currentStep() === 1"
               class="px-3.5 py-2 rounded-full border border-[#e0e0e0] font-medium transition-all active-press whitespace-nowrap"
             >
-              1. Type
+              1.<span class="sm:inline" [class.hidden]="builder.currentStep() !== 1">&nbsp;Type</span>
             </button>
 
             <!-- Step 2: Mounting -->
@@ -50,7 +50,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
               [class.border-[#1d1d1f]]="builder.currentStep() === 2"
               class="px-3.5 py-2 rounded-full border border-[#e0e0e0] font-medium transition-all active-press disabled:opacity-40 whitespace-nowrap"
             >
-              2. Mounting
+              2.<span class="sm:inline" [class.hidden]="builder.currentStep() !== 2">&nbsp;Mounting</span>
             </button>
 
             <!-- Step 3: Gemstone -->
@@ -62,7 +62,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
               [class.border-[#1d1d1f]]="builder.currentStep() === 3"
               class="px-3.5 py-2 rounded-full border border-[#e0e0e0] font-medium transition-all active-press disabled:opacity-40 whitespace-nowrap"
             >
-              3. Gemstone
+              3.<span class="sm:inline" [class.hidden]="builder.currentStep() !== 3">&nbsp;Gemstone</span>
             </button>
 
             <!-- Step 4: Personalize & Review -->
@@ -74,7 +74,7 @@ import { VirtualTryOnComponent } from '../components/virtual-try-on';
               [class.font-semibold]="builder.currentStep() === 4"
               class="px-3.5 py-2 rounded-full border border-[#e0e0e0] font-medium transition-all active-press disabled:opacity-40 whitespace-nowrap"
             >
-              4. Review
+              4.<span class="sm:inline" [class.hidden]="builder.currentStep() !== 4">&nbsp;Review</span>
             </button>
           </div>
 

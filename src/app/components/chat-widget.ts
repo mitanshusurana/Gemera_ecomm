@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, signal, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
+import { WhatsappEnquiryService } from '../services/whatsapp-enquiry.service';
 
 @Component({
   selector: 'app-chat-widget',
@@ -8,7 +9,7 @@ import { Router } from '@angular/router';
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex flex-col items-end gap-4 pointer-events-none font-sans">
+    <div class="fixed bottom-3 right-3 md:bottom-6 md:right-6 z-50 flex flex-col items-end gap-4 pointer-events-none font-sans">
 
       <!-- Chat Window -->
       <div *ngIf="isOpen()" class="bg-white rounded-[18px] shadow-2xl w-[calc(100vw-2rem)] max-w-80 sm:max-w-sm overflow-hidden border border-[#e0e0e0] pointer-events-auto animate-fade-in-up">
@@ -73,12 +74,29 @@ import { Router } from '@angular/router';
         </div>
       </div>
 
-      <!-- Chat Bubble -->
-      <button (click)="toggleChat()"
+      <!-- Phone: the one launcher opens a two-item dial, WhatsApp and the
+           concierge, instead of two bubbles stacked over the page. -->
+      <div *ngIf="dialOpen() && !isOpen()" class="md:hidden flex flex-col items-end gap-2 pointer-events-auto animate-fade-in-up">
+        <a [href]="whatsappLink" target="_blank" rel="noopener noreferrer" (click)="dialOpen.set(false)"
+           class="flex items-center gap-2 active-press" aria-label="Contact us on WhatsApp">
+          <span class="text-xs font-medium text-[#1d1d1f] bg-white border border-[#e0e0e0] rounded-full px-3 py-1">WhatsApp</span>
+          <span class="w-11 h-11 rounded-full bg-[#25D366] flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.031 0C5.385 0 .002 5.38.002 12.025c0 2.124.553 4.195 1.604 6.014L.012 24l6.113-1.603c1.748.966 3.738 1.477 5.904 1.477h.005c6.643 0 12.028-5.38 12.028-12.023C24.062 5.222 18.679 0 12.031 0zm0 21.85c-1.802 0-3.564-.484-5.11-1.401l-.367-.217-3.793.996.993-3.696-.237-.378c-.999-1.583-1.527-3.414-1.527-5.312 0-5.525 4.5-10.024 10.038-10.024 5.524 0 10.022 4.498 10.022 10.024 0 5.527-4.498 10.025-10.022 10.025l.003-.017zm5.504-7.519c-.302-.152-1.785-.88-2.062-.981-.277-.101-.48-.152-.682.152-.202.302-.782.981-.958 1.183-.176.202-.353.227-.655.076-1.554-.783-2.668-1.503-3.673-3.235-.177-.303.176-.282.474-.877.102-.202.051-.379-.025-.53-.076-.152-.682-1.643-.933-2.249-.245-.591-.493-.51-.682-.519-.176-.008-.378-.01-.58-.01-.202 0-.528.076-.805.379-.277.303-1.057 1.034-1.057 2.519s1.082 2.915 1.233 3.117c.152.202 2.127 3.243 5.153 4.544 2.039.878 2.809.845 3.328.71.581-.151 1.785-.731 2.037-1.439.252-.708.252-1.314.177-1.442-.075-.126-.277-.202-.58-.353z"/></svg>
+          </span>
+        </a>
+        <button (click)="dialOpen.set(false); toggleChat()" class="flex items-center gap-2 active-press" aria-label="Open concierge chat">
+          <span class="text-xs font-medium text-[#1d1d1f] bg-white border border-[#e0e0e0] rounded-full px-3 py-1">Concierge</span>
+          <span class="w-11 h-11 rounded-full bg-[#1d1d1f] text-white flex items-center justify-center text-lg">💬</span>
+        </button>
+      </div>
+
+      <!-- Chat Bubble: opens the chat on desktop, the dial on a phone -->
+      <button (click)="launcherClick()"
               [class.scale-0]="isOpen()"
-              aria-label="Open chat"
+              [attr.aria-label]="dialOpen() ? 'Close contact options' : 'Open chat'"
+              [attr.aria-expanded]="dialOpen()"
               class="pointer-events-auto w-12 h-12 md:w-14 md:h-14 bg-[#D4AF37] hover:bg-[#B5952F] text-black rounded-full shadow-2xl flex items-center justify-center text-xl md:text-2xl transition-all hover:scale-110 mb-16 md:mb-0">
-        💬
+        {{ dialOpen() ? '×' : '💬' }}
       </button>
     </div>
   `
@@ -96,7 +114,26 @@ export class ChatWidgetComponent {
     { label: 'Speak to Human', action: 'human' }
   ]);
 
+  // Phone only: the launcher shows WhatsApp + concierge instead of opening the chat.
+  dialOpen = signal(false);
+  private wa = inject(WhatsappEnquiryService);
+  private platformId = inject(PLATFORM_ID);
+
   constructor(private router: Router) {}
+
+  get whatsappLink(): string {
+    return this.wa.currentLink();
+  }
+
+  launcherClick() {
+    const phone = isPlatformBrowser(this.platformId) && window.matchMedia('(max-width: 767px)').matches;
+    if (phone && !this.isOpen()) {
+      this.dialOpen.update(v => !v);
+      return;
+    }
+    this.dialOpen.set(false);
+    this.toggleChat();
+  }
 
   toggleChat() {
     this.isOpen.update(v => !v);

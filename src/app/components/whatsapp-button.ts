@@ -9,12 +9,14 @@ import { environment } from "../../environments/environment";
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Floating WhatsApp Button -->
+    <!-- Floating WhatsApp Button (desktop). On a phone the concierge launcher
+         in app-chat-widget offers WhatsApp too, so two bubbles do not stack over
+         the content. -->
     <a
       [href]="whatsappLink"
       target="_blank"
       rel="noopener noreferrer"
-      class="fixed bottom-36 right-4 md:right-6 md:bottom-28 z-40 group font-sans"
+      class="hidden md:block fixed md:right-6 md:bottom-28 z-40 group font-sans"
       aria-label="Contact us on WhatsApp"
     >
       <!-- Main Button (WhatsApp brand green) -->
