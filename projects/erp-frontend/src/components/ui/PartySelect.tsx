@@ -232,19 +232,19 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
     }
   };
 
-  const inputCls = 'w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-white text-sm outline-none focus:border-primary';
+  const inputCls = 'w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary text-sm outline-none focus:border-primary';
 
   return (
     <div ref={wrapperRef} className="relative w-full">
       {selectedParty ? (
         <div className="flex items-center justify-between w-full p-2 border border-border bg-surface rounded-md focus-within:border-primary">
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-white">{selectedParty.name}</span>
+            <span className="text-sm font-medium text-textPrimary">{selectedParty.name}</span>
             <span className="text-xs text-textSecondary">
               {selectedParty.legalName ? `${selectedParty.legalName} · ` : ''}{selectedParty.gstin}
             </span>
           </div>
-          <button type="button" onClick={handleClear} className="p-1 hover:bg-white/10 rounded-md" aria-label="Clear party">
+          <button type="button" onClick={handleClear} className="p-1 hover:bg-black/5 rounded-md" aria-label="Clear party">
             <X className="w-4 h-4 text-textSecondary" />
           </button>
         </div>
@@ -253,7 +253,7 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-textSecondary" />
           <input
             type="text"
-            className="w-full pl-9 pr-4 py-2 bg-surface border border-border rounded-md text-white placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors text-sm"
+            className="w-full pl-9 pr-4 py-2 bg-surface border border-border rounded-md text-textPrimary placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors text-sm"
             placeholder={placeholder}
             value={query}
             onChange={(e) => {
@@ -271,7 +271,7 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
         <div className="absolute z-50 w-full mt-1 bg-surface border border-border rounded-md shadow-lg max-h-96 overflow-auto">
           {creating ? (
             <div className="p-3 space-y-2" onMouseDown={(e) => e.stopPropagation()}>
-              <div className="text-sm font-semibold text-white">New party</div>
+              <div className="text-sm font-semibold text-textPrimary">New party</div>
               <div className="flex gap-2">
                 {(['Customer', 'Supplier', 'Both'] as const).map((t) => (
                   <button
@@ -286,7 +286,7 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
               </div>
               <div className="flex gap-2">
                 <input className={inputCls} placeholder="GSTIN (optional)" value={newGstin} onChange={(e) => setNewGstin(e.target.value)} maxLength={15} />
-                <button type="button" onClick={lookupGstin} disabled={lookingUp} className="px-2.5 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-white whitespace-nowrap">
+                <button type="button" onClick={lookupGstin} disabled={lookingUp} className="px-2.5 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-textPrimary whitespace-nowrap">
                   {lookingUp ? '…' : 'Lookup'}
                 </button>
               </div>
@@ -300,7 +300,7 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
               </div>
               {createError && <p className="text-xs text-danger">{createError}</p>}
               <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setCreating(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-white">Back</button>
+                <button type="button" onClick={() => setCreating(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-textPrimary">Back</button>
                 <button type="button" onClick={saveNew} disabled={saving} className="px-3 py-1.5 rounded-md bg-primary text-black text-xs font-semibold disabled:opacity-60">
                   {saving ? 'Saving…' : 'Create and select'}
                 </button>
@@ -315,10 +315,10 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
                   {options.map((party) => (
                     <li
                       key={party.id}
-                      className="px-3 py-2 hover:bg-white/5 cursor-pointer flex flex-col"
+                      className="px-3 py-2 hover:bg-black/5 cursor-pointer flex flex-col"
                       onClick={() => handleSelect(party)}
                     >
-                      <span className="text-sm font-medium text-white">{party.name}</span>
+                      <span className="text-sm font-medium text-textPrimary">{party.name}</span>
                       <div className="flex items-center gap-2 text-xs text-textSecondary mt-0.5">
                         {party.legalName && (<><span>{party.legalName}</span><span>•</span></>)}
                         <span>{party.gstin}</span>
@@ -333,7 +333,7 @@ export default function PartySelect({ value, onChange, partyType, types, placeho
                 <button
                   type="button"
                   onClick={startCreate}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-white/5 border-t border-border"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-black/5 border-t border-border"
                 >
                   <Plus className="w-4 h-4" />
                   Create new party{query.trim() ? ` “${query.trim()}”` : ''}

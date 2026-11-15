@@ -58,7 +58,7 @@ function formatWhen(iso: string | null): string {
 }
 
 const inputClass =
-  'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors disabled:opacity-50';
+  'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors disabled:opacity-50';
 const labelClass = 'block text-xs font-medium text-textSecondary mb-1';
 
 // ─── Role select with one-line descriptions ──────────────────────────────────
@@ -136,7 +136,7 @@ function PasswordSuggestion({
           type="button"
           onClick={() => onChange(generatePassword())}
           title="Generate a password"
-          className="px-3 rounded-lg border border-border bg-surface text-textSecondary hover:text-white hover:bg-white/5 transition-colors"
+          className="px-3 rounded-lg border border-border bg-surface text-textSecondary hover:text-textPrimary hover:bg-black/5 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
@@ -145,9 +145,9 @@ function PasswordSuggestion({
           onClick={copy}
           disabled={!value}
           title="Copy to clipboard"
-          className="px-3 rounded-lg border border-border bg-surface text-textSecondary hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
+          className="px-3 rounded-lg border border-border bg-surface text-textSecondary hover:text-textPrimary hover:bg-black/5 transition-colors disabled:opacity-40"
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          {copied ? <Check className="w-4 h-4 text-emerald-700" /> : <Copy className="w-4 h-4" />}
         </button>
       </div>
       <p className="text-xs text-textSecondary mt-1">
@@ -202,8 +202,8 @@ export default function UsersPage() {
   if (!allowed) {
     return (
       <div className="glass-card p-8 flex flex-col items-center text-center gap-3">
-        <ShieldAlert className="w-10 h-10 text-amber-400" />
-        <h1 className="text-xl font-playfair font-semibold text-white">Users is for owners and administrators</h1>
+        <ShieldAlert className="w-10 h-10 text-amber-700" />
+        <h1 className="text-xl font-playfair font-semibold text-textPrimary">Users is for owners and administrators</h1>
         <p className="text-sm text-textSecondary max-w-md">
           Your role ({ROLE_LABEL[actorRole] ?? me?.role ?? 'unknown'}) does not include managing accounts. Ask an owner
           or administrator to make changes for you. You can still change your own password from the account menu.
@@ -216,7 +216,7 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white flex items-center gap-3">
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary flex items-center gap-3">
             <UserCog className="w-7 h-7 text-primary" /> Users
           </h1>
           <p className="text-textSecondary mt-1">
@@ -225,7 +225,7 @@ export default function UsersPage() {
         </div>
         <button
           onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)] text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity text-sm"
         >
           <Plus className="w-4 h-4" />
           New user
@@ -240,19 +240,19 @@ export default function UsersPage() {
         <div className="p-4 overflow-x-auto">
           {loading ? (
             <div className="animate-pulse space-y-4 py-4">
-              <div className="h-8 bg-white/10 rounded w-full"></div>
-              <div className="h-8 bg-white/10 rounded w-full"></div>
-              <div className="h-8 bg-white/10 rounded w-full"></div>
+              <div className="h-8 bg-black/5 rounded w-full"></div>
+              <div className="h-8 bg-black/5 rounded w-full"></div>
+              <div className="h-8 bg-black/5 rounded w-full"></div>
             </div>
           ) : loadError ? (
             <div className="text-center py-12 text-textSecondary flex flex-col items-center gap-3">
-              <AlertCircle className="w-10 h-10 text-rose-400" />
+              <AlertCircle className="w-10 h-10 text-rose-700" />
               <p>{loadError}</p>
               <button onClick={load} className="text-sm text-primary hover:underline">Try again</button>
             </div>
           ) : users.length === 0 ? (
             <div className="text-center py-12 text-textSecondary flex flex-col items-center gap-3">
-              <AlertCircle className="w-12 h-12 text-white/20" />
+              <AlertCircle className="w-12 h-12 text-black/20" />
               <p>No users yet.</p>
             </div>
           ) : (
@@ -272,9 +272,9 @@ export default function UsersPage() {
                 {users.map((u) => {
                   const isSelf = !!me?.id && u.id === me.id;
                   return (
-                    <tr key={u.id} className={`hover:bg-white/5 transition-colors ${u.is_active ? '' : 'opacity-60'}`}>
+                    <tr key={u.id} className={`hover:bg-black/5 transition-colors ${u.is_active ? '' : 'opacity-60'}`}>
                       <td className="py-4">
-                        <div className="font-medium text-white flex items-center gap-2">
+                        <div className="font-medium text-textPrimary flex items-center gap-2">
                           {u.full_name}
                           {isSelf && <span className="text-[10px] uppercase tracking-wider text-primary border border-primary/40 rounded px-1">you</span>}
                         </div>
@@ -294,7 +294,7 @@ export default function UsersPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setEditing(u)}
-                            className="p-1.5 rounded text-xs font-medium flex items-center gap-1 text-textSecondary hover:text-white hover:bg-white/5"
+                            className="p-1.5 rounded text-xs font-medium flex items-center gap-1 text-textSecondary hover:text-textPrimary hover:bg-black/5"
                             title="Edit user"
                           >
                             <Pencil className="w-3.5 h-3.5" /> Edit
@@ -460,14 +460,14 @@ function CreateUserModal({
         </div>
 
         {(problems.length > 0 || error) && (
-          <ul className="text-xs text-rose-400 space-y-1 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
+          <ul className="text-xs text-rose-700 space-y-1 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
             {error && <li>{error}</li>}
             {problems.map((p) => <li key={p}>{p}</li>)}
           </ul>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-textSecondary hover:text-white transition-colors">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-textSecondary hover:text-textPrimary transition-colors">Cancel</button>
           <button
             type="submit"
             disabled={!canSubmit || saving}
@@ -564,10 +564,10 @@ function EditUserDrawer({
       <div className="relative z-50 h-full w-full max-w-md bg-surface border-l border-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
           <div>
-            <h3 id="edit-user-title" className="text-lg font-playfair font-semibold text-white">Edit user</h3>
+            <h3 id="edit-user-title" className="text-lg font-playfair font-semibold text-textPrimary">Edit user</h3>
             <p className="text-xs text-textSecondary">{user.email}</p>
           </div>
-          <button onClick={onClose} className="text-textSecondary hover:text-white transition-colors" aria-label="Close">
+          <button onClick={onClose} className="text-textSecondary hover:text-textPrimary transition-colors" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -604,7 +604,7 @@ function EditUserDrawer({
 
           <div className="flex items-start justify-between gap-4 p-3 rounded-lg border border-border bg-background">
             <div>
-              <p className="text-sm text-white font-medium">Account active</p>
+              <p className="text-sm text-textPrimary font-medium">Account active</p>
               <p className="text-xs text-textSecondary">A disabled account cannot sign in and its open sessions end immediately.</p>
             </div>
             <button
@@ -613,24 +613,24 @@ function EditUserDrawer({
               aria-checked={form.is_active}
               disabled={activeLocked || (lastActiveOwner && form.is_active)}
               onClick={() => setForm((f) => ({ ...f, is_active: !f.is_active }))}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${form.is_active ? 'bg-emerald-500' : 'bg-white/20'}`}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${form.is_active ? 'bg-emerald-500' : 'bg-black/10'}`}
             >
               <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${form.is_active ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
           </div>
 
           {lockReason && (
-            <p className="text-xs text-amber-400 flex items-start gap-2">
+            <p className="text-xs text-amber-700 flex items-start gap-2">
               <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" /> {lockReason}
             </p>
           )}
 
           {error && (
-            <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-xs text-rose-700 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <div className="flex items-center justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-textSecondary hover:text-white transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-textSecondary hover:text-textPrimary transition-colors">Cancel</button>
             <button
               type="submit"
               disabled={saving || !form.full_name.trim()}
@@ -675,7 +675,7 @@ function ResetPasswordModal({ user, onClose, onDone }: { user: ErpUser; onClose:
     <Modal isOpen onClose={onClose} title={`Reset password — ${user.full_name}`}>
       <form onSubmit={submit} className="space-y-4">
         <p className="text-sm text-textSecondary">
-          Sets a new password for <span className="text-white">{user.email}</span> and signs them out of every
+          Sets a new password for <span className="text-textPrimary">{user.email}</span> and signs them out of every
           device. Copy it before you confirm; it will not be shown again.
         </p>
         <div>
@@ -683,14 +683,14 @@ function ResetPasswordModal({ user, onClose, onDone }: { user: ErpUser; onClose:
           <PasswordSuggestion id="rp-password" value={password} onChange={setPassword} />
         </div>
         {(tooShort || sameAsEmail || error) && (
-          <ul className="text-xs text-rose-400 space-y-1 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
+          <ul className="text-xs text-rose-700 space-y-1 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
             {error && <li>{error}</li>}
             {tooShort && <li>At least {MIN_PASSWORD_LENGTH} characters.</li>}
             {sameAsEmail && <li>Must not be the email address.</li>}
           </ul>
         )}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-textSecondary hover:text-white transition-colors">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-textSecondary hover:text-textPrimary transition-colors">Cancel</button>
           <button
             type="submit"
             disabled={saving || tooShort || sameAsEmail}

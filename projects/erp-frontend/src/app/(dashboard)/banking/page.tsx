@@ -8,6 +8,7 @@ import { FileUp, Landmark, CheckCircle, Clock, Check, X, Printer, ArrowRightLeft
 import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 import BookFromStatementModal, { StatementLineForBooking } from '@/components/banking/BookFromStatementModal';
+import BankRulesDialog from '@/components/banking/BankRulesDialog';
 import { financialYearStart, isoDate, today } from '@/lib/fiscal';
 
 /** Period presets for the reconciliation screen; "custom" keeps whatever the two date boxes hold. */
@@ -66,6 +67,7 @@ export default function BankingPage() {
   const [matching, setMatching] = useState(false);
   // Booking a voucher straight from a statement line, and amount-based suggestions.
   const [bookingLine, setBookingLine] = useState<StatementLineForBooking | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [applyingSuggestion, setApplyingSuggestion] = useState<string | null>(null);
 
@@ -260,12 +262,16 @@ export default function BankingPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Bank Reconciliation (BRS)</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Bank Reconciliation (BRS)</h1>
           <p className="text-textSecondary mt-1">[Section 44AA] Match book entries with official bank statement lines.</p>
         </div>
         <div className="flex gap-3 items-center">
+          <button onClick={() => setRulesOpen(true)} className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-textSecondary hover:text-textPrimary hover:border-primary" title="Text in a statement line that suggests the ledger or party to book it to">
+            Bank rules
+          </button>
+          <BankRulesDialog open={rulesOpen} onClose={() => setRulesOpen(false)} />
           <select 
-            className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
+            className="bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary"
             value={selectedAccount} 
             onChange={(e) => setSelectedAccount(e.target.value)}
           >
@@ -274,7 +280,7 @@ export default function BankingPage() {
             ))}
           </select>
           <select
-            className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
+            className="bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary"
             value={preset}
             onChange={(e) => choosePreset(e.target.value as RangePreset)}
             aria-label="Period"
@@ -287,7 +293,7 @@ export default function BankingPage() {
           </select>
           <input
             type="date"
-            className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
+            className="bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary"
             value={range.from}
             max={range.to}
             onChange={(e) => editRange('from', e.target.value)}
@@ -296,7 +302,7 @@ export default function BankingPage() {
           <span className="text-textSecondary text-sm">to</span>
           <input
             type="date"
-            className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
+            className="bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary"
             value={range.to}
             min={range.from}
             onChange={(e) => editRange('to', e.target.value)}
@@ -334,7 +340,7 @@ export default function BankingPage() {
       {/* Match Actions Toolbar */}
       {(selectedBookId || selectedStmtId) && (
         <div className="p-4 bg-primary/10 border border-primary/30 rounded-xl flex items-center justify-between">
-          <div className="text-xs text-white flex items-center gap-2">
+          <div className="text-xs text-textPrimary flex items-center gap-2">
             <span className="font-semibold text-primary">Pair Matching Active:</span>
             <span>Book Entries: {selectedBookIds.length > 0 ? `✓ ${selectedBookIds.length} selected` : 'Pending Selection'}</span>
             <span>|</span>
@@ -343,7 +349,7 @@ export default function BankingPage() {
           <div className="flex gap-2">
             <button 
               onClick={() => { setSelectedBookId(null); setSelectedStmtId(null); }}
-              className="px-3 py-1 bg-surface border border-border text-textSecondary hover:text-white rounded text-xs"
+              className="px-3 py-1 bg-surface border border-border text-textSecondary hover:text-textPrimary rounded text-xs"
             >
               Clear Selection
             </button>
@@ -362,14 +368,14 @@ export default function BankingPage() {
       {/* Import Section */}
       <div className="glass-card p-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-surface/50">
         <div>
-          <h3 className="text-lg font-bold text-white mb-1">Import Statement (SBI / HDFC / ICICI Format)</h3>
+          <h3 className="text-lg font-bold text-textPrimary mb-1">Import Statement (SBI / HDFC / ICICI Format)</h3>
           <p className="text-sm text-textSecondary">Upload the statement exported from internet banking: Excel (.xlsx), CSV, or the tab-separated "xls" that SBI and other banks download. Rows already imported for this account are skipped.</p>
         </div>
         <div className="flex items-center gap-3">
           <input 
             type="file" 
             accept=".xlsx,.xls,.csv,.txt,.tsv"
-            className="text-xs text-textSecondary file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20" 
+            className="text-xs text-textSecondary file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-black/5 file:text-textPrimary hover:file:bg-black/10" 
             onChange={(e) => setFile(e.target.files?.[0] || null)} 
           />
           <button 
@@ -387,7 +393,7 @@ export default function BankingPage() {
         {/* Left: Book Entries */}
         <div className="glass-card flex flex-col h-[500px]">
           <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
-            <h3 className="font-bold text-white">Unreconciled Books Entries</h3>
+            <h3 className="font-bold text-textPrimary">Unreconciled Books Entries</h3>
             <Badge variant={unreconciled.length > 0 ? "warning" : "success"}>
               {unreconciled.length} Pending
             </Badge>
@@ -419,9 +425,9 @@ export default function BankingPage() {
                       key={i} 
                       onClick={() => toggleBookId(rowId)}
                       title="Click to select; click more rows to match several book entries against one statement line"
-                      className={`cursor-pointer transition-colors ${isSelected ? 'bg-primary/20 border-l-4 border-primary' : 'hover:bg-white/5'}`}
+                      className={`cursor-pointer transition-colors ${isSelected ? 'bg-primary/20 border-l-4 border-primary' : 'hover:bg-black/5'}`}
                     >
-                      <td className="py-3 text-white text-xs">{row.date || row.entry_date}</td>
+                      <td className="py-3 text-textPrimary text-xs">{row.date || row.entry_date}</td>
                       <td className="py-3 text-textSecondary text-xs">{row.desc || row.narration || row.particulars || 'Bank Transaction'}</td>
                       <td className="py-3 text-textSecondary text-xs font-mono">{row.ref || row.reference_no || row.entry_no || '—'}</td>
                       <td className={`py-3 text-right font-medium font-mono text-xs ${isDr ? 'text-success' : 'text-danger'}`}>
@@ -430,7 +436,7 @@ export default function BankingPage() {
                       <td className="py-3 text-center">
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleQuickMatch(rowId); }}
-                          className={`px-2.5 py-1 rounded text-xs transition-colors ${isSelected ? 'bg-primary text-black font-bold' : 'bg-surface border border-border hover:border-primary text-textSecondary hover:text-white'}`}
+                          className={`px-2.5 py-1 rounded text-xs transition-colors ${isSelected ? 'bg-primary text-black font-bold' : 'bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary'}`}
                         >
                           {isSelected ? 'Selected' : 'Match'}
                         </button>
@@ -446,7 +452,7 @@ export default function BankingPage() {
         {/* Right: Bank Statement Entries */}
         <div className="glass-card flex flex-col h-[500px]">
           <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
-            <h3 className="font-bold text-white">Bank Statement Entries</h3>
+            <h3 className="font-bold text-textPrimary">Bank Statement Entries</h3>
             <Badge variant={statementEntries.length > 0 ? "info" : "default"}>
               {statementEntries.length} Imported
             </Badge>
@@ -476,9 +482,9 @@ export default function BankingPage() {
                     <tr 
                       key={i} 
                       onClick={() => setSelectedStmtId(isSelected ? null : rowId)}
-                      className={`cursor-pointer transition-colors ${isSelected ? 'bg-primary/20 border-l-4 border-primary' : 'hover:bg-white/5'}`}
+                      className={`cursor-pointer transition-colors ${isSelected ? 'bg-primary/20 border-l-4 border-primary' : 'hover:bg-black/5'}`}
                     >
-                      <td className="py-3 text-white text-xs">{row.date || row.txn_date}</td>
+                      <td className="py-3 text-textPrimary text-xs">{row.date || row.txn_date}</td>
                       <td className="py-3 text-textSecondary text-xs truncate max-w-[160px]" title={row.desc || row.description}>
                         {row.desc || row.description || 'Statement Txn'}
                       </td>
@@ -488,14 +494,14 @@ export default function BankingPage() {
                       <td className="py-3 text-center">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setSelectedStmtId(isSelected ? null : rowId); }}
-                          className={`px-2.5 py-1 rounded text-xs transition-colors ${isSelected ? 'bg-primary text-black font-bold' : 'bg-surface border border-border hover:border-primary text-textSecondary hover:text-white'}`}
+                          className={`px-2.5 py-1 rounded text-xs transition-colors ${isSelected ? 'bg-primary text-black font-bold' : 'bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary'}`}
                         >
                           {isSelected ? 'Selected' : 'Match'}
                         </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setBookingLine(row); }}
                             title="Post a Receipt/Payment for this line and match it"
-                            className="ml-1 px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-white transition-colors"
+                            className="ml-1 px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary transition-colors"
                           >
                             Book
                           </button>
@@ -514,7 +520,7 @@ export default function BankingPage() {
         <div className="glass-card">
           <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
             <div>
-              <h3 className="font-bold text-white">Suggested matches</h3>
+              <h3 className="font-bold text-textPrimary">Suggested matches</h3>
               <p className="text-xs text-textSecondary mt-0.5">Same amount, same direction, within 5 days. Review and match in one click.</p>
             </div>
             <div className="flex items-center gap-3">
@@ -541,22 +547,22 @@ export default function BankingPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {suggestions.map((s) => (
-                  <tr key={s.bank_entry_id} className="hover:bg-white/5">
+                  <tr key={s.bank_entry_id} className="hover:bg-black/5">
                     <td className="py-3 text-xs">
-                      <span className="text-white">{s.bank_date}</span>
+                      <span className="text-textPrimary">{s.bank_date}</span>
                       <span className="text-textSecondary block truncate max-w-[260px]" title={s.description}>{s.description}</span>
                     </td>
                     <td className="py-3 text-xs">
-                      <span className="text-white">{s.book_entry_no}</span>
+                      <span className="text-textPrimary">{s.book_entry_no}</span>
                       <span className="text-textSecondary block">{s.book_date}{s.book_narration ? ` · ${s.book_narration}` : ''}</span>
                     </td>
-                    <td className="py-3 text-right font-mono text-xs text-white">{formatCurrency(Number(s.amount))}</td>
+                    <td className="py-3 text-right font-mono text-xs text-textPrimary">{formatCurrency(Number(s.amount))}</td>
                     <td className="py-3 text-center text-xs text-textSecondary">{s.days_apart === 0 ? 'same day' : `${s.days_apart} d`}</td>
                     <td className="py-3 text-center">
                       <button
                         onClick={() => applySuggestion(s)}
                         disabled={applyingSuggestion !== null}
-                        className="px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-white disabled:opacity-60"
+                        className="px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary disabled:opacity-60"
                       >
                         {applyingSuggestion === s.bank_entry_id ? '…' : 'Match'}
                       </button>
@@ -579,7 +585,7 @@ export default function BankingPage() {
       {/* Matched pairs: what has been reconciled this month, and the way back */}
       <div className="glass-card">
         <div className="p-4 border-b border-border bg-surface/80 flex justify-between items-center">
-          <h3 className="font-bold text-white">Matched Pairs — {range.from} to {range.to}</h3>
+          <h3 className="font-bold text-textPrimary">Matched Pairs — {range.from} to {range.to}</h3>
           <Badge variant={matches.length > 0 ? 'success' : 'default'}>{matches.length} Matched</Badge>
         </div>
         <div className="overflow-x-auto p-4">
@@ -605,9 +611,9 @@ export default function BankingPage() {
                 const stmtCr = Number(m.credit || 0);
                 const stmtDr = Number(m.debit || 0);
                 return (
-                  <tr key={m.match_id} className="hover:bg-white/5">
+                  <tr key={m.match_id} className="hover:bg-black/5">
                     <td className="py-3 text-xs">
-                      <span className="font-mono text-white">{m.entry_no || '—'}</span>
+                      <span className="font-mono text-textPrimary">{m.entry_no || '—'}</span>
                       <span className="block text-textSecondary truncate max-w-[220px]" title={m.narration}>{m.narration}</span>
                     </td>
                     <td className="py-3 text-xs text-textSecondary">{m.entry_date}</td>
@@ -628,7 +634,7 @@ export default function BankingPage() {
                       <button
                         onClick={() => handleUnmatch(m)}
                         disabled={unmatching === m.match_id}
-                        className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-textSecondary hover:text-white hover:border-danger disabled:opacity-50 flex items-center gap-1 mx-auto"
+                        className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-textSecondary hover:text-textPrimary hover:border-danger disabled:opacity-50 flex items-center gap-1 mx-auto"
                       >
                         {unmatching === m.match_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2Off className="w-3 h-3" />} Unmatch
                       </button>
@@ -667,23 +673,23 @@ export default function BankingPage() {
                 <div className="p-4 bg-surface border border-border rounded-xl space-y-2 text-xs">
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-textSecondary">Account:</span>
-                    <span className="font-semibold text-white">{brsReport.account_name} ({brsReport.account_code})</span>
+                    <span className="font-semibold text-textPrimary">{brsReport.account_name} ({brsReport.account_code})</span>
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-textSecondary">As at:</span>
-                    <span className="font-semibold text-white">{brsReport.as_of_date}</span>
+                    <span className="font-semibold text-textPrimary">{brsReport.as_of_date}</span>
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
-                    <span className="text-white font-medium">Balance as per books (bank ledger account):</span>
-                    <span className="font-mono font-bold text-white">{formatCurrency(Number(brsReport.balance_as_per_books))}</span>
+                    <span className="text-textPrimary font-medium">Balance as per books (bank ledger account):</span>
+                    <span className="font-mono font-bold text-textPrimary">{formatCurrency(Number(brsReport.balance_as_per_books))}</span>
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-textSecondary">Add: payments in the books not yet presented at the bank ({brsReport.unpresented_payments?.length || 0}):</span>
-                    <span className="font-mono text-emerald-400">+{formatCurrency(Number(brsReport.add_unpresented_payments))}</span>
+                    <span className="font-mono text-emerald-700">+{formatCurrency(Number(brsReport.add_unpresented_payments))}</span>
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-textSecondary">Less: deposits in the books not yet cleared by the bank ({brsReport.uncleared_deposits?.length || 0}):</span>
-                    <span className="font-mono text-rose-400">-{formatCurrency(Number(brsReport.less_uncleared_deposits))}</span>
+                    <span className="font-mono text-rose-700">-{formatCurrency(Number(brsReport.less_uncleared_deposits))}</span>
                   </div>
                   <div className="flex justify-between border-b border-border pb-2 text-sm font-bold">
                     <span className="text-primary">Balance the bank statement should show:</span>
@@ -691,7 +697,7 @@ export default function BankingPage() {
                   </div>
                   <div className="flex justify-between border-b border-border pb-2">
                     <span className="text-textSecondary">Balance as per bank statement{brsReport.statement_balance_date ? ` (line dated ${brsReport.statement_balance_date})` : ''}:</span>
-                    <span className="font-mono text-white">
+                    <span className="font-mono text-textPrimary">
                       {brsReport.balance_as_per_bank_statement === null || brsReport.balance_as_per_bank_statement === undefined
                         ? 'No statement imported'
                         : formatCurrency(Number(brsReport.balance_as_per_bank_statement))}
@@ -725,9 +731,9 @@ export default function BankingPage() {
                         {[...(brsReport.unpresented_payments || []).map((r: any) => ({ ...r, kind: 'Unpresented payment', amt: r.cr_amount })),
                           ...(brsReport.uncleared_deposits || []).map((r: any) => ({ ...r, kind: 'Uncleared deposit', amt: r.dr_amount }))].map((r: any) => (
                           <tr key={r.id}>
-                            <td className="px-3 py-1.5 text-white">{r.kind}: <span className="font-mono">{r.entry_no}</span> <span className="text-textSecondary">{r.narration}</span></td>
+                            <td className="px-3 py-1.5 text-textPrimary">{r.kind}: <span className="font-mono">{r.entry_no}</span> <span className="text-textSecondary">{r.narration}</span></td>
                             <td className="px-3 py-1.5 text-textSecondary">{r.entry_date}</td>
-                            <td className="px-3 py-1.5 text-right font-mono text-white">{formatCurrency(Number(r.amt))}</td>
+                            <td className="px-3 py-1.5 text-right font-mono text-textPrimary">{formatCurrency(Number(r.amt))}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -740,7 +746,7 @@ export default function BankingPage() {
             <div className="flex justify-end gap-3 pt-2">
               <button 
                 onClick={() => window.print()}
-                className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5 flex items-center gap-2 text-xs"
+                className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5 flex items-center gap-2 text-xs"
               >
                 <Printer className="w-4 h-4" /> Print BRS
               </button>

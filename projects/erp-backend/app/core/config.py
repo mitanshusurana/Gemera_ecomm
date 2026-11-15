@@ -101,6 +101,15 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3001",
     ]
 
+    # ─── Outgoing e-mail (invoices, quotes, statements, reminders) ─
+    # Left blank, nothing is sent and the mail endpoints answer 503.
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+    SMTP_FROM_NAME: str = ""
+
     # ─── Environment ────────────────────────────────────────────
     ENVIRONMENT: str = "development"
 

@@ -78,9 +78,9 @@ export default function GstExportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-playfair font-bold text-white">GST Exports & Filing Center</h1>
+            <h1 className="text-3xl font-playfair font-bold text-textPrimary">GST Exports & Filing Center</h1>
             <Badge variant="success" className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
               MCA Rule 11(g) Compliant
             </Badge>
           </div>
@@ -92,7 +92,7 @@ export default function GstExportsPage() {
             type="month" 
             value={period} 
             onChange={(e) => setPeriod(e.target.value)}
-            className="bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary font-medium"
+            className="bg-surface border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary font-medium"
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function GstExportsPage() {
               <FileJson className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-1">GSTR-1 Official JSON Export</h3>
+              <h3 className="text-xl font-bold text-textPrimary mb-1">GSTR-1 Official JSON Export</h3>
               <p className="text-sm text-textSecondary">B2B invoices (Table 4A), B2CS retail, and HSN Table 12 schema — ready to upload on GST portal.</p>
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function GstExportsPage() {
             <button 
               onClick={() => handleDownload('gstr1_excel', 'xlsx')} 
               disabled={downloading === 'gstr1_excel'}
-              className="flex-1 flex justify-center items-center gap-2 px-4 py-2 border border-border text-white font-medium rounded-lg hover:bg-white/5 disabled:opacity-50 text-sm"
+              className="flex-1 flex justify-center items-center gap-2 px-4 py-2 border border-border text-textPrimary font-medium rounded-lg hover:bg-black/5 disabled:opacity-50 text-sm"
             >
               {downloading === 'gstr1_excel' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
               Download Excel
@@ -130,11 +130,11 @@ export default function GstExportsPage() {
 
         <div className="glass-card p-6 flex flex-col h-full">
           <div className="flex items-start gap-4 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-700 flex-shrink-0">
               <FileJson className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-1">GSTR-3B JSON Export</h3>
+              <h3 className="text-xl font-bold text-textPrimary mb-1">GSTR-3B JSON Export</h3>
               <p className="text-sm text-textSecondary">Consolidated return summary with Section 16 eligible ITC, RCM, and computed cash liability.</p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function GstExportsPage() {
               <FileSpreadsheet className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-1">HSN Table 12 Summary</h3>
+              <h3 className="text-xl font-bold text-textPrimary mb-1">HSN Table 12 Summary</h3>
               <p className="text-sm text-textSecondary">HSN 7113 / SAC 9988 commodity & service supply breakdown for Table 12 compliance, as JSON. The same table is a sheet in the GSTR-1 Excel workbook.</p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function GstExportsPage() {
             <button 
               onClick={() => handleDownload('hsn', 'json')} 
               disabled={downloading === 'hsn'}
-              className="w-full flex justify-center items-center gap-2 px-4 py-2 border border-border text-white font-medium rounded-lg hover:bg-white/5 disabled:opacity-50 text-sm"
+              className="w-full flex justify-center items-center gap-2 px-4 py-2 border border-border text-textPrimary font-medium rounded-lg hover:bg-black/5 disabled:opacity-50 text-sm"
             >
               {downloading === 'hsn' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               Download HSN Summary JSON
@@ -179,7 +179,7 @@ export default function GstExportsPage() {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-xl font-bold text-white">e-Way Bill Integration</h3>
+                <h3 className="text-xl font-bold text-textPrimary">e-Way Bill Integration</h3>
                 <Badge variant="warning" className="text-[10px]">Provisions Ready</Badge>
               </div>
               <p className="text-sm text-textSecondary">e-Way Bill is currently exempt for gold & precious jewelry (HSN 7113/7114) nationally under CGST Rule 138(14). System is ready for imitation jewelry (HSN 7117).</p>
@@ -195,7 +195,7 @@ export default function GstExportsPage() {
 
       <div className="glass-card mt-8">
         <div className="p-4 border-b border-border flex justify-between items-center">
-          <h3 className="text-lg font-bold text-white">GST Summary for Return Filing ({period})</h3>
+          <h3 className="text-lg font-bold text-textPrimary">GST Summary for Return Filing ({period})</h3>
           <span className="text-xs text-textSecondary">{invoices.length} invoices{creditNotes.length > 0 ? `, ${creditNotes.length} credit notes netted` : ''}</span>
         </div>
         <div className="p-4 overflow-x-auto">
@@ -217,12 +217,12 @@ export default function GstExportsPage() {
                 <tr><td colSpan={6} className="py-12 text-center text-textSecondary">No outward tax invoices recorded for period {period}</td></tr>
               ) : (
                 <>
-                  <tr className="hover:bg-white/5">
-                    <td className="py-3 font-medium text-white">Outward Taxable Supplies (HSN 7113 / SAC 9988)</td>
-                    <td className="py-3 text-right text-white font-mono">{formatCurrency(totalTaxable)}</td>
-                    <td className="py-3 text-right text-white font-mono">{formatCurrency(totalCgst)}</td>
-                    <td className="py-3 text-right text-white font-mono">{formatCurrency(totalSgst)}</td>
-                    <td className="py-3 text-right text-white font-mono">{formatCurrency(totalIgst)}</td>
+                  <tr className="hover:bg-black/5">
+                    <td className="py-3 font-medium text-textPrimary">Outward Taxable Supplies (HSN 7113 / SAC 9988)</td>
+                    <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(totalTaxable)}</td>
+                    <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(totalCgst)}</td>
+                    <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(totalSgst)}</td>
+                    <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(totalIgst)}</td>
                     <td className="py-3 text-right text-primary font-mono font-bold">{formatCurrency(totalTax)}</td>
                   </tr>
                 </>

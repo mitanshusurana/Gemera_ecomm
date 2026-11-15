@@ -9,6 +9,7 @@ import { QUICK_CREATE_EVENT } from '@/lib/quickCreate';
 // `form: true` pages open their entry form on `?new=1` (see useQuickCreate);
 // the voucher pages are entry forms already.
 const ITEMS: { group: string; label: string; href: string; form?: boolean; icon: React.ReactNode }[] = [
+  { group: 'Sales', label: 'Quote', href: '/orders', form: true, icon: <FileText className="w-4 h-4" /> },
   { group: 'Sales', label: 'Sales invoice', href: '/sales', form: true, icon: <FileText className="w-4 h-4" /> },
   { group: 'Sales', label: 'Receipt', href: '/vouchers/receipt', icon: <ArrowDownLeft className="w-4 h-4" /> },
   { group: 'Purchases', label: 'Purchase bill', href: '/purchases', form: true, icon: <ShoppingBag className="w-4 h-4" /> },
@@ -68,7 +69,7 @@ export default function QuickCreate() {
                   role="menuitem"
                   type="button"
                   onClick={() => start(item)}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-textSecondary hover:bg-white/5 hover:text-white transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-textSecondary hover:bg-black/5 hover:text-textPrimary transition-colors"
                 >
                   <span className="text-primary">{item.icon}</span>
                   {item.label}

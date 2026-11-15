@@ -67,7 +67,7 @@ def test_narration_reads_like_the_day_book():
 
 
 def test_expense_posts_a_balanced_payment_and_keeps_the_document():
-    body = SRC.split("async def create_expense(")[1].split("@router.post(")[0]
+    body = SRC.split("async def record_expense(")[1].split("@router.post(")[0]
     assert "assert_period_open(db, company_id, payload.expense_date" in body
     assert 'exp_acc["nature"] != "Expenses"' in body                 # only an expense ledger is debited
     assert 'paid_acc["account_type"] not in ("Bank", "Cash")' in body  # only cash or bank is credited

@@ -34,7 +34,8 @@ router = APIRouter()
 search_router = APIRouter()
 
 ANALYSIS_REPORTS = (
-    "sales_by_customer", "sales_by_item", "purchases_by_vendor", "purchases_by_item", "expenses_by_account",
+    "sales_by_customer", "sales_by_item", "sales_by_salesperson", "purchases_by_vendor", "purchases_by_item",
+    "expenses_by_account",
 )
 
 
@@ -167,12 +168,14 @@ async def business_overview(
     # Money in and out of the cash and bank ledgers, month by month. Contra
     # entries move money between those ledgers and are left out, or a cash
     # deposit would count once as money out and once as money in.
+    # A reversal undoes an earlier movement, so it reduces the side it
+    # undoes: reversing a payment is less money out, not money in.
     flow_res = await db.execute(
         text("""
             SELECT EXTRACT(YEAR FROM je.entry_date) AS yr,
                    EXTRACT(MONTH FROM je.entry_date) AS mo,
-                   COALESCE(SUM(jel.dr_amount), 0) AS incoming,
-                   COALESCE(SUM(jel.cr_amount), 0) AS outgoing
+                   COALESCE(SUM(CASE WHEN je.entry_type = 'Reversal' THEN -jel.cr_amount ELSE jel.dr_amount END), 0) AS incoming,
+                   COALESCE(SUM(CASE WHEN je.entry_type = 'Reversal' THEN -jel.dr_amount ELSE jel.cr_amount END), 0) AS outgoing
             FROM caratloop.journal_entry_lines jel
             JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
             JOIN caratloop.accounts a ON a.id = jel.account_id
@@ -335,6 +338,26 @@ async def analysis_report(
         rows = _rows(res)
         totals = _totals(rows, ("quantity", "net_weight", "taxable", "total"))
         note = "Invoice lines of the period, cancelled invoices left out."
+    elif report == "sales_by_salesperson":
+        res = await db.execute(
+            text("""
+                SELECT COALESCE(NULLIF(si.salesperson, ''), 'Not recorded') AS name,
+                       COUNT(*) AS documents,
+                       COALESCE(SUM(si.grand_total - si.total_gst), 0) AS taxable,
+                       COALESCE(SUM(si.total_gst), 0) AS gst,
+                       COALESCE(SUM(si.grand_total), 0) AS total,
+                       COALESCE(SUM(si.grand_total - si.amount_paid), 0) AS outstanding
+                FROM caratloop.sales_invoices si
+                WHERE si.company_id = :cid AND si.status != 'Cancelled'
+                  AND si.invoice_date >= CAST(:from_date AS DATE) AND si.invoice_date <= CAST(:to_date AS DATE)
+                GROUP BY COALESCE(NULLIF(si.salesperson, ''), 'Not recorded')
+                ORDER BY total DESC
+            """),
+            params,
+        )
+        rows = _rows(res)
+        totals = _totals(rows, ("documents", "taxable", "gst", "total", "outstanding"))
+        note = "Invoices of the period by the salesperson named on them; cancelled invoices left out."
     elif report == "purchases_by_vendor":
         res = await db.execute(
             text("""
@@ -405,6 +428,170 @@ async def analysis_report(
     return {
         "report": report, "from_date": from_date.isoformat(), "to_date": to_date.isoformat(),
         "rows": rows, "totals": totals, "note": note,
+    }
+
+
+@router.get("/cash-flow-statement")
+async def cash_flow_statement(
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Where cash came from and went to, by the ledger group on the other side.
+
+    Direct method: every posted entry that touches a cash or bank ledger is
+    taken, and its other lines say what the money was for. Transfers between
+    cash and bank (Contra) are left out. Opening plus net movement equals
+    closing, and closing is the cash and bank balance on the last day.
+    """
+    cid = current_user["company_id"]
+    to_date = to_date or date.today()
+    from_date = from_date or fiscal_year_start(to_date)
+    if from_date > to_date:
+        raise HTTPException(status_code=422, detail="from_date is after to_date")
+    params = {"cid": cid, "from_date": from_date, "to_date": to_date}
+
+    bal = await db.execute(
+        text("""
+            SELECT a.normal_balance, a.opening_balance, a.opening_balance_type,
+                   COALESCE(t.before, 0) AS before, COALESCE(t.upto, 0) AS upto
+            FROM caratloop.accounts a
+            LEFT JOIN (
+                SELECT jel.account_id,
+                       SUM(CASE WHEN je.entry_date < CAST(:from_date AS DATE) THEN jel.dr_amount - jel.cr_amount ELSE 0 END) AS before,
+                       SUM(jel.dr_amount - jel.cr_amount) AS upto
+                FROM caratloop.journal_entry_lines jel
+                JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+                WHERE je.company_id = :cid AND je.status = 'Posted'
+                  AND je.entry_type <> 'Opening'
+                  AND je.entry_date <= CAST(:to_date AS DATE)
+                GROUP BY jel.account_id
+            ) t ON t.account_id = a.id
+            WHERE a.company_id = :cid AND a.account_type IN ('Bank', 'Cash')
+        """),
+        params,
+    )
+    opening = closing = Decimal("0")
+    for r in bal.mappings().all():
+        base = signed_opening(r)
+        opening += base + to_decimal(r["before"])
+        closing += base + to_decimal(r["upto"])
+
+    res = await db.execute(
+        text("""
+            SELECT ag.name AS group_name, ag.nature,
+                   COALESCE(SUM(jel.cr_amount - jel.dr_amount), 0) AS net
+            FROM caratloop.journal_entry_lines jel
+            JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
+            JOIN caratloop.accounts a ON a.id = jel.account_id
+            JOIN caratloop.account_groups ag ON ag.id = a.group_id
+            WHERE je.company_id = :cid AND je.status = 'Posted'
+              AND je.entry_type NOT IN ('Opening', 'Contra')
+              AND je.entry_date >= CAST(:from_date AS DATE) AND je.entry_date <= CAST(:to_date AS DATE)
+              AND a.account_type NOT IN ('Bank', 'Cash')
+              AND EXISTS (
+                  SELECT 1 FROM caratloop.journal_entry_lines c
+                  JOIN caratloop.accounts ca ON ca.id = c.account_id
+                  WHERE c.journal_entry_id = je.id AND ca.account_type IN ('Bank', 'Cash')
+              )
+            GROUP BY ag.name, ag.nature
+            HAVING SUM(jel.cr_amount - jel.dr_amount) <> 0
+            ORDER BY net DESC
+        """),
+        params,
+    )
+    rows = [{"group_name": r["group_name"], "nature": r["nature"], "net": float(to_decimal(r["net"]))} for r in res.mappings().all()]
+    inflow = sum(r["net"] for r in rows if r["net"] > 0)
+    outflow = -sum(r["net"] for r in rows if r["net"] < 0)
+    net = float(closing - opening)
+    return {
+        "from_date": from_date.isoformat(), "to_date": to_date.isoformat(),
+        "opening": float(opening), "closing": float(closing), "net_change": net,
+        "inflows": [r for r in rows if r["net"] > 0],
+        "outflows": [dict(r, net=-r["net"]) for r in rows if r["net"] < 0],
+        "total_inflow": round(inflow, 2), "total_outflow": round(outflow, 2),
+        # Entries that touch cash and several other ledgers are attributed by
+        # those ledgers' own lines; anything the split cannot explain shows here.
+        "unexplained": round(net - (inflow - outflow), 2),
+    }
+
+
+@router.get("/gst-annual-summary")
+async def gst_annual_summary(
+    fy_start_year: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """The year's GST by month, from the output, ITC and RCM registers: the figures GSTR-9 is prepared from.
+
+    A working paper, not the return: it adds up what the books hold. Outward
+    supplies are net of credit notes; ITC and RCM are net of amendment
+    reversals; only eligible ITC is counted.
+    """
+    cid = current_user["company_id"]
+    year = fy_start_year or fiscal_year_start(date.today()).year
+    start, end = date(year, 4, 1), date(year + 1, 3, 31)
+    params = {"cid": cid, "start": start, "end": end}
+    out_res = await db.execute(
+        text("""
+            SELECT TO_CHAR(invoice_date, 'YYYY-MM') AS month,
+                   SUM(CASE WHEN is_credit_note THEN -(taxable_material_value + taxable_making_value) ELSE taxable_material_value + taxable_making_value END) AS taxable,
+                   SUM(CASE WHEN is_credit_note THEN -igst_amount ELSE igst_amount END) AS igst,
+                   SUM(CASE WHEN is_credit_note THEN -cgst_amount ELSE cgst_amount END) AS cgst,
+                   SUM(CASE WHEN is_credit_note THEN -sgst_amount ELSE sgst_amount END) AS sgst
+            FROM caratloop.gst_output_tax_register
+            WHERE company_id = :cid AND invoice_date >= CAST(:start AS DATE) AND invoice_date <= CAST(:end AS DATE)
+            GROUP BY 1
+        """),
+        params,
+    )
+    itc_res = await db.execute(
+        text("""
+            SELECT TO_CHAR(invoice_date, 'YYYY-MM') AS month,
+                   SUM(CASE WHEN is_reversal THEN -igst_credit ELSE igst_credit END) AS igst,
+                   SUM(CASE WHEN is_reversal THEN -cgst_credit ELSE cgst_credit END) AS cgst,
+                   SUM(CASE WHEN is_reversal THEN -sgst_credit ELSE sgst_credit END) AS sgst
+            FROM caratloop.itc_register
+            WHERE company_id = :cid AND is_eligible = TRUE
+              AND invoice_date >= CAST(:start AS DATE) AND invoice_date <= CAST(:end AS DATE)
+            GROUP BY 1
+        """),
+        params,
+    )
+    rcm_res = await db.execute(
+        text("""
+            SELECT TO_CHAR(transaction_date, 'YYYY-MM') AS month,
+                   SUM(CASE WHEN is_reversal THEN -total_rcm ELSE total_rcm END) AS rcm
+            FROM caratloop.rcm_liability_register
+            WHERE company_id = :cid AND transaction_date >= CAST(:start AS DATE) AND transaction_date <= CAST(:end AS DATE)
+            GROUP BY 1
+        """),
+        params,
+    )
+    outward = {r["month"]: r for r in out_res.mappings().all()}
+    itc = {r["month"]: r for r in itc_res.mappings().all()}
+    rcm = {r["month"]: r for r in rcm_res.mappings().all()}
+    months = []
+    y, m = start.year, start.month
+    for _ in range(12):
+        key = f"{y:04d}-{m:02d}"
+        o, i, r = outward.get(key, {}), itc.get(key, {}), rcm.get(key, {})
+        out_tax = to_decimal(o.get("igst")) + to_decimal(o.get("cgst")) + to_decimal(o.get("sgst"))
+        itc_tax = to_decimal(i.get("igst")) + to_decimal(i.get("cgst")) + to_decimal(i.get("sgst"))
+        months.append({
+            "month": key, "name": date(y, m, 1).strftime("%b %Y"),
+            "taxable": float(to_decimal(o.get("taxable"))),
+            "output_igst": float(to_decimal(o.get("igst"))), "output_cgst": float(to_decimal(o.get("cgst"))), "output_sgst": float(to_decimal(o.get("sgst"))),
+            "output_tax": float(out_tax), "itc": float(itc_tax), "rcm": float(to_decimal(r.get("rcm"))),
+            "net_payable": float(out_tax + to_decimal(r.get("rcm")) - itc_tax),
+        })
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    keys = ("taxable", "output_igst", "output_cgst", "output_sgst", "output_tax", "itc", "rcm", "net_payable")
+    return {
+        "fiscal_year": f"{year}-{str(year + 1)[-2:]}", "from_date": start.isoformat(), "to_date": end.isoformat(),
+        "months": months, "totals": {k: round(sum(mo[k] for mo in months), 2) for k in keys},
+        "note": "Working figures for GSTR-9 from the books' own registers. Net payable is output tax plus reverse charge less eligible ITC, month by month; a negative month is credit carried forward.",
     }
 
 

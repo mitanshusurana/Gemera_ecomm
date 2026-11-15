@@ -200,10 +200,10 @@ export default function AccountingPage() {
   const money = (v: any) => (Number(v) > 0 ? formatCurrency(Number(v)) : '—');
 
   const columns = [
-    { header: 'Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-white text-xs">{item.code}</span> },
+    { header: 'Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-textPrimary text-xs">{item.code}</span> },
     { header: 'Account Head', accessorKey: 'account_name', cell: (item: any) => (
       <div>
-        <span className="font-medium text-white">{item.account_name || item.account}</span>
+        <span className="font-medium text-textPrimary">{item.account_name || item.account}</span>
         <span className="block text-textSecondary text-xs">{item.group_name || 'General'}</span>
       </div>
     )},
@@ -211,8 +211,8 @@ export default function AccountingPage() {
     { header: 'Opening Cr (₹)', accessorKey: 'opening_credit', cell: (item: any) => <span className="font-mono text-textSecondary">{money(item.opening_credit)}</span> },
     { header: 'Debit (₹)', accessorKey: 'debit', cell: (item: any) => <span className="font-mono">{money(item.debit ?? item.total_debit)}</span> },
     { header: 'Credit (₹)', accessorKey: 'credit', cell: (item: any) => <span className="font-mono">{money(item.credit ?? item.total_credit)}</span> },
-    { header: 'Closing Dr (₹)', accessorKey: 'closing_debit', cell: (item: any) => <span className="font-mono text-white font-semibold">{money(item.closing_debit)}</span> },
-    { header: 'Closing Cr (₹)', accessorKey: 'closing_credit', cell: (item: any) => <span className="font-mono text-white font-semibold">{money(item.closing_credit)}</span> },
+    { header: 'Closing Dr (₹)', accessorKey: 'closing_debit', cell: (item: any) => <span className="font-mono text-textPrimary font-semibold">{money(item.closing_debit)}</span> },
+    { header: 'Closing Cr (₹)', accessorKey: 'closing_credit', cell: (item: any) => <span className="font-mono text-textPrimary font-semibold">{money(item.closing_credit)}</span> },
   ];
 
   const jeColumns = [
@@ -221,7 +221,7 @@ export default function AccountingPage() {
     { header: 'Type', accessorKey: 'entry_type', cell: (item: any) => <Badge variant="warning">{item.entry_type}</Badge> },
     { header: 'Particulars', accessorKey: 'narration', cell: (item: any) => (
       <div>
-        <span className="text-white text-sm">{item.narration}</span>
+        <span className="text-textPrimary text-sm">{item.narration}</span>
         {item.reference_no && <span className="block text-xs text-textSecondary font-mono">{item.reference_no}</span>}
       </div>
     )},
@@ -232,7 +232,7 @@ export default function AccountingPage() {
   const coaColumns = [
     { header: 'Account Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-primary font-bold">{item.code}</span> },
     { header: 'Account Name', accessorKey: 'name', cell: (item: any) => (
-      <span className="text-white font-medium">{item.name}{item.is_active === false && <Badge variant="default" className="ml-2">Inactive</Badge>}</span>
+      <span className="text-textPrimary font-medium">{item.name}{item.is_active === false && <Badge variant="default" className="ml-2">Inactive</Badge>}</span>
     ) },
     { header: 'Account Group', accessorKey: 'group_name', cell: (item: any) => item.group_name },
     { header: 'Nature', accessorKey: 'nature', cell: (item: any) => (
@@ -248,7 +248,7 @@ export default function AccountingPage() {
     { header: 'Current Balance (₹)', accessorKey: 'current_balance', cell: (item: any) => (
       <button
         onClick={() => { setGlAccountId(item.id); setActiveTab('General Ledger'); }}
-        className={`font-mono font-semibold hover:underline ${Number(item.balance_signed) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}
+        className={`font-mono font-semibold hover:underline ${Number(item.balance_signed) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}
         title="Open this account's ledger"
       >
         {formatBalance(item.balance_signed ?? item.current_balance, item.balance_side)}
@@ -263,13 +263,13 @@ export default function AccountingPage() {
           setObType(item.opening_balance_type || item.normal_balance || 'D');
           setIsOpeningModalOpen(true);
         }}
-        className="px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs transition-colors"
+        className="px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary rounded text-xs transition-colors"
       >
         Edit Opening Bal
       </button>
       <button
         onClick={() => { setEditAcc(item); setEditName(item.name || ''); setEditGroup(item.group_code || ''); }}
-        className="ml-1 px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs transition-colors"
+        className="ml-1 px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary rounded text-xs transition-colors"
       >
         Edit
       </button>
@@ -285,7 +285,7 @@ export default function AccountingPage() {
           }
         }}
         title={item.is_active === false ? 'Show this account again' : 'Hide an unused account; refused if it has postings, an opening balance, a party or an item'}
-        className="ml-1 px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs transition-colors"
+        className="ml-1 px-2.5 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary rounded text-xs transition-colors"
       >
         {item.is_active === false ? 'Reactivate' : 'Deactivate'}
       </button>
@@ -301,14 +301,14 @@ export default function AccountingPage() {
       <div>
         <label className="block text-textSecondary mb-1 font-medium">From</label>
         <input type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value, label: 'custom' })}
-          className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-white focus:border-primary outline-none" />
+          className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-textPrimary focus:border-primary outline-none" />
       </div>
       <div>
         <label className="block text-textSecondary mb-1 font-medium">To</label>
         <input type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value, label: 'custom' })}
-          className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-white focus:border-primary outline-none" />
+          className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-textPrimary focus:border-primary outline-none" />
       </div>
-      <button onClick={() => activeFiscalYearRange().then(setRange)} className="px-3 py-2 border border-border rounded-lg text-textSecondary hover:text-white hover:border-primary">
+      <button onClick={() => activeFiscalYearRange().then(setRange)} className="px-3 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary hover:border-primary">
         Active fiscal year
       </button>
       {range.label && range.label !== 'custom' && <span className="text-textSecondary pb-2">{range.label}</span>}
@@ -319,11 +319,11 @@ export default function AccountingPage() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <div>
-          <div className="text-white font-semibold">{title}</div>
+          <div className="text-textPrimary font-semibold">{title}</div>
           <div className="text-xs text-textSecondary">{data.from_date || 'inception'} to {data.to_date || today()} · click a line to open its voucher</div>
         </div>
         <div className="flex gap-6 font-mono text-xs">
-          <span className="text-textSecondary">Opening <strong className="text-white">{formatBalance(data.opening_balance, data.opening_side)}</strong></span>
+          <span className="text-textSecondary">Opening <strong className="text-textPrimary">{formatBalance(data.opening_balance, data.opening_side)}</strong></span>
           <span className="text-textSecondary">Closing <strong className="text-primary">{formatBalance(data.closing_balance, data.closing_side)}</strong></span>
         </div>
       </div>
@@ -340,35 +340,35 @@ export default function AccountingPage() {
             </tr>
           </thead>
           <tbody>
-            <tr className="bg-white/5 border-b border-border/50">
+            <tr className="bg-black/5 border-b border-border/50">
               <td className="px-4 py-3 font-mono text-xs text-textSecondary">{data.from_date || '—'}</td>
               <td className="px-4 py-3 text-textSecondary text-xs" colSpan={2}>Opening balance b/f</td>
-              <td className="px-4 py-3 text-right font-mono text-white">{money(data.opening_debit)}</td>
+              <td className="px-4 py-3 text-right font-mono text-textPrimary">{money(data.opening_debit)}</td>
               <td className="px-4 py-3 text-right font-mono text-success">{money(data.opening_credit)}</td>
-              <td className="px-4 py-3 text-right font-mono font-semibold text-white">{formatBalance(data.opening_balance, data.opening_side)}</td>
+              <td className="px-4 py-3 text-right font-mono font-semibold text-textPrimary">{formatBalance(data.opening_balance, data.opening_side)}</td>
             </tr>
             {(data.entries || []).map((e: any) => (
               <tr key={e.line_id} onClick={() => setVoucherId(e.journal_entry_id)}
-                className="bg-background hover:bg-white/5 border-b border-border/50 cursor-pointer transition-colors">
-                <td className="px-4 py-3 font-mono text-xs text-white whitespace-nowrap">{e.entry_date || e.date}</td>
+                className="bg-background hover:bg-black/5 border-b border-border/50 cursor-pointer transition-colors">
+                <td className="px-4 py-3 font-mono text-xs text-textPrimary whitespace-nowrap">{e.entry_date || e.date}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span className="font-mono text-xs text-primary">{e.entry_no || e.voucher_no}</span>
                   <span className="block text-[10px] text-textSecondary">{e.entry_type || e.voucher_type}</span>
                 </td>
-                <td className="px-4 py-3 text-white">
+                <td className="px-4 py-3 text-textPrimary">
                   {e.line_narration || e.particulars || e.narration}
                   {e.reference_no && <span className="block text-xs text-textSecondary font-mono">{e.reference_no}</span>}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-white">{money(e.debit ?? e.dr_amount)}</td>
+                <td className="px-4 py-3 text-right font-mono text-textPrimary">{money(e.debit ?? e.dr_amount)}</td>
                 <td className="px-4 py-3 text-right font-mono text-success">{money(e.credit ?? e.cr_amount)}</td>
-                <td className={`px-4 py-3 text-right font-mono font-semibold ${e.running_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                <td className={`px-4 py-3 text-right font-mono font-semibold ${e.running_side === 'Cr' ? 'text-rose-700' : 'text-emerald-700'}`}>
                   {formatBalance(e.running_balance, e.running_side)}
                 </td>
               </tr>
             ))}
             <tr className="bg-primary/5 font-semibold border-t-2 border-primary/20">
-              <td className="px-4 py-3 text-right text-white" colSpan={3}>Period totals / closing balance c/f</td>
-              <td className="px-4 py-3 text-right font-mono text-white">{formatCurrency(Number(data.total_debit || 0))}</td>
+              <td className="px-4 py-3 text-right text-textPrimary" colSpan={3}>Period totals / closing balance c/f</td>
+              <td className="px-4 py-3 text-right font-mono text-textPrimary">{formatCurrency(Number(data.total_debit || 0))}</td>
               <td className="px-4 py-3 text-right font-mono text-success">{formatCurrency(Number(data.total_credit || 0))}</td>
               <td className="px-4 py-3 text-right font-mono text-primary">{formatBalance(data.closing_balance, data.closing_side)}</td>
             </tr>
@@ -392,7 +392,7 @@ export default function AccountingPage() {
             </Badge>
             <span className="text-textSecondary text-xs">as at {recon.as_of_date} · generated {recon.generated_at}</span>
           </div>
-          <button onClick={fetchData} className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg text-textSecondary hover:text-white hover:border-primary text-xs">
+          <button onClick={fetchData} className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg text-textSecondary hover:text-textPrimary hover:border-primary text-xs">
             <RefreshCw className="w-3.5 h-3.5" /> Re-run checks
           </button>
         </div>
@@ -408,7 +408,7 @@ export default function AccountingPage() {
                   <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${c.status === 'ok' ? 'text-success' : c.status === 'fail' ? 'text-danger' : c.status === 'warn' ? 'text-warning' : 'text-textSecondary'}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-white text-sm font-medium">{c.label}</span>
+                      <span className="text-textPrimary text-sm font-medium">{c.label}</span>
                       <Badge variant={st.badge}>{st.label}</Badge>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-xs font-mono text-textSecondary">
@@ -417,8 +417,8 @@ export default function AccountingPage() {
                       ) : (
                         <>
                           {/* Totals are amounts, not balances; only the ledger-vs-bills figure carries a side. */}
-                          <span>expected <strong className="text-white">{c.name === 'outstanding_vs_ledgers' ? formatBalance(c.expected) : formatCurrency(Number(c.expected || 0))}</strong></span>
-                          <span>actual <strong className="text-white">{c.name === 'outstanding_vs_ledgers' ? formatBalance(c.actual) : formatCurrency(Number(c.actual || 0))}</strong></span>
+                          <span>expected <strong className="text-textPrimary">{c.name === 'outstanding_vs_ledgers' ? formatBalance(c.expected) : formatCurrency(Number(c.expected || 0))}</strong></span>
+                          <span>actual <strong className="text-textPrimary">{c.name === 'outstanding_vs_ledgers' ? formatBalance(c.actual) : formatCurrency(Number(c.actual || 0))}</strong></span>
                           <span>difference <strong className={Number(c.difference) === 0 ? 'text-success' : 'text-danger'}>{Number(c.difference) === 0 ? '0.00' : Number(c.difference).toFixed(4)}</strong></span>
                         </>
                       )}
@@ -455,7 +455,7 @@ export default function AccountingPage() {
                             {c.items.map((it: any, i: number) => (
                               <tr key={i} className="border-t border-border/40">
                                 {Object.entries(it).map(([k, v]: any) => (
-                                  <td key={k} className="pr-4 py-1 font-mono text-white">
+                                  <td key={k} className="pr-4 py-1 font-mono text-textPrimary">
                                     {k === 'id' && it.entry_no ? <button className="text-primary underline" onClick={() => setVoucherId(v)}>{String(v)}</button> : String(v ?? '—')}
                                   </td>
                                 ))}
@@ -487,7 +487,7 @@ export default function AccountingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Double-Entry Mercantile Accounting [S44AA]</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Double-Entry Mercantile Accounting [S44AA]</h1>
           <p className="text-textSecondary mt-1">Trial Balance, General Ledger, Cash Book, Chart of Accounts, and the live reconciliation of the books.</p>
         </div>
         {activeTab === 'Chart of Accounts & Opening Balances' && (
@@ -509,7 +509,7 @@ export default function AccountingPage() {
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab
                   ? 'bg-primary/20 text-primary border border-primary/30'
-                  : 'text-textSecondary hover:bg-surface hover:text-white border border-transparent'
+                  : 'text-textSecondary hover:bg-surface hover:text-textPrimary border border-transparent'
               }`}
             >
               {tab}
@@ -522,7 +522,7 @@ export default function AccountingPage() {
             <div>
               <label className="block text-textSecondary mb-1 font-medium">As of</label>
               <input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)}
-                className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-white focus:border-primary outline-none" />
+                className="px-3 py-2 bg-background border border-border rounded-lg text-sm text-textPrimary focus:border-primary outline-none" />
             </div>
           </div>
         )}
@@ -537,17 +537,17 @@ export default function AccountingPage() {
               <>
                 <DataTable columns={columns} data={tbRows} />
                 <div className="bg-surface border border-border rounded-xl p-4 grid grid-cols-2 md:grid-cols-6 gap-3 text-xs mt-4">
-                  <div><div className="text-textSecondary">Opening Dr</div><div className="font-mono text-white">{formatCurrency(Number(tbTotals.opening_debit || 0))}</div></div>
-                  <div><div className="text-textSecondary">Opening Cr</div><div className="font-mono text-white">{formatCurrency(Number(tbTotals.opening_credit || 0))}</div></div>
-                  <div><div className="text-textSecondary">Total Dr</div><div className="font-mono text-emerald-400">{formatCurrency(Number(tbTotals.total_debit || 0))}</div></div>
-                  <div><div className="text-textSecondary">Total Cr</div><div className="font-mono text-emerald-400">{formatCurrency(Number(tbTotals.total_credit || 0))}</div></div>
-                  <div><div className="text-textSecondary">Closing Dr</div><div className="font-mono text-white font-semibold">{formatCurrency(Number(tbTotals.closing_debit || 0))}</div></div>
-                  <div><div className="text-textSecondary">Closing Cr</div><div className="font-mono text-white font-semibold">{formatCurrency(Number(tbTotals.closing_credit || 0))}</div></div>
+                  <div><div className="text-textSecondary">Opening Dr</div><div className="font-mono text-textPrimary">{formatCurrency(Number(tbTotals.opening_debit || 0))}</div></div>
+                  <div><div className="text-textSecondary">Opening Cr</div><div className="font-mono text-textPrimary">{formatCurrency(Number(tbTotals.opening_credit || 0))}</div></div>
+                  <div><div className="text-textSecondary">Total Dr</div><div className="font-mono text-emerald-700">{formatCurrency(Number(tbTotals.total_debit || 0))}</div></div>
+                  <div><div className="text-textSecondary">Total Cr</div><div className="font-mono text-emerald-700">{formatCurrency(Number(tbTotals.total_credit || 0))}</div></div>
+                  <div><div className="text-textSecondary">Closing Dr</div><div className="font-mono text-textPrimary font-semibold">{formatCurrency(Number(tbTotals.closing_debit || 0))}</div></div>
+                  <div><div className="text-textSecondary">Closing Cr</div><div className="font-mono text-textPrimary font-semibold">{formatCurrency(Number(tbTotals.closing_credit || 0))}</div></div>
                 </div>
                 {tbTotals.is_balanced ? (
-                  <p className="text-emerald-400 text-sm text-center mt-2 font-medium">Trial balance agrees: debits equal credits (postings and closing balances).</p>
+                  <p className="text-emerald-700 text-sm text-center mt-2 font-medium">Trial balance agrees: debits equal credits (postings and closing balances).</p>
                 ) : (
-                  <p className="text-rose-400 text-sm text-center mt-2 font-medium">
+                  <p className="text-rose-700 text-sm text-center mt-2 font-medium">
                     Trial balance difference: postings {Number(tbTotals.difference || 0).toFixed(4)}, closing balances {Number(tbTotals.closing_difference || 0).toFixed(4)}
                   </p>
                 )}
@@ -577,7 +577,7 @@ export default function AccountingPage() {
                 <select
                   value={glAccountId}
                   onChange={(e) => setGlAccountId(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none"
                 >
                   <option value="">-- Select Account --</option>
                   {accounts.map(acc => (
@@ -642,18 +642,18 @@ export default function AccountingPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-xs text-textSecondary mb-1 font-medium">Name</label>
-              <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white" />
+              <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary" />
             </div>
             <div>
               <label className="block text-xs text-textSecondary mb-1 font-medium">Group</label>
-              <select value={editGroup} onChange={(e) => setEditGroup(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white">
+              <select value={editGroup} onChange={(e) => setEditGroup(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary">
                 {accountGroups.map((g) => (
                   <option key={g.code} value={g.code}>{g.name} · {g.nature}</option>
                 ))}
               </select>
             </div>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setEditAcc(null)} className="px-4 py-2 rounded-lg border border-border text-textSecondary hover:text-white text-sm">Cancel</button>
+              <button onClick={() => setEditAcc(null)} className="px-4 py-2 rounded-lg border border-border text-textSecondary hover:text-textPrimary text-sm">Cancel</button>
               <button
                 disabled={isSavingEdit}
                 onClick={async () => {
@@ -690,7 +690,7 @@ export default function AccountingPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-xs text-textSecondary mb-1 font-medium">Account</label>
-              <div className="p-3 bg-surface border border-border rounded-lg text-white text-sm font-semibold">
+              <div className="p-3 bg-surface border border-border rounded-lg text-textPrimary text-sm font-semibold">
                 {selectedAccForOb.code} — {selectedAccForOb.name} ({selectedAccForOb.group_name})
               </div>
             </div>
@@ -702,7 +702,7 @@ export default function AccountingPage() {
                   step="0.01"
                   value={obAmount}
                   onChange={(e) => setObAmount(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white font-mono"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary font-mono"
                   placeholder="0.00"
                 />
               </div>
@@ -711,7 +711,7 @@ export default function AccountingPage() {
                 <select
                   value={obType}
                   onChange={(e) => setObType(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary"
                 >
                   <option value="D">Dr (Debit / Asset / Receivable)</option>
                   <option value="C">Cr (Credit / Liability / Payable)</option>
@@ -719,7 +719,7 @@ export default function AccountingPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <button onClick={() => setIsOpeningModalOpen(false)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">Cancel</button>
+              <button onClick={() => setIsOpeningModalOpen(false)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">Cancel</button>
               <button onClick={handleSaveOpeningBalance} disabled={isSavingOb} className="px-4 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 flex items-center gap-2">
                 {isSavingOb ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Opening Balance
               </button>
@@ -739,7 +739,7 @@ export default function AccountingPage() {
                   type="text"
                   value={newAccCode}
                   onChange={(e) => setNewAccCode(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white font-mono uppercase"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary font-mono uppercase"
                   placeholder="e.g. EXP-MISC-02"
                 />
               </div>
@@ -749,7 +749,7 @@ export default function AccountingPage() {
                   type="text"
                   value={newAccName}
                   onChange={(e) => setNewAccName(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary"
                   placeholder="e.g. Factory Repairs & Maintenance"
                 />
               </div>
@@ -766,7 +766,7 @@ export default function AccountingPage() {
                     // Expenses and assets normally carry a debit balance; income, liabilities and equity a credit one.
                     setNewAccNormalBalance(n.startsWith('exp') || n.startsWith('asset') ? 'D' : 'C');
                   }}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary"
                 >
                   {accountGroups.map((g) => (
                     <option key={g.code} value={g.code}>{g.name} · {g.nature}</option>
@@ -779,7 +779,7 @@ export default function AccountingPage() {
                 <select
                   value={newAccNormalBalance}
                   onChange={(e) => setNewAccNormalBalance(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary"
                 >
                   <option value="D">Debit (D)</option>
                   <option value="C">Credit (C)</option>
@@ -793,12 +793,12 @@ export default function AccountingPage() {
                 step="0.01"
                 value={newAccOpeningBal}
                 onChange={(e) => setNewAccOpeningBal(e.target.value)}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white font-mono"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary font-mono"
                 placeholder="0.00"
               />
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <button onClick={() => setIsNewAccModalOpen(false)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">Cancel</button>
+              <button onClick={() => setIsNewAccModalOpen(false)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">Cancel</button>
               <button onClick={handleCreateAccount} disabled={isCreatingAcc} className="px-4 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 flex items-center gap-2">
                 {isCreatingAcc ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Create Account
               </button>

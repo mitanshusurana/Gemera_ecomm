@@ -33,10 +33,10 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
       {/* Modal Content */}
       <div className="relative z-50 w-full max-w-2xl max-h-[90vh] glass-card flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 m-4">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface/50">
-          <h3 className="text-xl font-playfair font-semibold text-white">{title}</h3>
+          <h3 className="text-xl font-playfair font-semibold text-textPrimary">{title}</h3>
           <button 
             onClick={onClose}
-            className="text-textSecondary hover:text-white transition-colors"
+            className="text-textSecondary hover:text-textPrimary transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

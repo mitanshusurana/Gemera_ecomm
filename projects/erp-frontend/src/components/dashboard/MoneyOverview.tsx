@@ -26,7 +26,7 @@ function DueCard({ title, hint, icon, dues, href, loading }: {
         <span className="text-primary">{icon}</span>
       </div>
       <p className="text-xs text-textSecondary mt-1">{hint}</p>
-      <h4 className="text-3xl font-playfair font-semibold text-white mt-3">{loading ? '...' : formatCurrency(total)}</h4>
+      <h4 className="text-2xl xl:text-3xl font-playfair font-semibold text-textPrimary mt-3 whitespace-nowrap">{loading ? '...' : formatCurrency(total)}</h4>
       {/* current | overdue, as one bar with a gap between the two parts */}
       <div className="flex gap-[2px] h-1.5 mt-4" aria-hidden="true">
         {total > 0 ? (
@@ -35,7 +35,7 @@ function DueCard({ title, hint, icon, dues, href, loading }: {
             {overdue > 0 && <div className="rounded-full" style={{ width: `${100 - pct}%`, backgroundColor: FLOW_OUT }} />}
           </>
         ) : (
-          <div className="rounded-full w-full bg-white/10" />
+          <div className="rounded-full w-full bg-black/5" />
         )}
       </div>
       <div className="mt-3 space-y-1.5 text-xs">
@@ -44,14 +44,14 @@ function DueCard({ title, hint, icon, dues, href, loading }: {
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: FLOW_IN }} />
             Current
           </span>
-          <span className="text-white font-mono">{formatCurrency(current)}</span>
+          <span className="text-textPrimary font-mono">{formatCurrency(current)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-textSecondary">
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: FLOW_OUT }} />
             Overdue{dues && dues.overdue_count > 0 ? ` · ${dues.overdue_count} ${dues.overdue_count === 1 ? 'bill' : 'bills'}` : ''}
           </span>
-          <span className="text-white font-mono">{formatCurrency(overdue)}</span>
+          <span className="text-textPrimary font-mono">{formatCurrency(overdue)}</span>
         </div>
       </div>
     </Link>
@@ -99,7 +99,7 @@ export default function MoneyOverview({ refreshKey = 0 }: { refreshKey?: number 
             <Landmark className="w-5 h-5 text-primary" />
           </div>
           <p className="text-xs text-textSecondary mt-1">Book balances today</p>
-          <h4 className="text-3xl font-playfair font-semibold text-white mt-3">{loading ? '...' : formatCurrency(data?.cash_bank.total ?? 0)}</h4>
+          <h4 className="text-2xl xl:text-3xl font-playfair font-semibold text-textPrimary mt-3 whitespace-nowrap">{loading ? '...' : formatCurrency(data?.cash_bank.total ?? 0)}</h4>
           <div className="mt-4 space-y-1.5">
             {(data?.cash_bank.accounts || []).slice(0, 4).map((a) => (
               <div key={a.id} className="flex items-center justify-between text-xs">
@@ -107,7 +107,7 @@ export default function MoneyOverview({ refreshKey = 0 }: { refreshKey?: number 
                   {a.account_type === 'Cash' ? <Wallet className="w-3.5 h-3.5" /> : <Landmark className="w-3.5 h-3.5" />}
                   <span className="truncate">{a.name}</span>
                 </span>
-                <span className="text-white font-mono">{formatCurrency(a.balance)}</span>
+                <span className="text-textPrimary font-mono whitespace-nowrap pl-2">{formatCurrency(a.balance)}</span>
               </div>
             ))}
             {!loading && (data?.cash_bank.accounts || []).length === 0 && (
@@ -123,14 +123,14 @@ export default function MoneyOverview({ refreshKey = 0 }: { refreshKey?: number 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 glass-card p-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-playfair font-semibold text-white">Cash Flow</h3>
+            <h3 className="text-lg font-playfair font-semibold text-textPrimary">Cash Flow</h3>
             <span className="text-xs text-textSecondary">This financial year · cash and bank ledgers, transfers between them left out</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 mb-2 text-xs">
-            <div><p className="text-textSecondary">Cash on {data?.fy_start ? new Date(data.fy_start).toLocaleDateString('en-IN') : '1 April'}</p><p className="text-white font-mono text-sm mt-0.5">{formatCurrency(flow?.opening ?? 0)}</p></div>
-            <div><p className="text-textSecondary">Money in (+)</p><p className="text-white font-mono text-sm mt-0.5">{formatCurrency(flow?.incoming ?? 0)}</p></div>
-            <div><p className="text-textSecondary">Money out (−)</p><p className="text-white font-mono text-sm mt-0.5">{formatCurrency(flow?.outgoing ?? 0)}</p></div>
-            <div><p className="text-textSecondary">Cash today (=)</p><p className="text-white font-mono text-sm mt-0.5">{formatCurrency(flow?.closing ?? 0)}</p></div>
+            <div><p className="text-textSecondary">Cash on {data?.fy_start ? new Date(data.fy_start).toLocaleDateString('en-IN') : '1 April'}</p><p className="text-textPrimary font-mono text-sm mt-0.5">{formatCurrency(flow?.opening ?? 0)}</p></div>
+            <div><p className="text-textSecondary">Money in (+)</p><p className="text-textPrimary font-mono text-sm mt-0.5">{formatCurrency(flow?.incoming ?? 0)}</p></div>
+            <div><p className="text-textSecondary">Money out (−)</p><p className="text-textPrimary font-mono text-sm mt-0.5">{formatCurrency(flow?.outgoing ?? 0)}</p></div>
+            <div><p className="text-textSecondary">Cash today (=)</p><p className="text-textPrimary font-mono text-sm mt-0.5">{formatCurrency(flow?.closing ?? 0)}</p></div>
           </div>
           {hasFlow ? (
             <CashFlowChart data={flow?.months || []} />
@@ -143,7 +143,7 @@ export default function MoneyOverview({ refreshKey = 0 }: { refreshKey?: number 
 
         <div className="glass-card p-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-playfair font-semibold text-white">Top Expenses</h3>
+            <h3 className="text-lg font-playfair font-semibold text-textPrimary">Top Expenses</h3>
             <Link href="/reports?report=expenses_by_account" className="text-xs text-primary hover:underline">All expenses</Link>
           </div>
           <p className="text-xs text-textSecondary mt-1">
@@ -153,10 +153,10 @@ export default function MoneyOverview({ refreshKey = 0 }: { refreshKey?: number 
             {(expenses?.rows || []).map((r) => (
               <div key={r.account_id}>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-white truncate pr-3" title={`${r.code} · ${r.group_name}`}>{r.name}</span>
-                  <span className="text-white font-mono text-xs">{formatCurrency(r.amount)}</span>
+                  <span className="text-textPrimary truncate pr-3" title={`${r.code} · ${r.group_name}`}>{r.name}</span>
+                  <span className="text-textPrimary font-mono text-xs">{formatCurrency(r.amount)}</span>
                 </div>
-                <div className="h-1.5 mt-1.5 rounded-full bg-white/5">
+                <div className="h-1.5 mt-1.5 rounded-full bg-black/5">
                   <div className="h-1.5 rounded-full" style={{ width: `${Math.max(2, (r.amount / maxExpense) * 100)}%`, backgroundColor: FLOW_IN }} />
                 </div>
               </div>

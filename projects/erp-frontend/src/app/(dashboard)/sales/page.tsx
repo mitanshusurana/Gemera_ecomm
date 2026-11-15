@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, Download, Printer, Trash2, Calendar, Search, Filter, QrCode } from 'lucide-react';
+import { Plus, Download, Printer, Trash2, Calendar, Search, Filter, QrCode, Mail } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
@@ -11,6 +11,8 @@ import EInvoicePanel, { eInvoiceBadge } from '@/components/einvoice/EInvoicePane
 import PartySelect from '@/components/ui/PartySelect';
 import { formatCurrency } from '@/lib/utils';
 import { useQuickCreate } from '@/lib/quickCreate';
+import { mailApi, ordersApi, OrderDocument } from '@/lib/api';
+import EmailDialog from '@/components/mail/EmailDialog';
 import { apiClient } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
 
@@ -57,7 +59,19 @@ export default function SalesPage() {
   }, [fromDate, toDate, selectedCustomerId, searchQuery]);
 
   // Header "+" → Sales invoice, and /sales?q=<invoice no> from the search box.
-  useQuickCreate(() => setIsModalOpen(true));
+  useQuickCreate(() => { setFromOrder(null); setRecurringProfileId(null); setIsModalOpen(true); });
+  // /sales?from_order=<id>: invoice a quote or a sales order.
+  const [fromOrder, setFromOrder] = useState<OrderDocument | null>(null);
+  const [recurringProfileId, setRecurringProfileId] = useState<string | null>(null);
+  const [mailing, setMailing] = useState<any | null>(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('from_order');
+    if (!id) return;
+    setRecurringProfileId(new URLSearchParams(window.location.search).get('recurring'));
+    ordersApi.get(id)
+      .then((res) => { setFromOrder(res.data); setIsModalOpen(true); window.history.replaceState(null, '', '/sales'); })
+      .catch(() => alert('Could not load the quote or order to invoice.'));
+  }, []);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('q');
     if (q) setSearchQuery(q);
@@ -91,7 +105,7 @@ export default function SalesPage() {
   };
 
   const columns = [
-    { header: 'Invoice No', accessorKey: 'invoice_no', cell: (item: any) => <span className="font-medium text-white">{item.invoice_no || item.invoice_number || item.id}</span> },
+    { header: 'Invoice No', accessorKey: 'invoice_no', cell: (item: any) => <span className="font-medium text-textPrimary">{item.invoice_no || item.invoice_number || item.id}</span> },
     { header: 'Date', accessorKey: 'invoice_date', cell: (item: any) => new Date(item.invoice_date || item.date || item.created_at).toLocaleDateString('en-IN') },
     { header: 'Customer', accessorKey: 'customer_name', cell: (item: any) => item.customer_name || item.customer || '—' },
     { header: 'Tax Amount', accessorKey: 'total_gst', cell: (item: any) => formatCurrency(item.total_gst || item.gst || item.tax_amount || 0) },
@@ -119,16 +133,25 @@ export default function SalesPage() {
         >
           <QrCode className="w-4 h-4" />
         </button>
+        {item.status !== 'Cancelled' && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setMailing(item); }}
+            className="p-1 text-textSecondary hover:text-primary transition-colors"
+            title="E-mail this invoice to the customer"
+          >
+            <Mail className="w-4 h-4" />
+          </button>
+        )}
         <button
           onClick={(e) => { e.stopPropagation(); openPrint(item); }}
-          className="p-1 text-textSecondary hover:text-white transition-colors"
+          className="p-1 text-textSecondary hover:text-textPrimary transition-colors"
           title="Print Statutory Tax Invoice"
         >
           <Printer className="w-4 h-4" />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); openPrint(item); }}
-          className="p-1 text-textSecondary hover:text-white transition-colors" 
+          className="p-1 text-textSecondary hover:text-textPrimary transition-colors" 
           title="Download Invoice"
         >
           <Download className="w-4 h-4" />
@@ -150,12 +173,12 @@ export default function SalesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Sales Register</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Sales Register</h1>
           <p className="text-textSecondary mt-1">[CGST Rule 56(4)] Manage B2B and B2C sales invoices with date range filters.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)]"
+          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" /> New Invoice
         </button>
@@ -171,7 +194,7 @@ export default function SalesPage() {
             type="date" 
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none"
           />
         </div>
 
@@ -183,7 +206,7 @@ export default function SalesPage() {
             type="date" 
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none"
           />
         </div>
 
@@ -209,7 +232,7 @@ export default function SalesPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyUp={(e) => e.key === 'Enter' && fetchSalesData()}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-textSecondary focus:border-primary outline-none"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary placeholder:text-textSecondary focus:border-primary outline-none"
           />
         </div>
       </div>
@@ -223,7 +246,7 @@ export default function SalesPage() {
           </div>
         ) : salesData.length === 0 ? (
           <div className="text-center py-12 text-textSecondary space-y-2">
-            <p className="text-base font-semibold text-white">No sales invoices found for selected period</p>
+            <p className="text-base font-semibold text-textPrimary">No sales invoices found for selected period</p>
             <p className="text-xs text-textSecondary">Try adjusting the date filters or click "New Invoice" to record a sale.</p>
           </div>
         ) : (
@@ -231,12 +254,19 @@ export default function SalesPage() {
         )}
       </div>
 
+      <EmailDialog
+        subject={mailing ? `Invoice ${mailing.invoice_no}` : null}
+        defaultTo={mailing?.customer_email}
+        onClose={() => setMailing(null)}
+        onSend={(body) => mailApi.invoice(mailing.id, body)}
+      />
+
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
         title="Create Tax Invoice"
       >
-        <SalesInvoiceForm onSuccess={() => { setIsModalOpen(false); fetchSalesData(); }} />
+        <SalesInvoiceForm fromOrder={fromOrder} recurringProfileId={recurringProfileId} onSuccess={() => { setIsModalOpen(false); setFromOrder(null); setRecurringProfileId(null); fetchSalesData(); }} />
       </Modal>
 
       {selectedPrintInvoice && (

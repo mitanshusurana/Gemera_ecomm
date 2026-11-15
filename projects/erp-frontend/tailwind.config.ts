@@ -8,23 +8,35 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Light theme. Fills, borders and rings read `colors`; text reads
+      // `textColor` where a fill colour would be too pale to read on white
+      // (gold, green, amber, red are darkened for text only).
       colors: {
-        primary: "#D4A843",
-        background: "#0A0A0B",
-        surface: "#141418",
-        border: "#2A2A35",
-        accent: "#D4A843",
-        success: "#22C55E",
-        warning: "#F59E0B",
-        danger: "#EF4444",
-        textPrimary: "#F5F5F5",
-        textSecondary: "#9CA3AF"
+        primary: "#C9992B",
+        background: "#F5F5F7",
+        surface: "#FFFFFF",
+        border: "#E0E0E5",
+        accent: "#C9992B",
+        success: "#16A34A",
+        warning: "#D97706",
+        danger: "#DC2626",
+        textPrimary: "#1D1D1F",
+        textSecondary: "#6E6E73"
+      },
+      textColor: {
+        primary: "#8A6508",
+        accent: "#8A6508",
+        success: "#15803D",
+        warning: "#B45309",
+        danger: "#B91C1C",
+        // Text on the gold action fill (buttons): ink, not the page colour.
+        background: "#1D1D1F",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-        "gold-gradient": "linear-gradient(135deg, #D4A843 0%, #B28830 100%)",
+        "gold-gradient": "linear-gradient(135deg, #DDB04A 0%, #C9992B 100%)",
       },
       fontFamily: {
         inter: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

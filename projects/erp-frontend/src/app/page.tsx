@@ -72,7 +72,7 @@ export default function LoginPage() {
               <path d="M6 3l6 6" />
               <path d="M18 3l-6 6" />
             </svg>
-            <h1 className="text-5xl font-playfair font-bold text-white tracking-wider">
+            <h1 className="text-5xl font-playfair font-bold text-textPrimary tracking-wider">
               Caratloop
             </h1>
           </div>
@@ -85,10 +85,10 @@ export default function LoginPage() {
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background relative">
         <div className="w-full max-w-md glass-card p-10 space-y-8 relative overflow-hidden group">
-          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"></div>
+          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-black/5 to-transparent group-hover:animate-[shimmer_1.5s_infinite]"></div>
           
           <div className="text-center space-y-2 relative z-10">
-            <h2 className="text-3xl font-playfair font-semibold text-white">Welcome Back</h2>
+            <h2 className="text-3xl font-playfair font-semibold text-textPrimary">Welcome Back</h2>
             <p className="text-textSecondary text-sm">Sign in to your ERP dashboard</p>
           </div>
 
@@ -107,7 +107,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@caratloop.com"
-                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-white placeholder:text-border focus:outline-none focus:border-primary transition-colors"
+                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-textPrimary placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors"
               />
             </div>
             
@@ -121,14 +121,14 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-white placeholder:text-border focus:outline-none focus:border-primary transition-colors"
+                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-textPrimary placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors"
               />
             </div>
 
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-gold-gradient text-background font-semibold rounded-lg px-4 py-3 hover:opacity-90 transition-opacity shadow-[0_0_20px_rgba(212,168,67,0.3)] hover:shadow-[0_0_30px_rgba(212,168,67,0.5)] disabled:opacity-50"
+              className="w-full bg-gold-gradient text-background font-semibold rounded-lg px-4 py-3 hover:opacity-90 transition-opacity hover: disabled:opacity-50"
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>

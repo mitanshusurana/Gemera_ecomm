@@ -13,6 +13,7 @@ import { financialYearStart } from '@/lib/fiscal';
 const ANALYSIS: Record<string, AnalysisReport> = {
   'Sales by Customer': 'sales_by_customer',
   'Sales by Item': 'sales_by_item',
+  'Sales by Salesperson': 'sales_by_salesperson',
   'Purchases by Vendor': 'purchases_by_vendor',
   'Purchases by Item': 'purchases_by_item',
   'Expenses by Category': 'expenses_by_account',
@@ -43,6 +44,9 @@ export default function ReportsPage() {
     { id: 'Audit Trail Log', name: 'Audit Trail Log [MCA-11g]', desc: 'Immutable database change history with sequence numbers & row hashes' },
     { id: 'Sales by Customer', name: 'Sales by Customer', desc: 'Who buys: invoices, taxable value, GST, total and what is still unpaid, per customer' },
     { id: 'Sales by Item', name: 'Sales by Item', desc: 'What sells: quantity, net weight and value per item or product' },
+    { id: 'Sales by Salesperson', name: 'Sales by Salesperson', desc: 'Invoices, value and what is unpaid for each salesperson named on an invoice' },
+    { id: 'Cash Flow Statement', name: 'Cash Flow Statement', desc: 'Where cash came from and went to in the period; opening plus movement equals closing' },
+    { id: 'GST Annual Summary', name: 'GST Annual Summary', desc: 'The year by month: outward supplies, output tax, ITC, reverse charge. Working figures for GSTR-9' },
     { id: 'Purchases by Vendor', name: 'Purchases by Vendor', desc: 'Whom you buy from: bills, taxable value, GST, total and what is still payable' },
     { id: 'Purchases by Item', name: 'Purchases by Item', desc: 'What you buy: quantity, weight and value per item, services included' },
     { id: 'Expenses by Category', name: 'Expenses by Category', desc: 'Where the money goes: each expense ledger for the period, largest first' },
@@ -78,6 +82,12 @@ export default function ReportsPage() {
       } else if (selectedReport === 'Audit Trail Log') {
         const res = await apiClient.get(`/reports/audit-trail?from_date=${fromDate}&to_date=${toDate}`);
         setReportData(res.data);
+      } else if (selectedReport === 'Cash Flow Statement') {
+        const res = await insightsApi.cashFlowStatement(fromDate, toDate);
+        setReportData(res.data);
+      } else if (selectedReport === 'GST Annual Summary') {
+        const res = await insightsApi.gstAnnualSummary(Number(fromDate.slice(0, 4)) - (Number(fromDate.slice(5, 7)) < 4 ? 1 : 0));
+        setReportData(res.data);
       } else if (ANALYSIS[selectedReport]) {
         const res = await insightsApi.analysis(ANALYSIS[selectedReport], fromDate, toDate);
         setReportData(res.data);
@@ -102,10 +112,10 @@ export default function ReportsPage() {
 
   const num = (v: any, digits = 2) => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: digits });
   const partyAnalysisColumns = [
-    { header: selectedReport === 'Purchases by Vendor' ? 'Vendor' : 'Customer', accessorKey: 'name', cell: (item: any) => (
+    { header: selectedReport === 'Purchases by Vendor' ? 'Vendor' : selectedReport === 'Sales by Salesperson' ? 'Salesperson' : 'Customer', accessorKey: 'name', cell: (item: any) => (
       <span>
-        <span className="block font-medium text-white">{item.name}</span>
-        <span className="block font-mono text-[11px] text-textSecondary">{item.gstin || 'Unregistered'}</span>
+        <span className="block font-medium text-textPrimary">{item.name}</span>
+        {selectedReport !== 'Sales by Salesperson' && <span className="block font-mono text-[11px] text-textSecondary">{item.gstin || 'Unregistered'}</span>}
       </span>
     ) },
     { header: selectedReport === 'Purchases by Vendor' ? 'Bills' : 'Invoices', accessorKey: 'documents', cell: (item: any) => num(item.documents, 0) },
@@ -116,7 +126,7 @@ export default function ReportsPage() {
   ];
   const itemAnalysisColumns = [
     { header: 'Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-xs text-textSecondary">{item.code || '—'}</span> },
-    { header: 'Item', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-white">{item.name}</span> },
+    { header: 'Item', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-textPrimary">{item.name}</span> },
     { header: 'Category', accessorKey: 'category', cell: (item: any) => item.category || '—' },
     { header: selectedReport === 'Purchases by Item' ? 'Bills' : 'Invoices', accessorKey: 'documents', cell: (item: any) => num(item.documents, 0) },
     { header: 'Quantity', accessorKey: 'quantity', cell: (item: any) => num(item.quantity, 3) },
@@ -126,7 +136,7 @@ export default function ReportsPage() {
   ];
   const expenseAnalysisColumns = [
     { header: 'Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-xs text-textSecondary">{item.code}</span> },
-    { header: 'Expense Ledger', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-white">{item.name}</span> },
+    { header: 'Expense Ledger', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-textPrimary">{item.name}</span> },
     { header: 'Group', accessorKey: 'group_name', cell: (item: any) => item.group_name },
     { header: 'Vouchers', accessorKey: 'documents', cell: (item: any) => num(item.documents, 0) },
     { header: 'Amount (₹)', accessorKey: 'total', cell: (item: any) => <span className="font-mono font-semibold text-primary">{formatCurrency(item.total || 0)}</span> },
@@ -141,8 +151,8 @@ export default function ReportsPage() {
 
   // Column definitions for different statutory tables
   const trialColumns = [
-    { header: 'Account Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-white">{item.code}</span> },
-    { header: 'Account Name', accessorKey: 'account_name', cell: (item: any) => <span className="font-medium text-white">{item.account_name}</span> },
+    { header: 'Account Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-textPrimary">{item.code}</span> },
+    { header: 'Account Name', accessorKey: 'account_name', cell: (item: any) => <span className="font-medium text-textPrimary">{item.account_name}</span> },
     { header: 'Group Name', accessorKey: 'group_name', cell: (item: any) => <span className="text-textSecondary text-xs">{item.group_name}</span> },
     { header: 'Opening (₹)', accessorKey: 'opening_debit', cell: (item: any) => <span className="font-mono text-textSecondary">{Number(item.opening_debit) || Number(item.opening_credit) ? formatBalance(Number(item.opening_debit || 0) - Number(item.opening_credit || 0)) : '—'}</span> },
     { header: 'Total Debit (₹)', accessorKey: 'total_debit', cell: (item: any) => <span className="font-mono">{formatCurrency(item.total_debit || 0)}</span> },
@@ -151,15 +161,15 @@ export default function ReportsPage() {
     // NORMAL side (positive = usual balance), so "net_balance >= 0 ? Dr : Cr"
     // labelled every GST output and sales balance "Dr".
     { header: 'Closing Balance (₹)', accessorKey: 'closing_signed', cell: (item: any) => (
-      <span className={`font-semibold font-mono ${item.closing_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>
+      <span className={`font-semibold font-mono ${item.closing_side === 'Cr' ? 'text-rose-700' : 'text-emerald-700'}`}>
         {formatBalance(item.closing_signed ?? 0, item.closing_side)}
       </span>
     )}
   ];
 
   const stockColumns = [
-    { header: 'Material Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-white">{item.code || item.material_code}</span> },
-    { header: 'Name', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-white">{item.name || item.material_name}</span> },
+    { header: 'Material Code', accessorKey: 'code', cell: (item: any) => <span className="font-mono text-textPrimary">{item.code || item.material_code}</span> },
+    { header: 'Name', accessorKey: 'name', cell: (item: any) => <span className="font-medium text-textPrimary">{item.name || item.material_name}</span> },
     { header: 'Category / Group', accessorKey: 'group_name', cell: (item: any) => item.group_name || item.category || 'Stock Material' },
     { header: 'HSN / SAC', accessorKey: 'hsn_code', cell: (item: any) => <span className="font-mono text-xs">{item.hsn_code || '71131910'}</span> },
     { header: 'GST Rate', accessorKey: 'gst_tax_rate', cell: (item: any) => `${item.gst_tax_rate ?? item.material_gst_rate ?? 3.0}%` },
@@ -178,12 +188,12 @@ export default function ReportsPage() {
         {item.action}
       </Badge>
     )},
-    { header: 'Table', accessorKey: 'table_name', cell: (item: any) => <span className="font-mono text-xs text-white">{item.table_name}</span> },
+    { header: 'Table', accessorKey: 'table_name', cell: (item: any) => <span className="font-mono text-xs text-textPrimary">{item.table_name}</span> },
     { header: 'Reason / Purpose', accessorKey: 'reason', cell: (item: any) => item.reason || 'Financial mutation' }
   ];
 
   const agingColumns = [
-    { header: 'Party Name', accessorKey: 'party_name', cell: (item: any) => <span className="font-medium text-white">{item.party_name}</span> },
+    { header: 'Party Name', accessorKey: 'party_name', cell: (item: any) => <span className="font-medium text-textPrimary">{item.party_name}</span> },
     { header: 'GSTIN', accessorKey: 'gstin', cell: (item: any) => <span className="font-mono text-xs text-textSecondary">{item.gstin || 'Unregistered'}</span> },
     { header: '0 - 30 Days (₹)', accessorKey: 'bucket_0_30', cell: (item: any) => formatCurrency(item.bucket_0_30 || 0) },
     { header: '31 - 60 Days (₹)', accessorKey: 'bucket_31_60', cell: (item: any) => formatCurrency(item.bucket_31_60 || 0) },
@@ -193,7 +203,7 @@ export default function ReportsPage() {
     // The party's ledger balance and what of it the open bills do not
     // explain (advances, unapplied credit notes and receipts), so the
     // bill-wise report always reconciles to the ledger on screen.
-    { header: 'Ledger Balance', accessorKey: 'ledger_balance', cell: (item: any) => <span className={`font-mono ${item.ledger_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>{formatBalance(item.ledger_balance ?? 0, item.ledger_side)}</span> },
+    { header: 'Ledger Balance', accessorKey: 'ledger_balance', cell: (item: any) => <span className={`font-mono ${item.ledger_side === 'Cr' ? 'text-rose-700' : 'text-emerald-700'}`}>{formatBalance(item.ledger_balance ?? 0, item.ledger_side)}</span> },
     { header: 'Unadjusted (on account)', accessorKey: 'unadjusted', cell: (item: any) => <span className="font-mono text-textSecondary">{Number(item.unadjusted || 0) === 0 ? '—' : formatBalance(item.unadjusted)}</span> },
   ];
 
@@ -202,7 +212,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Statutory & MIS Reporting Center</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Statutory & MIS Reporting Center</h1>
           <p className="text-textSecondary mt-1">Real-time compliance reports under Section 44AA, CGST Rule 56, and MCA Rule 11(g).</p>
         </div>
         <div className="flex items-center gap-3">
@@ -211,7 +221,7 @@ export default function ReportsPage() {
           </Badge>
           <button 
             onClick={fetchReport}
-            className="p-2 bg-surface border border-border rounded-lg text-textSecondary hover:text-white hover:border-primary transition-colors"
+            className="p-2 bg-surface border border-border rounded-lg text-textSecondary hover:text-textPrimary hover:border-primary transition-colors"
             title="Refresh Report Data"
           >
             <RefreshCw className="w-4 h-4" />
@@ -227,8 +237,8 @@ export default function ReportsPage() {
             onClick={() => setSelectedReport(rep.id)}
             className={`glass-card p-4 cursor-pointer transition-all border ${
               selectedReport === rep.id 
-                ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(212,168,67,0.2)]' 
-                : 'border-border hover:border-white/30'
+                ? 'border-primary bg-primary/10' 
+                : 'border-border hover:border-black/20'
             }`}
           >
             <div className="flex items-center justify-between mb-2">
@@ -237,7 +247,7 @@ export default function ReportsPage() {
               </span>
               <FileText className="w-4 h-4 text-primary" />
             </div>
-            <h3 className="font-playfair font-semibold text-white text-sm">{rep.name}</h3>
+            <h3 className="font-playfair font-semibold text-textPrimary text-sm">{rep.name}</h3>
             <p className="text-xs text-textSecondary mt-1 line-clamp-2">{rep.desc}</p>
           </div>
         ))}
@@ -248,31 +258,31 @@ export default function ReportsPage() {
         {/* Sub-header & Filter Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border pb-4 gap-4">
           <div>
-            <h2 className="text-xl font-playfair font-bold text-white">{selectedReport} Report</h2>
+            <h2 className="text-xl font-playfair font-bold text-textPrimary">{selectedReport} Report</h2>
             <p className="text-xs text-textSecondary">
-              {ANALYSIS[selectedReport] ? 'Management report' : 'Statutory Mercantile Format'} • Generated on {new Date().toLocaleDateString('en-IN')}
+              {ANALYSIS[selectedReport] || selectedReport === 'Cash Flow Statement' || selectedReport === 'GST Annual Summary' ? 'Management report' : 'Statutory Mercantile Format'} • Generated on {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Filter controls based on report type */}
             {(selectedReport === 'Trial Balance' || selectedReport === 'Balance Sheet' || selectedReport === 'Stock Register' || selectedReport === 'Age-Wise Outstanding') && (
-              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
+              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-textPrimary">
                 <Calendar className="w-3.5 h-3.5 text-textSecondary" />
                 <span className="text-textSecondary">As Of:</span>
                 <input 
                   type="date" 
                   value={asOfDate} 
                   onChange={(e) => setAsOfDate(e.target.value)} 
-                  className="bg-transparent border-none text-white focus:outline-none text-xs" 
+                  className="bg-transparent border-none text-textPrimary focus:outline-none text-xs" 
                 />
               </div>
             )}
 
             {selectedReport === 'TDS/TCS Register' && (
-              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
+              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-textPrimary">
                 <span className="text-textSecondary">Kind:</span>
-                <select value={tdsKind} onChange={(e) => setTdsKind(e.target.value)} className="bg-transparent border-none text-white focus:outline-none text-xs">
+                <select value={tdsKind} onChange={(e) => setTdsKind(e.target.value)} className="bg-transparent border-none text-textPrimary focus:outline-none text-xs">
                   <option value="" className="bg-background">TDS and TCS</option>
                   <option value="TDS" className="bg-background">TDS 194Q (purchases)</option>
                   <option value="TCS" className="bg-background">TCS 206C(1H) (sales)</option>
@@ -280,42 +290,42 @@ export default function ReportsPage() {
               </div>
             )}
 
-            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'TDS/TCS Register' || selectedReport === 'Audit Trail Log' || !!ANALYSIS[selectedReport]) && (
-              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
+            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'TDS/TCS Register' || selectedReport === 'Audit Trail Log' || selectedReport === 'Cash Flow Statement' || selectedReport === 'GST Annual Summary' || !!ANALYSIS[selectedReport]) && (
+              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-textPrimary">
                 <Calendar className="w-3.5 h-3.5 text-textSecondary" />
                 <span className="text-textSecondary">From:</span>
                 <input 
                   type="date" 
                   value={fromDate} 
                   onChange={(e) => setFromDate(e.target.value)} 
-                  className="bg-transparent border-none text-white focus:outline-none text-xs" 
+                  className="bg-transparent border-none text-textPrimary focus:outline-none text-xs" 
                 />
                 <span className="text-textSecondary">To:</span>
                 <input 
                   type="date" 
                   value={toDate} 
                   onChange={(e) => setToDate(e.target.value)} 
-                  className="bg-transparent border-none text-white focus:outline-none text-xs" 
+                  className="bg-transparent border-none text-textPrimary focus:outline-none text-xs" 
                 />
               </div>
             )}
 
             {selectedReport === 'Production Account' && (
-              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
+              <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-textPrimary">
                 <Calendar className="w-3.5 h-3.5 text-textSecondary" />
                 <span className="text-textSecondary">Month:</span>
                 <input 
                   type="month" 
                   value={monthYear} 
                   onChange={(e) => setMonthYear(e.target.value)} 
-                  className="bg-transparent border-none text-white focus:outline-none text-xs" 
+                  className="bg-transparent border-none text-textPrimary focus:outline-none text-xs" 
                 />
               </div>
             )}
 
             <button 
               onClick={() => window.print()}
-              className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-white text-xs font-semibold rounded-lg hover:border-primary transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-textPrimary text-xs font-semibold rounded-lg hover:border-primary transition-colors"
             >
               <Download className="w-4 h-4" /> Print / Export PDF
             </button>
@@ -332,12 +342,12 @@ export default function ReportsPage() {
           <div className="space-y-4">
             <DataTable columns={trialColumns} data={reportData?.accounts || []} />
             <div className="bg-surface border border-border rounded-xl p-4 flex flex-col md:flex-row justify-between items-center text-sm gap-4">
-              <span className="font-semibold text-white">Trial Balance Equality Check [S44AA]:</span>
+              <span className="font-semibold text-textPrimary">Trial Balance Equality Check [S44AA]:</span>
               <div className="flex items-center gap-6">
-                <span className="text-textSecondary">Total Dr: <strong className="text-white font-mono">{formatCurrency(reportData?.total_debit || 0)}</strong></span>
-                <span className="text-textSecondary">Total Cr: <strong className="text-white font-mono">{formatCurrency(reportData?.total_credit || 0)}</strong></span>
-                <span className="text-textSecondary">Closing Dr: <strong className="text-white font-mono">{formatCurrency(reportData?.totals?.closing_debit || 0)}</strong></span>
-                <span className="text-textSecondary">Closing Cr: <strong className="text-white font-mono">{formatCurrency(reportData?.totals?.closing_credit || 0)}</strong></span>
+                <span className="text-textSecondary">Total Dr: <strong className="text-textPrimary font-mono">{formatCurrency(reportData?.total_debit || 0)}</strong></span>
+                <span className="text-textSecondary">Total Cr: <strong className="text-textPrimary font-mono">{formatCurrency(reportData?.total_credit || 0)}</strong></span>
+                <span className="text-textSecondary">Closing Dr: <strong className="text-textPrimary font-mono">{formatCurrency(reportData?.totals?.closing_debit || 0)}</strong></span>
+                <span className="text-textSecondary">Closing Cr: <strong className="text-textPrimary font-mono">{formatCurrency(reportData?.totals?.closing_credit || 0)}</strong></span>
                 <Badge variant={reportData?.is_balanced ? 'success' : 'danger'}>
                   {reportData?.is_balanced ? 'Balanced (Dr = Cr)' : `Unbalanced by ${Number(reportData?.totals?.difference || reportData?.totals?.closing_difference || 0).toFixed(4)}`}
                 </Badge>
@@ -349,7 +359,7 @@ export default function ReportsPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
-                <h3 className="font-playfair font-bold text-white text-base border-b border-border pb-2">Revenue / Direct Income</h3>
+                <h3 className="font-playfair font-bold text-textPrimary text-base border-b border-border pb-2">Revenue / Direct Income</h3>
                 <div className="space-y-2 text-sm">
                   {(reportData?.revenue || []).length === 0 ? (
                     <div className="text-textSecondary py-3 text-center">No revenue recorded in selected period</div>
@@ -357,22 +367,22 @@ export default function ReportsPage() {
                     (reportData?.revenue || []).map((r: any) => (
                       <div key={r.code} className="flex justify-between items-center py-1 border-b border-border/40">
                         <div>
-                          <span className="text-white">{r.account_name}</span>
+                          <span className="text-textPrimary">{r.account_name}</span>
                           <span className="text-textSecondary text-xs block">{r.code}</span>
                         </div>
-                        <span className="text-white font-mono">{formatCurrency(r.total_cr - r.total_dr)}</span>
+                        <span className="text-textPrimary font-mono">{formatCurrency(r.total_cr - r.total_dr)}</span>
                       </div>
                     ))
                   )}
                   <div className="border-t border-border pt-3 flex justify-between font-semibold">
-                    <span className="text-white">Total Revenue</span>
+                    <span className="text-textPrimary">Total Revenue</span>
                     <span className="text-success font-mono">{formatCurrency(reportData?.total_revenue || 0)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
-                <h3 className="font-playfair font-bold text-white text-base border-b border-border pb-2">Cost of Goods & Expenses</h3>
+                <h3 className="font-playfair font-bold text-textPrimary text-base border-b border-border pb-2">Cost of Goods & Expenses</h3>
                 <div className="space-y-2 text-sm">
                   {(reportData?.expenses || []).length === 0 ? (
                     <div className="text-textSecondary py-3 text-center">No expenses recorded in selected period</div>
@@ -380,15 +390,15 @@ export default function ReportsPage() {
                     (reportData?.expenses || []).map((e: any) => (
                       <div key={e.code} className="flex justify-between items-center py-1 border-b border-border/40">
                         <div>
-                          <span className="text-white">{e.account_name}</span>
+                          <span className="text-textPrimary">{e.account_name}</span>
                           <span className="text-textSecondary text-xs block">{e.code}</span>
                         </div>
-                        <span className="text-white font-mono">{formatCurrency(e.total_dr - e.total_cr)}</span>
+                        <span className="text-textPrimary font-mono">{formatCurrency(e.total_dr - e.total_cr)}</span>
                       </div>
                     ))
                   )}
                   <div className="border-t border-border pt-3 flex justify-between font-semibold">
-                    <span className="text-white">Total Expenses</span>
+                    <span className="text-textPrimary">Total Expenses</span>
                     <span className="text-danger font-mono">{formatCurrency(reportData?.total_expenses || 0)}</span>
                   </div>
                 </div>
@@ -397,7 +407,7 @@ export default function ReportsPage() {
 
             <div className="bg-surface border border-primary/30 rounded-xl p-5 flex justify-between items-center">
               <div>
-                <span className="font-playfair font-bold text-lg text-white">Net Operating Profit / (Loss)</span>
+                <span className="font-playfair font-bold text-lg text-textPrimary">Net Operating Profit / (Loss)</span>
                 <p className="text-xs text-textSecondary">Calculated for statutory tax computation [S44AA]</p>
               </div>
               <span className={`text-2xl font-bold font-mono ${Number(reportData?.net_profit || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -412,7 +422,7 @@ export default function ReportsPage() {
               {/* Assets Section */}
               <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
                 <div className="flex justify-between items-center border-b border-border pb-3">
-                  <h3 className="font-playfair font-bold text-white text-lg">Assets</h3>
+                  <h3 className="font-playfair font-bold text-textPrimary text-lg">Assets</h3>
                   <span className="text-sm font-semibold text-success font-mono">
                     {formatCurrency(reportData?.total_assets || 0)}
                   </span>
@@ -424,10 +434,10 @@ export default function ReportsPage() {
                     (reportData?.assets || []).map((a: any) => (
                       <div key={a.code} className="flex justify-between items-center py-1 border-b border-border/50">
                         <div>
-                          <span className="text-white font-medium">{a.account_name}</span>
+                          <span className="text-textPrimary font-medium">{a.account_name}</span>
                           <span className="text-textSecondary text-xs block">{a.group_name} ({a.code})</span>
                         </div>
-                        <span className={`font-mono ${a.balance_side === 'Cr' ? 'text-rose-300' : 'text-white'}`} title={a.balance_side === 'Cr' ? 'Credit balance on an asset account (shown negative so the sheet balances)' : undefined}>
+                        <span className={`font-mono ${a.balance_side === 'Cr' ? 'text-rose-700' : 'text-textPrimary'}`} title={a.balance_side === 'Cr' ? 'Credit balance on an asset account (shown negative so the sheet balances)' : undefined}>
                           {formatBalance(a.balance_signed ?? a.balance ?? 0, a.balance_side)}
                         </span>
                       </div>
@@ -439,7 +449,7 @@ export default function ReportsPage() {
               {/* Liabilities & Equity Section */}
               <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
                 <div className="flex justify-between items-center border-b border-border pb-3">
-                  <h3 className="font-playfair font-bold text-white text-lg">Liabilities & Capital Equity</h3>
+                  <h3 className="font-playfair font-bold text-textPrimary text-lg">Liabilities & Capital Equity</h3>
                   <span className="text-sm font-semibold text-warning font-mono">
                     {formatCurrency(reportData?.totals?.total_liabilities_and_equity || 0)}
                   </span>
@@ -453,10 +463,10 @@ export default function ReportsPage() {
                       (reportData?.liabilities || []).map((l: any) => (
                         <div key={l.code} className="flex justify-between items-center py-1 border-b border-border/50">
                           <div>
-                            <span className="text-white font-medium">{l.account_name}</span>
+                            <span className="text-textPrimary font-medium">{l.account_name}</span>
                             <span className="text-textSecondary text-xs block">{l.code}</span>
                           </div>
-                          <span className={`font-mono ${l.balance_side === 'Dr' ? 'text-rose-300' : 'text-white'}`}>{formatBalance(l.balance_signed ?? -(l.balance || 0), l.balance_side)}</span>
+                          <span className={`font-mono ${l.balance_side === 'Dr' ? 'text-rose-700' : 'text-textPrimary'}`}>{formatBalance(l.balance_signed ?? -(l.balance || 0), l.balance_side)}</span>
                         </div>
                       ))
                     )}
@@ -467,10 +477,10 @@ export default function ReportsPage() {
                     {(reportData?.equity || []).map((eq: any) => (
                       <div key={eq.code} className="flex justify-between items-center py-1 border-b border-border/50">
                         <div>
-                          <span className="text-white font-medium">{eq.account_name}</span>
+                          <span className="text-textPrimary font-medium">{eq.account_name}</span>
                           <span className="text-textSecondary text-xs block">{eq.code}</span>
                         </div>
-                        <span className="text-white font-mono">{formatCurrency(eq.balance || 0)}</span>
+                        <span className="text-textPrimary font-mono">{formatCurrency(eq.balance || 0)}</span>
                       </div>
                     ))}
                   </div>
@@ -479,10 +489,10 @@ export default function ReportsPage() {
             </div>
 
             <div className="bg-surface border border-border rounded-xl p-4 flex justify-between items-center text-sm">
-              <span className="font-semibold text-white">Balance Sheet Balance Verification:</span>
+              <span className="font-semibold text-textPrimary">Balance Sheet Balance Verification:</span>
               <div className="flex items-center gap-6">
-                <span className="text-textSecondary">Total Assets: <strong className="text-white font-mono">{formatCurrency(reportData?.total_assets || 0)}</strong></span>
-                <span className="text-textSecondary">Total Liab + Equity: <strong className="text-white font-mono">{formatCurrency(reportData?.totals?.total_liabilities_and_equity || 0)}</strong></span>
+                <span className="text-textSecondary">Total Assets: <strong className="text-textPrimary font-mono">{formatCurrency(reportData?.total_assets || 0)}</strong></span>
+                <span className="text-textSecondary">Total Liab + Equity: <strong className="text-textPrimary font-mono">{formatCurrency(reportData?.totals?.total_liabilities_and_equity || 0)}</strong></span>
                 <Badge variant={reportData?.totals?.is_balanced ? 'success' : 'danger'}>
                   {reportData?.totals?.is_balanced ? 'Matched (Assets = Liab + Equity)' : 'Difference Detected'}
                 </Badge>
@@ -494,9 +504,9 @@ export default function ReportsPage() {
           <div className="space-y-4">
             <DataTable columns={stockColumns} data={Array.isArray(reportData) ? reportData : reportData?.items || reportData?.stock || []} />
             <div className="bg-surface border border-border rounded-xl p-4 flex flex-col md:flex-row justify-between items-center text-sm gap-4">
-              <span className="font-semibold text-white">Stock Valuation Summary [CGST Rule 56(2)]:</span>
+              <span className="font-semibold text-textPrimary">Stock Valuation Summary [CGST Rule 56(2)]:</span>
               <div className="flex items-center gap-6">
-                <span className="text-textSecondary">Gold Stock Weight: <strong className="text-white font-mono">{Number(reportData?.total_gold_weight_gm || 0).toFixed(2)} gm</strong></span>
+                <span className="text-textSecondary">Gold Stock Weight: <strong className="text-textPrimary font-mono">{Number(reportData?.total_gold_weight_gm || 0).toFixed(2)} gm</strong></span>
                 <span className="text-textSecondary">Total Valuation: <strong className="text-primary font-mono">{formatCurrency(reportData?.total_stock_value || 0)}</strong></span>
               </div>
             </div>
@@ -508,7 +518,7 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-surface border border-border rounded-xl p-4">
                 <span className="text-xs text-textSecondary">Orders Completed</span>
-                <p className="text-2xl font-bold text-white mt-1">{reportData?.summary?.completed_orders || 0} / {reportData?.summary?.total_orders || 0}</p>
+                <p className="text-2xl font-bold text-textPrimary mt-1">{reportData?.summary?.completed_orders || 0} / {reportData?.summary?.total_orders || 0}</p>
               </div>
               <div className="bg-surface border border-border rounded-xl p-4">
                 <span className="text-xs text-textSecondary">Raw Material Consumed</span>
@@ -529,7 +539,7 @@ export default function ReportsPage() {
 
             {/* Consumption & Output Details */}
             <div className="space-y-3">
-              <h3 className="font-playfair font-bold text-white text-base">Raw Materials Issued to Artisans / WIP</h3>
+              <h3 className="font-playfair font-bold text-textPrimary text-base">Raw Materials Issued to Artisans / WIP</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="text-textSecondary border-b border-border">
@@ -548,12 +558,12 @@ export default function ReportsPage() {
                     ) : (
                       (reportData?.consumption || []).map((c: any) => (
                         <tr key={c.id}>
-                          <td className="py-2 text-white font-medium">{c.material_name} ({c.material_code})</td>
+                          <td className="py-2 text-textPrimary font-medium">{c.material_name} ({c.material_code})</td>
                           <td className="py-2 text-textSecondary">{c.quantity_issued} {c.uom}</td>
-                          <td className="py-2 text-white">{c.net_weight} gm</td>
+                          <td className="py-2 text-textPrimary">{c.net_weight} gm</td>
                           <td className="py-2 text-textSecondary">{c.purity}</td>
                           <td className="py-2 font-mono">{formatCurrency(c.rate)}</td>
-                          <td className="py-2 text-right font-mono font-semibold text-white">{formatCurrency(c.amount)}</td>
+                          <td className="py-2 text-right font-mono font-semibold text-textPrimary">{formatCurrency(c.amount)}</td>
                         </tr>
                       ))
                     )}
@@ -564,7 +574,7 @@ export default function ReportsPage() {
 
             {/* Finished Goods Output Details */}
             <div className="space-y-3 pt-4 border-t border-border">
-              <h3 className="font-playfair font-bold text-white text-base">Finished Goods Output & Hallmarking</h3>
+              <h3 className="font-playfair font-bold text-textPrimary text-base">Finished Goods Output & Hallmarking</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="text-textSecondary border-b border-border">
@@ -583,9 +593,9 @@ export default function ReportsPage() {
                     ) : (
                       (reportData?.output || []).map((o: any) => (
                         <tr key={o.id}>
-                          <td className="py-2 text-white font-medium">{o.material_name}</td>
+                          <td className="py-2 text-textPrimary font-medium">{o.material_name}</td>
                           <td className="py-2 text-textSecondary">{o.quantity_produced} pc</td>
-                          <td className="py-2 text-white">{o.net_weight} gm</td>
+                          <td className="py-2 text-textPrimary">{o.net_weight} gm</td>
                           <td className="py-2 text-primary font-mono">{o.hallmark_no || 'BIS Hallmarked'}</td>
                           <td className="py-2 font-mono">{formatCurrency(o.valuation_rate)}</td>
                           <td className="py-2 text-right font-mono font-semibold text-success">{formatCurrency(o.amount)}</td>
@@ -603,11 +613,11 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-surface border border-border rounded-xl p-4">
                 <span className="text-xs text-textSecondary">Material Taxable (3% GST)</span>
-                <p className="text-xl font-bold text-white mt-1">{formatCurrency(reportData?.summary?.total_material_taxable_3pct || 0)}</p>
+                <p className="text-xl font-bold text-textPrimary mt-1">{formatCurrency(reportData?.summary?.total_material_taxable_3pct || 0)}</p>
               </div>
               <div className="bg-surface border border-border rounded-xl p-4">
                 <span className="text-xs text-textSecondary">Making Charges (5% GST)</span>
-                <p className="text-xl font-bold text-white mt-1">{formatCurrency(reportData?.summary?.total_making_taxable_5pct || 0)}</p>
+                <p className="text-xl font-bold text-textPrimary mt-1">{formatCurrency(reportData?.summary?.total_making_taxable_5pct || 0)}</p>
               </div>
               <div className="bg-surface border border-border rounded-xl p-4">
                 <span className="text-xs text-textSecondary">Total Output GST</span>
@@ -621,7 +631,7 @@ export default function ReportsPage() {
 
             {/* Outward supplies table */}
             <div className="space-y-3">
-              <h3 className="font-playfair font-bold text-white text-base">Outward Tax Invoices (Dual-Rate GST 3% & 5%)</h3>
+              <h3 className="font-playfair font-bold text-textPrimary text-base">Outward Tax Invoices (Dual-Rate GST 3% & 5%)</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="text-textSecondary border-b border-border">
@@ -643,11 +653,11 @@ export default function ReportsPage() {
                         <tr key={out.id}>
                           <td className="py-2 text-primary font-mono">{out.invoice_no}</td>
                           <td className="py-2 text-textSecondary">{new Date(out.invoice_date).toLocaleDateString('en-IN')}</td>
-                          <td className="py-2 text-white font-medium">{out.customer_name}</td>
+                          <td className="py-2 text-textPrimary font-medium">{out.customer_name}</td>
                           <td className="py-2 font-mono">{formatCurrency(out.material_taxable_value)}</td>
                           <td className="py-2 font-mono">{formatCurrency(out.making_taxable_value)}</td>
                           <td className="py-2 font-mono text-warning">{formatCurrency(out.total_tax_amount)}</td>
-                          <td className="py-2 text-right font-mono font-bold text-white">{formatCurrency(out.grand_total)}</td>
+                          <td className="py-2 text-right font-mono font-bold text-textPrimary">{formatCurrency(out.grand_total)}</td>
                         </tr>
                       ))
                     )}
@@ -662,12 +672,12 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-surface border border-border rounded-xl p-4">
                 <span className="text-xs text-textSecondary">TDS deducted (194Q)</span>
-                <p className="text-xl font-bold text-white mt-1">{formatCurrency(reportData?.summary?.by_kind?.TDS?.amount || 0)}</p>
+                <p className="text-xl font-bold text-textPrimary mt-1">{formatCurrency(reportData?.summary?.by_kind?.TDS?.amount || 0)}</p>
                 <p className="text-[11px] text-textSecondary">{reportData?.summary?.by_kind?.TDS?.documents || 0} bills · {reportData?.settings?.tds_194q_enabled ? 'enabled' : 'disabled in settings'}</p>
               </div>
               <div className="bg-surface border border-border rounded-xl p-4">
                 <span className="text-xs text-textSecondary">TCS collected (206C(1H))</span>
-                <p className="text-xl font-bold text-white mt-1">{formatCurrency(reportData?.summary?.by_kind?.TCS?.amount || 0)}</p>
+                <p className="text-xl font-bold text-textPrimary mt-1">{formatCurrency(reportData?.summary?.by_kind?.TCS?.amount || 0)}</p>
                 <p className="text-[11px] text-textSecondary">{reportData?.summary?.by_kind?.TCS?.documents || 0} invoices · {reportData?.settings?.tcs_206c1h_enabled ? 'enabled' : 'disabled in settings'}</p>
               </div>
               <div className="bg-surface border border-border rounded-xl p-4">
@@ -684,7 +694,7 @@ export default function ReportsPage() {
 
             {(reportData?.summary?.by_party || []).length > 0 && (
               <div className="space-y-3">
-                <h3 className="font-playfair font-bold text-white text-base">By party (Form 26Q / 27EQ deductee rows)</h3>
+                <h3 className="font-playfair font-bold text-textPrimary text-base">By party (Form 26Q / 27EQ deductee rows)</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead className="text-textSecondary border-b border-border">
@@ -701,11 +711,11 @@ export default function ReportsPage() {
                       {reportData.summary.by_party.map((p: any) => (
                         <tr key={`${p.kind}:${p.party_id}`}>
                           <td className="py-2"><Badge variant={p.kind === 'TDS' ? 'warning' : 'info'}>{p.kind}</Badge></td>
-                          <td className="py-2 text-white font-medium">{p.party_name}</td>
+                          <td className="py-2 text-textPrimary font-medium">{p.party_name}</td>
                           <td className="py-2 font-mono text-xs">{p.pan || <span className="text-warning">No PAN</span>}</td>
                           <td className="py-2 text-right font-mono">{p.documents}</td>
                           <td className="py-2 text-right font-mono">{formatCurrency(p.base_amount)}</td>
-                          <td className="py-2 text-right font-mono font-bold text-white">{formatCurrency(p.amount)}</td>
+                          <td className="py-2 text-right font-mono font-bold text-textPrimary">{formatCurrency(p.amount)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -715,7 +725,7 @@ export default function ReportsPage() {
             )}
 
             <div className="space-y-3">
-              <h3 className="font-playfair font-bold text-white text-base">Documents</h3>
+              <h3 className="font-playfair font-bold text-textPrimary text-base">Documents</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="text-textSecondary border-b border-border">
@@ -739,11 +749,11 @@ export default function ReportsPage() {
                           <td className="py-2 text-textSecondary">{new Date(e.document_date).toLocaleDateString('en-IN')}</td>
                           <td className="py-2"><Badge variant={e.kind === 'TDS' ? 'warning' : 'info'}>{e.kind} {e.section}</Badge></td>
                           <td className="py-2 text-primary font-mono">{e.document_no}</td>
-                          <td className="py-2 text-white font-medium">{e.party_name}</td>
+                          <td className="py-2 text-textPrimary font-medium">{e.party_name}</td>
                           <td className="py-2 font-mono text-xs">{e.pan || <span className="text-warning">—</span>}</td>
                           <td className="py-2 text-right font-mono">{formatCurrency(e.base_amount)}</td>
                           <td className="py-2 text-right font-mono">{Number(e.rate)}%</td>
-                          <td className="py-2 text-right font-mono font-bold text-white">{formatCurrency(e.amount)}</td>
+                          <td className="py-2 text-right font-mono font-bold text-textPrimary">{formatCurrency(e.amount)}</td>
                         </tr>
                       ))
                     )}
@@ -757,9 +767,70 @@ export default function ReportsPage() {
           <div className="space-y-4">
             <DataTable columns={agingColumns} data={reportData?.aging_report || []} />
             <div className="bg-surface border border-border rounded-xl p-4 flex justify-between items-center text-sm">
-              <span className="font-semibold text-white">Total Outstanding Receivables:</span>
+              <span className="font-semibold text-textPrimary">Total Outstanding Receivables:</span>
               <span className="text-primary font-mono font-bold text-lg">{formatCurrency(reportData?.totals?.total_outstanding || 0)}</span>
             </div>
+          </div>
+        ) : selectedReport === 'Cash Flow Statement' ? (
+          /* 10. Cash flow statement (direct method) */
+          <div className="space-y-4 max-w-3xl">
+            <div className="bg-surface border border-border rounded-xl p-4 flex justify-between text-sm">
+              <span className="text-textSecondary">Cash and bank at the start</span>
+              <span className="font-mono text-textPrimary">{formatCurrency(reportData?.opening || 0)}</span>
+            </div>
+            {([['Money in', reportData?.inflows, reportData?.total_inflow, '+'], ['Money out', reportData?.outflows, reportData?.total_outflow, '−']] as [string, any[], number, string][]).map(([title, list, total, sign]) => (
+              <div key={title} className="bg-surface border border-border rounded-xl overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-border flex justify-between text-sm font-semibold text-textPrimary">
+                  <span>{title}</span><span className="font-mono">{sign} {formatCurrency(total || 0)}</span>
+                </div>
+                {(list || []).length === 0 ? <p className="px-4 py-3 text-xs text-textSecondary">Nothing in this period.</p> : (list || []).map((r: any) => (
+                  <div key={r.group_name} className="px-4 py-2 flex justify-between text-sm border-b border-border/50 last:border-b-0">
+                    <span className="text-textSecondary">{r.group_name} <span className="text-[11px]">({r.nature})</span></span>
+                    <span className="font-mono text-textPrimary">{formatCurrency(r.net)}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="bg-surface border border-border rounded-xl p-4 flex justify-between text-sm">
+              <span className="font-semibold text-textPrimary">Cash and bank at the end</span>
+              <span className="font-mono font-bold text-primary text-lg">{formatCurrency(reportData?.closing || 0)}</span>
+            </div>
+            <p className="text-xs text-textSecondary">
+              Each line is the ledger group on the other side of a cash or bank entry. Transfers between cash and bank are left out.
+              {Math.abs(Number(reportData?.unexplained || 0)) >= 0.01 && ` Not attributed to a group: ${formatCurrency(reportData.unexplained)}.`}
+            </p>
+          </div>
+        ) : selectedReport === 'GST Annual Summary' ? (
+          /* 11. Annual GST summary by month */
+          <div className="space-y-4">
+            <div className="overflow-x-auto bg-surface border border-border rounded-xl">
+              <table className="w-full text-sm">
+                <thead className="text-textSecondary text-xs uppercase tracking-wider border-b border-border">
+                  <tr>
+                    {['Month', 'Taxable', 'IGST', 'CGST', 'SGST', 'Output Tax', 'ITC', 'Reverse Charge', 'Net Payable'].map((h, i) => (
+                      <th key={h} className={`px-3 py-2.5 ${i === 0 ? 'text-left' : 'text-right'}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(reportData?.months || []).map((m: any) => (
+                    <tr key={m.month}>
+                      <td className="px-3 py-2 text-textPrimary">{m.name}</td>
+                      {['taxable', 'output_igst', 'output_cgst', 'output_sgst', 'output_tax', 'itc', 'rcm', 'net_payable'].map((k) => (
+                        <td key={k} className={`px-3 py-2 text-right font-mono ${k === 'net_payable' ? 'text-textPrimary font-semibold' : 'text-textSecondary'}`}>{Number(m[k]) === 0 ? '—' : formatCurrency(m[k])}</td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-border">
+                    <td className="px-3 py-2.5 font-semibold text-textPrimary">FY {reportData?.fiscal_year}</td>
+                    {['taxable', 'output_igst', 'output_cgst', 'output_sgst', 'output_tax', 'itc', 'rcm', 'net_payable'].map((k) => (
+                      <td key={k} className="px-3 py-2.5 text-right font-mono font-semibold text-primary">{formatCurrency(reportData?.totals?.[k] || 0)}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-textSecondary">{reportData?.note} The year shown is the financial year the From date falls in.</p>
           </div>
         ) : ANALYSIS[selectedReport] ? (
           /* 9. Analysis: sales by customer / item, purchases by vendor / item, expenses by category */
@@ -769,7 +840,7 @@ export default function ReportsPage() {
               <span className="text-xs text-textSecondary max-w-2xl">{reportData?.note}</span>
               <div className="flex items-center gap-6">
                 {reportData?.totals?.taxable !== undefined && (
-                  <span className="text-textSecondary">Taxable: <strong className="text-white font-mono">{formatCurrency(reportData.totals.taxable || 0)}</strong></span>
+                  <span className="text-textSecondary">Taxable: <strong className="text-textPrimary font-mono">{formatCurrency(reportData.totals.taxable || 0)}</strong></span>
                 )}
                 <span className="text-textSecondary">Total: <strong className="text-primary font-mono text-lg">{formatCurrency(reportData?.totals?.total || 0)}</strong></span>
               </div>

@@ -57,7 +57,7 @@ export default function VoucherModal({ voucherId, onClose }: VoucherModalProps) 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>
               <div className="text-xs text-textSecondary">Date</div>
-              <div className="text-white font-mono">{voucher.entry_date}</div>
+              <div className="text-textPrimary font-mono">{voucher.entry_date}</div>
             </div>
             <div>
               <div className="text-xs text-textSecondary">Type</div>
@@ -69,13 +69,13 @@ export default function VoucherModal({ voucherId, onClose }: VoucherModalProps) 
             </div>
             <div>
               <div className="text-xs text-textSecondary">Reference</div>
-              <div className="text-white font-mono text-xs break-all">{voucher.reference_no || '—'}</div>
+              <div className="text-textPrimary font-mono text-xs break-all">{voucher.reference_no || '—'}</div>
             </div>
           </div>
 
           <div className="text-sm">
             <div className="text-xs text-textSecondary">Narration</div>
-            <div className="text-white">{voucher.narration}</div>
+            <div className="text-textPrimary">{voucher.narration}</div>
           </div>
 
           <table className="w-full text-left text-sm">
@@ -93,17 +93,17 @@ export default function VoucherModal({ voucherId, onClose }: VoucherModalProps) 
                 <tr key={l.id}>
                   <td className="py-2 text-textSecondary font-mono text-xs">{l.sequence_no}</td>
                   <td className="py-2">
-                    <div className="text-white">{l.account_name}</div>
+                    <div className="text-textPrimary">{l.account_name}</div>
                     <div className="text-xs text-textSecondary font-mono">{l.account_code}{l.party_name ? ` · ${l.party_name}` : ''}</div>
                   </td>
                   <td className="py-2 text-textSecondary text-xs">{l.narration}</td>
-                  <td className="py-2 text-right font-mono text-white">{Number(l.dr_amount) > 0 ? formatCurrency(Number(l.dr_amount)) : '—'}</td>
+                  <td className="py-2 text-right font-mono text-textPrimary">{Number(l.dr_amount) > 0 ? formatCurrency(Number(l.dr_amount)) : '—'}</td>
                   <td className="py-2 text-right font-mono text-success">{Number(l.cr_amount) > 0 ? formatCurrency(Number(l.cr_amount)) : '—'}</td>
                 </tr>
               ))}
-              <tr className="bg-white/5 font-semibold">
-                <td colSpan={3} className="py-2 text-right text-white">Total</td>
-                <td className="py-2 text-right font-mono text-white">{formatCurrency(totalDr)}</td>
+              <tr className="bg-black/5 font-semibold">
+                <td colSpan={3} className="py-2 text-right text-textPrimary">Total</td>
+                <td className="py-2 text-right font-mono text-textPrimary">{formatCurrency(totalDr)}</td>
                 <td className="py-2 text-right font-mono text-success">{formatCurrency(totalCr)}</td>
               </tr>
             </tbody>
@@ -116,7 +116,7 @@ export default function VoucherModal({ voucherId, onClose }: VoucherModalProps) 
             <div className="bg-surface border border-border rounded-xl p-4 text-sm flex items-center justify-between gap-4">
               <div>
                 <div className="text-xs text-textSecondary uppercase">Source document</div>
-                <div className="text-white font-mono">{doc.number || doc.type}</div>
+                <div className="text-textPrimary font-mono">{doc.number || doc.type}</div>
                 {doc.grand_total !== undefined && (
                   <div className="text-xs text-textSecondary mt-1">
                     {doc.type} · {doc.date} · total {formatCurrency(Number(doc.grand_total || 0))} · paid {formatCurrency(Number(doc.amount_paid || 0))} · {doc.payment_status} · {doc.status}

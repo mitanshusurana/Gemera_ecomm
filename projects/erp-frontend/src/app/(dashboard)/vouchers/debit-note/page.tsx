@@ -72,7 +72,7 @@ export default function DebitNotePage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Debit Note</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Debit Note</h1>
           <p className="text-textSecondary mt-1">Auto-generated Voucher Number (Purchase Return)</p>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function DebitNotePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm text-textSecondary mb-1">Date</label>
-            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
             <label className="block text-sm text-textSecondary mb-1">Supplier</label>
@@ -90,7 +90,7 @@ export default function DebitNotePage() {
           <div>
             <label className="block text-sm text-textSecondary mb-1">Original Purchase Ref</label>
             <select
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
               value={selectedPurchase?.id || ''}
               onChange={(e) => {
                 const pur = purchases.find(p => p.id === e.target.value);
@@ -109,7 +109,7 @@ export default function DebitNotePage() {
           <div>
             <label className="block text-sm text-textSecondary mb-1">Reason for Return</label>
             <select 
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             >
@@ -123,14 +123,14 @@ export default function DebitNotePage() {
             <label className="block text-sm text-textSecondary mb-1">Amount (Taxable)</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary">₹</span>
-              <input type="number" className="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-md text-white h-[38px]" placeholder="0.00" value={taxableAmount} onChange={(e) => setTaxableAmount(e.target.value)} />
+              <input type="number" className="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-md text-textPrimary h-[38px]" placeholder="0.00" value={taxableAmount} onChange={(e) => setTaxableAmount(e.target.value)} />
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           <div className="p-4 bg-background border border-border rounded-lg">
-            <h3 className="text-sm font-medium text-white mb-3">ITC Reversal Info</h3>
+            <h3 className="text-sm font-medium text-textPrimary mb-3">ITC Reversal Info</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-textSecondary">
                 <span>Taxable Amount</span>
@@ -144,7 +144,7 @@ export default function DebitNotePage() {
                 <span>SGST ITC to Reverse ({gstRate / 2}%)</span>
                 <span>{formatCurrency(sgst)}</span>
               </div>
-              <div className="flex justify-between text-white font-bold pt-2 border-t border-border">
+              <div className="flex justify-between text-textPrimary font-bold pt-2 border-t border-border">
                 <span>Total Debit Amount</span>
                 <span>{formatCurrency(totalDebit)}</span>
               </div>
@@ -152,7 +152,7 @@ export default function DebitNotePage() {
           </div>
 
           <div className="p-4 bg-background border border-border rounded-lg">
-            <h3 className="text-sm font-medium text-white mb-3">Journal Preview</h3>
+            <h3 className="text-sm font-medium text-textPrimary mb-3">Journal Preview</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-success">
                 <span>Dr: Supplier A/c</span>
@@ -178,7 +178,7 @@ export default function DebitNotePage() {
           <button 
             type="button"
             onClick={() => { setTaxableAmount(''); setError(''); setSelectedPurchase(null); }}
-            className="px-4 py-2 border border-border rounded-md text-white hover:bg-white/5"
+            className="px-4 py-2 border border-border rounded-md text-textPrimary hover:bg-black/5"
           >
             Reset
           </button>

@@ -125,6 +125,83 @@ async def list_expenses(
     return {"from_date": from_date.isoformat(), "to_date": to_date.isoformat(), "expenses": rows, "total": round(total, 2)}
 
 
+async def record_expense(db: AsyncSession, *, company_id, user_id: str, ip_address: str, session_id, payload: CreateExpenseRequest) -> dict:
+    """Post one expense inside the caller's transaction (no commit).
+
+    Shared by the request handler and by recurring profiles, so a rent that
+    posts itself goes through exactly the checks a typed one does.
+    """
+    amount = round_money(payload.amount)
+    await assert_period_open(db, company_id, payload.expense_date, what="This expense")
+
+    acc_res = await db.execute(
+        text("""
+            SELECT a.id, a.name, a.account_type, a.is_active, ag.nature
+            FROM caratloop.accounts a
+            JOIN caratloop.account_groups ag ON ag.id = a.group_id
+            WHERE a.company_id = :cid
+              AND a.id IN (CAST(:exp AS UUID), CAST(:paid AS UUID))
+        """),
+        {"cid": company_id, "exp": str(payload.expense_account_id), "paid": str(payload.paid_through_account_id)},
+    )
+    accounts = {str(r["id"]): r for r in acc_res.mappings().all()}
+    exp_acc = accounts.get(str(payload.expense_account_id))
+    paid_acc = accounts.get(str(payload.paid_through_account_id))
+    if exp_acc is None:
+        raise HTTPException(status_code=404, detail="Expense account not found")
+    if paid_acc is None:
+        raise HTTPException(status_code=404, detail="Paid-through account not found")
+    if exp_acc["nature"] != "Expenses":
+        raise HTTPException(status_code=422, detail=f"{exp_acc['name']} is not an expense ledger. Pick an account from an Expenses group.")
+    if paid_acc["account_type"] not in ("Bank", "Cash"):
+        raise HTTPException(status_code=422, detail=f"{paid_acc['name']} is not a cash or bank ledger.")
+
+    vendor_name = None
+    if payload.vendor_id:
+        v_res = await db.execute(
+            text("SELECT COALESCE(NULLIF(trade_name, ''), name) FROM caratloop.parties WHERE id = :pid AND company_id = :cid"),
+            {"pid": str(payload.vendor_id), "cid": company_id},
+        )
+        vendor_name = v_res.scalar()
+        if vendor_name is None:
+            raise HTTPException(status_code=404, detail="Vendor not found")
+
+    fy = await get_fy(db, company_id)
+    no_res = await db.execute(
+        text("SELECT 'PAY/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
+        {"fy": fy["year_label"]},
+    )
+    voucher_no = no_res.scalar()
+    expense_no = await next_expense_no(db, company_id, fy["year_label"])
+    narration = expense_narration(exp_acc["name"], vendor_name, payload.notes)
+    lines = [
+        {"acc": str(payload.expense_account_id), "dr": amount, "cr": Decimal("0"), "narr": narration},
+        {"acc": str(payload.paid_through_account_id), "dr": Decimal("0"), "cr": amount, "narr": narration},
+    ]
+    je_id = await post_journal(
+        db, company_id, str(fy["id"]), voucher_no, payload.expense_date, "Payment", narration,
+        (payload.reference_no or expense_no)[:50], amount, user_id, ip_address, session_id, lines,
+        ref_type="Expense",
+    )
+    ins = await db.execute(
+        text("""
+            INSERT INTO caratloop.expenses (
+                company_id, fiscal_year_id, expense_no, expense_date, expense_account_id,
+                paid_through_account_id, vendor_id, amount, reference_no, notes, journal_entry_id, created_by
+            ) VALUES (
+                :cid, :fyid, :eno, :edate, CAST(:exp AS UUID),
+                CAST(:paid AS UUID), CAST(:vendor AS UUID), :amount, :ref, :notes, :jeid, CAST(:cb AS UUID)
+            ) RETURNING id
+        """),
+        {"cid": company_id, "fyid": str(fy["id"]), "eno": expense_no, "edate": payload.expense_date,
+         "exp": str(payload.expense_account_id), "paid": str(payload.paid_through_account_id),
+         "vendor": str(payload.vendor_id) if payload.vendor_id else None, "amount": amount,
+         "ref": payload.reference_no, "notes": payload.notes, "jeid": je_id, "cb": user_id},
+    )
+    expense_id = ins.scalar()
+    return {"id": str(expense_id), "expense_no": expense_no, "voucher_no": voucher_no}
+
+
 @router.post("", dependencies=[Depends(require(*CAN_POST))])
 async def create_expense(
     payload: CreateExpenseRequest,
@@ -137,77 +214,10 @@ async def create_expense(
     ip_address = request.client.host if request.client else "0.0.0.0"
     session_id = current_user.get("session_id", "0")
     await set_audit_context(db, user_id, session_id, ip_address, payload.reason)
-    amount = round_money(payload.amount)
     try:
-        await assert_period_open(db, company_id, payload.expense_date, what="This expense")
-
-        acc_res = await db.execute(
-            text("""
-                SELECT a.id, a.name, a.account_type, a.is_active, ag.nature
-                FROM caratloop.accounts a
-                JOIN caratloop.account_groups ag ON ag.id = a.group_id
-                WHERE a.company_id = :cid
-                  AND a.id IN (CAST(:exp AS UUID), CAST(:paid AS UUID))
-            """),
-            {"cid": company_id, "exp": str(payload.expense_account_id), "paid": str(payload.paid_through_account_id)},
-        )
-        accounts = {str(r["id"]): r for r in acc_res.mappings().all()}
-        exp_acc = accounts.get(str(payload.expense_account_id))
-        paid_acc = accounts.get(str(payload.paid_through_account_id))
-        if exp_acc is None:
-            raise HTTPException(status_code=404, detail="Expense account not found")
-        if paid_acc is None:
-            raise HTTPException(status_code=404, detail="Paid-through account not found")
-        if exp_acc["nature"] != "Expenses":
-            raise HTTPException(status_code=422, detail=f"{exp_acc['name']} is not an expense ledger. Pick an account from an Expenses group.")
-        if paid_acc["account_type"] not in ("Bank", "Cash"):
-            raise HTTPException(status_code=422, detail=f"{paid_acc['name']} is not a cash or bank ledger.")
-
-        vendor_name = None
-        if payload.vendor_id:
-            v_res = await db.execute(
-                text("SELECT COALESCE(NULLIF(trade_name, ''), name) FROM caratloop.parties WHERE id = :pid AND company_id = :cid"),
-                {"pid": str(payload.vendor_id), "cid": company_id},
-            )
-            vendor_name = v_res.scalar()
-            if vendor_name is None:
-                raise HTTPException(status_code=404, detail="Vendor not found")
-
-        fy = await get_fy(db, company_id)
-        no_res = await db.execute(
-            text("SELECT 'PAY/' || :fy || '/' || LPAD(NEXTVAL('caratloop.journal_entry_seq')::TEXT, 5, '0')"),
-            {"fy": fy["year_label"]},
-        )
-        voucher_no = no_res.scalar()
-        expense_no = await next_expense_no(db, company_id, fy["year_label"])
-        narration = expense_narration(exp_acc["name"], vendor_name, payload.notes)
-        lines = [
-            {"acc": str(payload.expense_account_id), "dr": amount, "cr": Decimal("0"), "narr": narration},
-            {"acc": str(payload.paid_through_account_id), "dr": Decimal("0"), "cr": amount, "narr": narration},
-        ]
-        je_id = await post_journal(
-            db, company_id, str(fy["id"]), voucher_no, payload.expense_date, "Payment", narration,
-            (payload.reference_no or expense_no)[:50], amount, user_id, ip_address, session_id, lines,
-            ref_type="Expense",
-        )
-        ins = await db.execute(
-            text("""
-                INSERT INTO caratloop.expenses (
-                    company_id, fiscal_year_id, expense_no, expense_date, expense_account_id,
-                    paid_through_account_id, vendor_id, amount, reference_no, notes, journal_entry_id, created_by
-                ) VALUES (
-                    :cid, :fyid, :eno, :edate, CAST(:exp AS UUID),
-                    CAST(:paid AS UUID), CAST(:vendor AS UUID), :amount, :ref, :notes, :jeid, CAST(:cb AS UUID)
-                ) RETURNING id
-            """),
-            {"cid": company_id, "fyid": str(fy["id"]), "eno": expense_no, "edate": payload.expense_date,
-             "exp": str(payload.expense_account_id), "paid": str(payload.paid_through_account_id),
-             "vendor": str(payload.vendor_id) if payload.vendor_id else None, "amount": amount,
-             "ref": payload.reference_no, "notes": payload.notes, "jeid": je_id, "cb": user_id},
-        )
-        expense_id = ins.scalar()
+        created = await record_expense(db, company_id=company_id, user_id=user_id, ip_address=ip_address, session_id=session_id, payload=payload)
         await db.commit()
-        return {"status": "success", "id": str(expense_id), "expense_no": expense_no, "voucher_no": voucher_no}
+        return {"status": "success", **created}
     except HTTPException:
         await db.rollback()
         raise

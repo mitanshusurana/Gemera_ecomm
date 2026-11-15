@@ -86,7 +86,7 @@ export default function JournalVoucherPage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Journal Entry</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Journal Entry</h1>
           <p className="text-textSecondary mt-1">Auto-generated Voucher Number (Journal)</p>
         </div>
       </div>
@@ -95,11 +95,11 @@ export default function JournalVoucherPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm text-textSecondary mb-1">Date</label>
-            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
             <label className="block text-sm text-textSecondary mb-1">Narration (Global)</label>
-            <input type="text" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" placeholder="Being..." value={narration} onChange={(e) => setNarration(e.target.value)} />
+            <input type="text" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" placeholder="Being..." value={narration} onChange={(e) => setNarration(e.target.value)} />
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export default function JournalVoucherPage() {
                 <tr key={row.id}>
                   <td className="py-3">
                     <select 
-                      className="w-full bg-background border border-border rounded-md px-2 py-2 text-white h-[38px]"
+                      className="w-full bg-background border border-border rounded-md px-2 py-2 text-textPrimary h-[38px]"
                       value={row.type}
                       onChange={(e) => {
                         const newRows = [...rows];
@@ -133,7 +133,7 @@ export default function JournalVoucherPage() {
                   </td>
                   <td className="py-3 px-2">
                     <select 
-                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
                       value={row.account}
                       onChange={(e) => {
                         const newRows = [...rows];
@@ -155,7 +155,7 @@ export default function JournalVoucherPage() {
                   <td className="py-3 px-2">
                     <input 
                       type="number" 
-                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px] text-right" 
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px] text-right" 
                       placeholder="0.00"
                       value={row.amount}
                       onChange={(e) => {
@@ -168,7 +168,7 @@ export default function JournalVoucherPage() {
                   <td className="py-3 px-2">
                     <input 
                       type="text" 
-                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" 
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" 
                       placeholder="Optional remarks" 
                       value={row.remarks}
                       onChange={(e) => {
@@ -179,7 +179,7 @@ export default function JournalVoucherPage() {
                     />
                   </td>
                   <td className="py-3 text-right">
-                    <button onClick={() => removeRow(row.id)} className="p-2 text-textSecondary hover:text-danger rounded-md hover:bg-white/5">
+                    <button onClick={() => removeRow(row.id)} className="p-2 text-textSecondary hover:text-danger rounded-md hover:bg-black/5">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -196,7 +196,7 @@ export default function JournalVoucherPage() {
 
         <div className="mt-6 p-4 bg-background border border-border rounded-lg flex justify-between items-center text-sm">
           <div className="text-textSecondary">Totals</div>
-          <div className="flex gap-8 text-white font-medium">
+          <div className="flex gap-8 text-textPrimary font-medium">
             <div className="flex gap-4">
               <span className="text-textSecondary">Dr:</span>
               <span>{formatCurrency(totalDr)}</span>
@@ -220,7 +220,7 @@ export default function JournalVoucherPage() {
               setNarration('');
               setError('');
             }}
-            className="px-4 py-2 border border-border rounded-md text-white hover:bg-white/5"
+            className="px-4 py-2 border border-border rounded-md text-textPrimary hover:bg-black/5"
           >
             Reset
           </button>

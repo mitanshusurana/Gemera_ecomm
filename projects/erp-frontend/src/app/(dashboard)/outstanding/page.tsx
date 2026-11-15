@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import RemindersDialog from '@/components/mail/RemindersDialog';
 import Link from 'next/link';
 import StatsCard from '@/components/ui/StatsCard';
 import { IndianRupee, AlertCircle } from 'lucide-react';
@@ -28,6 +29,7 @@ export default function OutstandingPage() {
   const [totals, setTotals] = useState<any>(null);
   const [recon, setRecon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [remindersOpen, setRemindersOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,22 +75,29 @@ export default function OutstandingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Outstanding Analysis</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Outstanding Analysis</h1>
           <p className="text-textSecondary mt-1">Receivables and payables from the party ledgers, and bill-wise aging reconciled against them.</p>
         </div>
         <div className="flex gap-4 items-end">
           <div>
             <label className="block text-sm text-textSecondary mb-1">As of Date</label>
-            <input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} className="bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" />
+            <input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} className="bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" />
           </div>
           <button
             onClick={() => setIsAgeWise(!isAgeWise)}
-            className={`px-4 py-2 border rounded-md font-medium text-sm transition-colors ${isAgeWise ? 'bg-primary/20 text-primary border-primary' : 'border-border text-white hover:bg-white/5'}`}
+            className={`px-4 py-2 border rounded-md font-medium text-sm transition-colors ${isAgeWise ? 'bg-primary/20 text-primary border-primary' : 'border-border text-textPrimary hover:bg-black/5'}`}
           >
             Bill-wise age view
           </button>
+          <button
+            onClick={() => setRemindersOpen(true)}
+            className="px-4 py-2 border border-primary text-primary rounded-md font-medium text-sm hover:bg-primary/10 transition-colors"
+          >
+            Overdue reminders
+          </button>
         </div>
       </div>
+      <RemindersDialog open={remindersOpen} onClose={() => setRemindersOpen(false)} />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatsCard title={activeTab === 'Receivables' ? 'Total Receivable' : 'Total Payable'} value={formatCurrency(totalOutstanding)} icon={<IndianRupee className="w-6 h-6" />}
@@ -106,7 +115,7 @@ export default function OutstandingPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`pb-4 border-b-2 font-medium text-sm transition-colors -mb-[17px] ${
-                activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-textSecondary hover:text-white'
+                activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-textSecondary hover:text-textPrimary'
               }`}
             >
               {tab} (Sundry {tab === 'Receivables' ? 'Debtors' : 'Creditors'})
@@ -117,12 +126,12 @@ export default function OutstandingPage() {
         <div className="p-4 overflow-x-auto">
           {loading ? (
              <div className="animate-pulse space-y-4 py-4">
-                <div className="h-8 bg-white/10 rounded w-full"></div>
-                <div className="h-8 bg-white/10 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
              </div>
           ) : data.length === 0 ? (
              <div className="text-center py-12 text-textSecondary flex flex-col items-center gap-3">
-               <AlertCircle className="w-12 h-12 text-white/20" />
+               <AlertCircle className="w-12 h-12 text-black/20" />
                <p>No {activeTab.toLowerCase()} as at {asOfDate}.</p>
              </div>
           ) : (
@@ -151,19 +160,19 @@ export default function OutstandingPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {data.map((row, i) => (
-                  <tr key={i} className="hover:bg-white/5">
-                    <td className="py-3 font-medium text-white">
+                  <tr key={i} className="hover:bg-black/5">
+                    <td className="py-3 font-medium text-textPrimary">
                       <Link href={`/ledger?party=${row.party_id}`} className="hover:underline">{row.party_name || row.name}</Link>
                     </td>
                     <td className="py-3 text-textSecondary font-mono text-xs">{row.gstin || 'Unregistered'}</td>
                     {isAgeWise ? (
                       <>
-                        <td className="py-3 text-right text-white font-mono">{money(row.bucket_0_30)}</td>
-                        <td className="py-3 text-right text-white font-mono">{money(row.bucket_31_60)}</td>
-                        <td className="py-3 text-right text-white font-mono">{money(row.bucket_61_90)}</td>
+                        <td className="py-3 text-right text-textPrimary font-mono">{money(row.bucket_0_30)}</td>
+                        <td className="py-3 text-right text-textPrimary font-mono">{money(row.bucket_31_60)}</td>
+                        <td className="py-3 text-right text-textPrimary font-mono">{money(row.bucket_61_90)}</td>
                         <td className="py-3 text-right text-danger font-medium font-mono">{money(row.bucket_over_90)}</td>
                         <td className="py-3 text-right font-medium text-primary font-mono">{formatCurrency(num(row.total_outstanding))}</td>
-                        <td className={`py-3 text-right font-mono ${row.ledger_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>{formatBalance(row.ledger_balance, row.ledger_side)}</td>
+                        <td className={`py-3 text-right font-mono ${row.ledger_side === 'Cr' ? 'text-rose-700' : 'text-emerald-700'}`}>{formatBalance(row.ledger_balance, row.ledger_side)}</td>
                         <td className="py-3 text-right font-mono text-textSecondary" title="Ledger balance less (open sales bills − open purchase bills). Cr = credit on account.">
                           {num(row.unadjusted) === 0 ? '—' : formatBalance(row.unadjusted)}
                         </td>
@@ -171,14 +180,14 @@ export default function OutstandingPage() {
                     ) : (
                       <>
                         <td className="py-3 text-textSecondary font-mono text-xs">{row.account_code || '—'}</td>
-                        <td className={`py-3 text-right font-medium font-mono ${row.balance_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                        <td className={`py-3 text-right font-medium font-mono ${row.balance_side === 'Cr' ? 'text-rose-700' : 'text-emerald-700'}`}>
                           {formatBalance(activeTab === 'Receivables' ? num(row.total_outstanding) : -num(row.total_outstanding), row.balance_side)}
                         </td>
                       </>
                     )}
                   </tr>
                 ))}
-                <tr className="bg-primary/5 font-bold border-t-2 border-primary/20 text-white">
+                <tr className="bg-primary/5 font-bold border-t-2 border-primary/20 text-textPrimary">
                   <td className="py-3 text-primary" colSpan={2}>TOTAL</td>
                   {isAgeWise ? (
                     <>
@@ -202,10 +211,10 @@ export default function OutstandingPage() {
           )}
           {isAgeWise && recon && (
             <div className="mt-4 text-xs text-textSecondary font-mono bg-surface border border-border rounded-lg p-3 flex flex-wrap gap-6">
-              <span>Open sales bills: <strong className="text-white">{formatCurrency(num(recon.bills_receivable))}</strong></span>
-              <span>Open purchase bills: <strong className="text-white">{formatCurrency(num(recon.bills_payable))}</strong></span>
-              <span>All party ledgers: <strong className="text-white">{formatBalance(recon.ledger_total)}</strong></span>
-              <span>On account: <strong className="text-white">{formatBalance(num(recon.ledger_total) - (num(recon.bills_receivable) - num(recon.bills_payable)))}</strong></span>
+              <span>Open sales bills: <strong className="text-textPrimary">{formatCurrency(num(recon.bills_receivable))}</strong></span>
+              <span>Open purchase bills: <strong className="text-textPrimary">{formatCurrency(num(recon.bills_payable))}</strong></span>
+              <span>All party ledgers: <strong className="text-textPrimary">{formatBalance(recon.ledger_total)}</strong></span>
+              <span>On account: <strong className="text-textPrimary">{formatBalance(num(recon.ledger_total) - (num(recon.bills_receivable) - num(recon.bills_payable)))}</strong></span>
             </div>
           )}
         </div>

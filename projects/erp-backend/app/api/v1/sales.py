@@ -156,6 +156,8 @@ class CreateSalesInvoiceRequest(BaseModel):
     # the terms unless one is sent (Custom); it drives the overdue split on
     # the dashboard and the reminders.
     due_date: Optional[date] = None
+    # Who made the sale, for the sales-by-salesperson report. Free text.
+    salesperson: Optional[str] = Field(default=None, max_length=80)
     narration: Optional[str] = None
     reason: str = "Sales invoice creation"
     # Set only by the e-commerce bridge: the storefront has already issued the
@@ -541,7 +543,7 @@ async def create_sales_invoice(
                     cgst_material, sgst_material, cgst_making, sgst_making,
                     total_gst, grand_total,
                     tcs_section, tcs_rate, tcs_base, tcs_amount,
-                    payment_terms, due_date,
+                    payment_terms, due_date, salesperson,
                     narration, status, created_by
                 ) VALUES (
                     :cid, :fyid, :inv_no, :inv_date, :inv_type,
@@ -556,7 +558,7 @@ async def create_sales_invoice(
                     :cgst_mat, :sgst_mat, :cgst_mak, :sgst_mak,
                     :total_gst, :grand_total,
                     :tcs_section, :tcs_rate, :tcs_base, :tcs_amount,
-                    :payment_terms, :due_date,
+                    :payment_terms, :due_date, :salesperson,
                     :narration, 'Posted', :created_by
                 )
                 RETURNING id
@@ -599,6 +601,7 @@ async def create_sales_invoice(
                 "tcs_amount": tcs_amount,
                 "payment_terms": payload.payment_terms,
                 "due_date": invoice_due_date,
+                "salesperson": (payload.salesperson or "").strip() or None,
                 "narration": payload.narration,
                 "created_by": user_id,
             },

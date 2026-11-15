@@ -231,7 +231,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
       {selectedItem ? (
         <div className="flex items-center justify-between w-full p-2 border border-border bg-surface rounded-md focus-within:border-primary">
           <div className="flex flex-col">
-            <span className="font-medium text-sm text-white">{selectedItem.name}</span>
+            <span className="font-medium text-sm text-textPrimary">{selectedItem.name}</span>
             <span className="text-xs text-textSecondary font-mono">
               {selectedItem.code} • HSN: {selectedItem.hsn_code} ({selectedItem.material_gst_rate}% GST)
             </span>
@@ -239,7 +239,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
           <button
             type="button"
             onClick={handleClear}
-            className="p-1 hover:bg-white/10 rounded-full text-textSecondary hover:text-white transition-colors"
+            className="p-1 hover:bg-black/5 rounded-full text-textSecondary hover:text-textPrimary transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -248,7 +248,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
         <div className="relative w-full">
           <input
             type="text"
-            className="w-full bg-background border border-border rounded-md pl-9 pr-8 py-2 text-sm text-white placeholder-textSecondary focus:outline-none focus:border-primary transition-colors h-[38px]"
+            className="w-full bg-background border border-border rounded-md pl-9 pr-8 py-2 text-sm text-textPrimary placeholder-textSecondary focus:outline-none focus:border-primary transition-colors h-[38px]"
             placeholder={placeholder}
             value={query}
             onChange={(e) => {
@@ -263,35 +263,35 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
           )}
 
           {isOpen && (
-            <div className="absolute z-50 left-0 right-0 mt-1 bg-[#18181C] border border-border rounded-md shadow-xl max-h-60 overflow-y-auto">
+            <div className="absolute z-50 left-0 right-0 mt-1 bg-surface border border-border rounded-md shadow-xl max-h-60 overflow-y-auto">
               {creating ? (
                 <div className="p-3 space-y-2 text-sm" onMouseDown={(e) => e.stopPropagation()}>
-                  <div className="font-semibold text-white">New item</div>
-                  <input className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                  <div className="font-semibold text-textPrimary">New item</div>
+                  <input className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary" placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} />
                   <div className="grid grid-cols-2 gap-2">
-                    <select className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" value={newCategory} onChange={(e) => { setNewCategory(e.target.value); if (e.target.value === 'Service') setNewRate('18'); }}>
+                    <select className="bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary" value={newCategory} onChange={(e) => { setNewCategory(e.target.value); if (e.target.value === 'Service') setNewRate('18'); }}>
                       {['Gold', 'Silver', 'Diamond', 'Ruby', 'Emerald', 'Sapphire', 'Other_Gem', 'Consumable', 'Finished_Good', 'Other', 'Service'].map((c) => (
                         <option key={c} value={c}>{c === 'Service' ? 'Service / expense' : c.replace('_', ' ')}</option>
                       ))}
                     </select>
-                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder="Code" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
-                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder={newCategory === 'Service' ? 'SAC (997212 rent)' : 'HSN (7103 gems)'} value={newHsn} onChange={(e) => setNewHsn(e.target.value)} />
-                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" placeholder="GST %" value={newRate} onChange={(e) => setNewRate(e.target.value)} />
+                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary" placeholder="Code" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
+                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary" placeholder={newCategory === 'Service' ? 'SAC (997212 rent)' : 'HSN (7103 gems)'} value={newHsn} onChange={(e) => setNewHsn(e.target.value)} />
+                    <input className="bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary" placeholder="GST %" value={newRate} onChange={(e) => setNewRate(e.target.value)} />
                     {newCategory !== 'Service' && (
-                      <select className="bg-background border border-border rounded-md px-2.5 py-1.5 text-white" value={newUom} onChange={(e) => setNewUom(e.target.value)}>
+                      <select className="bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary" value={newUom} onChange={(e) => setNewUom(e.target.value)}>
                         {['pcs', 'gm', 'ct', 'kg'].map((x) => <option key={x} value={x}>{x}</option>)}
                       </select>
                     )}
                   </div>
                   {newCategory === 'Service' && (
-                    <select className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-white" value={newExpenseAccount} onChange={(e) => setNewExpenseAccount(e.target.value)}>
+                    <select className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-textPrimary" value={newExpenseAccount} onChange={(e) => setNewExpenseAccount(e.target.value)}>
                       <option value="">Expense ledger this service is booked to...</option>
                       {expenseAccounts.map((a: any) => <option key={a.id} value={a.id}>{a.code} · {a.name} ({a.group_name})</option>)}
                     </select>
                   )}
                   {createError && <p className="text-xs text-danger">{createError}</p>}
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setCreating(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-white">Back</button>
+                    <button type="button" onClick={() => setCreating(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-textPrimary">Back</button>
                     <button type="button" onClick={saveNew} disabled={saving} className="px-3 py-1.5 rounded-md bg-primary text-black text-xs font-semibold disabled:opacity-60">{saving ? 'Saving…' : 'Create and select'}</button>
                   </div>
                 </div>
@@ -312,7 +312,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
                       <div className="flex items-center gap-2">
                         <Package className="w-4 h-4 text-primary shrink-0" />
                         <div className="flex flex-col">
-                          <span className="font-medium text-white">{item.name}</span>
+                          <span className="font-medium text-textPrimary">{item.name}</span>
                           <span className="text-xs text-textSecondary font-mono">{item.code}</span>
                         </div>
                       </div>
@@ -327,7 +327,7 @@ export default function ItemSelect({ value, onChange, placeholder = 'Search item
                 </ul>
               )}
               {!creating && (
-                <button type="button" onClick={startCreate} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-white/5 border-t border-border">
+                <button type="button" onClick={startCreate} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-black/5 border-t border-border">
                   <Plus className="w-4 h-4" /> Create new item{query.trim() ? ` “${query.trim()}”` : ''}
                 </button>
               )}

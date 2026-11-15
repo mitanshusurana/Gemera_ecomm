@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { CalendarRange, Lock, Unlock, CheckCircle2, Plus, Loader2, AlertTriangle, BookLock } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
-import { fiscalYearsApi, type ClosingPreview, type FiscalYear } from '@/lib/api';
+import { controlsApi, fiscalYearsApi, type ClosingPreview, type FiscalYear } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { normaliseRole, useMe } from '@/lib/session';
 
@@ -22,6 +22,27 @@ export default function FiscalYearsPage() {
   const canAmend = CAN_AMEND.includes(normaliseRole(me?.role));
 
   const [years, setYears] = useState<FiscalYear[]>([]);
+  // Lock date: nothing dated on or before it can be posted, whatever its year.
+  const [lockDate, setLockDate] = useState<string | null>(null);
+  const [lockInput, setLockInput] = useState('');
+  const [savingLock, setSavingLock] = useState(false);
+  useEffect(() => {
+    controlsApi.getLockDate().then((r) => { setLockDate(r.data?.locked_until || null); setLockInput(r.data?.locked_until || ''); }).catch(() => {});
+  }, []);
+  const saveLock = async (value: string | null) => {
+    if (value === null && !confirm('Remove the lock date? Entries dated before it can be posted again.')) return;
+    setSavingLock(true);
+    try {
+      const r = await controlsApi.setLockDate(value);
+      setLockDate(r.data?.locked_until || null);
+      setLockInput(r.data?.locked_until || '');
+      setMessage({ kind: 'ok', text: r.data?.locked_until ? `Books locked up to ${r.data.locked_until}.` : 'Lock date removed.' });
+    } catch (err: any) {
+      setMessage({ kind: 'err', text: err.response?.data?.detail || 'Could not change the lock date.' });
+    } finally {
+      setSavingLock(false);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -148,7 +169,7 @@ export default function FiscalYearsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Fiscal Years</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Fiscal Years</h1>
           <p className="text-textSecondary mt-1">
             Period lock and year-end closing. A locked year refuses every posting dated inside it (HTTP 423).
           </p>
@@ -173,6 +194,24 @@ export default function FiscalYearsPage() {
         </div>
       )}
 
+      <div className="glass-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-semibold text-textPrimary flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> Lock date</h3>
+          <p className="text-xs text-textSecondary mt-1 max-w-xl">
+            {lockDate
+              ? `Nothing dated on or before ${new Date(lockDate).toLocaleDateString('en-IN')} can be posted, amended or reversed.`
+              : 'Not set. Set it to the last day of a month once its GST return is filed, so that month cannot change.'}
+          </p>
+        </div>
+        {canAmend && (
+          <div className="flex items-center gap-2">
+            <input type="date" value={lockInput} onChange={(e) => setLockInput(e.target.value)} className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary" />
+            <button disabled={savingLock || !lockInput || lockInput === lockDate} onClick={() => saveLock(lockInput)} className="px-3 py-2 bg-primary text-black font-semibold rounded-lg text-sm disabled:opacity-50">Lock</button>
+            {lockDate && <button disabled={savingLock} onClick={() => saveLock(null)} className="px-3 py-2 border border-border text-textPrimary rounded-lg text-sm hover:border-primary">Remove</button>}
+          </div>
+        )}
+      </div>
+
       <div className="glass-card overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="text-textSecondary border-b border-border bg-surface/80">
@@ -195,8 +234,8 @@ export default function FiscalYearsPage() {
               const busy = busyId === fy.id;
               const ended = fy.end_date < today;
               return (
-                <tr key={fy.id} className="hover:bg-white/5">
-                  <td className="px-4 py-3 font-mono font-semibold text-white flex items-center gap-2">
+                <tr key={fy.id} className="hover:bg-black/5">
+                  <td className="px-4 py-3 font-mono font-semibold text-textPrimary flex items-center gap-2">
                     <CalendarRange className="w-4 h-4 text-primary" /> {fy.year_label}
                   </td>
                   <td className="px-4 py-3 text-textSecondary">{fy.start_date}</td>
@@ -218,16 +257,16 @@ export default function FiscalYearsPage() {
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2 flex-wrap">
                         {!fy.is_active && !fy.is_closed && (
-                          <button disabled={busy} onClick={() => act(fy, 'activate')} className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-white hover:border-primary disabled:opacity-50">
+                          <button disabled={busy} onClick={() => act(fy, 'activate')} className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-textPrimary hover:border-primary disabled:opacity-50">
                             Activate
                           </button>
                         )}
                         {!fy.is_closed && (fy.is_locked ? (
-                          <button disabled={busy} onClick={() => act(fy, 'unlock')} className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-white hover:border-primary disabled:opacity-50 flex items-center gap-1">
+                          <button disabled={busy} onClick={() => act(fy, 'unlock')} className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-textPrimary hover:border-primary disabled:opacity-50 flex items-center gap-1">
                             <Unlock className="w-3 h-3" /> Unlock
                           </button>
                         ) : (
-                          <button disabled={busy} onClick={() => act(fy, 'lock')} className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-white hover:border-primary disabled:opacity-50 flex items-center gap-1">
+                          <button disabled={busy} onClick={() => act(fy, 'lock')} className="px-2.5 py-1 rounded text-xs bg-surface border border-border text-textPrimary hover:border-primary disabled:opacity-50 flex items-center gap-1">
                             <Lock className="w-3 h-3" /> Lock
                           </button>
                         ))}
@@ -248,8 +287,8 @@ export default function FiscalYearsPage() {
       </div>
 
       <div className="glass-card p-4 text-xs text-textSecondary space-y-1">
-        <p><span className="text-white font-medium">Lock</span> refuses purchases, vouchers, bank reconciliation matches and (once wired) sales dated inside the year; unlock reopens it.</p>
-        <p><span className="text-white font-medium">Close year</span> posts the closing journal (every Income and Expenses account into Retained Earnings), locks the year, creates the next one if needed and posts its opening balances. A closed year cannot be reopened.</p>
+        <p><span className="text-textPrimary font-medium">Lock</span> refuses purchases, vouchers, bank reconciliation matches and (once wired) sales dated inside the year; unlock reopens it.</p>
+        <p><span className="text-textPrimary font-medium">Close year</span> posts the closing journal (every Income and Expenses account into Retained Earnings), locks the year, creates the next one if needed and posts its opening balances. A closed year cannot be reopened.</p>
       </div>
 
       {/* Create modal */}
@@ -259,22 +298,22 @@ export default function FiscalYearsPage() {
             <div className="space-y-1">
               <label className="text-xs text-textSecondary">Label</label>
               <input value={label} onChange={(e) => setLabel(e.target.value)} required maxLength={10} placeholder="2027-28"
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary" />
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary" />
             </div>
             <div className="space-y-1">
               <label className="text-xs text-textSecondary">Start</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary" />
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary" />
             </div>
             <div className="space-y-1">
               <label className="text-xs text-textSecondary">End</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary" />
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary" />
             </div>
           </div>
           <p className="text-xs text-textSecondary">Years may not overlap. The new year is created inactive; activate it when the business starts posting into it.</p>
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setIsCreateOpen(false)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5 text-sm">Cancel</button>
+            <button type="button" onClick={() => setIsCreateOpen(false)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5 text-sm">Cancel</button>
             <button type="submit" disabled={creating} className="px-4 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 text-sm disabled:opacity-50 flex items-center gap-2">
               {creating && <Loader2 className="w-4 h-4 animate-spin" />} Create
             </button>
@@ -298,12 +337,12 @@ export default function FiscalYearsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3 bg-surface border border-border rounded-lg">
                 <p className="text-[11px] uppercase tracking-wider text-textSecondary">Income closed</p>
-                <p className="font-mono text-white text-base">{formatCurrency(Number(preview.total_income))}</p>
+                <p className="font-mono text-textPrimary text-base">{formatCurrency(Number(preview.total_income))}</p>
                 <p className="text-[11px] text-textSecondary">{preview.income_accounts.length} accounts</p>
               </div>
               <div className="p-3 bg-surface border border-border rounded-lg">
                 <p className="text-[11px] uppercase tracking-wider text-textSecondary">Expenses closed</p>
-                <p className="font-mono text-white text-base">{formatCurrency(Number(preview.total_expenses))}</p>
+                <p className="font-mono text-textPrimary text-base">{formatCurrency(Number(preview.total_expenses))}</p>
                 <p className="text-[11px] text-textSecondary">{preview.expense_accounts.length} accounts</p>
               </div>
               <div className="p-3 bg-surface border border-primary/40 rounded-lg">
@@ -329,9 +368,9 @@ export default function FiscalYearsPage() {
                 <tbody className="divide-y divide-border">
                   {[...preview.income_accounts, ...preview.expense_accounts].map((a) => (
                     <tr key={a.id}>
-                      <td className="px-3 py-1.5 text-white"><span className="font-mono text-primary">{a.code}</span> {a.name}</td>
+                      <td className="px-3 py-1.5 text-textPrimary"><span className="font-mono text-primary">{a.code}</span> {a.name}</td>
                       <td className="px-3 py-1.5 text-textSecondary">{a.nature}</td>
-                      <td className="px-3 py-1.5 text-right font-mono text-white">{formatCurrency(Math.abs(Number(a.balance)))} {Number(a.balance) >= 0 ? 'Cr' : 'Dr'}</td>
+                      <td className="px-3 py-1.5 text-right font-mono text-textPrimary">{formatCurrency(Math.abs(Number(a.balance)))} {Number(a.balance) >= 0 ? 'Cr' : 'Dr'}</td>
                     </tr>
                   ))}
                   {preview.income_accounts.length + preview.expense_accounts.length === 0 && (
@@ -342,7 +381,7 @@ export default function FiscalYearsPage() {
             </div>
 
             <div className="text-xs text-textSecondary">
-              Next year <span className="font-mono text-white">{preview.next_year.year_label}</span> ({preview.next_year.start_date} to {preview.next_year.end_date}){' '}
+              Next year <span className="font-mono text-textPrimary">{preview.next_year.year_label}</span> ({preview.next_year.start_date} to {preview.next_year.end_date}){' '}
               {preview.next_year.exists ? 'exists' : 'will be created'}; {preview.carried_forward.length} balance-sheet balances will be posted as its opening journal.
               {Number(preview.opening_difference) !== 0 && (
                 <span className="block mt-1 text-danger">
@@ -352,12 +391,12 @@ export default function FiscalYearsPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-textSecondary">Type the year label <span className="font-mono text-white">{closing?.year_label}</span> to confirm</label>
+              <label className="text-xs text-textSecondary">Type the year label <span className="font-mono text-textPrimary">{closing?.year_label}</span> to confirm</label>
               <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary font-mono" />
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary font-mono" />
             </div>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setClosing(null)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5 text-sm">Cancel</button>
+              <button type="button" onClick={() => setClosing(null)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5 text-sm">Cancel</button>
               <button
                 type="button"
                 disabled={closingBusy || confirmText.trim() !== closing?.year_label || Number(preview.opening_difference) !== 0}

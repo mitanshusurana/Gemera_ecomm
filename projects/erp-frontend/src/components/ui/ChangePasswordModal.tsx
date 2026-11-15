@@ -76,7 +76,7 @@ export default function ChangePasswordModal({ isOpen, onClose, email }: Props) {
   };
 
   const inputClass =
-    'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors';
+    'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
@@ -84,7 +84,7 @@ export default function ChangePasswordModal({ isOpen, onClose, email }: Props) {
       <div className="relative z-50 w-full max-w-md glass-card m-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-border flex items-center gap-3 bg-surface/50">
           <KeyRound className="w-5 h-5 text-primary" />
-          <h3 id="change-password-title" className="text-lg font-playfair font-semibold text-white">
+          <h3 id="change-password-title" className="text-lg font-playfair font-semibold text-textPrimary">
             Change password
           </h3>
         </div>
@@ -133,14 +133,14 @@ export default function ChangePasswordModal({ isOpen, onClose, email }: Props) {
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            className="inline-flex items-center gap-1.5 text-xs text-textSecondary hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-textSecondary hover:text-textPrimary transition-colors"
           >
             {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             {show ? 'Hide passwords' : 'Show passwords'}
           </button>
 
           {(localProblems.length > 0 || error) && (
-            <ul className="text-xs text-rose-400 space-y-1 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
+            <ul className="text-xs text-rose-700 space-y-1 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
               {error && <li>{error}</li>}
               {localProblems.map((p) => (
                 <li key={p}>{p}</li>
@@ -157,7 +157,7 @@ export default function ChangePasswordModal({ isOpen, onClose, email }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-textSecondary hover:text-white transition-colors"
+              className="px-4 py-2 text-sm text-textSecondary hover:text-textPrimary transition-colors"
             >
               Cancel
             </button>

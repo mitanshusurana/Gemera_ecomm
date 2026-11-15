@@ -129,7 +129,7 @@ export default function GSTPage() {
   const netPayable = Math.max(0, outputTotal - itcTotal);
 
   const outputColumns = [
-    { header: 'Invoice No', accessorKey: 'invoice_no', cell: (item: any) => <span className="font-medium text-white">{item.invoice_no}</span> },
+    { header: 'Invoice No', accessorKey: 'invoice_no', cell: (item: any) => <span className="font-medium text-textPrimary">{item.invoice_no}</span> },
     { header: 'Date', accessorKey: 'invoice_date', cell: (item: any) => new Date(item.invoice_date).toLocaleDateString('en-IN') },
     { header: 'Customer', accessorKey: 'party_name', cell: (item: any) => item.party_name || 'B2C Retail Buyer' },
     { header: 'GSTIN', accessorKey: 'party_gstin', cell: (item: any) => item.party_gstin || 'Unregistered' },
@@ -142,7 +142,7 @@ export default function GSTPage() {
   ];
 
   const itcColumns = [
-    { header: 'Vendor Invoice', accessorKey: 'vendor_invoice_no', cell: (item: any) => <span className="font-medium text-white">{item.vendor_invoice_no}</span> },
+    { header: 'Vendor Invoice', accessorKey: 'vendor_invoice_no', cell: (item: any) => <span className="font-medium text-textPrimary">{item.vendor_invoice_no}</span> },
     { header: 'Date', accessorKey: 'invoice_date', cell: (item: any) => new Date(item.invoice_date).toLocaleDateString('en-IN') },
     { header: 'Vendor', accessorKey: 'vendor_name', cell: (item: any) => item.vendor_name },
     { header: 'Vendor GSTIN', accessorKey: 'vendor_gstin', cell: (item: any) => item.vendor_gstin },
@@ -164,7 +164,7 @@ export default function GSTPage() {
     { header: 'Old Gold Purchase (₹)', accessorKey: 'purchase_value', cell: (item: any) => formatCurrency(item.purchase_value || 0) },
     { header: 'CGST RCM 1.5%', accessorKey: 'cgst_rcm', cell: (item: any) => formatCurrency(item.cgst_rcm || 0) },
     { header: 'SGST RCM 1.5%', accessorKey: 'sgst_rcm', cell: (item: any) => formatCurrency(item.sgst_rcm || 0) },
-    { header: 'Total RCM (₹)', accessorKey: 'total_rcm', cell: (item: any) => <span className="text-amber-400 font-semibold">{formatCurrency(item.total_rcm || 0)}</span> },
+    { header: 'Total RCM (₹)', accessorKey: 'total_rcm', cell: (item: any) => <span className="text-amber-700 font-semibold">{formatCurrency(item.total_rcm || 0)}</span> },
     { header: 'ITC Availed', accessorKey: 'itc_availed', cell: (item: any) => (
       <Badge variant={item.itc_availed ? 'success' : 'default'}>{item.itc_availed ? 'Availed' : 'Pending'}</Badge>
     )}
@@ -178,7 +178,7 @@ export default function GSTPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">GST Statutory Compliance [CGST-R56-4]</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">GST Statutory Compliance [CGST-R56-4]</h1>
           <p className="text-textSecondary mt-1">Real-time Dual-Rate Tax Registers, GSTR-1 Staging & GSTR-3B Returns.</p>
         </div>
         <div className="flex gap-3 items-center">
@@ -186,17 +186,17 @@ export default function GSTPage() {
             type="month" 
             value={selectedPeriod} 
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="bg-surface border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
+            className="bg-surface border border-border rounded-lg px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary"
           />
           <button 
             onClick={() => handleExportJson('gstr1')}
-            className="flex items-center gap-2 px-3.5 py-2 bg-surface border border-border text-white text-xs font-semibold rounded-lg hover:border-primary transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 bg-surface border border-border text-textPrimary text-xs font-semibold rounded-lg hover:border-primary transition-colors"
           >
             <FileJson className="w-4 h-4 text-primary" /> Export GSTR-1 JSON
           </button>
           <button 
             onClick={() => handleExportJson('gstr3b')}
-            className="flex items-center gap-2 px-3.5 py-2 bg-surface border border-border text-white text-xs font-semibold rounded-lg hover:border-primary transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 bg-surface border border-border text-textPrimary text-xs font-semibold rounded-lg hover:border-primary transition-colors"
           >
             <FileJson className="w-4 h-4 text-success" /> Export GSTR-3B JSON
           </button>
@@ -207,7 +207,7 @@ export default function GSTPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="glass-card p-6">
           <h3 className="text-xs font-medium text-textSecondary uppercase tracking-wider">Total Output Tax Liability</h3>
-          <p className="text-2xl font-playfair font-bold text-white mt-2">{formatCurrency(outputTotal)}</p>
+          <p className="text-2xl font-playfair font-bold text-textPrimary mt-2">{formatCurrency(outputTotal)}</p>
         </div>
         <div className="glass-card p-6">
           <h3 className="text-xs font-medium text-textSecondary uppercase tracking-wider">Eligible Input Tax Credit (ITC)</h3>
@@ -215,7 +215,7 @@ export default function GSTPage() {
         </div>
         <div className="glass-card p-6">
           <h3 className="text-xs font-medium text-textSecondary uppercase tracking-wider">RCM Liability (Old Gold)</h3>
-          <p className="text-2xl font-playfair font-bold text-amber-400 mt-2">{formatCurrency(rcmTotal)}</p>
+          <p className="text-2xl font-playfair font-bold text-amber-700 mt-2">{formatCurrency(rcmTotal)}</p>
         </div>
         <div className="glass-card p-6 border-l-4 border-l-danger">
           <h3 className="text-xs font-medium text-textSecondary uppercase tracking-wider">Net Cash Tax Payable</h3>
@@ -233,7 +233,7 @@ export default function GSTPage() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${
                 activeTab === tab 
                   ? 'bg-primary/20 text-primary border border-primary/30' 
-                  : 'text-textSecondary hover:bg-surface hover:text-white border border-transparent'
+                  : 'text-textSecondary hover:bg-surface hover:text-textPrimary border border-transparent'
               }`}
             >
               {tab}
@@ -251,7 +251,7 @@ export default function GSTPage() {
           <div className="space-y-4">
             <div className="p-3 bg-surface border border-border rounded-lg text-xs text-textSecondary flex justify-between">
               <span>HSN 7113 (Jewelry Material) @ 3% Dual-Rate | SAC 9988 (Making Charges) @ 5% GST</span>
-              <span className="text-white font-medium">Total Invoices: {outputTaxData?.records?.length || 0}</span>
+              <span className="text-textPrimary font-medium">Total Invoices: {outputTaxData?.records?.length || 0}</span>
             </div>
             <DataTable columns={outputColumns} data={outputTaxData?.records || []} />
           </div>
@@ -259,13 +259,13 @@ export default function GSTPage() {
           <div className="space-y-4">
             <div className="p-3 bg-surface border border-border rounded-lg text-xs text-textSecondary flex justify-between">
               <span>Section 16 Eligible ITC on Raw Gold, Gems, & Artisan Invoices</span>
-              <span className="text-emerald-400 font-medium">Total ITC Claimable: {formatCurrency(itcTotal)}</span>
+              <span className="text-emerald-700 font-medium">Total ITC Claimable: {formatCurrency(itcTotal)}</span>
             </div>
             <DataTable columns={itcColumns} data={itcData?.records || []} />
           </div>
         ) : activeTab === 'RCM Register' ? (
           <div className="space-y-4">
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-400 flex justify-between">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-700 flex justify-between">
               <span>[Notification 13/2017-CT(Rate)] Reverse Charge on Purchase of Old Gold from Unregistered Individuals</span>
               <span className="font-bold">Total RCM Liability: {formatCurrency(rcmTotal)}</span>
             </div>
@@ -275,7 +275,7 @@ export default function GSTPage() {
           <div className="space-y-6">
             <div className="p-4 bg-surface border border-border rounded-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <h4 className="text-base font-playfair font-bold text-white">GSTR-2B Reconciliation for {selectedPeriod}</h4>
+                <h4 className="text-base font-playfair font-bold text-textPrimary">GSTR-2B Reconciliation for {selectedPeriod}</h4>
                 <p className="text-xs text-textSecondary">
                   [s.16(2)(aa)] Upload the GSTR-2B JSON downloaded from the GST portal, then reconcile it against the ITC register.
                   {gstr2bData?.last_reconciled_at && <> Last reconciled {new Date(gstr2bData.last_reconciled_at).toLocaleString('en-IN')}.</>}
@@ -285,7 +285,7 @@ export default function GSTPage() {
                 <input
                   type="file"
                   accept=".json,application/json"
-                  className="text-xs text-textSecondary file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20"
+                  className="text-xs text-textSecondary file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-black/5 file:text-textPrimary hover:file:bg-black/10"
                   onChange={(e) => setGstr2bFile(e.target.files?.[0] || null)}
                 />
                 <button
@@ -320,7 +320,7 @@ export default function GSTPage() {
                       <span className="text-xs text-textSecondary uppercase tracking-wider">{b.title}</span>
                       <Badge variant={b.variant}>{bucket?.count ?? 0}</Badge>
                     </div>
-                    <p className="text-lg font-playfair font-bold text-white mt-1">{formatCurrency(Number(bucket?.total_tax || 0))}</p>
+                    <p className="text-lg font-playfair font-bold text-textPrimary mt-1">{formatCurrency(Number(bucket?.total_tax || 0))}</p>
                     <p className="text-[11px] text-textSecondary">tax on {formatCurrency(Number(bucket?.taxable || 0))}</p>
                   </div>
                 );
@@ -344,7 +344,7 @@ export default function GSTPage() {
               return (
                 <div key={b.key} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h5 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <h5 className="text-sm font-semibold text-textPrimary flex items-center gap-2">
                       {b.title} <Badge variant={b.variant}>{rows.length}</Badge>
                     </h5>
                     <span className="text-[11px] text-textSecondary">{b.note}</span>
@@ -370,10 +370,10 @@ export default function GSTPage() {
                         {rows.length === 0 ? (
                           <tr><td colSpan={10} className="px-3 py-4 text-center text-textSecondary">Nothing in this bucket</td></tr>
                         ) : rows.map((r: any) => (
-                          <tr key={r.id} className="hover:bg-white/5">
+                          <tr key={r.id} className="hover:bg-black/5">
                             <td className="px-3 py-2 font-mono text-primary">{r.supplier_gstin || r.vendor_gstin}</td>
-                            <td className="px-3 py-2 text-white">{r.supplier_name || r.vendor_name || r.books?.vendor_name || '—'}</td>
-                            <td className="px-3 py-2 font-mono text-white">
+                            <td className="px-3 py-2 text-textPrimary">{r.supplier_name || r.vendor_name || r.books?.vendor_name || '—'}</td>
+                            <td className="px-3 py-2 font-mono text-textPrimary">
                               {fromBooks && r.invoice_id
                                 ? <button className="underline hover:text-primary" title="Open this bill" onClick={() => router.push(`/purchases?view_id=${r.invoice_id}`)}>{r.invoice_no}</button>
                                 : r.invoice_no}
@@ -382,7 +382,7 @@ export default function GSTPage() {
                             {!fromBooks && (
                               <td className="px-3 py-2 font-mono text-textSecondary">
                                 {r.books?.invoice_id
-                                  ? <button className="underline hover:text-white" title="Open this bill" onClick={() => router.push(`/purchases?view_id=${r.books.invoice_id}`)}>{r.books.bill_no}</button>
+                                  ? <button className="underline hover:text-textPrimary" title="Open this bill" onClick={() => router.push(`/purchases?view_id=${r.books.invoice_id}`)}>{r.books.bill_no}</button>
                                   : (r.books?.bill_no || '—')}
                               </td>
                             )}
@@ -393,7 +393,7 @@ export default function GSTPage() {
                             {b.key === 'Mismatch' && <td className="px-3 py-2 text-warning">{r.match_note}</td>}
                             {b.key === 'Missing_In_Books' && (
                               <td className="px-3 py-2">
-                                <button onClick={() => router.push(`/purchases?from2b=${r.id}`)} title="Open the purchase form prefilled with this row" className="px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-white">Create bill</button>
+                                <button onClick={() => router.push(`/purchases?from2b=${r.id}`)} title="Open the purchase form prefilled with this row" className="px-2.5 py-1 rounded text-xs bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary">Create bill</button>
                               </td>
                             )}
                           </tr>
@@ -409,7 +409,7 @@ export default function GSTPage() {
           <div className="space-y-6">
             <div className="p-4 bg-surface border border-border rounded-xl flex items-center justify-between">
               <div>
-                <h4 className="text-base font-playfair font-bold text-white">GSTR-1 Monthly Return Staging Tables</h4>
+                <h4 className="text-base font-playfair font-bold text-textPrimary">GSTR-1 Monthly Return Staging Tables</h4>
                 <p className="text-xs text-textSecondary">Outward Supplies Schema conforming to GSTN Table 4A (B2B) and Table 12 (HSN).</p>
               </div>
               <button 
@@ -421,7 +421,7 @@ export default function GSTPage() {
             </div>
 
             <div className="space-y-3">
-              <h5 className="text-sm font-semibold text-white">Table 4A — Taxable Outward B2B Supplies</h5>
+              <h5 className="text-sm font-semibold text-textPrimary">Table 4A — Taxable Outward B2B Supplies</h5>
               {gstr1B2B.length === 0 ? (
                 <div className="p-6 bg-surface/50 border border-border rounded-xl text-center text-xs text-textSecondary">
                   No B2B invoices in selected period (all B2C retail).
@@ -432,7 +432,7 @@ export default function GSTPage() {
             </div>
 
             <div className="space-y-3">
-              <h5 className="text-sm font-semibold text-white">Table 12 — HSN-wise Summary of Outward Supplies</h5>
+              <h5 className="text-sm font-semibold text-textPrimary">Table 12 — HSN-wise Summary of Outward Supplies</h5>
               <div className="bg-surface border border-border rounded-xl p-4">
                 <table className="w-full text-left text-xs">
                   <thead className="text-textSecondary border-b border-border">
@@ -451,12 +451,12 @@ export default function GSTPage() {
                     {gstr1Hsn.length === 0 ? (
                       <tr><td colSpan={8} className="py-6 text-center text-textSecondary">No HSN summary available</td></tr>
                     ) : gstr1Hsn.map((h: any, i: number) => (
-                      <tr key={i} className="hover:bg-white/5">
+                      <tr key={i} className="hover:bg-black/5">
                         <td className="py-2.5 font-mono text-primary">{h.hsn_code || '71131910'}</td>
-                        <td className="py-2.5 text-white">{h.description || 'Precious Metal Jewellery'}</td>
+                        <td className="py-2.5 text-textPrimary">{h.description || 'Precious Metal Jewellery'}</td>
                         <td className="py-2.5 text-textSecondary">{h.uom || 'GMS'}</td>
                         <td className="py-2.5 text-right font-mono">{h.total_qty || '—'}</td>
-                        <td className="py-2.5 text-right font-mono text-white">{formatCurrency(h.taxable_value || 0)}</td>
+                        <td className="py-2.5 text-right font-mono text-textPrimary">{formatCurrency(h.taxable_value || 0)}</td>
                         <td className="py-2.5 text-right font-mono">{formatCurrency(h.igst || 0)}</td>
                         <td className="py-2.5 text-right font-mono">{formatCurrency(h.cgst || 0)}</td>
                         <td className="py-2.5 text-right font-mono">{formatCurrency(h.sgst || 0)}</td>
@@ -471,7 +471,7 @@ export default function GSTPage() {
           <div className="space-y-6">
             <div className="p-4 bg-surface border border-border rounded-xl flex items-center justify-between">
               <div>
-                <h4 className="text-base font-playfair font-bold text-white">GSTR-3B Monthly Consolidated Summary</h4>
+                <h4 className="text-base font-playfair font-bold text-textPrimary">GSTR-3B Monthly Consolidated Summary</h4>
                 <p className="text-xs text-textSecondary">Summary of Outward Supplies, Input Tax Credit (ITC), and Tax Payment Computation.</p>
               </div>
               <button 
@@ -485,13 +485,13 @@ export default function GSTPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Table 3.1 Outward */}
               <div className="p-4 bg-surface border border-border rounded-xl space-y-3">
-                <h5 className="text-sm font-semibold text-white border-b border-border pb-2">
+                <h5 className="text-sm font-semibold text-textPrimary border-b border-border pb-2">
                   3.1 Details of Outward Supplies & Inward Supplies Liable to Reverse Charge
                 </h5>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(a) Outward Taxable Supplies (Jewelry):</span>
-                    <span className="font-mono font-bold text-white">{formatCurrency(outputTaxData?.summary?.total_taxable || 0)}</span>
+                    <span className="font-mono font-bold text-textPrimary">{formatCurrency(outputTaxData?.summary?.total_taxable || 0)}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">Total Output Tax (CGST + SGST + IGST):</span>
@@ -499,28 +499,28 @@ export default function GSTPage() {
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(d) Inward Supplies Liable to Reverse Charge (Old Gold):</span>
-                    <span className="font-mono font-bold text-amber-400">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.total_rcm || 0))}</span>
+                    <span className="font-mono font-bold text-amber-700">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.total_rcm || 0))}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(d) taxable value of RCM inward supplies:</span>
-                    <span className="font-mono text-white">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.taxable_value || 0))}</span>
+                    <span className="font-mono text-textPrimary">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.taxable_value || 0))}</span>
                   </div>
                 </div>
               </div>
 
               {/* Table 4 Eligible ITC */}
               <div className="p-4 bg-surface border border-border rounded-xl space-y-3">
-                <h5 className="text-sm font-semibold text-white border-b border-border pb-2">
+                <h5 className="text-sm font-semibold text-textPrimary border-b border-border pb-2">
                   4. Eligible Input Tax Credit (ITC)
                 </h5>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(A)(3) ITC on inward supplies liable to reverse charge:</span>
-                    <span className="font-mono font-bold text-emerald-400">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.total_rcm || 0))}</span>
+                    <span className="font-mono font-bold text-emerald-700">{formatCurrency(Number(gstr3bData?.table_3_1d_rcm_inward?.total_rcm || 0))}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(A)(5) All Other ITC:</span>
-                    <span className="font-mono font-bold text-emerald-400">{formatCurrency(Number(gstr3bData?.table_4_itc_available?.total_itc ?? itcTotal))}</span>
+                    <span className="font-mono font-bold text-emerald-700">{formatCurrency(Number(gstr3bData?.table_4_itc_available?.total_itc ?? itcTotal))}</span>
                   </div>
                   {Number(gstr3bData?.table_4_itc_available?.itc_unmatched_2b || 0) > 0 && (
                     <div className="flex justify-between py-1 border-b border-border/50 text-warning">
@@ -530,11 +530,11 @@ export default function GSTPage() {
                   )}
                   <div className="flex justify-between py-1 border-b border-border/50">
                     <span className="text-textSecondary">(B) Net ITC Available (A - Reversals):</span>
-                    <span className="font-mono font-bold text-emerald-400">{formatCurrency(itcTotal)}</span>
+                    <span className="font-mono font-bold text-emerald-700">{formatCurrency(itcTotal)}</span>
                   </div>
                   <div className="flex justify-between py-1 pt-2 border-t border-border font-bold">
-                    <span className="text-rose-400">Net Tax Payable in Cash:</span>
-                    <span className="font-mono text-rose-400 text-sm">{formatCurrency(netPayable)}</span>
+                    <span className="text-rose-700">Net Tax Payable in Cash:</span>
+                    <span className="font-mono text-rose-700 text-sm">{formatCurrency(netPayable)}</span>
                   </div>
                 </div>
               </div>

@@ -42,7 +42,7 @@ export default function DataTable({ columns, data, isLoading = false, onRowClick
             <tr 
               key={rowIndex} 
               onClick={() => onRowClick && onRowClick(item)}
-              className={`bg-background hover:bg-white/5 border-b border-border/50 transition-colors last:border-0 ${onRowClick ? 'cursor-pointer' : ''}`}
+              className={`bg-background hover:bg-black/5 border-b border-border/50 transition-colors last:border-0 ${onRowClick ? 'cursor-pointer' : ''}`}
             >
               {columns.map((col, colIndex) => (
                 <td 

@@ -13,7 +13,8 @@ SRC = io.open(ROOT / "app" / "api" / "v1" / "insights.py", encoding="utf-8").rea
 
 
 def test_endpoints_are_mounted():
-    assert {r.path for r in insights.router.routes} == {"/business-overview", "/analysis"}
+    assert {r.path for r in insights.router.routes} == {
+        "/business-overview", "/analysis", "/cash-flow-statement", "/gst-annual-summary"}
     assert {r.path for r in insights.search_router.routes} == {"/search"}
     router_src = io.open(ROOT / "app" / "api" / "v1" / "router.py", encoding="utf-8").read()
     assert 'include_router(insights.router,        prefix="/reports"' in router_src
@@ -51,13 +52,16 @@ def test_overview_follows_the_rules_the_other_reports_use():
     assert "COALESCE(si.due_date, si.invoice_date + COALESCE(p.credit_days, 0))" in SRC
     # a transfer between cash and bank is not cash flow
     assert "je.entry_type NOT IN ('Opening', 'Contra')" in SRC
+    # reversing a payment is less money out, not money in
+    assert "WHEN je.entry_type = 'Reversal' THEN -jel.dr_amount ELSE jel.cr_amount END), 0) AS outgoing" in SRC
     # opening balances come from the account, not from 'Opening' journals
     assert "je.entry_type <> 'Opening'" in SRC
 
 
 def test_every_analysis_report_has_a_branch_and_rejects_unknown_names():
     assert set(ANALYSIS_REPORTS) == {
-        "sales_by_customer", "sales_by_item", "purchases_by_vendor", "purchases_by_item", "expenses_by_account",
+        "sales_by_customer", "sales_by_item", "sales_by_salesperson", "purchases_by_vendor", "purchases_by_item",
+        "expenses_by_account",
     }
     for name in ANALYSIS_REPORTS[:-1]:
         assert f'report == "{name}"' in SRC
@@ -122,3 +126,20 @@ def test_unaliased_search_statements_name_real_columns():
     ):
         have = _schema_columns(table)
         assert not [c for c in cols if c not in have], (table, [c for c in cols if c not in have])
+
+
+def test_cash_flow_statement_reads_the_other_side_of_cash_entries():
+    body = SRC.split("async def cash_flow_statement(")[1].split("@router.get(")[0]
+    assert "je.entry_type NOT IN ('Opening', 'Contra')" in body          # a transfer is not a flow
+    assert "a.account_type NOT IN ('Bank', 'Cash')" in body               # the lines that say what the money was for
+    assert "ca.account_type IN ('Bank', 'Cash')" in body                  # ... of entries that touch cash
+    assert '"unexplained": round(net - (inflow - outflow), 2)' in body    # opening + movement must reach closing
+
+
+def test_annual_gst_summary_nets_credit_notes_and_reversals():
+    body = SRC.split("async def gst_annual_summary(")[1].split("def like_pattern")[0]
+    assert "CASE WHEN is_credit_note THEN -igst_amount ELSE igst_amount END" in body
+    assert "CASE WHEN is_reversal THEN -igst_credit ELSE igst_credit END" in body
+    assert "is_eligible = TRUE" in body
+    assert "CASE WHEN is_reversal THEN -total_rcm ELSE total_rcm END" in body
+    assert "date(year, 4, 1), date(year + 1, 3, 31)" in body

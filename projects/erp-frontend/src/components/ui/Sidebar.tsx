@@ -50,9 +50,11 @@ const navigation: NavItem[] = [
   { name: 'Gemstone Lots', href: '/lots', icon: Package, group: 'Masters' },
   { name: 'Locations & Transfers', href: '/locations', icon: ArrowLeftRight, group: 'Masters' },
   { name: 'Manufacturing', href: '/manufacturing', icon: Factory, group: 'Operations' },
+  { name: 'Quotes & Orders', href: '/orders', icon: ClipboardList, group: 'Operations' },
   { name: 'Sales', href: '/sales', icon: ShoppingCart, group: 'Operations' },
   { name: 'Purchases', href: '/purchases', icon: ShoppingBag, group: 'Operations' },
   { name: 'Expenses', href: '/expenses', icon: Receipt, group: 'Operations' },
+  { name: 'Recurring', href: '/recurring', icon: Calendar, group: 'Operations' },
   { name: 'Memos (Jangad)', href: '/memos', icon: ClipboardList, group: 'Operations' },
   { name: 'Job Work', href: '/job-work', icon: Hammer, group: 'Operations' },
   { name: 'Receipt', href: '/vouchers/receipt', icon: ArrowDownLeft, group: 'Vouchers' },
@@ -68,6 +70,7 @@ const navigation: NavItem[] = [
   // Period lock and year-end closing; the API refuses lock/close to anyone
   // but owner/admin, the page hides the buttons for everyone else.
   { name: 'Fiscal Years', href: '/fiscal-years', icon: Calendar, group: 'Finance' },
+  { name: 'Budgets', href: '/budgets', icon: BarChart3, group: 'Finance' },
   { name: 'GST', href: '/gst', icon: Receipt, group: 'Finance' },
   { name: 'GST & Compliance', href: '/gst/exports', icon: FileText, group: 'Finance' },
   { name: 'Reconciliation', href: '/banking', icon: Landmark, group: 'Banking' },
@@ -115,7 +118,7 @@ export default function Sidebar() {
           <path d="M2 9h20" />
           <path d="M12 21V9" />
         </svg>
-        <span className="text-2xl font-playfair font-bold text-white tracking-wide">Caratloop</span>
+        <span className="text-2xl font-playfair font-bold text-textPrimary tracking-wide">Caratloop</span>
       </div>
 
       {/* Navigation */}
@@ -139,7 +142,7 @@ export default function Sidebar() {
                           "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
                           isActive
                             ? "bg-primary/10 text-primary border-l-2 border-primary"
-                            : "text-textSecondary hover:bg-white/5 hover:text-white"
+                            : "text-textSecondary hover:bg-black/5 hover:text-textPrimary"
                         )}
                       >
                         <item.icon className={cn(
@@ -147,7 +150,7 @@ export default function Sidebar() {
                           isActive ? "text-primary" : "text-textSecondary group-hover:text-primary"
                         )} />
                         <span className={cn(
-                          isActive ? "" : "group-hover:text-white transition-colors"
+                          isActive ? "" : "group-hover:text-textPrimary transition-colors"
                         )}>
                           {item.name}
                         </span>
@@ -164,7 +167,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-border mt-auto">
         <div className="text-xs text-textSecondary text-center">
-          <p className="font-semibold text-white">{company?.legal_name || company?.name || company?.trade_name || '—'}</p>
+          <p className="font-semibold text-textPrimary">{company?.legal_name || company?.name || company?.trade_name || '—'}</p>
           <p>FY {financialYearLabel()}</p>
         </div>
       </div>

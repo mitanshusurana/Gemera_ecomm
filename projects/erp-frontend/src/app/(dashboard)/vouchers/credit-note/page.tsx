@@ -109,7 +109,7 @@ export default function CreditNotePage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Credit Note</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Credit Note</h1>
           <p className="text-textSecondary mt-1">Auto-generated Voucher Number (Sales Return)</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function CreditNotePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm text-textSecondary mb-1">Date</label>
-            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div>
             <label className="block text-sm text-textSecondary mb-1">Customer</label>
@@ -145,7 +145,7 @@ export default function CreditNotePage() {
           <div>
             <label className="block text-sm text-textSecondary mb-1">Original Invoice Ref</label>
             <select
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
               value={selectedInvoice?.id || ''}
               onChange={(e) => {
                 const inv = invoices.find(i => i.id === e.target.value);
@@ -164,7 +164,7 @@ export default function CreditNotePage() {
           <div>
             <label className="block text-sm text-textSecondary mb-1">Reason for Return</label>
             <select 
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             >
@@ -177,7 +177,7 @@ export default function CreditNotePage() {
         </div>
 
         <div className="mt-6 border-t border-border pt-6">
-          <h3 className="text-lg font-playfair font-medium text-white mb-4">Items Returned</h3>
+          <h3 className="text-lg font-playfair font-medium text-textPrimary mb-4">Items Returned</h3>
           <div className="grid grid-cols-12 gap-4 items-end">
             <div className="col-span-5">
               <label className="block text-sm text-textSecondary mb-1">Item</label>
@@ -185,22 +185,22 @@ export default function CreditNotePage() {
             </div>
             <div className="col-span-2">
               <label className="block text-sm text-textSecondary mb-1">Weight (gm)</label>
-              <input type="number" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" placeholder="0.00" value={weight} onChange={(e) => setWeight(e.target.value)} />
+              <input type="number" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" placeholder="0.00" value={weight} onChange={(e) => setWeight(e.target.value)} />
             </div>
             <div className="col-span-2">
               <label className="block text-sm text-textSecondary mb-1">Rate (₹)</label>
-              <input type="number" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" placeholder="0.00" value={rate} onChange={(e) => setRate(e.target.value)} />
+              <input type="number" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" placeholder="0.00" value={rate} onChange={(e) => setRate(e.target.value)} />
             </div>
             <div className="col-span-3">
               <label className="block text-sm text-textSecondary mb-1">Taxable Value (₹)</label>
-              <input type="number" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px] bg-surface" readOnly placeholder="0.00" value={taxableValue || ''} />
+              <input type="number" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px] bg-surface" readOnly placeholder="0.00" value={taxableValue || ''} />
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           <div className="p-4 bg-background border border-border rounded-lg">
-            <h3 className="text-sm font-medium text-white mb-3">GST Reversal Preview</h3>
+            <h3 className="text-sm font-medium text-textPrimary mb-3">GST Reversal Preview</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-textSecondary">
                 <span>Taxable Amount</span>
@@ -214,7 +214,7 @@ export default function CreditNotePage() {
                 <span>SGST ({gstRate / 2}%)</span>
                 <span>{formatCurrency(sgst)}</span>
               </div>
-              <div className="flex justify-between text-white font-bold pt-2 border-t border-border">
+              <div className="flex justify-between text-textPrimary font-bold pt-2 border-t border-border">
                 <span>Total Credit</span>
                 <span>{formatCurrency(totalCredit)}</span>
               </div>
@@ -222,7 +222,7 @@ export default function CreditNotePage() {
           </div>
 
           <div className="p-4 bg-background border border-border rounded-lg">
-            <h3 className="text-sm font-medium text-white mb-3">Journal Preview</h3>
+            <h3 className="text-sm font-medium text-textPrimary mb-3">Journal Preview</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-success">
                 <span>Dr: Sales Return A/c</span>
@@ -248,7 +248,7 @@ export default function CreditNotePage() {
           <button 
             type="button"
             onClick={() => { setWeight(''); setRate(''); setError(''); }}
-            className="px-4 py-2 border border-border rounded-md text-white hover:bg-white/5"
+            className="px-4 py-2 border border-border rounded-md text-textPrimary hover:bg-black/5"
           >
             Reset
           </button>
@@ -266,7 +266,7 @@ export default function CreditNotePage() {
       {/* Recent notes: open the e-invoice panel to generate, view or cancel the IRN. */}
       <div className="glass-card p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-playfair font-medium text-white">Recent credit notes</h3>
+          <h3 className="text-lg font-playfair font-medium text-textPrimary">Recent credit notes</h3>
           <p className="text-xs text-textSecondary">A note against a B2B invoice is reported to the IRP as a CRN.</p>
         </div>
         {recent.length === 0 ? (
@@ -287,16 +287,16 @@ export default function CreditNotePage() {
               <tbody>
                 {recent.map((row) => (
                   <tr key={String(row.id)} className="border-b border-border/50">
-                    <td className="py-2 pr-4 font-mono text-white">{row.entry_no}</td>
+                    <td className="py-2 pr-4 font-mono text-textPrimary">{row.entry_no}</td>
                     <td className="py-2 pr-4 text-textSecondary">{row.entry_date ? new Date(row.entry_date).toLocaleDateString('en-IN') : '—'}</td>
                     <td className="py-2 pr-4 text-textSecondary truncate max-w-[24rem]" title={row.narration}>{row.narration}</td>
-                    <td className="py-2 pr-4 text-right text-white">{formatCurrency(Number(row.total_debit || 0))}</td>
+                    <td className="py-2 pr-4 text-right text-textPrimary">{formatCurrency(Number(row.total_debit || 0))}</td>
                     <td className="py-2 pr-4 text-textSecondary">{row.status}</td>
                     <td className="py-2 text-right">
                       <button
                         type="button"
                         onClick={() => setEinvoiceFor({ id: row.id, no: row.entry_no })}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border text-white hover:border-primary"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border text-textPrimary hover:border-primary"
                       >
                         <QrCode className="w-3.5 h-3.5" /> IRN
                       </button>

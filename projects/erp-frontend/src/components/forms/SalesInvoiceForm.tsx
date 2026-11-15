@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
-import { apiClient, lotsApi, LotRow } from '@/lib/api';
+import { apiClient, lotsApi, LotRow, ordersApi, OrderDocument, recurringApi } from '@/lib/api';
 import { useCompany } from '@/lib/company';
 import { isoDate, today } from '@/lib/fiscal';
 
@@ -20,6 +20,8 @@ interface LineItem {
   materialValue: number;
   makingCharges: number;
   quantity: number;
+  /** Percent off material and making alike, as the API applies it. */
+  discountPct: number;
   lot_id: string;
   lot_no: string;
 }
@@ -57,15 +59,19 @@ const normaliseStateCode = (code?: string | null) => {
 
 const newLine = (id: number): LineItem => ({
   id, material_id: '', name: '', code: '', hsn_code: '71131910', material_gst_rate: 3.0,
-  materialValue: 0, makingCharges: 0, quantity: 1, lot_id: '', lot_no: '',
+  materialValue: 0, makingCharges: 0, quantity: 1, discountPct: 0, lot_id: '', lot_no: '',
 });
 
 interface SalesInvoiceFormProps {
   /** Called after a successful create so the caller can close and refresh. */
   onSuccess?: () => void;
+  /** A quote or sales order being invoiced: prefills the form and is marked converted on save. */
+  fromOrder?: OrderDocument | null;
+  /** Set when the invoice is this period's document of a recurring profile: the profile moves on, the order stays open. */
+  recurringProfileId?: string | null;
 }
 
-export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
+export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfileId }: SalesInvoiceFormProps) {
   const { company } = useCompany();
   const homeState = normaliseStateCode(company?.state_code);
   const [customerId, setCustomerId] = useState('');
@@ -77,6 +83,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
   // Payment terms decide the due date (Immediate = today, Net N = N days on);
   // Custom lets the date be typed. The due date drives the overdue split.
   const [paymentTerms, setPaymentTerms] = useState('Immediate');
+  const [salesperson, setSalesperson] = useState('');
   const [customDueDate, setCustomDueDate] = useState('');
   // Local date, not UTC: before 05:30 IST the UTC date is still yesterday.
   const invoiceDay = today();
@@ -110,6 +117,29 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
   const isInterState = isExport || (!!placeOfSupply && !!homeState && placeOfSupply !== homeState);
 
   const [items, setItems] = useState<LineItem[]>([newLine(1)]);
+
+  // Invoicing a quote or a sales order: its customer and lines. A line that
+  // named no stock item arrives without one and must be picked, because the
+  // invoice relieves stock.
+  useEffect(() => {
+    if (!fromOrder) return;
+    setCustomerId(fromOrder.party_id);
+    if (fromOrder.party_state_code) { setPlaceOfSupply(normaliseStateCode(fromOrder.party_state_code)); setPosTouched(true); }
+    setCustomerHasIdentity(Boolean(fromOrder.party_gstin));
+    setItems((fromOrder.lines || []).map((l, i) => ({
+      ...newLine(i + 1),
+      material_id: l.material_id || '',
+      name: l.material_name || l.description || '',
+      code: l.material_code || '',
+      hsn_code: l.hsn_sac_code || '71131910',
+      material_gst_rate: Number(l.material_gst_rate ?? 3),
+      materialValue: Number(l.material_value) || 0,
+      makingCharges: Number(l.making_charges) || 0,
+      quantity: Number(l.quantity) || 1,
+      discountPct: Number(l.discount_pct) || 0,
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromOrder?.id]);
   // Open lots of the material on each line, for the lot picker.
   const [lotOptions, setLotOptions] = useState<Record<string, LotRow[]>>({});
 
@@ -155,6 +185,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
         invoice_date: invoiceDay,
         place_of_supply: isExport ? undefined : placeOfSupply,
         payment_terms: paymentTerms,
+        salesperson: salesperson.trim() || undefined,
         due_date: paymentTerms === 'Custom' && customDueDate ? customDueDate : undefined,
         invoice_type: invoiceType,
         currency,
@@ -166,6 +197,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
           hsn_sac_code: i.hsn_code,
           material_value: Number(i.materialValue) || 0,
           making_charges: Number(i.makingCharges) || 0,
+          discount_pct: Number(i.discountPct) || 0,
           quantity: Number(i.quantity) > 0 ? Number(i.quantity) : 1,
         })),
         reason: isExport ? 'Export invoice creation' : isBillOfSupply ? 'Bill of supply creation' : 'Sales invoice creation',
@@ -179,7 +211,14 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
         body.lut_no = exportType === 'LUT_without_tax' ? (lutNo || undefined) : undefined;
       }
       if (pan.trim()) body.pan = pan.trim().toUpperCase();
-      await apiClient.post('/sales/invoices', body);
+      const created = await apiClient.post('/sales/invoices', body);
+      if (recurringProfileId && created.data?.invoice_no) {
+        // This period's invoice of a recurring profile: the profile moves to its next date; its template order stays open.
+        try { await recurringApi.advance(recurringProfileId, created.data.invoice_no); } catch { /* shown as still due under Recurring */ }
+      } else if (fromOrder && created.data?.invoice_no) {
+        // The invoice is posted; a failure to close the order must not hide that.
+        try { await ordersApi.markConverted(fromOrder.id, created.data.invoice_no); } catch { /* the order stays open; it can be closed from Quotes & Orders */ }
+      }
       if (onSuccess) {
         onSuccess();
       } else {
@@ -224,7 +263,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
     }));
   };
 
-  const updateItemField = (id: number, field: 'materialValue' | 'makingCharges' | 'quantity', value: number) => {
+  const updateItemField = (id: number, field: 'materialValue' | 'makingCharges' | 'quantity' | 'discountPct', value: number) => {
     setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
@@ -246,8 +285,9 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
   const taxFree = isBillOfSupply || (isExport && exportType === 'LUT_without_tax');
 
   items.forEach(item => {
-    const matVal = Number(item.materialValue) || 0;
-    const makVal = Number(item.makingCharges) || 0;
+    const keep = (100 - Math.min(100, Math.max(0, Number(item.discountPct) || 0))) / 100;
+    const matVal = (Number(item.materialValue) || 0) * keep;
+    const makVal = (Number(item.makingCharges) || 0) * keep;
     const lineTaxable = matVal + makVal;
     const matGstRate = taxFree ? 0 : Number(item.material_gst_rate) ?? 3.0;
     const makGstRate = taxFree ? 0 : 5.0;
@@ -272,7 +312,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
     : formatCurrency(n);
   const pan114bHint = !isExport && grandTotal * fx >= 200000 && !customerHasIdentity;
 
-  const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
+  const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
@@ -289,7 +329,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
             onClick={() => { setInvoiceType(value); if (value !== 'Export_Invoice') { setCurrency('INR'); setExchangeRate('1'); } }}
             className={`text-left p-3 rounded-lg border transition-colors ${invoiceType === value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'}`}
           >
-            <div className={`text-sm font-semibold ${invoiceType === value ? 'text-primary' : 'text-white'}`}>{label}</div>
+            <div className={`text-sm font-semibold ${invoiceType === value ? 'text-primary' : 'text-textPrimary'}`}>{label}</div>
             <div className="text-[11px] text-textSecondary">{hint}</div>
           </button>
         ))}
@@ -301,6 +341,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
           <label className="text-sm text-textSecondary font-medium">Customer *</label>
           <PartySelect
             partyType="Customer"
+            value={customerId}
             onChange={(id, partyObj) => {
               setCustomerId(id);
               const p: any = partyObj || {};
@@ -334,7 +375,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
             <select
               value={placeOfSupply}
               onChange={(e) => handlePlaceOfSupplyChange(e.target.value)}
-              className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none font-medium"
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none font-medium"
             >
               <option value="" disabled>Select state...</option>
               {GST_STATES.map(s => (
@@ -347,11 +388,11 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
         )}
       </div>
 
-      {/* Payment terms and due date */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Payment terms, due date, salesperson */}
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <label className="text-sm text-textSecondary font-medium">Payment Terms</label>
-          <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none font-medium">
+          <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none font-medium">
             <option value="Immediate">Due on receipt</option>
             <option value="Net 7">Net 7 days</option>
             <option value="Net 15">Net 15 days</option>
@@ -369,7 +410,18 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
             min={invoiceDay}
             disabled={paymentTerms !== 'Custom'}
             onChange={(e) => setCustomDueDate(e.target.value)}
-            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none disabled:opacity-70"
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none disabled:opacity-70"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm text-textSecondary font-medium">Salesperson</label>
+          <input
+            type="text"
+            maxLength={80}
+            value={salesperson}
+            onChange={(e) => setSalesperson(e.target.value)}
+            placeholder="Optional"
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none"
           />
         </div>
       </div>
@@ -379,7 +431,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
         <div className="p-4 bg-surface/50 border border-primary/30 rounded-xl space-y-4">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-white">Export particulars</span>
+            <span className="text-sm font-semibold text-textPrimary">Export particulars</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -429,8 +481,8 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
       {/* Items List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-lg font-playfair font-medium text-white">Line Items (Strict Master Selection)</h4>
-          <button type="button" onClick={addItem} className="text-xs text-primary flex items-center gap-1 hover:text-white transition-colors">
+          <h4 className="text-lg font-playfair font-medium text-textPrimary">Line Items (Strict Master Selection)</h4>
+          <button type="button" onClick={addItem} className="text-xs text-primary flex items-center gap-1 hover:text-textPrimary transition-colors">
             <Plus className="w-4 h-4" /> Add Item
           </button>
         </div>
@@ -456,7 +508,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
                     readOnly
                     disabled
                     value={item.hsn_code}
-                    className="w-full bg-white/5 border border-border rounded-lg px-2.5 py-2 text-xs text-textSecondary font-mono cursor-not-allowed h-[38px]"
+                    className="w-full bg-black/5 border border-border rounded-lg px-2.5 py-2 text-xs text-textSecondary font-mono cursor-not-allowed h-[38px]"
                   />
                 </div>
                 <div className="w-24 space-y-2">
@@ -466,7 +518,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
                     readOnly
                     disabled
                     value={taxFree ? '0%' : `${item.material_gst_rate}%`}
-                    className="w-full bg-white/5 border border-primary/30 rounded-lg px-2.5 py-2 text-xs text-primary font-mono font-bold cursor-not-allowed h-[38px]"
+                    className="w-full bg-black/5 border border-primary/30 rounded-lg px-2.5 py-2 text-xs text-primary font-mono font-bold cursor-not-allowed h-[38px]"
                   />
                 </div>
                 <div className="w-24 space-y-2">
@@ -475,7 +527,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
                     type="number" step="any" min="0"
                     value={item.quantity || ''}
                     onChange={(e) => updateItemField(item.id, 'quantity', Number(e.target.value))}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
                     placeholder="1"
                   />
                 </div>
@@ -485,7 +537,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
                     type="number"
                     value={item.materialValue || ''}
                     onChange={(e) => updateItemField(item.id, 'materialValue', Number(e.target.value))}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
                     placeholder="0.00"
                   />
                 </div>
@@ -495,8 +547,20 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
                     type="number"
                     value={item.makingCharges || ''}
                     onChange={(e) => updateItemField(item.id, 'makingCharges', Number(e.target.value))}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
                     placeholder="0.00"
+                  />
+                </div>
+                <div className="w-20 space-y-2">
+                  <label className="text-xs text-textSecondary" title="Percent off material and making">Disc %</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={item.discountPct || ''}
+                    onChange={(e) => updateItemField(item.id, 'discountPct', Math.min(100, Math.max(0, Number(e.target.value))))}
+                    className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
+                    placeholder="0"
                   />
                 </div>
                 <div className="pt-8">
@@ -515,7 +579,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
                   <select
                     value={item.lot_id}
                     onChange={(e) => selectLot(item.id, e.target.value)}
-                    className="bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-white focus:border-primary outline-none font-mono"
+                    className="bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-textPrimary focus:border-primary outline-none font-mono"
                   >
                     <option value="">— untagged stock —</option>
                     {lots.map(l => (
@@ -537,7 +601,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
         <div className="flex items-center justify-between border-b border-border pb-2">
           <div className="flex items-center gap-2">
             <Calculator className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-white">
+            <span className="text-sm font-semibold text-textPrimary">
               {isExport ? 'Export invoice summary' : isBillOfSupply ? 'Bill of supply summary' : 'Multi-Rate Itemized GST Tax Breakdown'}
             </span>
           </div>
@@ -549,12 +613,12 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
         </div>
 
         <div className="space-y-2 text-xs text-textSecondary">
-          <div className="flex justify-between text-white font-medium">
+          <div className="flex justify-between text-textPrimary font-medium">
             <span>Total Material Value:</span>
             <span className="font-mono">{fmt(totalMaterialVal)}</span>
           </div>
           {totalMakingVal > 0 && (
-            <div className="flex justify-between text-white font-medium">
+            <div className="flex justify-between text-textPrimary font-medium">
               <span>Total Making Charges:</span>
               <span className="font-mono">{fmt(totalMakingVal)}</span>
             </div>
@@ -568,15 +632,15 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
               <div key={rateStr} className="p-2 bg-surface/50 border border-border/50 rounded-lg space-y-1">
                 <div className="flex justify-between text-textSecondary font-medium">
                   <span>Items @ {rate}% Tax Rate:</span>
-                  <span className="font-mono text-white">Taxable: {fmt(bucket.taxable)}</span>
+                  <span className="font-mono text-textPrimary">Taxable: {fmt(bucket.taxable)}</span>
                 </div>
                 {!isInterState ? (
-                  <div className="flex justify-between text-emerald-400 text-[11px]">
+                  <div className="flex justify-between text-emerald-700 text-[11px]">
                     <span>CGST ({halfRate}%): {fmt(bucket.taxAmount / 2)}</span>
                     <span>SGST ({halfRate}%): {fmt(bucket.taxAmount / 2)}</span>
                   </div>
                 ) : (
-                  <div className="flex justify-between text-amber-400 text-[11px]">
+                  <div className="flex justify-between text-amber-700 text-[11px]">
                     <span>IGST ({rate}%):</span>
                     <span>{fmt(bucket.taxAmount)}</span>
                   </div>
@@ -585,7 +649,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
             );
           })}
 
-          <div className="flex justify-between text-white border-t border-border pt-2 text-sm font-bold">
+          <div className="flex justify-between text-textPrimary border-t border-border pt-2 text-sm font-bold">
             <span>Grand Total Invoice Amount:</span>
             <span className="text-primary font-mono">{fmt(grandTotal)}</span>
           </div>
@@ -601,7 +665,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
       {/* Rule 114B: PAN on a Rs 2 lakh sale */}
       {pan114bHint && (
         <div className="p-3 border border-amber-500/40 bg-amber-500/10 rounded-lg space-y-2">
-          <p className="text-xs text-amber-300">
+          <p className="text-xs text-amber-700">
             Rule 114B: this invoice is Rs 2,00,000 or more and the customer has neither a PAN nor a GSTIN on record. Enter the buyer&apos;s PAN; it is stored on the party.
           </p>
           <input

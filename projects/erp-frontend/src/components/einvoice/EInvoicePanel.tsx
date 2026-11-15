@@ -137,7 +137,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
   const providerOff = data?.provider === 'disabled';
   const fmtDt = (v: any) => (v ? new Date(v).toLocaleString('en-IN') : '—');
 
-  const input = 'w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-white focus:border-primary outline-none';
+  const input = 'w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
   const label = 'block text-xs text-textSecondary mb-1';
 
   return (
@@ -166,13 +166,13 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
           )}
           {isNote && data?.against_invoice_no && (
             <p className="text-xs text-textSecondary">
-              Credit note against invoice <span className="font-mono text-white">{data.against_invoice_no}</span>; sent to the IRP as document type CRN with that invoice in PrecDocDtls.
+              Credit note against invoice <span className="font-mono text-textPrimary">{data.against_invoice_no}</span>; sent to the IRP as document type CRN with that invoice in PrecDocDtls.
             </p>
           )}
           {hasIrn && data?.recovered_from_irp && (
             <div className="flex items-start gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5 text-xs text-textSecondary">
               <RefreshCw className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
-              <span><span className="text-white font-medium">Recovered from IRP.</span> The IRP already held an IRN for this {docLabel} (a retry after a timeout or an unsaved earlier attempt); it was fetched by document details and recorded here rather than issued afresh.</span>
+              <span><span className="text-textPrimary font-medium">Recovered from IRP.</span> The IRP already held an IRN for this {docLabel} (a retry after a timeout or an unsaved earlier attempt); it was fetched by document details and recorded here rather than issued afresh.</span>
             </div>
           )}
 
@@ -183,10 +183,10 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
                 <span className="text-xs uppercase tracking-wider text-textSecondary">IRN</span>
                 {eInvoiceBadge(status, data?.irn)}
               </div>
-              <p className="font-mono text-[11px] break-all text-white min-h-[2.5rem]">{data?.irn || <span className="text-textSecondary">No IRN on record</span>}</p>
+              <p className="font-mono text-[11px] break-all text-textPrimary min-h-[2.5rem]">{data?.irn || <span className="text-textSecondary">No IRN on record</span>}</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div><span className="text-textSecondary">Ack No</span><p className="font-mono text-white">{data?.ack_no || '—'}</p></div>
-                <div><span className="text-textSecondary">Ack Date</span><p className="text-white">{fmtDt(data?.ack_date)}</p></div>
+                <div><span className="text-textSecondary">Ack No</span><p className="font-mono text-textPrimary">{data?.ack_no || '—'}</p></div>
+                <div><span className="text-textSecondary">Ack Date</span><p className="text-textPrimary">{fmtDt(data?.ack_date)}</p></div>
                 {data?.cancelled_at && (
                   <div className="col-span-2"><span className="text-textSecondary">Cancelled at</span><p className="text-danger">{fmtDt(data.cancelled_at)}</p></div>
                 )}
@@ -197,10 +197,10 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
                 <span className="text-xs uppercase tracking-wider text-textSecondary">e-Way Bill</span>
                 {data?.eway_bill?.no ? <Badge variant="success">Issued</Badge> : <Badge variant="default">None</Badge>}
               </div>
-              <p className="font-mono text-white">{data?.eway_bill?.no || <span className="text-textSecondary">Not generated</span>}</p>
+              <p className="font-mono text-textPrimary">{data?.eway_bill?.no || <span className="text-textSecondary">Not generated</span>}</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div><span className="text-textSecondary">Generated</span><p className="text-white">{fmtDt(data?.eway_bill?.date)}</p></div>
-                <div><span className="text-textSecondary">Valid up to</span><p className="text-white">{fmtDt(data?.eway_bill?.valid_upto)}</p></div>
+                <div><span className="text-textSecondary">Generated</span><p className="text-textPrimary">{fmtDt(data?.eway_bill?.date)}</p></div>
+                <div><span className="text-textSecondary">Valid up to</span><p className="text-textPrimary">{fmtDt(data?.eway_bill?.valid_upto)}</p></div>
               </div>
             </div>}
           </div>
@@ -222,7 +222,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
           <div className="flex flex-wrap gap-2 border-t border-border pt-4">
             <button
               onClick={() => setView(view === 'payload' ? 'summary' : 'payload')}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border text-white hover:border-primary"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border text-textPrimary hover:border-primary"
             >
               <QrCode className="w-3.5 h-3.5" /> {view === 'payload' ? 'Hide payload' : 'Preview payload'}
             </button>
@@ -251,7 +251,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
                 )}
               </>
             )}
-            <button onClick={load} disabled={busy} className="ml-auto p-2 text-textSecondary hover:text-white" title="Refresh">
+            <button onClick={load} disabled={busy} className="ml-auto p-2 text-textSecondary hover:text-textPrimary" title="Refresh">
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
@@ -261,7 +261,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
               <p className="text-xs text-textSecondary">{isNote
                 ? 'NIC e-invoice schema 1.1, document type CRN — exactly what Generate sends. Values are the note\'s own amounts, positive; the invoice it reduces is in PrecDocDtls.'
                 : 'NIC e-invoice schema 1.1 — exactly what Generate sends. Material and making are separate items; TCS, if any, travels in OthChrg.'}</p>
-              <pre className="bg-background border border-border rounded-lg p-3 text-[11px] leading-relaxed text-white overflow-auto max-h-80">
+              <pre className="bg-background border border-border rounded-lg p-3 text-[11px] leading-relaxed text-textPrimary overflow-auto max-h-80">
                 {data?.payload ? JSON.stringify(data.payload, null, 2) : 'Payload cannot be built — see the validation notes above.'}
               </pre>
             </div>
@@ -344,7 +344,7 @@ export default function EInvoicePanel({ invoiceId, invoiceNo, kind = 'invoice', 
                 {data.log.map((l: any) => (
                   <div key={l.id} className="flex items-center gap-3 px-3 py-2">
                     <span className="text-textSecondary w-36 shrink-0">{fmtDt(l.created_at)}</span>
-                    <span className="font-mono text-white w-28 shrink-0">{l.action}</span>
+                    <span className="font-mono text-textPrimary w-28 shrink-0">{l.action}</span>
                     <Badge variant={l.status === 'Success' ? 'success' : 'danger'}>{l.status}</Badge>
                     {l.error && <span className="text-danger truncate" title={l.error}>{l.error}</span>}
                   </div>
