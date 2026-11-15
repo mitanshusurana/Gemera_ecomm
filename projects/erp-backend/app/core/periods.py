@@ -110,13 +110,28 @@ def check_period_open(fiscal_years: Iterable[Mapping[str, Any]], on: Any, *, wha
                 "the document in an open year."
             ),
         )
+    # The company's lock date (companies.books_locked_until) rides on every
+    # fiscal-year row load_fiscal_years returns: nothing dated on or before
+    # it may be posted, whatever the state of its year.
+    locked_until = fy.get("books_locked_until") if fy else None
+    if locked_until is not None and d <= _as_date(locked_until):
+        raise HTTPException(
+            status_code=423,
+            detail=(
+                f"{what} is dated {d.isoformat()}, and the books are locked up to "
+                f"{_as_date(locked_until).isoformat()}. Move the lock date (owner or admin, under "
+                "Fiscal Years) or date the document after it."
+            ),
+        )
     return fy  # type: ignore[return-value]
 
 
 async def load_fiscal_years(db: AsyncSession, company_id: Any) -> list[dict]:
     res = await db.execute(
         text(
-            "SELECT id, year_label, start_date, end_date, is_active, is_locked, is_closed "
+            "SELECT id, year_label, start_date, end_date, is_active, is_locked, is_closed, "
+            "(SELECT c.books_locked_until FROM caratloop.companies c "
+            " WHERE c.id = caratloop.fiscal_years.company_id) AS books_locked_until "
             "FROM caratloop.fiscal_years WHERE company_id = :cid ORDER BY start_date"
         ),
         {"cid": str(company_id)},

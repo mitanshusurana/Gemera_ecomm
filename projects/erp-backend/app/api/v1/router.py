@@ -51,3 +51,5 @@ from app.api.v1 import recurring  # noqa: E402  (recurring expenses, bills and i
 api_router.include_router(recurring.router,   prefix="/recurring", tags=["Recurring Documents"])
 from app.api.v1 import mail  # noqa: E402  (e-mailing invoices, quotes, statements, reminders)
 api_router.include_router(mail.router,        prefix="/mail",      tags=["E-mail"])
+from app.api.v1 import controls  # noqa: E402  (lock date, budgets, bank rules)
+api_router.include_router(controls.router,    prefix="/controls",  tags=["Accountant's Controls"])
