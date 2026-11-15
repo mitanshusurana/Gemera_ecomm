@@ -86,12 +86,12 @@ export default function ProductionOrderForm({ onSuccess, onCancel, initialBomId 
 
   return (
     <form className="space-y-5 text-sm" onSubmit={handleSubmit}>
-      {error && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-xs">{error}</div>}
+      {error && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-700 text-xs">{error}</div>}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <label className="block text-xs text-textSecondary mb-1">Bill of materials</label>
-          <select value={bomId} onChange={(e) => setBomId(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white focus:border-primary outline-none">
+          <select value={bomId} onChange={(e) => setBomId(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary focus:border-primary outline-none">
             <option value="">— No BOM (ad hoc order) —</option>
             {boms.map((b) => (
               <option key={b.id} value={b.id}>{b.name || b.product_name} · v{b.bom_version} · {b.line_count} line(s){b.output_material_code ? ` → ${b.output_material_code}` : ''}</option>
@@ -102,26 +102,26 @@ export default function ProductionOrderForm({ onSuccess, onCancel, initialBomId 
         {!bomId && (
           <div className="col-span-2">
             <label className="block text-xs text-textSecondary mb-1">Product name / design *</label>
-            <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g. 22K Gold Bridal Necklace" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white focus:border-primary outline-none" />
+            <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g. 22K Gold Bridal Necklace" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary focus:border-primary outline-none" />
           </div>
         )}
         <div>
           <label className="block text-xs text-textSecondary mb-1">Order date</label>
-          <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white focus:border-primary outline-none" />
+          <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary focus:border-primary outline-none" />
         </div>
         <div>
           <label className="block text-xs text-textSecondary mb-1">Output quantity{bomDetail?.output_material_code ? ` (${bomDetail.output_material_code})` : ''} *</label>
-          <input type="number" min="0.0001" step="0.0001" value={outputQty} onChange={(e) => setOutputQty(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white font-mono focus:border-primary outline-none" />
+          <input type="number" min="0.0001" step="0.0001" value={outputQty} onChange={(e) => setOutputQty(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary font-mono focus:border-primary outline-none" />
         </div>
         <div>
           <label className="block text-xs text-textSecondary mb-1">Allowed wastage / melting loss (%)</label>
-          <input type="number" step="0.1" min="0" max="100" value={allowedWastage} onChange={(e) => setAllowedWastage(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white font-mono focus:border-primary outline-none" />
+          <input type="number" step="0.1" min="0" max="100" value={allowedWastage} onChange={(e) => setAllowedWastage(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary font-mono focus:border-primary outline-none" />
         </div>
       </div>
 
       {bomId && (
         <div className="bg-surface/60 border border-border rounded-lg p-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-white mb-2"><ClipboardList className="w-4 h-4 text-primary" /> Consumption plan for {fmtQty(outputQty)} {bomDetail?.output_material_name ? `× ${bomDetail.output_material_name}` : 'unit(s)'}</div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-textPrimary mb-2"><ClipboardList className="w-4 h-4 text-primary" /> Consumption plan for {fmtQty(outputQty)} {bomDetail?.output_material_name ? `× ${bomDetail.output_material_name}` : 'unit(s)'}</div>
           {plan.length === 0 ? (
             <p className="text-xs text-textSecondary">Loading the plan...</p>
           ) : (
@@ -130,7 +130,7 @@ export default function ProductionOrderForm({ onSuccess, onCancel, initialBomId 
               <tbody>
                 {plan.map((l: any) => (
                   <tr key={l.id} className="border-t border-border/40">
-                    <td className="py-1 text-white">{l.material_code} — {l.material_name}</td>
+                    <td className="py-1 text-textPrimary">{l.material_code} — {l.material_name}</td>
                     <td className="py-1 text-right font-mono">{fmtQty(l.quantity_per_unit)} {l.uom || ''}</td>
                     <td className="py-1 text-right font-mono">{fmtQty(l.net_required)}</td>
                     <td className="py-1 text-right font-mono text-textSecondary">{fmtQty(l.loss_pct)}</td>
@@ -145,11 +145,11 @@ export default function ProductionOrderForm({ onSuccess, onCancel, initialBomId 
 
       <div>
         <label className="block text-xs text-textSecondary mb-1">Order notes & instructions</label>
-        <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} placeholder="Hallmarking standard: 916 BIS, net weight tolerance +/- 0.05 g" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white focus:border-primary outline-none text-sm" />
+        <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} placeholder="Hallmarking standard: 916 BIS, net weight tolerance +/- 0.05 g" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary focus:border-primary outline-none text-sm" />
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-border">
-        <button type="button" onClick={onCancel} className="px-5 py-2 rounded-lg border border-border text-white hover:bg-surface transition-colors">Cancel</button>
+        <button type="button" onClick={onCancel} className="px-5 py-2 rounded-lg border border-border text-textPrimary hover:bg-surface transition-colors">Cancel</button>
         <button type="submit" disabled={submitting} className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gold-gradient text-background font-semibold hover:opacity-90 transition-opacity disabled:opacity-50">
           {submitting && <Loader2 className="w-4 h-4 animate-spin" />} Release order
         </button>

@@ -174,7 +174,7 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Stock Items Master</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Stock Items Master</h1>
           <p className="text-textSecondary mt-1">[CGST Rule 56(2)] Stock Register & Inward/Outward Ledger</p>
         </div>
         <div className="flex items-center gap-3">
@@ -185,7 +185,7 @@ export default function InventoryPage() {
             <select
               value={locationId}
               onChange={(e) => setLocationId(e.target.value)}
-              className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none min-w-[200px]"
+              className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none min-w-[200px]"
             >
               <option value="">All locations</option>
               {locations.map((l) => (
@@ -223,17 +223,17 @@ export default function InventoryPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {inventoryData.map((item) => (
-                  <tr key={item.id} className="hover:bg-white/5 transition-colors">
+                  <tr key={item.id} className="hover:bg-black/5 transition-colors">
                     <td className="py-3 font-mono text-primary font-medium">{item.code}</td>
-                    <td className="py-3 text-white font-medium">{item.name}</td>
+                    <td className="py-3 text-textPrimary font-medium">{item.name}</td>
                     <td className="py-3">
                       <Badge variant="default">{item.category || 'General'}</Badge>
                     </td>
                     <td className="py-3 font-mono text-textSecondary">{item.hsn_code || '—'}</td>
-                    <td className="py-3 text-right font-mono text-white">
+                    <td className="py-3 text-right font-mono text-textPrimary">
                       {Number(item.gst_tax_rate ?? item.material_gst_rate ?? 3.0)}%
                     </td>
-                    <td className="py-3 text-right font-mono font-bold text-white">
+                    <td className="py-3 text-right font-mono font-bold text-textPrimary">
                       {formatBalanceDisplay(item.current_stock, item.uom)}
                     </td>
                     <td className="py-3">
@@ -246,7 +246,7 @@ export default function InventoryPage() {
                         </button>
                         <button 
                           onClick={() => handleEditItem(item)}
-                          className="p-1 text-textSecondary hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                          className="p-1 text-textSecondary hover:text-textPrimary hover:bg-black/5 rounded-md transition-colors"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -265,10 +265,10 @@ export default function InventoryPage() {
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-surface border-l border-border h-full p-6 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-4">
-              <h2 className="text-xl font-playfair font-bold text-white">
+              <h2 className="text-xl font-playfair font-bold text-textPrimary">
                 {editingItem ? 'Edit Stock Item Master' : 'Create New Stock Item'}
               </h2>
-              <button onClick={() => setIsDrawerOpen(false)} className="text-textSecondary hover:text-white">
+              <button onClick={() => setIsDrawerOpen(false)} className="text-textSecondary hover:text-textPrimary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -279,7 +279,7 @@ export default function InventoryPage() {
                 <input 
                   type="text" 
                   disabled={Boolean(editingItem)}
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   required
@@ -290,7 +290,7 @@ export default function InventoryPage() {
                 <label className="block text-sm text-textSecondary mb-1">Item Name *</label>
                 <input 
                   type="text" 
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. 22K Gold Bullion / Emerald 5ct"
@@ -302,7 +302,7 @@ export default function InventoryPage() {
                 <div>
                   <label className="block text-sm text-textSecondary mb-1">Category</label>
                   <select 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
@@ -323,7 +323,7 @@ export default function InventoryPage() {
                 <div>
                   <label className="block text-sm text-textSecondary mb-1">Unit of Measure (UOM)</label>
                   <select 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                     value={formData.uom}
                     onChange={(e) => setFormData({ ...formData, uom: e.target.value })}
                   >
@@ -340,7 +340,7 @@ export default function InventoryPage() {
                 {formData.category === 'Service' && (
                   <div className="col-span-2">
                     <label className="block text-sm text-textSecondary mb-1">Expense ledger (debited by each bill) *</label>
-                    <select className="w-full bg-background border border-border rounded-md px-3 py-2 text-white" value={expenseAccountId} onChange={(e) => setExpenseAccountId(e.target.value)}>
+                    <select className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary" value={expenseAccountId} onChange={(e) => setExpenseAccountId(e.target.value)}>
                       <option value="">Select expense ledger...</option>
                       {expenseAccounts.map((a: any) => <option key={a.id} value={a.id}>{a.code} · {a.name} ({a.group_name})</option>)}
                     </select>
@@ -351,7 +351,7 @@ export default function InventoryPage() {
                   <label className="block text-sm text-textSecondary mb-1">HSN Code *</label>
                   <input 
                     type="text" 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.hsn_code}
                     onChange={(e) => setFormData({ ...formData, hsn_code: e.target.value })}
                     required
@@ -369,7 +369,7 @@ export default function InventoryPage() {
                         className={`px-1.5 py-0.5 rounded border text-xs ${
                           Number(formData.gst_tax_rate) === rate 
                             ? 'bg-primary text-black border-primary font-bold' 
-                            : 'border-border text-textSecondary hover:text-white'
+                            : 'border-border text-textSecondary hover:text-textPrimary'
                         }`}
                       >
                         {rate}%
@@ -385,7 +385,7 @@ export default function InventoryPage() {
                   <input 
                     type="number" 
                     step="any"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.opening_qty}
                     onChange={(e) => setFormData({ ...formData, opening_qty: Number(e.target.value) })}
                   />
@@ -396,7 +396,7 @@ export default function InventoryPage() {
                 <button 
                   type="button"
                   onClick={() => setIsDrawerOpen(false)}
-                  className="px-4 py-2 border border-border rounded-md text-textSecondary hover:text-white"
+                  className="px-4 py-2 border border-border rounded-md text-textSecondary hover:text-textPrimary"
                 >
                   Cancel
                 </button>
@@ -419,10 +419,10 @@ export default function InventoryPage() {
           <div className="w-full max-w-4xl bg-surface border border-border rounded-xl p-6 space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-border pb-3">
               <div>
-                <h3 className="text-lg font-playfair font-bold text-white">Stock Movement Ledger</h3>
+                <h3 className="text-lg font-playfair font-bold text-textPrimary">Stock Movement Ledger</h3>
                 <p className="text-xs text-textSecondary">[CGST Rule 56(2)] Immutable stock inward/outward trail. Click any reference to view voucher.</p>
               </div>
-              <button onClick={() => setIsLedgerModalOpen(false)} className="text-textSecondary hover:text-white">
+              <button onClick={() => setIsLedgerModalOpen(false)} className="text-textSecondary hover:text-textPrimary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -434,9 +434,9 @@ export default function InventoryPage() {
             ) : (
               <div className="space-y-4">
                 <div className="p-3 bg-background border border-border rounded-lg flex justify-between text-xs text-textSecondary">
-                  <span>Item: <strong className="text-white">{selectedLedger.material_name || selectedLedger.item?.name}</strong></span>
+                  <span>Item: <strong className="text-textPrimary">{selectedLedger.material_name || selectedLedger.item?.name}</strong></span>
                   <span>Code: <strong className="text-primary font-mono">{selectedLedger.material_code || selectedLedger.item?.code}</strong></span>
-                  <span>Current Stock: <strong className="text-emerald-400 font-mono">{formatBalanceDisplay(selectedLedger.closing_stock ?? selectedLedger.current_stock, selectedLedger.uom_code || selectedLedger.uom)}</strong></span>
+                  <span>Current Stock: <strong className="text-emerald-700 font-mono">{formatBalanceDisplay(selectedLedger.closing_stock ?? selectedLedger.current_stock, selectedLedger.uom_code || selectedLedger.uom)}</strong></span>
                 </div>
 
                 <table className="w-full text-left text-xs">
@@ -452,21 +452,21 @@ export default function InventoryPage() {
                   </thead>
                   <tbody className="divide-y divide-border font-mono">
                     {selectedLedger.entries.map((entry: any, i: number) => (
-                      <tr key={i} className="hover:bg-white/5">
-                        <td className="py-2.5 text-white">{entry.entry_date || entry.date}</td>
+                      <tr key={i} className="hover:bg-black/5">
+                        <td className="py-2.5 text-textPrimary">{entry.entry_date || entry.date}</td>
                         <td className="py-2.5 text-textSecondary">{entry.transaction_type || entry.type}</td>
                         <td className="py-2.5">
                           <Badge variant={entry.direction === 'IN' || entry.direction === 'I' ? 'success' : 'danger'}>
                             {entry.direction === 'IN' || entry.direction === 'I' ? 'INWARD' : 'OUTWARD'}
                           </Badge>
                         </td>
-                        <td className="py-2.5 text-right text-white font-bold">{entry.quantity}</td>
-                        <td className="py-2.5 text-right text-emerald-400 font-semibold">{entry.running_balance ?? '—'}</td>
+                        <td className="py-2.5 text-right text-textPrimary font-bold">{entry.quantity}</td>
+                        <td className="py-2.5 text-right text-emerald-700 font-semibold">{entry.running_balance ?? '—'}</td>
                         <td className="py-2.5">
                           <button 
                             type="button" 
                             onClick={() => handleVoucherClick(entry)}
-                            className="text-primary hover:underline hover:text-white flex items-center gap-1 font-semibold"
+                            className="text-primary hover:underline hover:text-textPrimary flex items-center gap-1 font-semibold"
                           >
                             <span>{entry.source_document_no || entry.reference || entry.voucher_no || 'View Voucher'}</span>
                             <ExternalLink className="w-3 h-3" />

@@ -145,19 +145,19 @@ export default function PaymentVoucherPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Payment Voucher</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Payment Voucher</h1>
           <p className="text-textSecondary mt-1">Record supplier payouts and business operating expenses (Electricity, Rent, Interest, Salaries).</p>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-700 text-sm">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm font-semibold">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 text-sm font-semibold">
           {success}
         </div>
       )}
@@ -171,7 +171,7 @@ export default function PaymentVoucherPage() {
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               paymentCategory === 'Supplier'
                 ? 'bg-primary text-black shadow-lg shadow-primary/20'
-                : 'border border-border text-textSecondary hover:text-white'
+                : 'border border-border text-textSecondary hover:text-textPrimary'
             }`}
           >
             Supplier / Vendor Payout
@@ -182,7 +182,7 @@ export default function PaymentVoucherPage() {
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               paymentCategory === 'Expense'
                 ? 'bg-primary text-black shadow-lg shadow-primary/20'
-                : 'border border-border text-textSecondary hover:text-white'
+                : 'border border-border text-textSecondary hover:text-textPrimary'
             }`}
           >
             Business Operating Expense (Electricity, Rent, Interest)
@@ -192,13 +192,13 @@ export default function PaymentVoucherPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-xs text-textSecondary font-medium mb-1">Voucher Date</label>
-            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
 
           <div>
             <label className="block text-xs text-textSecondary font-medium mb-1">Paid From (Bank / Cash Account) *</label>
             <select 
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
               value={paidFrom}
               onChange={(e) => setPaidFrom(e.target.value)}
               disabled={isLoadingBanks}
@@ -224,7 +224,7 @@ export default function PaymentVoucherPage() {
               <div>
                 <label className="block text-xs text-textSecondary font-medium mb-1">Settle Against Purchase Bill (Optional)</label>
                 <select
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
                   value={selectedInvoiceId}
                   onChange={(e) => handleInvoiceSelect(e.target.value)}
                   disabled={!party || openInvoices.length === 0}
@@ -244,7 +244,7 @@ export default function PaymentVoucherPage() {
               <select 
                 value={expenseAccountId}
                 onChange={(e) => setExpenseAccountId(e.target.value)}
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px] font-medium"
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px] font-medium"
               >
                 {expenseAccounts.map(exp => (
                   <option key={exp.id} value={exp.id}>{exp.code} — {exp.name} ({exp.group_name || exp.nature})</option>
@@ -257,13 +257,13 @@ export default function PaymentVoucherPage() {
             <label className="block text-xs text-textSecondary font-medium mb-1">Amount Payable (₹) *</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary">₹</span>
-              <input type="number" className="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-md text-white h-[38px] font-mono text-sm" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <input type="number" className="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-md text-textPrimary h-[38px] font-mono text-sm" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
           </div>
 
           <div>
             <label className="block text-xs text-textSecondary font-medium mb-1">Payment Mode</label>
-            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]">
+            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]">
               <option>NEFT</option>
               <option>RTGS</option>
               <option>UPI</option>
@@ -275,13 +275,13 @@ export default function PaymentVoucherPage() {
           {paymentMode !== 'Cash' && (
             <div>
               <label className="block text-xs text-textSecondary font-medium mb-1">UTR / Ref Number</label>
-              <input type="text" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" placeholder="Enter reference number" value={reference} onChange={(e) => setReference(e.target.value)} />
+              <input type="text" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" placeholder="Enter reference number" value={reference} onChange={(e) => setReference(e.target.value)} />
             </div>
           )}
 
           <div className="md:col-span-2">
             <label className="block text-xs text-textSecondary font-medium mb-1">Narration / Bill Details</label>
-            <textarea className="w-full bg-background border border-border rounded-md px-3 py-2 text-white text-sm" rows={2} placeholder="Being amount paid for..." value={narration} onChange={(e) => setNarration(e.target.value)}></textarea>
+            <textarea className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary text-sm" rows={2} placeholder="Being amount paid for..." value={narration} onChange={(e) => setNarration(e.target.value)}></textarea>
           </div>
         </div>
 
@@ -289,11 +289,11 @@ export default function PaymentVoucherPage() {
         <div className="p-4 bg-background border border-border rounded-lg space-y-2">
           <h3 className="text-xs font-semibold text-textSecondary uppercase tracking-wider">Double-Entry Journal Preview [Section 44AA]</h3>
           <div className="space-y-1 text-sm font-mono">
-            <div className="flex justify-between text-emerald-400">
+            <div className="flex justify-between text-emerald-700">
               <span>Dr: {paymentCategory === 'Supplier' ? 'Supplier Party Ledger' : currentExpenseName}</span>
               <span className="font-bold">{amount ? formatCurrency(Number(amount)) : '₹0.00'}</span>
             </div>
-            <div className="flex justify-between pl-4 text-rose-400">
+            <div className="flex justify-between pl-4 text-rose-700">
               <span>Cr: Bank / Cash Ledger</span>
               <span className="font-bold">{amount ? formatCurrency(Number(amount)) : '₹0.00'}</span>
             </div>
@@ -304,7 +304,7 @@ export default function PaymentVoucherPage() {
           <button 
             type="button"
             onClick={handleReset}
-            className="px-4 py-2 border border-border rounded-md text-white hover:bg-white/5 text-sm"
+            className="px-4 py-2 border border-border rounded-md text-textPrimary hover:bg-black/5 text-sm"
           >
             Reset
           </button>

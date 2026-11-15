@@ -33,7 +33,7 @@ const errText = (err: any, fallback: string) => {
   return fallback;
 };
 
-const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
+const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
 
 const typeLabel = (t: string) => t.replace('_', ' ');
 
@@ -113,7 +113,7 @@ export default function LocationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Stock Locations & Transfers</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Stock Locations & Transfers</h1>
           <p className="text-textSecondary mt-1">[CGST Rule 56(2)] Where the stock is, per material, and every move between places.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export default function LocationsPage() {
         {/* Locations */}
         <div className="glass-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Warehouse className="w-4 h-4 text-primary" /> Locations</h2>
+            <h2 className="text-sm font-semibold text-textPrimary flex items-center gap-2"><Warehouse className="w-4 h-4 text-primary" /> Locations</h2>
             <label className="text-[11px] text-textSecondary flex items-center gap-1">
               <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="accent-primary" /> show inactive
             </label>
@@ -150,7 +150,7 @@ export default function LocationsPage() {
                       <span className="font-mono text-primary text-sm font-semibold flex items-center gap-1">{l.code}{l.is_default && <Star className="w-3 h-3 fill-primary" />}</span>
                       <Badge variant="default">{typeLabel(l.location_type)}</Badge>
                     </div>
-                    <div className="text-white text-sm">{l.name}</div>
+                    <div className="text-textPrimary text-sm">{l.name}</div>
                     <div className="text-[11px] text-textSecondary flex justify-between">
                       <span>{l.materials_moved || 0} material(s)</span>
                       <span className="font-mono">{formatCurrency(num(l.stock_value))}</span>
@@ -167,13 +167,13 @@ export default function LocationsPage() {
         <div className="glass-card p-4 lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-white">{selected ? `${selected.code} — ${selected.name}` : 'Select a location'}</h2>
+              <h2 className="text-sm font-semibold text-textPrimary">{selected ? `${selected.code} — ${selected.name}` : 'Select a location'}</h2>
               {selected?.address && <p className="text-[11px] text-textSecondary">{selected.address}</p>}
             </div>
             {selected && (
               <div className="flex items-center gap-2">
-                <button type="button" onClick={loadBalances} className="p-1.5 text-textSecondary hover:text-white" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
-                <button type="button" onClick={() => setEditing(selected)} className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-lg text-xs text-textSecondary hover:text-white"><Edit className="w-3.5 h-3.5" /> Edit</button>
+                <button type="button" onClick={loadBalances} className="p-1.5 text-textSecondary hover:text-textPrimary" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
+                <button type="button" onClick={() => setEditing(selected)} className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-lg text-xs text-textSecondary hover:text-textPrimary"><Edit className="w-3.5 h-3.5" /> Edit</button>
               </div>
             )}
           </div>
@@ -194,10 +194,10 @@ export default function LocationsPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {balances.map((b) => (
-                  <tr key={b.material_id} className="hover:bg-white/5">
-                    <td className="py-2 text-white">{b.material_name}<span className="block text-[10px] font-mono text-textSecondary">{b.material_code}</span></td>
+                  <tr key={b.material_id} className="hover:bg-black/5">
+                    <td className="py-2 text-textPrimary">{b.material_name}<span className="block text-[10px] font-mono text-textSecondary">{b.material_code}</span></td>
                     <td className="py-2"><Badge variant="default">{b.category || '—'}</Badge></td>
-                    <td className="py-2 text-right font-mono text-white font-semibold">{qty(b.quantity, b.uom)}</td>
+                    <td className="py-2 text-right font-mono text-textPrimary font-semibold">{qty(b.quantity, b.uom)}</td>
                     <td className="py-2 text-right font-mono text-textSecondary">{num(b.net_weight) ? qty(b.net_weight, 'gm') : '—'}</td>
                     <td className="py-2 text-right font-mono text-primary">{formatCurrency(num(b.value))}</td>
                   </tr>
@@ -210,7 +210,7 @@ export default function LocationsPage() {
 
       {/* Transfers */}
       <div className="glass-card p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2"><ArrowLeftRight className="w-4 h-4 text-primary" /> Recent transfers</h2>
+        <h2 className="text-sm font-semibold text-textPrimary flex items-center gap-2"><ArrowLeftRight className="w-4 h-4 text-primary" /> Recent transfers</h2>
         {transfers.length === 0 ? (
           <p className="text-xs text-textSecondary py-4 text-center">No transfers recorded.</p>
         ) : (
@@ -228,12 +228,12 @@ export default function LocationsPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {transfers.map((t) => (
-                <tr key={t.transfer_no} className="hover:bg-white/5 cursor-pointer" onClick={() => openTransfer(t.transfer_no)}>
+                <tr key={t.transfer_no} className="hover:bg-black/5 cursor-pointer" onClick={() => openTransfer(t.transfer_no)}>
                   <td className="py-2 font-mono text-primary">{t.transfer_no}</td>
-                  <td className="py-2 text-white">{t.transfer_date}</td>
+                  <td className="py-2 text-textPrimary">{t.transfer_date}</td>
                   <td className="py-2 font-mono text-textSecondary">{t.from_location_code || locName(t.from_location_id)}</td>
                   <td className="py-2 font-mono text-textSecondary">{t.to_location_code || locName(t.to_location_id)}</td>
-                  <td className="py-2 text-right font-mono text-white">{t.line_count}</td>
+                  <td className="py-2 text-right font-mono text-textPrimary">{t.line_count}</td>
                   <td className="py-2 text-right font-mono text-primary">{formatCurrency(num(t.total_value))}</td>
                   <td className="py-2 text-textSecondary text-xs">{t.remarks || '—'}</td>
                 </tr>
@@ -272,11 +272,11 @@ export default function LocationsPage() {
             <tbody className="divide-y divide-border font-mono">
               {(transferDetail.entries || []).map((e: any) => (
                 <tr key={e.id}>
-                  <td className="py-1.5 text-white">{e.entry_date}</td>
+                  <td className="py-1.5 text-textPrimary">{e.entry_date}</td>
                   <td className="py-1.5"><Badge variant={e.direction === 'O' ? 'danger' : 'success'}>{e.direction === 'O' ? 'OUT' : 'IN'}</Badge></td>
                   <td className="py-1.5 text-textSecondary">{e.location_code}</td>
-                  <td className="py-1.5 text-white">{e.material_code}</td>
-                  <td className="py-1.5 text-right text-white">{qty(e.quantity, e.uom)}</td>
+                  <td className="py-1.5 text-textPrimary">{e.material_code}</td>
+                  <td className="py-1.5 text-right text-textPrimary">{qty(e.quantity, e.uom)}</td>
                   <td className="py-1.5 text-right text-primary">{formatCurrency(num(e.amount))}</td>
                 </tr>
               ))}
@@ -357,7 +357,7 @@ function LocationModal({ location, types, onClose, onDone }: { location: StockLo
           {location && <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} disabled={!!location.is_default} onChange={(e) => set('is_active', e.target.checked)} className="accent-primary" /> Active</label>}
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </form>
@@ -439,7 +439,7 @@ function TransferModal({ locations, defaultFrom, onClose, onDone }: { locations:
               </div>
               <div className="w-32">
                 <input type="number" step="any" min="0" value={l.quantity} onChange={(e) => update(l.key, { quantity: e.target.value })} className={`${fieldCls} font-mono`} placeholder={`Qty ${l.unit || ''}`} />
-                {l.material_id && num(l.quantity) > (available[l.material_id] || 0) && <p className="text-[10px] text-red-400 mt-1">More than on hand</p>}
+                {l.material_id && num(l.quantity) > (available[l.material_id] || 0) && <p className="text-[10px] text-red-600 mt-1">More than on hand</p>}
               </div>
               <button type="button" disabled={lines.length <= 1} onClick={() => setLines(lines.filter((x) => x.key !== l.key))} className="p-2 text-textSecondary hover:text-danger disabled:opacity-30"><Trash2 className="w-4 h-4" /></button>
             </div>
@@ -451,7 +451,7 @@ function TransferModal({ locations, defaultFrom, onClose, onDone }: { locations:
           <input value={reason} onChange={(e) => setReason(e.target.value)} className={fieldCls} required />
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary">Cancel</button>
           <button type="submit" disabled={!valid || saving} className="px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg disabled:opacity-50">{saving ? 'Recording…' : 'Record transfer'}</button>
         </div>
       </form>

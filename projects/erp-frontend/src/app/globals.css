@@ -10,11 +10,12 @@
 
 @layer utilities {
   .glass {
-    @apply bg-surface/80 backdrop-blur-md border border-border;
+    @apply bg-surface/90 backdrop-blur-md border border-border;
   }
   
   .glass-card {
-    @apply bg-surface/60 backdrop-blur-lg border border-border rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300;
+    /* A plain white card with a hairline: no blur, no glow, no lift on hover. */
+    @apply bg-surface border border-border rounded-xl;
   }
   
   .gold-text-gradient {
@@ -27,14 +28,14 @@
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #0A0A0B;
+    background: #F5F5F7;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2A2A35;
+    background: #C7C7CC;
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #D4A843;
+    background: #8E8E93;
   }
 }
 

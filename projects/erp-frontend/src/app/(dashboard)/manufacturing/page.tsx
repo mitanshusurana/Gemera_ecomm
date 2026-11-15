@@ -78,8 +78,8 @@ const errorText = (err: any, fallback: string): string => {
   return err?.message || fallback;
 };
 
-const cellCls = 'w-full bg-background border border-border rounded px-2 py-1 text-white text-xs font-mono focus:border-primary outline-none';
-const selectCls = 'w-full bg-background border border-border rounded px-2 py-1 text-white text-xs focus:border-primary outline-none';
+const cellCls = 'w-full bg-background border border-border rounded px-2 py-1 text-textPrimary text-xs font-mono focus:border-primary outline-none';
+const selectCls = 'w-full bg-background border border-border rounded px-2 py-1 text-textPrimary text-xs focus:border-primary outline-none';
 
 let keySeq = 1;
 const nextKey = () => keySeq++;
@@ -333,7 +333,7 @@ export default function ManufacturingPage() {
   // ─── Table ────────────────────────────────────────────────────────────────
 
   const columns = [
-    { header: 'Order No', accessorKey: 'order_no', cell: (item: any) => <span className="font-medium text-white font-mono">{item.order_no || item.id}</span> },
+    { header: 'Order No', accessorKey: 'order_no', cell: (item: any) => <span className="font-medium text-textPrimary font-mono">{item.order_no || item.id}</span> },
     { header: 'Product', accessorKey: 'product_name', cell: (item: any) => <span>{item.product_name || item.product}{item.bom_name && <span className="block text-[10px] text-textSecondary">BOM: {item.bom_name}</span>}</span> },
     { header: 'Planned Qty', accessorKey: 'planned_qty', cell: (item: any) => `${fmtQty(item.planned_qty || 1)}${item.actual_qty ? ` / ${fmtQty(item.actual_qty)} made` : ''}` },
     { header: 'Date', accessorKey: 'order_date', cell: (item: any) => new Date(item.order_date || item.date || item.created_at).toLocaleDateString('en-IN') },
@@ -354,7 +354,7 @@ export default function ManufacturingPage() {
           <CheckSquare className="w-3.5 h-3.5" /> Complete & Post Journal
         </button>
       ) : (
-        <span className="text-emerald-400 text-xs font-semibold flex items-center gap-1">
+        <span className="text-emerald-700 text-xs font-semibold flex items-center gap-1">
           <CheckCircle className="w-3.5 h-3.5" /> {item.status === 'Cancelled' ? 'Cancelled' : 'Journal Posted'}
         </span>
       )
@@ -362,7 +362,7 @@ export default function ManufacturingPage() {
   ];
 
   const tabBtn = (t: Tab, label: string, icon: React.ReactNode) => (
-    <button type="button" onClick={() => setTab(t)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-primary/15 text-primary border border-primary/30' : 'text-textSecondary hover:text-white hover:bg-white/5 border border-transparent'}`}>
+    <button type="button" onClick={() => setTab(t)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-primary/15 text-primary border border-primary/30' : 'text-textSecondary hover:text-textPrimary hover:bg-black/5 border border-transparent'}`}>
       {icon} {label}
     </button>
   );
@@ -371,17 +371,17 @@ export default function ManufacturingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Production & Manufacturing [CGST-R56-12]</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Production & Manufacturing [CGST-R56-12]</h1>
           <p className="text-textSecondary mt-1">Orders from bills of materials; completion posts every consumption, output and wastage line and the four-leg manufacturing journal.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => (tab === 'boms' ? fetchBoms() : fetchProductionData())} className="p-2 rounded-lg border border-border text-textSecondary hover:text-white hover:bg-white/5" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
+          <button type="button" onClick={() => (tab === 'boms' ? fetchBoms() : fetchProductionData())} className="p-2 rounded-lg border border-border text-textSecondary hover:text-textPrimary hover:bg-black/5" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
           {tab === 'orders' ? (
-            <button onClick={() => { setNewOrderBomId(undefined); setIsModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)]">
+            <button onClick={() => { setNewOrderBomId(undefined); setIsModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity">
               <Plus className="w-4 h-4" /> New Order
             </button>
           ) : (
-            <button onClick={() => openBomEditor()} className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)]">
+            <button onClick={() => openBomEditor()} className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity">
               <Plus className="w-4 h-4" /> New BOM
             </button>
           )}
@@ -398,21 +398,21 @@ export default function ManufacturingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-card p-6 border-l-4 border-l-warning">
               <h3 className="text-sm font-medium text-textSecondary uppercase">Active Orders</h3>
-              <p className="text-3xl font-playfair font-bold text-white mt-2">{productionData.filter(o => o.status === 'In_Progress' || o.status === 'In Progress' || o.status === 'Released').length || 0}</p>
+              <p className="text-3xl font-playfair font-bold text-textPrimary mt-2">{productionData.filter(o => o.status === 'In_Progress' || o.status === 'In Progress' || o.status === 'Released').length || 0}</p>
             </div>
             <div className="glass-card p-6 border-l-4 border-l-primary">
               <h3 className="text-sm font-medium text-textSecondary uppercase">Completed Orders</h3>
-              <p className="text-3xl font-playfair font-bold text-white mt-2">{productionData.filter(o => o.status === 'Completed').length || 0}</p>
+              <p className="text-3xl font-playfair font-bold text-textPrimary mt-2">{productionData.filter(o => o.status === 'Completed').length || 0}</p>
             </div>
             <div className="glass-card p-6 border-l-4 border-l-success">
               <h3 className="text-sm font-medium text-textSecondary uppercase">CGST Rule 56(12) Status</h3>
-              <p className="text-lg font-semibold text-emerald-400 mt-2">WIP & Loss Journals Active</p>
+              <p className="text-lg font-semibold text-emerald-700 mt-2">WIP & Loss Journals Active</p>
             </div>
           </div>
 
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-playfair font-semibold text-white">Production Orders & Work Orders</h2>
+              <h2 className="text-xl font-playfair font-semibold text-textPrimary">Production Orders & Work Orders</h2>
             </div>
             {loading ? (
               <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
@@ -427,7 +427,7 @@ export default function ManufacturingPage() {
 
       {tab === 'boms' && (
         <div className="glass-card p-6">
-          <h2 className="text-xl font-playfair font-semibold text-white mb-4">Bills of materials</h2>
+          <h2 className="text-xl font-playfair font-semibold text-textPrimary mb-4">Bills of materials</h2>
           {bomsLoading ? (
             <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
           ) : boms.length === 0 ? (
@@ -438,8 +438,8 @@ export default function ManufacturingPage() {
                 <thead className="text-xs text-textSecondary uppercase bg-surface"><tr><th className="px-4 py-3">Name</th><th className="px-4 py-3">Produces</th><th className="px-4 py-3">Version</th><th className="px-4 py-3 text-right">Batch</th><th className="px-4 py-3 text-right">Lines</th><th className="px-4 py-3 text-right">Orders</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr></thead>
                 <tbody>
                   {boms.map((b) => (
-                    <tr key={b.id} className="bg-background hover:bg-white/5 border-b border-border/50 last:border-0">
-                      <td className="px-4 py-3 text-white">{b.name || b.product_name}<span className="block text-[10px] text-textSecondary">product: {b.product_name}</span></td>
+                    <tr key={b.id} className="bg-background hover:bg-black/5 border-b border-border/50 last:border-0">
+                      <td className="px-4 py-3 text-textPrimary">{b.name || b.product_name}<span className="block text-[10px] text-textSecondary">product: {b.product_name}</span></td>
                       <td className="px-4 py-3">{b.output_material_code ? `${b.output_material_code} — ${b.output_material_name}` : <span className="text-textSecondary">—</span>}</td>
                       <td className="px-4 py-3 font-mono">{b.bom_version}</td>
                       <td className="px-4 py-3 text-right font-mono">{fmtQty(b.output_quantity)}</td>
@@ -448,7 +448,7 @@ export default function ManufacturingPage() {
                       <td className="px-4 py-3"><Badge variant={b.is_active ? 'success' : 'default'}>{b.is_active ? 'Active' : 'Inactive'}</Badge></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button type="button" onClick={() => openBomEditor(b)} className="flex items-center gap-1 px-2 py-1 border border-border rounded text-xs text-white hover:bg-white/5"><Pencil className="w-3.5 h-3.5" /> Edit</button>
+                          <button type="button" onClick={() => openBomEditor(b)} className="flex items-center gap-1 px-2 py-1 border border-border rounded text-xs text-textPrimary hover:bg-black/5"><Pencil className="w-3.5 h-3.5" /> Edit</button>
                           {b.is_active && <button type="button" onClick={() => { setNewOrderBomId(b.id); setIsModalOpen(true); }} className="flex items-center gap-1 px-2 py-1 bg-primary text-black font-semibold rounded text-xs hover:bg-primary/90"><Factory className="w-3.5 h-3.5" /> Raise order</button>}
                         </div>
                       </td>
@@ -479,13 +479,13 @@ export default function ManufacturingPage() {
       {selectedOrder && (
         <Modal isOpen onClose={() => setSelectedOrder(null)} title={`Complete Order: ${selectedOrder.order_no} (${selectedOrder.product_name})`}>
           <div className="space-y-5 text-sm">
-            {completeError && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-xs">{completeError}</div>}
+            {completeError && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-700 text-xs">{completeError}</div>}
             {planLoading && <div className="text-xs text-textSecondary flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading the BOM plan...</div>}
 
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-textSecondary mb-1">Completion date</label>
-                <input type="date" value={completionDate} onChange={(e) => setCompletionDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm" />
+                <input type="date" value={completionDate} onChange={(e) => setCompletionDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm" />
               </div>
               <div className="col-span-2 text-xs text-textSecondary self-end pb-2">
                 Planned {fmtQty(selectedOrder.planned_qty)} · allowed wastage {fmtQty(selectedOrder.allowed_wastage_pct ?? 0)}% · this entry {lossPct.toFixed(2)}%
@@ -496,7 +496,7 @@ export default function ManufacturingPage() {
             {/* Consumption */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-white uppercase">Raw material consumed → WIP</h4>
+                <h4 className="text-xs font-semibold text-textPrimary uppercase">Raw material consumed → WIP</h4>
                 <button type="button" onClick={() => setConsumption((p) => [...p, { key: nextKey(), material_id: goldDefault(), qty_issued: '', gross_weight: '', net_weight: '', purity_pct: '', rate: '', remarks: '' }])} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="w-3.5 h-3.5" /> Add line</button>
               </div>
               <div className="w-full glass rounded-xl overflow-x-auto border border-border">
@@ -523,7 +523,7 @@ export default function ManufacturingPage() {
             {/* Output */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-white uppercase">Finished goods produced ← WIP</h4>
+                <h4 className="text-xs font-semibold text-textPrimary uppercase">Finished goods produced ← WIP</h4>
                 <button type="button" onClick={() => setOutputs((p) => [...p, { key: nextKey(), material_id: goldDefault(), qty_produced: '', gross_weight: '', net_weight: '', hallmark_no: '', quality_grade: 'A', valuation_rate: '' }])} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="w-3.5 h-3.5" /> Add line</button>
               </div>
               <div className="w-full glass rounded-xl overflow-x-auto border border-border">
@@ -551,7 +551,7 @@ export default function ManufacturingPage() {
             {/* Wastage */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-white uppercase">Wastage / melting & polishing loss</h4>
+                <h4 className="text-xs font-semibold text-textPrimary uppercase">Wastage / melting & polishing loss</h4>
                 <button type="button" onClick={() => setWastage((p) => [...p, { key: nextKey(), material_id: goldDefault(), wastage_type: 'Melting_Loss', qty_lost: '', recoverable_qty: '', rate: '', remarks: '' }])} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="w-3.5 h-3.5" /> Add line</button>
               </div>
               <div className="w-full glass rounded-xl overflow-x-auto border border-border">
@@ -576,7 +576,7 @@ export default function ManufacturingPage() {
             </div>
 
             <div className="p-3 bg-surface border border-border rounded-lg text-xs text-textSecondary space-y-1">
-              <strong className="text-white block font-medium">Journal to be posted [CGST Rule 56(12) & s.44AA]:</strong>
+              <strong className="text-textPrimary block font-medium">Journal to be posted [CGST Rule 56(12) & s.44AA]:</strong>
               <p>• Dr WIP {formatCurrency(consumptionValue)} / Cr raw material stock — {consumption.filter((l) => l.material_id).length} line(s), {fmtQty(consumedQty)} consumed</p>
               <p>• Dr finished goods stock {formatCurrency(outputValue)} / Cr WIP — {outputs.filter((l) => l.material_id).length} line(s)</p>
               <p>• Dr manufacturing loss {formatCurrency(wastageValue)} / Cr WIP — {fmtQty(lostQty)} lost ({lossPct.toFixed(2)}%)</p>
@@ -584,7 +584,7 @@ export default function ManufacturingPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <button onClick={() => setSelectedOrder(null)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">Cancel</button>
+              <button onClick={() => setSelectedOrder(null)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">Cancel</button>
               <button onClick={handleCompleteOrder} disabled={completing || planLoading} className="flex items-center gap-2 px-5 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
                 {completing && <Loader2 className="w-4 h-4 animate-spin" />} Post Manufacturing Journal
               </button>
@@ -597,23 +597,23 @@ export default function ManufacturingPage() {
       {bomEditor && (
         <Modal isOpen onClose={() => setBomEditor(null)} title={bomEditor.id ? 'Edit bill of materials' : 'New bill of materials'}>
           <div className="space-y-4 text-sm">
-            {bomError && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-xs">{bomError}</div>}
+            {bomError && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-700 text-xs">{bomError}</div>}
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="block text-xs text-textSecondary mb-1">Name *</label>
-                <input type="text" value={bomName} onChange={(e) => setBomName(e.target.value)} placeholder="e.g. 22K plain bangle, 20 g" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm" />
+                <input type="text" value={bomName} onChange={(e) => setBomName(e.target.value)} placeholder="e.g. 22K plain bangle, 20 g" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm" />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs text-textSecondary mb-1">Produces (finished material) *</label>
-                <select value={bomOutputMaterial} onChange={(e) => setBomOutputMaterial(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm"><option value="">— choose —</option>{materialOptions}</select>
+                <select value={bomOutputMaterial} onChange={(e) => setBomOutputMaterial(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm"><option value="">— choose —</option>{materialOptions}</select>
               </div>
               <div>
                 <label className="block text-xs text-textSecondary mb-1">Batch size (lines are per this many)</label>
-                <input type="number" min="0.0001" step="0.0001" value={bomOutputQty} onChange={(e) => setBomOutputQty(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm font-mono" />
+                <input type="number" min="0.0001" step="0.0001" value={bomOutputQty} onChange={(e) => setBomOutputQty(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm font-mono" />
               </div>
               <div>
                 <label className="block text-xs text-textSecondary mb-1">Version</label>
-                <input type="text" value={bomVersion} onChange={(e) => setBomVersion(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm font-mono" />
+                <input type="text" value={bomVersion} onChange={(e) => setBomVersion(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm font-mono" />
               </div>
               <div className="col-span-2 flex items-center gap-2">
                 <input id="bom-active" type="checkbox" checked={bomActive} onChange={(e) => setBomActive(e.target.checked)} />
@@ -623,7 +623,7 @@ export default function ManufacturingPage() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-white uppercase">Materials per batch</h4>
+                <h4 className="text-xs font-semibold text-textPrimary uppercase">Materials per batch</h4>
                 <button type="button" onClick={() => setBomLines((p) => [...p, { key: nextKey(), material_id: '', quantity_per_unit: '', standard_loss_pct: '0', loss_type: 'Melting_Loss', notes: '' }])} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="w-3.5 h-3.5" /> Add line</button>
               </div>
               <div className="w-full glass rounded-xl overflow-x-auto border border-border">
@@ -648,11 +648,11 @@ export default function ManufacturingPage() {
 
             <div>
               <label className="block text-xs text-textSecondary mb-1">Remarks</label>
-              <input type="text" value={bomRemarks} onChange={(e) => setBomRemarks(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm" />
+              <input type="text" value={bomRemarks} onChange={(e) => setBomRemarks(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-textPrimary text-sm" />
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <button type="button" onClick={() => setBomEditor(null)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">Cancel</button>
+              <button type="button" onClick={() => setBomEditor(null)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">Cancel</button>
               <button type="button" onClick={saveBom} disabled={bomSaving} className="flex items-center gap-2 px-5 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50">
                 {bomSaving && <Loader2 className="w-4 h-4 animate-spin" />} Save BOM
               </button>

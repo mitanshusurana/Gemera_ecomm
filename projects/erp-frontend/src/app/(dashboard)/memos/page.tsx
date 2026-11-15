@@ -224,14 +224,14 @@ export default function MemosPage() {
   const columns = useMemo(() => [
     { header: 'Memo No', accessorKey: 'memo_no', cell: (m: MemoRow) => (
       <div className="flex items-center gap-2">
-        <span className="font-medium text-white">{m.memo_no}</span>
+        <span className="font-medium text-textPrimary">{m.memo_no}</span>
         {m.is_overdue && <AlertTriangle className="w-4 h-4 text-danger" aria-label="Overdue" />}
       </div>
     ) },
     { header: 'Date', accessorKey: 'memo_date', cell: (m: MemoRow) => fmtDate(m.memo_date) },
     { header: 'Party', accessorKey: 'party_name', cell: (m: MemoRow) => (
       <div>
-        <div className="text-white">{m.party_name}</div>
+        <div className="text-textPrimary">{m.party_name}</div>
         {m.party_city && <div className="text-xs text-textSecondary">{m.party_city}</div>}
       </div>
     ) },
@@ -255,7 +255,7 @@ export default function MemosPage() {
       <div className="flex gap-2 items-center">
         <button
           onClick={(e) => { e.stopPropagation(); openDetail(m); }}
-          className="p-1 text-textSecondary hover:text-white transition-colors"
+          className="p-1 text-textSecondary hover:text-textPrimary transition-colors"
           title="Open memo"
         >
           <FileText className="w-4 h-4" />
@@ -270,7 +270,7 @@ export default function MemosPage() {
               showToast('error', 'Could not print memo', errorText(err, 'Request failed'));
             }
           }}
-          className="p-1 text-textSecondary hover:text-white transition-colors"
+          className="p-1 text-textSecondary hover:text-textPrimary transition-colors"
           title="Print memo"
         >
           <Printer className="w-4 h-4" />
@@ -285,14 +285,14 @@ export default function MemosPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Approval Memos (Jangad)</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Approval Memos (Jangad)</h1>
           <p className="text-textSecondary mt-1">
             Goods sent on approval. Not a supply, no GST; title passes only when a tax invoice is raised.
           </p>
         </div>
         <button
           onClick={() => setIsNewOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)]"
+          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" /> New Memo
         </button>
@@ -307,7 +307,7 @@ export default function MemosPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none"
           >
             <option value="live">Out on approval (Open + Partial)</option>
             <option value="Open">Open</option>
@@ -321,7 +321,7 @@ export default function MemosPage() {
           <label className="text-xs text-textSecondary font-medium">Party</label>
           <PartySelect placeholder="All parties" value={partyFilter} onChange={(id) => setPartyFilter(id)} />
         </div>
-        <label className="flex items-center gap-2 text-sm text-white cursor-pointer pb-2">
+        <label className="flex items-center gap-2 text-sm text-textPrimary cursor-pointer pb-2">
           <input
             type="checkbox"
             checked={overdueOnly}
@@ -332,7 +332,7 @@ export default function MemosPage() {
         </label>
         <button
           onClick={refreshAll}
-          className="flex items-center justify-center gap-2 px-3 py-2 border border-border rounded-lg text-sm text-textSecondary hover:text-white hover:border-white/30 transition-colors"
+          className="flex items-center justify-center gap-2 px-3 py-2 border border-border rounded-lg text-sm text-textSecondary hover:text-textPrimary hover:border-black/20 transition-colors"
         >
           <RefreshCw className="w-4 h-4" /> Refresh
         </button>
@@ -348,7 +348,7 @@ export default function MemosPage() {
         ) : memos.length === 0 ? (
           <div className="text-center py-12 text-textSecondary space-y-2">
             <ClipboardList className="w-10 h-10 mx-auto text-primary/60" />
-            <p className="text-base font-semibold text-white">No approval memos match these filters</p>
+            <p className="text-base font-semibold text-textPrimary">No approval memos match these filters</p>
             <p className="text-xs">Issue one with &quot;New Memo&quot; when goods go out on jangad.</p>
           </div>
         ) : (
@@ -416,7 +416,7 @@ function AgingCard({ aging, overdueCount, onRefresh }: { aging: any; overdueCoun
   const overall = aging?.overall || {};
   const total = num(aging?.total_open_value);
   const tone = (label: string) =>
-    label === '61+' ? 'text-danger' : label === '31-60' ? 'text-warning' : 'text-white';
+    label === '61+' ? 'text-danger' : label === '31-60' ? 'text-warning' : 'text-textPrimary';
 
   return (
     <div className="glass-card p-6">
@@ -427,13 +427,13 @@ function AgingCard({ aging, overdueCount, onRefresh }: { aging: any; overdueCoun
           </div>
           <div>
             <p className="text-sm font-medium text-textSecondary uppercase tracking-wider">Goods out on approval</p>
-            <h4 className="text-2xl font-playfair font-semibold text-white">{formatCurrency(total)}</h4>
+            <h4 className="text-2xl font-playfair font-semibold text-textPrimary">{formatCurrency(total)}</h4>
           </div>
         </div>
         <div className="text-right text-xs text-textSecondary">
           <div>{aging?.open_memos ?? 0} open memo{(aging?.open_memos ?? 0) === 1 ? '' : 's'}</div>
           {overdueCount > 0 && <div className="text-danger font-medium">{overdueCount} overdue in view</div>}
-          <button onClick={onRefresh} className="mt-1 text-primary hover:text-white transition-colors">refresh</button>
+          <button onClick={onRefresh} className="mt-1 text-primary hover:text-textPrimary transition-colors">refresh</button>
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -457,7 +457,7 @@ function AgingCard({ aging, overdueCount, onRefresh }: { aging: any; overdueCoun
             <tbody>
               {aging.parties.slice(0, 8).map((p: any) => (
                 <tr key={p.party_id} className="border-t border-border/40">
-                  <td className="py-1 pr-3 text-white">{p.party_name} <span className="text-textSecondary">({p.memos})</span></td>
+                  <td className="py-1 pr-3 text-textPrimary">{p.party_name} <span className="text-textSecondary">({p.memos})</span></td>
                   {labels.map((l) => (
                     <td key={l} className={`text-right py-1 px-2 ${num(p.buckets?.[l]) > 0 ? tone(l) : 'text-textSecondary'}`}>
                       {num(p.buckets?.[l]) > 0 ? formatCurrency(num(p.buckets[l])) : '—'}
@@ -541,7 +541,7 @@ function NewMemoForm({ onSuccess }: { onSuccess: (memoNo: string) => void }) {
     }
   };
 
-  const inputCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
+  const inputCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
 
   return (
     <form onSubmit={submit} className="space-y-6">
@@ -570,11 +570,11 @@ function NewMemoForm({ onSuccess }: { onSuccess: (memoNo: string) => void }) {
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-lg font-playfair font-medium text-white">Goods going out</h4>
+          <h4 className="text-lg font-playfair font-medium text-textPrimary">Goods going out</h4>
           <button
             type="button"
             onClick={() => setLines((ls) => [...ls, newLine((ls[ls.length - 1]?.key || 0) + 1)])}
-            className="text-xs text-primary flex items-center gap-1 hover:text-white transition-colors"
+            className="text-xs text-primary flex items-center gap-1 hover:text-textPrimary transition-colors"
           >
             <Plus className="w-4 h-4" /> Add line
           </button>
@@ -622,7 +622,7 @@ function NewMemoForm({ onSuccess }: { onSuccess: (memoNo: string) => void }) {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-textSecondary">Value</label>
-                  <div className="px-3 py-2 text-sm text-primary font-medium border border-border/50 rounded-lg bg-white/5">{formatCurrency(lineValue(l))}</div>
+                  <div className="px-3 py-2 text-sm text-primary font-medium border border-border/50 rounded-lg bg-black/5">{formatCurrency(lineValue(l))}</div>
                 </div>
               </div>
             </div>
@@ -630,7 +630,7 @@ function NewMemoForm({ onSuccess }: { onSuccess: (memoNo: string) => void }) {
         </div>
 
         <div className="flex justify-end gap-8 text-sm">
-          <div className="text-textSecondary">Total qty: <span className="text-white font-medium">{fmtQty(totalQty)}</span></div>
+          <div className="text-textSecondary">Total qty: <span className="text-textPrimary font-medium">{fmtQty(totalQty)}</span></div>
           <div className="text-textSecondary">Memo value: <span className="text-primary font-semibold">{formatCurrency(totalValue)}</span></div>
         </div>
       </div>
@@ -679,7 +679,7 @@ function DetailPanel({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-playfair font-bold text-white">{memo.memo_no}</h2>
+                  <h2 className="text-2xl font-playfair font-bold text-textPrimary">{memo.memo_no}</h2>
                   <Badge variant={statusVariant(memo.status)}>{statusLabel(memo.status)}</Badge>
                   {memo.is_overdue && <Badge variant="danger">Overdue {memo.days_out}d</Badge>}
                 </div>
@@ -687,7 +687,7 @@ function DetailPanel({
                   {memo.party_name}{memo.party_city ? `, ${memo.party_city}` : ''} · GSTIN {memo.party_gstin || 'Unregistered'}
                 </p>
               </div>
-              <button onClick={onClose} className="text-textSecondary hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={onClose} className="text-textSecondary hover:text-textPrimary"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -718,11 +718,11 @@ function DetailPanel({
                     <tr key={l.id} className="border-t border-border/50">
                       <td className="px-3 py-2 text-textSecondary">{l.sequence_no}</td>
                       <td className="px-3 py-2">
-                        <div className="text-white">{l.description || l.material_name}</div>
+                        <div className="text-textPrimary">{l.description || l.material_name}</div>
                         <div className="text-xs text-textSecondary font-mono">{l.material_code}{l.hsn_code ? ` · HSN ${l.hsn_code}` : ''}</div>
                         {l.invoice_no && <div className="text-xs text-success">Invoice {l.invoice_no}</div>}
                       </td>
-                      <td className="px-3 py-2 text-right text-white">{fmtQty(l.quantity)} {l.uom || ''}</td>
+                      <td className="px-3 py-2 text-right text-textPrimary">{fmtQty(l.quantity)} {l.uom || ''}</td>
                       <td className="px-3 py-2 text-right text-textSecondary">{l.gross_weight != null ? num(l.gross_weight).toFixed(3) : '—'} / {l.net_weight != null ? num(l.net_weight).toFixed(3) : '—'}</td>
                       <td className="px-3 py-2 text-right">{formatCurrency(num(l.rate))}</td>
                       <td className="px-3 py-2 text-right">{formatCurrency(num(l.value))}</td>
@@ -736,15 +736,15 @@ function DetailPanel({
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2 border-t border-border">
-              <button onClick={() => onPrint('print')} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-white hover:border-primary transition-colors">
+              <button onClick={() => onPrint('print')} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-textPrimary hover:border-primary transition-colors">
                 <Printer className="w-4 h-4" /> Print memo
               </button>
-              <button onClick={() => onPrint('download')} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-white hover:border-primary transition-colors">
+              <button onClick={() => onPrint('download')} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-textPrimary hover:border-primary transition-colors">
                 <Download className="w-4 h-4" /> Download PDF
               </button>
               {live && anyOutstanding && (
                 <>
-                  <button onClick={onReturn} className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg text-sm text-white hover:bg-white/20 transition-colors">
+                  <button onClick={onReturn} className="flex items-center gap-2 px-4 py-2 bg-black/5 rounded-lg text-sm text-textPrimary hover:bg-black/10 transition-colors">
                     <RotateCcw className="w-4 h-4" /> Return
                   </button>
                   <button onClick={onConvert} className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg text-sm hover:opacity-90 transition-opacity">
@@ -770,7 +770,7 @@ function Info({ label, value, highlight, danger }: { label: string; value: strin
   return (
     <div className="bg-background/60 border border-border rounded-lg p-3">
       <div className="text-xs text-textSecondary">{label}</div>
-      <div className={`font-medium ${danger ? 'text-danger' : highlight ? 'text-primary' : 'text-white'}`}>{value}</div>
+      <div className={`font-medium ${danger ? 'text-danger' : highlight ? 'text-primary' : 'text-textPrimary'}`}>{value}</div>
     </div>
   );
 }
@@ -806,7 +806,7 @@ function ReturnForm({ memo, onDone }: { memo: MemoDetail; onDone: (memoStatus: M
     }
   };
 
-  const inputCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
+  const inputCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
 
   return (
     <form onSubmit={submit} className="space-y-5">
@@ -833,7 +833,7 @@ function ReturnForm({ memo, onDone }: { memo: MemoDetail; onDone: (memoStatus: M
             {open.map((l) => (
               <tr key={l.id} className="border-t border-border/50">
                 <td className="px-3 py-2">
-                  <div className="text-white">{l.description || l.material_name}</div>
+                  <div className="text-textPrimary">{l.description || l.material_name}</div>
                   <div className="text-xs text-textSecondary font-mono">{l.material_code}</div>
                 </td>
                 <td className="px-3 py-2 text-right text-primary">{fmtQty(l.outstanding_quantity)} {l.uom || ''}</td>
@@ -926,18 +926,18 @@ function ConvertForm({ memo, onDone }: { memo: MemoDetail; onDone: (invoiceNo: s
     }
   };
 
-  const inputCls = 'w-full bg-background border border-border rounded-lg px-2 py-1.5 text-sm text-white focus:border-primary outline-none text-right';
+  const inputCls = 'w-full bg-background border border-border rounded-lg px-2 py-1.5 text-sm text-textPrimary focus:border-primary outline-none text-right';
 
   return (
     <form onSubmit={submit} className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-xs text-textSecondary">Invoice date *</label>
-          <input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none" required />
+          <input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none" required />
         </div>
         <div className="space-y-1">
           <label className="text-xs text-textSecondary">Place of supply (state code, optional)</label>
-          <input type="text" maxLength={2} value={placeOfSupply} onChange={(e) => setPlaceOfSupply(e.target.value)} placeholder="Party's registered state if blank" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+          <input type="text" maxLength={2} value={placeOfSupply} onChange={(e) => setPlaceOfSupply(e.target.value)} placeholder="Party's registered state if blank" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none" />
         </div>
       </div>
       <div className="border border-border rounded-xl overflow-x-auto">
@@ -958,7 +958,7 @@ function ConvertForm({ memo, onDone }: { memo: MemoDetail; onDone: (invoiceNo: s
               return (
                 <tr key={l.id} className="border-t border-border/50">
                   <td className="px-3 py-2">
-                    <div className="text-white">{l.description || l.material_name}</div>
+                    <div className="text-textPrimary">{l.description || l.material_name}</div>
                     <div className="text-xs text-textSecondary font-mono">{l.material_code} · memo rate {formatCurrency(num(l.rate))}</div>
                   </td>
                   <td className="px-3 py-2 text-right text-primary">{fmtQty(l.outstanding_quantity)}</td>
@@ -973,8 +973,8 @@ function ConvertForm({ memo, onDone }: { memo: MemoDetail; onDone: (invoiceNo: s
         </table>
       </div>
       <div className="flex justify-end gap-8 text-sm">
-        <div className="text-textSecondary">Taxable material: <span className="text-white font-medium">{formatCurrency(totals.material)}</span></div>
-        <div className="text-textSecondary">Taxable making: <span className="text-white font-medium">{formatCurrency(totals.making)}</span></div>
+        <div className="text-textSecondary">Taxable material: <span className="text-textPrimary font-medium">{formatCurrency(totals.material)}</span></div>
+        <div className="text-textSecondary">Taxable making: <span className="text-textPrimary font-medium">{formatCurrency(totals.making)}</span></div>
       </div>
       <p className="text-xs text-textSecondary">
         The kept quantity moves back to the default location and a tax invoice is raised through the sales register: GST at the item&apos;s rate on material and 5% on making, COGS and the journal all post as for a counter sale. The rest stays out on approval.

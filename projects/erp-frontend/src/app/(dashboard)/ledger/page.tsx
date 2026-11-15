@@ -86,7 +86,7 @@ export default function LedgerPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Party Ledger Statement</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Party Ledger Statement</h1>
           <p className="text-textSecondary mt-1">[S44AA] Sub-ledger statement: opening balance, every voucher in date order, running balance with Dr/Cr. Click a line to open its voucher.</p>
         </div>
         <div className="flex gap-2">
@@ -104,7 +104,7 @@ export default function LedgerPage() {
               const { generatePartyLedgerPDF } = require('@/lib/vectorPdfEngine');
               generatePartyLedgerPDF(partyDetails || { name: 'Party Ledger' }, pdfRows(), fromDate, toDate, 'print');
             }}
-            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5"
+            className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5"
           >
             <Printer className="w-4 h-4" /> Print PDF
           </button>
@@ -118,13 +118,13 @@ export default function LedgerPage() {
         </div>
         <div>
           <label className="block text-sm text-textSecondary mb-1">From Date</label>
-          <input type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setRangeLabel('custom'); }} className="bg-background border border-border rounded-md px-3 py-2 text-white h-[38px] outline-none focus:border-primary" />
+          <input type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setRangeLabel('custom'); }} className="bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px] outline-none focus:border-primary" />
         </div>
         <div>
           <label className="block text-sm text-textSecondary mb-1">To Date</label>
-          <input type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setRangeLabel('custom'); }} className="bg-background border border-border rounded-md px-3 py-2 text-white h-[38px] outline-none focus:border-primary" />
+          <input type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setRangeLabel('custom'); }} className="bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px] outline-none focus:border-primary" />
         </div>
-        <button onClick={() => activeFiscalYearRange().then((r) => { setFromDate(r.from); setToDate(r.to); setRangeLabel(r.label); })} className="px-3 py-2 border border-border rounded-md text-textSecondary hover:text-white hover:border-primary h-[38px] text-xs">
+        <button onClick={() => activeFiscalYearRange().then((r) => { setFromDate(r.from); setToDate(r.to); setRangeLabel(r.label); })} className="px-3 py-2 border border-border rounded-md text-textSecondary hover:text-textPrimary hover:border-primary h-[38px] text-xs">
           Active fiscal year
         </button>
         <button onClick={fetchLedger} className="px-6 py-2 bg-gold-gradient text-background font-semibold rounded-md h-[38px] hover:opacity-90">
@@ -135,15 +135,15 @@ export default function LedgerPage() {
 
       {loading ? (
         <div className="animate-pulse space-y-4 py-4">
-          <div className="h-24 bg-white/10 rounded w-full"></div>
-          <div className="h-8 bg-white/10 rounded w-full"></div>
-          <div className="h-8 bg-white/10 rounded w-full"></div>
+          <div className="h-24 bg-black/5 rounded w-full"></div>
+          <div className="h-8 bg-black/5 rounded w-full"></div>
+          <div className="h-8 bg-black/5 rounded w-full"></div>
         </div>
       ) : hasSearched && selectedParty && ledger ? (
         <div id="printable-voucher" className="printable-area glass-card">
           <div className="p-6 border-b border-border bg-surface/50 flex flex-wrap justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white">{partyDetails?.trade_name || partyDetails?.name} {partyDetails?.trade_name && partyDetails?.trade_name !== partyDetails?.name ? `(${partyDetails.name})` : ''}</h2>
+              <h2 className="text-xl font-bold text-textPrimary">{partyDetails?.trade_name || partyDetails?.name} {partyDetails?.trade_name && partyDetails?.trade_name !== partyDetails?.name ? `(${partyDetails.name})` : ''}</h2>
               <div className="flex flex-wrap gap-6 mt-2 text-sm text-textSecondary font-mono">
                 <span>GSTIN: {partyDetails?.gstin || 'N/A'}</span>
                 {partyDetails?.pan && <span>PAN: {partyDetails.pan}</span>}
@@ -153,7 +153,7 @@ export default function LedgerPage() {
             </div>
             <div className="text-right text-sm">
               <div className="text-textSecondary text-xs">Closing balance as at {ledger.to_date || toDate}</div>
-              <div className={`text-2xl font-mono font-bold ${ledger.closing_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>
+              <div className={`text-2xl font-mono font-bold ${ledger.closing_side === 'Cr' ? 'text-rose-700' : 'text-emerald-700'}`}>
                 {formatBalance(ledger.closing_balance, ledger.closing_side)}
               </div>
               <div className="text-xs text-textSecondary mt-1">
@@ -176,38 +176,38 @@ export default function LedgerPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                <tr className="bg-white/5 font-mono">
+                <tr className="bg-black/5 font-mono">
                   <td className="py-3 text-textSecondary text-xs">{ledger.from_date || '—'}</td>
-                  <td colSpan={3} className="py-3 font-medium text-white">Opening Balance b/f</td>
-                  <td className="py-3 text-right text-white">{money(ledger.opening_debit)}</td>
+                  <td colSpan={3} className="py-3 font-medium text-textPrimary">Opening Balance b/f</td>
+                  <td className="py-3 text-right text-textPrimary">{money(ledger.opening_debit)}</td>
                   <td className="py-3 text-right text-success">{money(ledger.opening_credit)}</td>
                   <td className="py-3 text-right font-semibold text-primary">{formatBalance(ledger.opening_balance, ledger.opening_side)}</td>
                 </tr>
                 {entries.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-10 text-center text-textSecondary">
-                      <AlertCircle className="w-8 h-8 text-white/20 mx-auto mb-2" />
+                      <AlertCircle className="w-8 h-8 text-black/20 mx-auto mb-2" />
                       No vouchers for this party in the selected range; the opening and closing balances are the balance brought forward.
                     </td>
                   </tr>
                 )}
                 {entries.map((row) => (
-                  <tr key={row.line_id} onClick={() => setVoucherId(row.journal_entry_id)} className="hover:bg-white/5 transition-colors cursor-pointer" title="Open voucher">
-                    <td className="py-3 text-white font-mono text-xs whitespace-nowrap">{row.date}</td>
-                    <td className="py-3 font-medium text-white">{row.voucher_type}</td>
+                  <tr key={row.line_id} onClick={() => setVoucherId(row.journal_entry_id)} className="hover:bg-black/5 transition-colors cursor-pointer" title="Open voucher">
+                    <td className="py-3 text-textPrimary font-mono text-xs whitespace-nowrap">{row.date}</td>
+                    <td className="py-3 font-medium text-textPrimary">{row.voucher_type}</td>
                     <td className="py-3 font-mono text-primary text-xs">
                       {row.voucher_no}
                       {row.bill_ref && <span className="block text-[10px] text-textSecondary">{row.bill_ref}</span>}
                     </td>
                     <td className="py-3 text-textSecondary">{row.particulars || row.entry_narration || 'Journal Line Entry'}</td>
-                    <td className="py-3 text-right font-mono text-white">{money(row.debit)}</td>
+                    <td className="py-3 text-right font-mono text-textPrimary">{money(row.debit)}</td>
                     <td className="py-3 text-right font-mono text-success">{money(row.credit)}</td>
-                    <td className={`py-3 text-right font-mono font-semibold ${row.running_side === 'Cr' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                    <td className={`py-3 text-right font-mono font-semibold ${row.running_side === 'Cr' ? 'text-rose-700' : 'text-emerald-700'}`}>
                       {formatBalance(row.running_balance, row.running_side)}
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-primary/5 font-bold border-t-2 border-primary/20 text-white">
+                <tr className="bg-primary/5 font-bold border-t-2 border-primary/20 text-textPrimary">
                   <td colSpan={4} className="py-3 text-right">Period totals / Closing Balance c/f</td>
                   <td className="py-3 text-right font-mono">{formatCurrency(Number(ledger.total_debit || 0))}</td>
                   <td className="py-3 text-right font-mono text-success">{formatCurrency(Number(ledger.total_credit || 0))}</td>

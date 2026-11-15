@@ -17,7 +17,7 @@ import { formatCurrency } from '@/lib/utils';
 // courier, bank charges. Posts Dr expense ledger, Cr cash/bank. A cost with
 // GST credit to claim is a purchase bill instead (it feeds the ITC register).
 
-const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none';
+const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none';
 
 export default function ExpensesPage() {
   const [rows, setRows] = useState<Expense[]>([]);
@@ -117,28 +117,28 @@ export default function ExpensesPage() {
   const columns = [
     { header: 'Date / No', accessorKey: 'expense_date', cell: (e: Expense) => (
       <span>
-        <span className="block text-white text-sm">{new Date(e.expense_date).toLocaleDateString('en-IN')}</span>
+        <span className="block text-textPrimary text-sm">{new Date(e.expense_date).toLocaleDateString('en-IN')}</span>
         <button className="font-mono text-primary hover:underline text-[11px]" title={`Open voucher ${e.voucher_no}`} onClick={() => setVoucherId(e.journal_entry_id)}>{e.expense_no}</button>
       </span>
     ) },
     { header: 'Expense Account', accessorKey: 'expense_account_name', cell: (e: Expense) => (
       <span>
-        <span className="block font-medium text-white">{e.expense_account_name}</span>
+        <span className="block font-medium text-textPrimary">{e.expense_account_name}</span>
         <span className="block text-xs text-textSecondary">paid from {e.paid_through_name}</span>
       </span>
     ) },
     { header: 'Paid To / Notes', accessorKey: 'vendor_name', cell: (e: Expense) => (
       <span>
-        <span className="block text-white text-sm">{e.vendor_name || '—'}</span>
+        <span className="block text-textPrimary text-sm">{e.vendor_name || '—'}</span>
         {(e.notes || e.reference_no) && <span className="block text-xs text-textSecondary truncate max-w-[260px]">{[e.reference_no, e.notes].filter(Boolean).join(' · ')}</span>}
       </span>
     ) },
-    { header: 'Amount (₹)', accessorKey: 'amount', cell: (e: Expense) => <span className={`font-mono font-semibold ${e.status === 'Reversed' ? 'text-textSecondary line-through' : 'text-white'}`}>{formatCurrency(e.amount)}</span> },
+    { header: 'Amount (₹)', accessorKey: 'amount', cell: (e: Expense) => <span className={`font-mono font-semibold ${e.status === 'Reversed' ? 'text-textSecondary line-through' : 'text-textPrimary'}`}>{formatCurrency(e.amount)}</span> },
     { header: 'Status', accessorKey: 'status', cell: (e: Expense) => (
       <span className="flex items-center gap-2">
         <Badge variant={e.status === 'Posted' ? 'success' : 'warning'}>{e.status}</Badge>
         {e.status === 'Posted' && (
-          <button onClick={() => reverse(e)} title="Reverse this expense" aria-label={`Reverse ${e.expense_no}`} className="p-1.5 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded">
+          <button onClick={() => reverse(e)} title="Reverse this expense" aria-label={`Reverse ${e.expense_no}`} className="p-1.5 bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary rounded">
             <Undo2 className="w-3.5 h-3.5" />
           </button>
         )}
@@ -150,21 +150,21 @@ export default function ExpensesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Expenses</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Expenses</h1>
           <p className="text-textSecondary mt-1">Rent, electricity, courier, bank charges: paid from cash or bank and recorded in one step.</p>
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90">
+        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 whitespace-nowrap">
           <Plus className="w-4 h-4" /> Record Expense
         </button>
       </div>
 
       <div className="glass-card p-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
+        <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-textPrimary">
           <Calendar className="w-3.5 h-3.5 text-textSecondary" />
           <span className="text-textSecondary">From:</span>
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-transparent border-none text-white focus:outline-none text-xs" />
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-transparent border-none text-textPrimary focus:outline-none text-xs" />
           <span className="text-textSecondary">To:</span>
-          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-transparent border-none text-white focus:outline-none text-xs" />
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-transparent border-none text-textPrimary focus:outline-none text-xs" />
         </div>
         <div className="text-sm text-textSecondary">
           {rows.filter((r) => r.status === 'Posted').length} expense(s) · Total <span className="text-primary font-mono font-semibold">{formatCurrency(total)}</span>
@@ -225,8 +225,8 @@ export default function ExpensesPage() {
           <p className="text-[11px] text-textSecondary">No GST credit is taken on an expense. To claim input credit (for example on rent with GST), record a purchase bill with a service item instead.</p>
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-3 pt-2 border-t border-border">
-            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 border border-border text-white text-sm rounded-lg hover:bg-surface">Cancel</button>
-            <button type="button" disabled={saving} onClick={() => save(true)} className="px-4 py-2 border border-border text-white text-sm rounded-lg hover:border-primary disabled:opacity-50">Save and New</button>
+            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 border border-border text-textPrimary text-sm rounded-lg hover:bg-surface">Cancel</button>
+            <button type="button" disabled={saving} onClick={() => save(true)} className="px-4 py-2 border border-border text-textPrimary text-sm rounded-lg hover:border-primary disabled:opacity-50">Save and New</button>
             <button type="button" disabled={saving} onClick={() => save(false)} className="px-6 py-2 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
               {saving ? 'Saving...' : 'Save'}
             </button>

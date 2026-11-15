@@ -171,8 +171,8 @@ const currentQuarterIndex = () => {
   return m >= 4 && m <= 6 ? 0 : m >= 7 && m <= 9 ? 1 : m >= 10 ? 2 : 3;
 };
 
-const inputCls = 'w-full bg-background border border-border rounded-md px-3 py-2 text-white text-sm focus:border-primary outline-none';
-const cellInputCls = 'w-full bg-background border border-border rounded px-2 py-1 text-white text-xs font-mono focus:border-primary outline-none';
+const inputCls = 'w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary text-sm focus:border-primary outline-none';
+const cellInputCls = 'w-full bg-background border border-border rounded px-2 py-1 text-textPrimary text-xs font-mono focus:border-primary outline-none';
 
 type Tab = 'challans' | 'receipts' | 'overdue' | 'itc04';
 
@@ -494,7 +494,7 @@ export default function JobWorkPage() {
     <button
       type="button"
       onClick={() => setTab(t)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-primary/15 text-primary border border-primary/30' : 'text-textSecondary hover:text-white hover:bg-white/5 border border-transparent'}`}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? 'bg-primary/15 text-primary border border-primary/30' : 'text-textSecondary hover:text-textPrimary hover:bg-black/5 border border-transparent'}`}
     >
       {icon} {label}
     </button>
@@ -504,17 +504,17 @@ export default function JobWorkPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Job Work — Karigar Challans [CGST s.143]</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Job Work — Karigar Challans [CGST s.143]</h1>
           <p className="text-textSecondary mt-1">Metal out on delivery challan, finished pieces back with the karigar&apos;s making-charge bill. Inputs must return within one year, capital goods within three.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={refreshAll} className="p-2 rounded-lg border border-border text-textSecondary hover:text-white hover:bg-white/5" title="Refresh">
+          <button type="button" onClick={refreshAll} className="p-2 rounded-lg border border-border text-textSecondary hover:text-textPrimary hover:bg-black/5" title="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={() => { resetForm(); setIsNewOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)]"
+            className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
           >
             <Plus className="w-4 h-4" /> New challan
           </button>
@@ -524,19 +524,19 @@ export default function JobWorkPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="glass-card p-6 border-l-4 border-l-primary">
           <h3 className="text-sm font-medium text-textSecondary uppercase">Open challans</h3>
-          <p className="text-3xl font-playfair font-bold text-white mt-2">{openCount}</p>
+          <p className="text-3xl font-playfair font-bold text-textPrimary mt-2">{openCount}</p>
         </div>
         <div className="glass-card p-6 border-l-4 border-l-warning">
           <h3 className="text-sm font-medium text-textSecondary uppercase">Quantity with karigars</h3>
-          <p className="text-3xl font-playfair font-bold text-white mt-2">{fmtQty(outstandingQty)}</p>
+          <p className="text-3xl font-playfair font-bold text-textPrimary mt-2">{fmtQty(outstandingQty)}</p>
         </div>
         <div className={`glass-card p-6 border-l-4 ${overdueCount > 0 ? 'border-l-danger' : 'border-l-success'}`}>
           <h3 className="text-sm font-medium text-textSecondary uppercase">Past s.143 deadline</h3>
-          <p className={`text-3xl font-playfair font-bold mt-2 ${overdueCount > 0 ? 'text-danger' : 'text-white'}`}>{overdueCount}</p>
+          <p className={`text-3xl font-playfair font-bold mt-2 ${overdueCount > 0 ? 'text-danger' : 'text-textPrimary'}`}>{overdueCount}</p>
         </div>
         <div className="glass-card p-6 border-l-4 border-l-danger">
           <h3 className="text-sm font-medium text-textSecondary uppercase">Value at risk (deemed supply)</h3>
-          <p className="text-2xl font-playfair font-bold text-white mt-2">{formatCurrency(valueAtRisk)}</p>
+          <p className="text-2xl font-playfair font-bold text-textPrimary mt-2">{formatCurrency(valueAtRisk)}</p>
         </div>
       </div>
 
@@ -551,8 +551,8 @@ export default function JobWorkPage() {
       {tab === 'challans' && (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-playfair font-semibold text-white">Delivery challans</h2>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-background border border-border rounded-md px-3 py-1.5 text-sm text-white">
+            <h2 className="text-xl font-playfair font-semibold text-textPrimary">Delivery challans</h2>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-background border border-border rounded-md px-3 py-1.5 text-sm text-textPrimary">
               <option value="">All statuses</option>
               <option value="Open">Open</option>
               <option value="PartiallyReceived">Partially received</option>
@@ -589,11 +589,11 @@ export default function JobWorkPage() {
                       <tr
                         key={c.id}
                         onClick={() => openDetail(c)}
-                        className={`border-b border-border/50 last:border-0 transition-colors cursor-pointer ${c.is_overdue ? 'bg-danger/10 hover:bg-danger/15' : 'bg-background hover:bg-white/5'}`}
+                        className={`border-b border-border/50 last:border-0 transition-colors cursor-pointer ${c.is_overdue ? 'bg-danger/10 hover:bg-danger/15' : 'bg-background hover:bg-black/5'}`}
                       >
-                        <td className="px-4 py-3 font-mono text-white">{c.challan_no}<span className="block text-[10px] text-textSecondary">{c.goods_type === 'CapitalGoods' ? 'Capital goods' : 'Inputs'}{c.nature_of_work ? ` · ${c.nature_of_work}` : ''}</span></td>
+                        <td className="px-4 py-3 font-mono text-textPrimary">{c.challan_no}<span className="block text-[10px] text-textSecondary">{c.goods_type === 'CapitalGoods' ? 'Capital goods' : 'Inputs'}{c.nature_of_work ? ` · ${c.nature_of_work}` : ''}</span></td>
                         <td className="px-4 py-3">
-                          <button type="button" onClick={(e) => { e.stopPropagation(); openStatement(c.job_worker_id); }} className="text-white hover:text-primary text-left">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); openStatement(c.job_worker_id); }} className="text-textPrimary hover:text-primary text-left">
                             {c.job_worker_name}
                           </button>
                           <span className="block text-[10px] text-textSecondary">{c.job_worker_gstin || 'Unregistered'}</span>
@@ -604,16 +604,16 @@ export default function JobWorkPage() {
                           {open && <span className="block text-[10px]">{c.is_overdue ? `${-c.days_remaining} days overdue` : `${c.days_remaining} days left`}</span>}
                         </td>
                         <td className="px-4 py-3 text-right font-mono">{fmtQty(c.quantity_sent)}</td>
-                        <td className="px-4 py-3 text-right font-mono text-emerald-400">{fmtQty(c.quantity_received)}</td>
+                        <td className="px-4 py-3 text-right font-mono text-emerald-700">{fmtQty(c.quantity_received)}</td>
                         <td className="px-4 py-3 text-right font-mono text-textSecondary">{fmtQty(c.quantity_wastage)}</td>
-                        <td className="px-4 py-3 text-right font-mono text-white">{fmtQty(c.quantity_outstanding)}</td>
+                        <td className="px-4 py-3 text-right font-mono text-textPrimary">{fmtQty(c.quantity_outstanding)}</td>
                         <td className="px-4 py-3 text-right font-mono">{formatCurrency(num(c.taxable_value))}</td>
                         <td className="px-4 py-3">
                           <Badge variant={statusVariant(c.status, c.is_overdue)}>{c.is_overdue ? 'OVERDUE' : statusLabel(c.status)}</Badge>
                         </td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-1">
-                            <button type="button" onClick={() => printChallan(c, 'print')} className="p-1.5 rounded hover:bg-white/10 text-textSecondary hover:text-white" title="Print challan"><Printer className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => printChallan(c, 'print')} className="p-1.5 rounded hover:bg-black/5 text-textSecondary hover:text-textPrimary" title="Print challan"><Printer className="w-4 h-4" /></button>
                             {open && (
                               <button type="button" onClick={() => openReceipt(c)} className="flex items-center gap-1 px-2 py-1 bg-primary text-black font-semibold rounded text-xs hover:bg-primary/90" title="Receive goods back">
                                 <PackageCheck className="w-3.5 h-3.5" /> Receive
@@ -639,7 +639,7 @@ export default function JobWorkPage() {
       {/* ─── Receipts register ────────────────────────────────────────────── */}
       {tab === 'receipts' && (
         <div className="glass-card p-6">
-          <h2 className="text-xl font-playfair font-semibold text-white mb-4">Receipts register</h2>
+          <h2 className="text-xl font-playfair font-semibold text-textPrimary mb-4">Receipts register</h2>
           {receiptsLoading ? (
             <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
           ) : receipts.length === 0 ? (
@@ -662,18 +662,18 @@ export default function JobWorkPage() {
                 </thead>
                 <tbody>
                   {receipts.map((r) => (
-                    <tr key={r.id} className="bg-background hover:bg-white/5 border-b border-border/50 last:border-0">
-                      <td className="px-4 py-3 font-mono text-white">{r.receipt_no}{r.was_overdue && <span className="block text-[10px] text-danger">received after deadline</span>}</td>
+                    <tr key={r.id} className="bg-background hover:bg-black/5 border-b border-border/50 last:border-0">
+                      <td className="px-4 py-3 font-mono text-textPrimary">{r.receipt_no}{r.was_overdue && <span className="block text-[10px] text-danger">received after deadline</span>}</td>
                       <td className="px-4 py-3 text-textSecondary whitespace-nowrap">{fmtDate(r.receipt_date)}</td>
                       <td className="px-4 py-3 font-mono"><button type="button" className="hover:text-primary" onClick={() => openDetail({ id: r.challan_id })}>{r.challan_no}</button></td>
                       <td className="px-4 py-3"><button type="button" className="hover:text-primary" onClick={() => openStatement(r.job_worker_id)}>{r.job_worker_name}</button></td>
-                      <td className="px-4 py-3 text-right font-mono text-emerald-400">{fmtQty(r.quantity_received)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-emerald-700">{fmtQty(r.quantity_received)}</td>
                       <td className="px-4 py-3 text-right font-mono text-textSecondary">{fmtQty(r.quantity_wastage)} <span className="text-[10px]">({r.wastage_pct}%)</span></td>
                       <td className="px-4 py-3 text-right font-mono">{formatCurrency(num(r.cost_amount))}</td>
                       <td className="px-4 py-3 text-right font-mono">{formatCurrency(num(r.making_charges))}</td>
                       <td className="px-4 py-3 text-xs">
                         {r.making_charge_bill_no ? (
-                          <span className="font-mono text-white">{r.making_charge_bill_no}{r.bill_reverse_charge && <span className="ml-1 text-[10px] text-warning">RCM</span>}<span className="block text-textSecondary">{formatCurrency(num(r.bill_total))}{r.karigar_bill_no ? ` · ref ${r.karigar_bill_no}` : ''}</span></span>
+                          <span className="font-mono text-textPrimary">{r.making_charge_bill_no}{r.bill_reverse_charge && <span className="ml-1 text-[10px] text-warning">RCM</span>}<span className="block text-textSecondary">{formatCurrency(num(r.bill_total))}{r.karigar_bill_no ? ` · ref ${r.karigar_bill_no}` : ''}</span></span>
                         ) : <span className="text-textSecondary">—</span>}
                       </td>
                     </tr>
@@ -689,12 +689,12 @@ export default function JobWorkPage() {
       {tab === 'overdue' && (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-playfair font-semibold text-white">Past the s.143 deadline</h2>
+            <h2 className="text-xl font-playfair font-semibold text-textPrimary">Past the s.143 deadline</h2>
             <span className="text-xs text-textSecondary">{overdue?.rule}</span>
           </div>
           <p className="text-sm text-textSecondary mb-4">Each of these is a deemed supply on the <em>challan</em> date, so tax and interest have been running since dispatch. Receive the goods, or deem the supply and invoice the karigar.</p>
           {!overdue || overdue.challans.length === 0 ? (
-            <div className="text-center py-8 text-emerald-400 text-sm">Nothing is overdue.</div>
+            <div className="text-center py-8 text-emerald-700 text-sm">Nothing is overdue.</div>
           ) : (
             <div className="w-full glass rounded-xl overflow-x-auto border border-border">
               <table className="w-full text-sm text-left">
@@ -712,7 +712,7 @@ export default function JobWorkPage() {
                 <tbody>
                   {overdue.challans.map((c: any) => (
                     <tr key={c.id} className="bg-danger/10 hover:bg-danger/15 border-b border-border/50 last:border-0">
-                      <td className="px-4 py-3 font-mono text-white">{c.challan_no}</td>
+                      <td className="px-4 py-3 font-mono text-textPrimary">{c.challan_no}</td>
                       <td className="px-4 py-3">{c.job_worker_name}<span className="block text-[10px] text-textSecondary">{c.job_worker_gstin || 'Unregistered'}</span></td>
                       <td className="px-4 py-3 text-textSecondary">{fmtDate(c.challan_date)}</td>
                       <td className="px-4 py-3 text-danger">{fmtDate(c.return_due_date)}</td>
@@ -738,10 +738,10 @@ export default function JobWorkPage() {
         <div className="glass-card p-6 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-playfair font-semibold text-white">FORM ITC-04</h2>
+              <h2 className="text-xl font-playfair font-semibold text-textPrimary">FORM ITC-04</h2>
               <p className="text-sm text-textSecondary">Goods sent to and received back from job workers in the quarter.</p>
             </div>
-            <select value={quarterIdx} onChange={(e) => setQuarterIdx(Number(e.target.value))} className="bg-background border border-border rounded-md px-3 py-1.5 text-sm text-white">
+            <select value={quarterIdx} onChange={(e) => setQuarterIdx(Number(e.target.value))} className="bg-background border border-border rounded-md px-3 py-1.5 text-sm text-textPrimary">
               {quarters.map((q, i) => <option key={q.label} value={i}>{q.label}</option>)}
             </select>
           </div>
@@ -750,13 +750,13 @@ export default function JobWorkPage() {
           ) : itc ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="bg-surface rounded-lg p-3"><div className="text-xs text-textSecondary uppercase">Sent qty</div><div className="font-mono text-white text-lg">{fmtQty(itc.totals?.sent_quantity)}</div></div>
-                <div className="bg-surface rounded-lg p-3"><div className="text-xs text-textSecondary uppercase">Sent value</div><div className="font-mono text-white text-lg">{formatCurrency(num(itc.totals?.sent_value))}</div></div>
-                <div className="bg-surface rounded-lg p-3"><div className="text-xs text-textSecondary uppercase">Received qty</div><div className="font-mono text-emerald-400 text-lg">{fmtQty(itc.totals?.received_quantity)}</div></div>
+                <div className="bg-surface rounded-lg p-3"><div className="text-xs text-textSecondary uppercase">Sent qty</div><div className="font-mono text-textPrimary text-lg">{fmtQty(itc.totals?.sent_quantity)}</div></div>
+                <div className="bg-surface rounded-lg p-3"><div className="text-xs text-textSecondary uppercase">Sent value</div><div className="font-mono text-textPrimary text-lg">{formatCurrency(num(itc.totals?.sent_value))}</div></div>
+                <div className="bg-surface rounded-lg p-3"><div className="text-xs text-textSecondary uppercase">Received qty</div><div className="font-mono text-emerald-700 text-lg">{fmtQty(itc.totals?.received_quantity)}</div></div>
                 <div className="bg-surface rounded-lg p-3"><div className="text-xs text-textSecondary uppercase">Wastage qty</div><div className="font-mono text-warning text-lg">{fmtQty(itc.totals?.wastage_quantity)}</div></div>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white mb-2">Table 4 — goods sent to job worker</h3>
+                <h3 className="text-sm font-semibold text-textPrimary mb-2">Table 4 — goods sent to job worker</h3>
                 <div className="w-full glass rounded-xl overflow-x-auto border border-border">
                   <table className="w-full text-xs text-left">
                     <thead className="text-textSecondary uppercase bg-surface"><tr><th className="px-3 py-2">Challan</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Job worker GSTIN / State</th><th className="px-3 py-2">Description</th><th className="px-3 py-2">HSN</th><th className="px-3 py-2 text-right">Qty</th><th className="px-3 py-2 text-right">Taxable value</th></tr></thead>
@@ -764,7 +764,7 @@ export default function JobWorkPage() {
                       {itc.table_4_sent.length === 0 ? <tr><td colSpan={7} className="px-3 py-6 text-center text-textSecondary">Nothing sent in this quarter.</td></tr> :
                         itc.table_4_sent.map((r: any, i: number) => (
                           <tr key={i} className="bg-background border-b border-border/40 last:border-0">
-                            <td className="px-3 py-2 font-mono text-white">{r.challan_no}</td>
+                            <td className="px-3 py-2 font-mono text-textPrimary">{r.challan_no}</td>
                             <td className="px-3 py-2 text-textSecondary">{fmtDate(r.challan_date)}</td>
                             <td className="px-3 py-2">{r.job_worker_gstin || 'URP'} <span className="text-textSecondary">/ {r.state_code || '—'}</span><span className="block text-textSecondary">{r.job_worker_name}</span></td>
                             <td className="px-3 py-2">{r.description || r.material_name}</td>
@@ -778,7 +778,7 @@ export default function JobWorkPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white mb-2">Table 5 — goods received back from job worker</h3>
+                <h3 className="text-sm font-semibold text-textPrimary mb-2">Table 5 — goods received back from job worker</h3>
                 <div className="w-full glass rounded-xl overflow-x-auto border border-border">
                   <table className="w-full text-xs text-left">
                     <thead className="text-textSecondary uppercase bg-surface"><tr><th className="px-3 py-2">Receipt</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Against challan</th><th className="px-3 py-2">Job worker</th><th className="px-3 py-2">Material</th><th className="px-3 py-2 text-right">Received</th><th className="px-3 py-2 text-right">Wastage</th></tr></thead>
@@ -786,12 +786,12 @@ export default function JobWorkPage() {
                       {itc.table_5_received.length === 0 ? <tr><td colSpan={7} className="px-3 py-6 text-center text-textSecondary">Nothing received in this quarter.</td></tr> :
                         itc.table_5_received.map((r: any, i: number) => (
                           <tr key={i} className="bg-background border-b border-border/40 last:border-0">
-                            <td className="px-3 py-2 font-mono text-white">{r.receipt_no}</td>
+                            <td className="px-3 py-2 font-mono text-textPrimary">{r.receipt_no}</td>
                             <td className="px-3 py-2 text-textSecondary">{fmtDate(r.receipt_date)}</td>
                             <td className="px-3 py-2 font-mono">{r.challan_no} <span className="text-textSecondary">({fmtDate(r.challan_date)})</span></td>
                             <td className="px-3 py-2">{r.job_worker_name}<span className="block text-textSecondary">{r.job_worker_gstin || 'URP'}</span></td>
                             <td className="px-3 py-2">{r.material_code} — {r.material_name}</td>
-                            <td className="px-3 py-2 text-right font-mono text-emerald-400">{fmtQty(r.quantity_received)}</td>
+                            <td className="px-3 py-2 text-right font-mono text-emerald-700">{fmtQty(r.quantity_received)}</td>
                             <td className="px-3 py-2 text-right font-mono text-textSecondary">{fmtQty(r.quantity_wastage)} ({r.wastage_pct}%)</td>
                           </tr>
                         ))}
@@ -839,7 +839,7 @@ export default function JobWorkPage() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-semibold text-white">Goods sent</h4>
+              <h4 className="text-sm font-semibold text-textPrimary">Goods sent</h4>
               <button type="button" onClick={() => { setLines((p) => [...p, newLine(lineKey)]); setLineKey((k) => k + 1); }} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="w-3.5 h-3.5" /> Add line</button>
             </div>
             <div className="space-y-2">
@@ -892,7 +892,7 @@ export default function JobWorkPage() {
           <div className="flex items-center justify-between pt-4 border-t border-border">
             <div className="text-xs text-textSecondary">{lines.filter((l) => l.material_id).length} line(s) · value {formatCurrency(totalLineValue)}</div>
             <div className="flex gap-3">
-              <button type="button" onClick={() => setIsNewOpen(false)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">Cancel</button>
+              <button type="button" onClick={() => setIsNewOpen(false)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">Cancel</button>
               <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />} Issue challan
               </button>
@@ -906,13 +906,13 @@ export default function JobWorkPage() {
         <Modal isOpen={!!receiptFor} onClose={() => setReceiptFor(null)} title={`Receive against ${receiptFor.challan_no} — ${receiptFor.job_worker_name}`}>
           {receiptResult ? (
             <div className="space-y-4 text-sm">
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-300">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-700">
                 <div className="font-semibold">Receipt {receiptResult.receipt_no} recorded — challan {statusLabel(receiptResult.challan_status)}</div>
                 <div className="text-xs mt-1">Stock value in: {formatCurrency(num(receiptResult.stock_value_in))} (metal {formatCurrency(num(receiptResult.metal_cost))} + making charges). Outstanding: {fmtQty(receiptResult.outstanding_quantity)}.</div>
               </div>
               {receiptResult.making_charge_bill ? (
                 <div className="p-4 bg-surface border border-border rounded-lg space-y-1">
-                  <div className="text-white font-semibold flex items-center gap-2"><ReceiptIcon className="w-4 h-4 text-primary" /> Karigar bill {receiptResult.making_charge_bill.bill_no}{receiptResult.making_charge_bill.reverse_charge && <Badge variant="warning">Reverse charge</Badge>}</div>
+                  <div className="text-textPrimary font-semibold flex items-center gap-2"><ReceiptIcon className="w-4 h-4 text-primary" /> Karigar bill {receiptResult.making_charge_bill.bill_no}{receiptResult.making_charge_bill.reverse_charge && <Badge variant="warning">Reverse charge</Badge>}</div>
                   <div className="text-xs text-textSecondary">Taxable {formatCurrency(num(receiptResult.making_charges_tax.taxable_value))} at {receiptResult.making_charges_tax.rate}% (SAC 998892) — CGST {formatCurrency(num(receiptResult.making_charges_tax.cgst))}, SGST {formatCurrency(num(receiptResult.making_charges_tax.sgst))}, IGST {formatCurrency(num(receiptResult.making_charges_tax.igst))}.</div>
                   {receiptResult.capitalisation_journal_no && <div className="text-xs text-textSecondary">Making charges moved into stock by journal {receiptResult.capitalisation_journal_no}.</div>}
                 </div>
@@ -949,7 +949,7 @@ export default function JobWorkPage() {
                     {receiptLines.length === 0 ? <tr><td colSpan={6} className="px-3 py-6 text-center text-textSecondary">Nothing outstanding on this challan.</td></tr> :
                       receiptLines.map((l) => (
                         <tr key={l.challan_line_id} className="bg-background border-b border-border/40 last:border-0">
-                          <td className="px-3 py-2 text-white">{l.label}</td>
+                          <td className="px-3 py-2 text-textPrimary">{l.label}</td>
                           <td className="px-3 py-2 text-right font-mono">{fmtQty(l.outstanding)}</td>
                           <td className="px-3 py-2 w-28"><input type="number" step="0.001" min="0" value={l.quantity_received} onChange={(e) => updateReceiptLine(l.challan_line_id, { quantity_received: e.target.value })} className={cellInputCls} /></td>
                           <td className="px-3 py-2 w-28"><input type="number" step="0.001" min="0" value={l.quantity_wastage} onChange={(e) => updateReceiptLine(l.challan_line_id, { quantity_wastage: e.target.value })} className={cellInputCls} /></td>
@@ -965,12 +965,12 @@ export default function JobWorkPage() {
                 <input type="text" value={receiptRemarks} onChange={(e) => setReceiptRemarks(e.target.value)} className={inputCls} />
               </div>
               <div className="p-3 bg-surface border border-border rounded-lg text-xs text-textSecondary space-y-1">
-                <strong className="text-white block font-medium">What this posts:</strong>
+                <strong className="text-textPrimary block font-medium">What this posts:</strong>
                 <p>• Stock in at full cost: the metal at the rate it went out (wastage included) plus the making charges.</p>
                 <p>• Making charges &gt; 0: a purchase bill on the karigar (SAC 998892 at 5%, ITC; reverse charge when the karigar is unregistered) and a journal moving the charges from expense into stock. Needs a posting role.</p>
               </div>
               <div className="flex justify-end gap-3 pt-3 border-t border-border">
-                <button type="button" onClick={() => setReceiptFor(null)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">Cancel</button>
+                <button type="button" onClick={() => setReceiptFor(null)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">Cancel</button>
                 <button type="button" onClick={submitReceipt} disabled={receiving || receiptLines.length === 0} className="flex items-center gap-2 px-5 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50">
                   {receiving && <Loader2 className="w-4 h-4 animate-spin" />} Record receipt{num(makingCharges) > 0 ? ' & bill' : ''}
                 </button>
@@ -990,7 +990,7 @@ export default function JobWorkPage() {
             </div>
             <p className="text-xs text-textSecondary">If the goods have in fact come back, record a receipt instead. This cannot be undone from here; the invoice can be cancelled from Sales.</p>
             <div className="flex justify-end gap-3 pt-3 border-t border-border">
-              <button type="button" onClick={() => setDeemFor(null)} className="px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">Cancel</button>
+              <button type="button" onClick={() => setDeemFor(null)} className="px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">Cancel</button>
               <button type="button" onClick={confirmDeemSupply} disabled={deeming} className="flex items-center gap-2 px-5 py-2 bg-danger text-white font-semibold rounded-lg hover:bg-danger/90 disabled:opacity-50">
                 {deeming && <Loader2 className="w-4 h-4 animate-spin" />} <Gavel className="w-4 h-4" /> Deem supplied & invoice
               </button>
@@ -1007,12 +1007,12 @@ export default function JobWorkPage() {
           ) : (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                <div><div className="text-textSecondary">Karigar</div><div className="text-white">{detail.job_worker_name}</div><div className="text-textSecondary">{detail.job_worker_gstin || 'Unregistered'}</div></div>
-                <div><div className="text-textSecondary">Sent on</div><div className="text-white">{fmtDate(detail.challan_date)}</div></div>
-                <div><div className="text-textSecondary">Return due</div><div className={detail.is_overdue ? 'text-danger font-semibold' : 'text-white'}>{fmtDate(detail.return_due_date)}</div><div className="text-textSecondary">legal: {fmtDate(detail.legal_return_due_date)}</div></div>
+                <div><div className="text-textSecondary">Karigar</div><div className="text-textPrimary">{detail.job_worker_name}</div><div className="text-textSecondary">{detail.job_worker_gstin || 'Unregistered'}</div></div>
+                <div><div className="text-textSecondary">Sent on</div><div className="text-textPrimary">{fmtDate(detail.challan_date)}</div></div>
+                <div><div className="text-textSecondary">Return due</div><div className={detail.is_overdue ? 'text-danger font-semibold' : 'text-textPrimary'}>{fmtDate(detail.return_due_date)}</div><div className="text-textSecondary">legal: {fmtDate(detail.legal_return_due_date)}</div></div>
                 <div><div className="text-textSecondary">Status</div><Badge variant={statusVariant(detail.status, detail.is_overdue)}>{detail.is_overdue ? 'OVERDUE' : statusLabel(detail.status)}</Badge></div>
               </div>
-              {detail.nature_of_work && <div className="text-xs text-textSecondary">Nature of work: <span className="text-white">{detail.nature_of_work}</span></div>}
+              {detail.nature_of_work && <div className="text-xs text-textSecondary">Nature of work: <span className="text-textPrimary">{detail.nature_of_work}</span></div>}
               <div className="w-full glass rounded-xl overflow-x-auto border border-border">
                 <table className="w-full text-xs text-left">
                   <thead className="text-textSecondary uppercase bg-surface"><tr><th className="px-3 py-2">#</th><th className="px-3 py-2">Item</th><th className="px-3 py-2">HSN</th><th className="px-3 py-2 text-right">Sent</th><th className="px-3 py-2 text-right">Gross</th><th className="px-3 py-2 text-right">Net</th><th className="px-3 py-2 text-right">Purity</th><th className="px-3 py-2 text-right">Value</th><th className="px-3 py-2 text-right">Back</th><th className="px-3 py-2 text-right">Waste</th><th className="px-3 py-2 text-right">Out</th></tr></thead>
@@ -1020,16 +1020,16 @@ export default function JobWorkPage() {
                     {detail.lines.map((l) => (
                       <tr key={l.id} className="bg-background border-b border-border/40 last:border-0">
                         <td className="px-3 py-2">{l.sequence_no}</td>
-                        <td className="px-3 py-2 text-white">{l.material_code} — {l.description || l.material_name}</td>
+                        <td className="px-3 py-2 text-textPrimary">{l.material_code} — {l.description || l.material_name}</td>
                         <td className="px-3 py-2 font-mono">{l.hsn_code || '—'}</td>
                         <td className="px-3 py-2 text-right font-mono">{fmtQty(l.quantity_sent)} {l.uom || ''}</td>
                         <td className="px-3 py-2 text-right font-mono">{l.gross_weight != null ? num(l.gross_weight).toFixed(3) : '—'}</td>
                         <td className="px-3 py-2 text-right font-mono">{l.net_weight != null ? num(l.net_weight).toFixed(3) : '—'}</td>
                         <td className="px-3 py-2 text-right font-mono">{l.purity != null ? `${(num(l.purity) * 100).toFixed(1)}%` : '—'}</td>
                         <td className="px-3 py-2 text-right font-mono">{formatCurrency(num(l.taxable_value))}</td>
-                        <td className="px-3 py-2 text-right font-mono text-emerald-400">{fmtQty(l.quantity_received)}</td>
+                        <td className="px-3 py-2 text-right font-mono text-emerald-700">{fmtQty(l.quantity_received)}</td>
                         <td className="px-3 py-2 text-right font-mono text-textSecondary">{fmtQty(l.quantity_wastage)}</td>
-                        <td className="px-3 py-2 text-right font-mono text-white">{fmtQty(l.quantity_outstanding)}</td>
+                        <td className="px-3 py-2 text-right font-mono text-textPrimary">{fmtQty(l.quantity_outstanding)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1037,12 +1037,12 @@ export default function JobWorkPage() {
               </div>
               {detail.receipts.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-white mb-2">Receipts</h4>
+                  <h4 className="text-xs font-semibold text-textPrimary mb-2">Receipts</h4>
                   <div className="space-y-1">
                     {detail.receipts.map((r: any) => (
                       <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 bg-surface/60 border border-border rounded-lg px-3 py-2 text-xs">
-                        <span className="font-mono text-white">{r.receipt_no} <span className="text-textSecondary">{fmtDate(r.receipt_date)}</span></span>
-                        <span>back <span className="font-mono text-emerald-400">{fmtQty(r.quantity_received)}</span> · waste <span className="font-mono">{fmtQty(r.quantity_wastage)}</span> · stock value {formatCurrency(num(r.cost_amount))}</span>
+                        <span className="font-mono text-textPrimary">{r.receipt_no} <span className="text-textSecondary">{fmtDate(r.receipt_date)}</span></span>
+                        <span>back <span className="font-mono text-emerald-700">{fmtQty(r.quantity_received)}</span> · waste <span className="font-mono">{fmtQty(r.quantity_wastage)}</span> · stock value {formatCurrency(num(r.cost_amount))}</span>
                         <span>making {formatCurrency(num(r.making_charges))}{r.making_charge_bill_no && <span className="text-textSecondary"> · bill {r.making_charge_bill_no}</span>}</span>
                       </div>
                     ))}
@@ -1051,11 +1051,11 @@ export default function JobWorkPage() {
               )}
               {detail.remarks && <div className="text-xs text-textSecondary">Remarks: {detail.remarks}</div>}
               <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-border">
-                <button type="button" onClick={() => openStatement(detail.job_worker_id)} className="flex items-center gap-1 px-3 py-2 border border-border rounded-lg text-white hover:bg-white/5 text-xs"><User className="w-4 h-4" /> Karigar statement</button>
-                <button type="button" onClick={() => generateJobWorkChallanPDF(detail, 'download', detail.company || company)} className="flex items-center gap-1 px-3 py-2 border border-border rounded-lg text-white hover:bg-white/5 text-xs"><Download className="w-4 h-4" /> PDF</button>
+                <button type="button" onClick={() => openStatement(detail.job_worker_id)} className="flex items-center gap-1 px-3 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5 text-xs"><User className="w-4 h-4" /> Karigar statement</button>
+                <button type="button" onClick={() => generateJobWorkChallanPDF(detail, 'download', detail.company || company)} className="flex items-center gap-1 px-3 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5 text-xs"><Download className="w-4 h-4" /> PDF</button>
                 <button type="button" onClick={() => generateJobWorkChallanPDF(detail, 'print', detail.company || company)} className="flex items-center gap-1 px-3 py-2 bg-primary text-black font-semibold rounded-lg hover:bg-primary/90 text-xs"><Printer className="w-4 h-4" /> Print challan</button>
                 {(detail.status === 'Open' || detail.status === 'PartiallyReceived') && (
-                  <button type="button" onClick={() => { setDetail(null); openReceipt(detail); }} className="flex items-center gap-1 px-3 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold rounded-lg text-xs"><PackageCheck className="w-4 h-4" /> Receive</button>
+                  <button type="button" onClick={() => { setDetail(null); openReceipt(detail); }} className="flex items-center gap-1 px-3 py-2 bg-emerald-500/20 text-emerald-700 border border-emerald-500/40 font-semibold rounded-lg text-xs"><PackageCheck className="w-4 h-4" /> Receive</button>
                 )}
               </div>
             </div>
@@ -1069,26 +1069,26 @@ export default function JobWorkPage() {
           <div className="w-full max-w-2xl h-full bg-surface border-l border-border overflow-y-auto p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-playfair font-semibold text-white flex items-center gap-2"><Hammer className="w-5 h-5 text-primary" /> {statement.party?.name || 'Karigar statement'}</h2>
+                <h2 className="text-xl font-playfair font-semibold text-textPrimary flex items-center gap-2"><Hammer className="w-5 h-5 text-primary" /> {statement.party?.name || 'Karigar statement'}</h2>
                 {statement.party?.party_code && <p className="text-xs text-textSecondary">{statement.party.party_code} · {statement.party.party_type} · {statement.party.gstin || 'Unregistered'}{statement.party.karigar_skills ? ` · ${statement.party.karigar_skills}` : ''}</p>}
               </div>
-              <button type="button" onClick={() => setStatement(null)} className="text-textSecondary hover:text-white"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setStatement(null)} className="text-textSecondary hover:text-textPrimary"><X className="w-5 h-5" /></button>
             </div>
             {statementLoading || !statement.summary ? (
               <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Sent</div><div className="font-mono text-white text-lg">{fmtQty(statement.summary.quantity_sent)}</div></div>
-                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Received back</div><div className="font-mono text-emerald-400 text-lg">{fmtQty(statement.summary.quantity_received)}</div></div>
+                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Sent</div><div className="font-mono text-textPrimary text-lg">{fmtQty(statement.summary.quantity_sent)}</div></div>
+                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Received back</div><div className="font-mono text-emerald-700 text-lg">{fmtQty(statement.summary.quantity_received)}</div></div>
                   <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Wastage</div><div className="font-mono text-warning text-lg">{fmtQty(statement.summary.quantity_wastage)} <span className="text-xs">({statement.summary.wastage_pct}%)</span></div></div>
-                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Still with karigar</div><div className="font-mono text-white text-lg">{fmtQty(statement.summary.quantity_outstanding)}</div><div className="text-textSecondary">{statement.summary.overdue_challans} overdue · {formatCurrency(num(statement.summary.value_at_risk))} at risk</div></div>
-                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Making charges billed</div><div className="font-mono text-white text-lg">{formatCurrency(num(statement.summary.making_charges_billed))}</div><div className="text-textSecondary">bills incl. tax {formatCurrency(num(statement.summary.bills_total))}</div></div>
-                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Payable balance</div><div className={`font-mono text-lg ${num(statement.summary.payable_balance) > 0 ? 'text-danger' : 'text-emerald-400'}`}>{formatCurrency(num(statement.summary.payable_balance))}</div></div>
+                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Still with karigar</div><div className="font-mono text-textPrimary text-lg">{fmtQty(statement.summary.quantity_outstanding)}</div><div className="text-textSecondary">{statement.summary.overdue_challans} overdue · {formatCurrency(num(statement.summary.value_at_risk))} at risk</div></div>
+                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Making charges billed</div><div className="font-mono text-textPrimary text-lg">{formatCurrency(num(statement.summary.making_charges_billed))}</div><div className="text-textSecondary">bills incl. tax {formatCurrency(num(statement.summary.bills_total))}</div></div>
+                  <div className="bg-background rounded-lg p-3"><div className="text-textSecondary uppercase">Payable balance</div><div className={`font-mono text-lg ${num(statement.summary.payable_balance) > 0 ? 'text-danger' : 'text-emerald-700'}`}>{formatCurrency(num(statement.summary.payable_balance))}</div></div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-2">Challans out ({statement.challans.length})</h3>
+                  <h3 className="text-sm font-semibold text-textPrimary mb-2">Challans out ({statement.challans.length})</h3>
                   <div className="w-full glass rounded-xl overflow-x-auto border border-border">
                     <table className="w-full text-xs text-left">
                       <thead className="text-textSecondary uppercase bg-background"><tr><th className="px-3 py-2">Challan</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Due</th><th className="px-3 py-2 text-right">Sent</th><th className="px-3 py-2 text-right">Back</th><th className="px-3 py-2 text-right">Waste</th><th className="px-3 py-2 text-right">Out</th><th className="px-3 py-2">Status</th></tr></thead>
@@ -1096,13 +1096,13 @@ export default function JobWorkPage() {
                         {statement.challans.length === 0 ? <tr><td colSpan={8} className="px-3 py-4 text-center text-textSecondary">None</td></tr> :
                           statement.challans.map((c: any) => (
                             <tr key={c.id} className={`border-b border-border/40 last:border-0 ${c.is_overdue ? 'bg-danger/10' : ''}`}>
-                              <td className="px-3 py-2 font-mono text-white"><button type="button" className="hover:text-primary" onClick={() => openDetail(c)}>{c.challan_no}</button></td>
+                              <td className="px-3 py-2 font-mono text-textPrimary"><button type="button" className="hover:text-primary" onClick={() => openDetail(c)}>{c.challan_no}</button></td>
                               <td className="px-3 py-2 text-textSecondary">{fmtDate(c.challan_date)}</td>
                               <td className={`px-3 py-2 ${c.is_overdue ? 'text-danger' : 'text-textSecondary'}`}>{fmtDate(c.return_due_date)}</td>
                               <td className="px-3 py-2 text-right font-mono">{fmtQty(c.quantity_sent)}</td>
-                              <td className="px-3 py-2 text-right font-mono text-emerald-400">{fmtQty(c.quantity_received)}</td>
+                              <td className="px-3 py-2 text-right font-mono text-emerald-700">{fmtQty(c.quantity_received)}</td>
                               <td className="px-3 py-2 text-right font-mono">{fmtQty(c.quantity_wastage)}</td>
-                              <td className="px-3 py-2 text-right font-mono text-white">{fmtQty(c.quantity_outstanding)}</td>
+                              <td className="px-3 py-2 text-right font-mono text-textPrimary">{fmtQty(c.quantity_outstanding)}</td>
                               <td className="px-3 py-2"><Badge variant={statusVariant(c.status, c.is_overdue)}>{c.is_overdue ? 'OVERDUE' : statusLabel(c.status)}</Badge></td>
                             </tr>
                           ))}
@@ -1112,7 +1112,7 @@ export default function JobWorkPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-2">Receipts in ({statement.receipts.length})</h3>
+                  <h3 className="text-sm font-semibold text-textPrimary mb-2">Receipts in ({statement.receipts.length})</h3>
                   <div className="w-full glass rounded-xl overflow-x-auto border border-border">
                     <table className="w-full text-xs text-left">
                       <thead className="text-textSecondary uppercase bg-background"><tr><th className="px-3 py-2">Receipt</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Challan</th><th className="px-3 py-2 text-right">Back</th><th className="px-3 py-2 text-right">Waste</th><th className="px-3 py-2 text-right">Stock value</th><th className="px-3 py-2 text-right">Making</th><th className="px-3 py-2">Bill</th></tr></thead>
@@ -1120,10 +1120,10 @@ export default function JobWorkPage() {
                         {statement.receipts.length === 0 ? <tr><td colSpan={8} className="px-3 py-4 text-center text-textSecondary">None</td></tr> :
                           statement.receipts.map((r: any) => (
                             <tr key={r.id} className="border-b border-border/40 last:border-0">
-                              <td className="px-3 py-2 font-mono text-white">{r.receipt_no}</td>
+                              <td className="px-3 py-2 font-mono text-textPrimary">{r.receipt_no}</td>
                               <td className="px-3 py-2 text-textSecondary">{fmtDate(r.receipt_date)}</td>
                               <td className="px-3 py-2 font-mono">{r.challan_no}</td>
-                              <td className="px-3 py-2 text-right font-mono text-emerald-400">{fmtQty(r.quantity_received)}</td>
+                              <td className="px-3 py-2 text-right font-mono text-emerald-700">{fmtQty(r.quantity_received)}</td>
                               <td className="px-3 py-2 text-right font-mono">{fmtQty(r.quantity_wastage)}</td>
                               <td className="px-3 py-2 text-right font-mono">{formatCurrency(num(r.cost_amount))}</td>
                               <td className="px-3 py-2 text-right font-mono">{formatCurrency(num(r.making_charges))}</td>
@@ -1136,7 +1136,7 @@ export default function JobWorkPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-2">Making-charge bills ({statement.bills.length})</h3>
+                  <h3 className="text-sm font-semibold text-textPrimary mb-2">Making-charge bills ({statement.bills.length})</h3>
                   <div className="w-full glass rounded-xl overflow-x-auto border border-border">
                     <table className="w-full text-xs text-left">
                       <thead className="text-textSecondary uppercase bg-background"><tr><th className="px-3 py-2">Bill</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Karigar ref</th><th className="px-3 py-2 text-right">Taxable</th><th className="px-3 py-2 text-right">GST</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2">Status</th></tr></thead>
@@ -1144,12 +1144,12 @@ export default function JobWorkPage() {
                         {statement.bills.length === 0 ? <tr><td colSpan={7} className="px-3 py-4 text-center text-textSecondary">None</td></tr> :
                           statement.bills.map((b: any) => (
                             <tr key={b.id} className="border-b border-border/40 last:border-0">
-                              <td className="px-3 py-2 font-mono text-white">{b.bill_no}{b.is_rcm_applicable && <span className="ml-1 text-[10px] text-warning">RCM</span>}</td>
+                              <td className="px-3 py-2 font-mono text-textPrimary">{b.bill_no}{b.is_rcm_applicable && <span className="ml-1 text-[10px] text-warning">RCM</span>}</td>
                               <td className="px-3 py-2 text-textSecondary">{fmtDate(b.bill_date)}</td>
                               <td className="px-3 py-2">{b.vendor_inv_no || '—'}</td>
                               <td className="px-3 py-2 text-right font-mono">{formatCurrency(num(b.subtotal_value))}</td>
                               <td className="px-3 py-2 text-right font-mono">{formatCurrency(num(b.total_gst) + num(b.rcm_cgst) + num(b.rcm_sgst))}</td>
-                              <td className="px-3 py-2 text-right font-mono text-white">{formatCurrency(num(b.grand_total))}</td>
+                              <td className="px-3 py-2 text-right font-mono text-textPrimary">{formatCurrency(num(b.grand_total))}</td>
                               <td className="px-3 py-2"><Badge variant={b.status === 'Cancelled' ? 'danger' : 'default'}>{b.status || 'Posted'}</Badge></td>
                             </tr>
                           ))}

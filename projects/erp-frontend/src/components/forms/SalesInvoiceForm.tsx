@@ -312,7 +312,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
     : formatCurrency(n);
   const pan114bHint = !isExport && grandTotal * fx >= 200000 && !customerHasIdentity;
 
-  const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
+  const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
@@ -329,7 +329,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
             onClick={() => { setInvoiceType(value); if (value !== 'Export_Invoice') { setCurrency('INR'); setExchangeRate('1'); } }}
             className={`text-left p-3 rounded-lg border transition-colors ${invoiceType === value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'}`}
           >
-            <div className={`text-sm font-semibold ${invoiceType === value ? 'text-primary' : 'text-white'}`}>{label}</div>
+            <div className={`text-sm font-semibold ${invoiceType === value ? 'text-primary' : 'text-textPrimary'}`}>{label}</div>
             <div className="text-[11px] text-textSecondary">{hint}</div>
           </button>
         ))}
@@ -375,7 +375,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
             <select
               value={placeOfSupply}
               onChange={(e) => handlePlaceOfSupplyChange(e.target.value)}
-              className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none font-medium"
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none font-medium"
             >
               <option value="" disabled>Select state...</option>
               {GST_STATES.map(s => (
@@ -392,7 +392,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <label className="text-sm text-textSecondary font-medium">Payment Terms</label>
-          <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none font-medium">
+          <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none font-medium">
             <option value="Immediate">Due on receipt</option>
             <option value="Net 7">Net 7 days</option>
             <option value="Net 15">Net 15 days</option>
@@ -410,7 +410,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
             min={invoiceDay}
             disabled={paymentTerms !== 'Custom'}
             onChange={(e) => setCustomDueDate(e.target.value)}
-            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none disabled:opacity-70"
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none disabled:opacity-70"
           />
         </div>
         <div className="space-y-2">
@@ -421,7 +421,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
             value={salesperson}
             onChange={(e) => setSalesperson(e.target.value)}
             placeholder="Optional"
-            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none"
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none"
           />
         </div>
       </div>
@@ -431,7 +431,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
         <div className="p-4 bg-surface/50 border border-primary/30 rounded-xl space-y-4">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-white">Export particulars</span>
+            <span className="text-sm font-semibold text-textPrimary">Export particulars</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -481,8 +481,8 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
       {/* Items List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-lg font-playfair font-medium text-white">Line Items (Strict Master Selection)</h4>
-          <button type="button" onClick={addItem} className="text-xs text-primary flex items-center gap-1 hover:text-white transition-colors">
+          <h4 className="text-lg font-playfair font-medium text-textPrimary">Line Items (Strict Master Selection)</h4>
+          <button type="button" onClick={addItem} className="text-xs text-primary flex items-center gap-1 hover:text-textPrimary transition-colors">
             <Plus className="w-4 h-4" /> Add Item
           </button>
         </div>
@@ -508,7 +508,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
                     readOnly
                     disabled
                     value={item.hsn_code}
-                    className="w-full bg-white/5 border border-border rounded-lg px-2.5 py-2 text-xs text-textSecondary font-mono cursor-not-allowed h-[38px]"
+                    className="w-full bg-black/5 border border-border rounded-lg px-2.5 py-2 text-xs text-textSecondary font-mono cursor-not-allowed h-[38px]"
                   />
                 </div>
                 <div className="w-24 space-y-2">
@@ -518,7 +518,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
                     readOnly
                     disabled
                     value={taxFree ? '0%' : `${item.material_gst_rate}%`}
-                    className="w-full bg-white/5 border border-primary/30 rounded-lg px-2.5 py-2 text-xs text-primary font-mono font-bold cursor-not-allowed h-[38px]"
+                    className="w-full bg-black/5 border border-primary/30 rounded-lg px-2.5 py-2 text-xs text-primary font-mono font-bold cursor-not-allowed h-[38px]"
                   />
                 </div>
                 <div className="w-24 space-y-2">
@@ -527,7 +527,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
                     type="number" step="any" min="0"
                     value={item.quantity || ''}
                     onChange={(e) => updateItemField(item.id, 'quantity', Number(e.target.value))}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
                     placeholder="1"
                   />
                 </div>
@@ -537,7 +537,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
                     type="number"
                     value={item.materialValue || ''}
                     onChange={(e) => updateItemField(item.id, 'materialValue', Number(e.target.value))}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
                     placeholder="0.00"
                   />
                 </div>
@@ -547,7 +547,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
                     type="number"
                     value={item.makingCharges || ''}
                     onChange={(e) => updateItemField(item.id, 'makingCharges', Number(e.target.value))}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
                     placeholder="0.00"
                   />
                 </div>
@@ -559,7 +559,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
                     max={100}
                     value={item.discountPct || ''}
                     onChange={(e) => updateItemField(item.id, 'discountPct', Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-textPrimary focus:border-primary outline-none h-[38px]"
                     placeholder="0"
                   />
                 </div>
@@ -579,7 +579,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
                   <select
                     value={item.lot_id}
                     onChange={(e) => selectLot(item.id, e.target.value)}
-                    className="bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-white focus:border-primary outline-none font-mono"
+                    className="bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-textPrimary focus:border-primary outline-none font-mono"
                   >
                     <option value="">— untagged stock —</option>
                     {lots.map(l => (
@@ -601,7 +601,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
         <div className="flex items-center justify-between border-b border-border pb-2">
           <div className="flex items-center gap-2">
             <Calculator className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-white">
+            <span className="text-sm font-semibold text-textPrimary">
               {isExport ? 'Export invoice summary' : isBillOfSupply ? 'Bill of supply summary' : 'Multi-Rate Itemized GST Tax Breakdown'}
             </span>
           </div>
@@ -613,12 +613,12 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
         </div>
 
         <div className="space-y-2 text-xs text-textSecondary">
-          <div className="flex justify-between text-white font-medium">
+          <div className="flex justify-between text-textPrimary font-medium">
             <span>Total Material Value:</span>
             <span className="font-mono">{fmt(totalMaterialVal)}</span>
           </div>
           {totalMakingVal > 0 && (
-            <div className="flex justify-between text-white font-medium">
+            <div className="flex justify-between text-textPrimary font-medium">
               <span>Total Making Charges:</span>
               <span className="font-mono">{fmt(totalMakingVal)}</span>
             </div>
@@ -632,15 +632,15 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
               <div key={rateStr} className="p-2 bg-surface/50 border border-border/50 rounded-lg space-y-1">
                 <div className="flex justify-between text-textSecondary font-medium">
                   <span>Items @ {rate}% Tax Rate:</span>
-                  <span className="font-mono text-white">Taxable: {fmt(bucket.taxable)}</span>
+                  <span className="font-mono text-textPrimary">Taxable: {fmt(bucket.taxable)}</span>
                 </div>
                 {!isInterState ? (
-                  <div className="flex justify-between text-emerald-400 text-[11px]">
+                  <div className="flex justify-between text-emerald-700 text-[11px]">
                     <span>CGST ({halfRate}%): {fmt(bucket.taxAmount / 2)}</span>
                     <span>SGST ({halfRate}%): {fmt(bucket.taxAmount / 2)}</span>
                   </div>
                 ) : (
-                  <div className="flex justify-between text-amber-400 text-[11px]">
+                  <div className="flex justify-between text-amber-700 text-[11px]">
                     <span>IGST ({rate}%):</span>
                     <span>{fmt(bucket.taxAmount)}</span>
                   </div>
@@ -649,7 +649,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
             );
           })}
 
-          <div className="flex justify-between text-white border-t border-border pt-2 text-sm font-bold">
+          <div className="flex justify-between text-textPrimary border-t border-border pt-2 text-sm font-bold">
             <span>Grand Total Invoice Amount:</span>
             <span className="text-primary font-mono">{fmt(grandTotal)}</span>
           </div>
@@ -665,7 +665,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfil
       {/* Rule 114B: PAN on a Rs 2 lakh sale */}
       {pan114bHint && (
         <div className="p-3 border border-amber-500/40 bg-amber-500/10 rounded-lg space-y-2">
-          <p className="text-xs text-amber-300">
+          <p className="text-xs text-amber-700">
             Rule 114B: this invoice is Rs 2,00,000 or more and the customer has neither a PAN nor a GSTIN on record. Enter the buyer&apos;s PAN; it is stored on the party.
           </p>
           <input

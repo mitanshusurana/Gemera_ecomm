@@ -80,7 +80,7 @@ export default function Header() {
       {/* Actions */}
       <div className="flex items-center gap-6">
         <QuickCreate />
-        <button className="relative text-textSecondary hover:text-white transition-colors">
+        <button className="relative text-textSecondary hover:text-textPrimary transition-colors">
           <Bell className="w-5 h-5" />
           <span className="absolute -top-1 -right-1 w-2 h-2 bg-danger rounded-full border border-surface"></span>
         </button>
@@ -92,13 +92,13 @@ export default function Header() {
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             aria-label="Account menu"
-            className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-white/5 transition-colors"
+            className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-black/5 transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/50 text-primary text-xs font-semibold">
               {badge ?? <User className="w-4 h-4" />}
             </div>
             <div className="hidden md:block text-sm text-left">
-              <p className="text-white font-medium" title={user?.email ?? undefined}>
+              <p className="text-textPrimary font-medium" title={user?.email ?? undefined}>
                 {displayName}
               </p>
               <p className="text-xs text-textSecondary">{roleLabel(user?.role)}</p>
@@ -112,7 +112,7 @@ export default function Header() {
               className="absolute right-0 top-full mt-2 w-60 glass-card border border-border rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 z-50"
             >
               <div className="px-4 py-3 border-b border-border">
-                <p className="text-sm text-white font-medium truncate">{displayName}</p>
+                <p className="text-sm text-textPrimary font-medium truncate">{displayName}</p>
                 {user?.email && <p className="text-xs text-textSecondary truncate">{user.email}</p>}
                 <p className="text-xs text-primary mt-0.5">{roleLabel(user?.role)}</p>
               </div>
@@ -123,7 +123,7 @@ export default function Header() {
                   setMenuOpen(false);
                   setChangePasswordOpen(true);
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-textSecondary hover:bg-white/5 hover:text-white transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-textSecondary hover:bg-black/5 hover:text-textPrimary transition-colors"
               >
                 <KeyRound className="w-4 h-4" />
                 Change password
@@ -132,7 +132,7 @@ export default function Header() {
                 role="menuitem"
                 type="button"
                 onClick={() => logout()}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-textSecondary hover:bg-white/5 hover:text-white transition-colors border-t border-border"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-textSecondary hover:bg-black/5 hover:text-textPrimary transition-colors border-t border-border"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out

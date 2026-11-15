@@ -15,7 +15,7 @@ interface Props {
   onSend: (body: { to?: string; cc?: string; message?: string }) => Promise<unknown>;
 }
 
-const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none';
+const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none';
 
 /** Recipient, CC and a covering note for e-mailing one document. */
 export default function EmailDialog({ subject, defaultTo, onClose, onSend }: Props) {
@@ -65,7 +65,7 @@ export default function EmailDialog({ subject, defaultTo, onClose, onSend }: Pro
         {error && <p className="text-sm text-danger">{error}</p>}
         {sent && <p className="text-sm text-success">{sent}</p>}
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border text-white text-sm rounded-lg hover:bg-surface">{sent ? 'Close' : 'Cancel'}</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border text-textPrimary text-sm rounded-lg hover:bg-surface">{sent ? 'Close' : 'Cancel'}</button>
           {!sent && (
             <button type="button" disabled={sending} onClick={send} className="px-6 py-2 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-2">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send

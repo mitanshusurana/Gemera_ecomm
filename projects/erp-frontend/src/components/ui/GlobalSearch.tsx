@@ -89,7 +89,7 @@ export default function GlobalSearch() {
         onKeyDown={onInputKey}
         placeholder="Search parties, items, invoices, vouchers  ( / )"
         aria-label="Search"
-        className="w-full bg-background border border-border rounded-full pl-10 pr-9 py-2 text-sm text-white placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors"
+        className="w-full bg-background border border-border rounded-full pl-10 pr-9 py-2 text-sm text-textPrimary placeholder:text-textSecondary focus:outline-none focus:border-primary transition-colors"
       />
       {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-textSecondary animate-spin" />}
 
@@ -107,11 +107,11 @@ export default function GlobalSearch() {
                   type="button"
                   onMouseEnter={() => setActive(i)}
                   onClick={() => go(hit)}
-                  className={`w-full flex items-start gap-3 px-4 py-2 text-left transition-colors ${i === active ? 'bg-white/5' : ''}`}
+                  className={`w-full flex items-start gap-3 px-4 py-2 text-left transition-colors ${i === active ? 'bg-black/5' : ''}`}
                 >
                   <span className="text-primary mt-0.5">{KIND_ICON[hit.kind]}</span>
                   <span className="min-w-0">
-                    <span className="block text-sm text-white truncate">{hit.title}</span>
+                    <span className="block text-sm text-textPrimary truncate">{hit.title}</span>
                     <span className="block text-xs text-textSecondary truncate">{hit.subtitle}</span>
                   </span>
                 </button>

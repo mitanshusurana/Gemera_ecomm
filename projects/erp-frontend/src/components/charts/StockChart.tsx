@@ -20,28 +20,28 @@ export default function StockChart({ data = [] }: StockChartProps) {
           data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#2A2A35" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E5" vertical={false} />
           <XAxis 
             dataKey="name" 
-            stroke="#9CA3AF" 
+            stroke="#6E6E73" 
             fontSize={12} 
             tickLine={false}
             axisLine={false}
           />
           <YAxis 
-            stroke="#9CA3AF" 
+            stroke="#6E6E73" 
             fontSize={12}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => `${Number(value).toLocaleString()} gm`}
           />
           <Tooltip 
-            cursor={{ fill: '#2A2A35', opacity: 0.4 }}
-            contentStyle={{ backgroundColor: '#141418', borderColor: '#2A2A35', borderRadius: '8px' }}
-            itemStyle={{ color: '#F5F5F5' }}
+            cursor={{ fill: '#E0E0E5', opacity: 0.4 }}
+            contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E0E0E5', borderRadius: '8px' }}
+            itemStyle={{ color: '#1D1D1F' }}
             formatter={(value: number) => [`${Number(value).toLocaleString()} gm / ct`, 'Stock Balance']}
           />
-          <Bar dataKey="weight" fill="#D4A843" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="weight" fill="#2a78d6" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

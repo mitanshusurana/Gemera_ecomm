@@ -213,7 +213,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
     }
   };
 
-  const inputCls = 'w-full bg-background border border-border rounded-md px-3 py-2 text-white text-sm outline-none focus:border-primary';
+  const inputCls = 'w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary text-sm outline-none focus:border-primary';
 
   return (
     <Modal isOpen={!!line} onClose={onClose} title={`Book ${entryType} from statement`}>
@@ -226,7 +226,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
                 {formatCurrency(amount)} {isCredit ? 'Cr (money in)' : 'Dr (money out)'}
               </span>
             </div>
-            <div className="text-white mt-1 break-words">{line.description}</div>
+            <div className="text-textPrimary mt-1 break-words">{line.description}</div>
             <div className="text-textSecondary text-xs mt-1">
               {isCredit ? 'Dr Bank / Cr contra' : 'Dr contra / Cr Bank'} · dated {line.txn_date}
             </div>
@@ -238,7 +238,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
-                className={`px-3 py-1.5 rounded-md text-sm border ${mode === m ? 'bg-primary text-black border-primary font-semibold' : 'border-border text-textSecondary hover:text-white'}`}
+                className={`px-3 py-1.5 rounded-md text-sm border ${mode === m ? 'bg-primary text-black border-primary font-semibold' : 'border-border text-textSecondary hover:text-textPrimary'}`}
               >
                 {m === 'party' ? (isCredit ? 'From a customer' : 'To a supplier') : 'Other ledger account'}
               </button>
@@ -269,7 +269,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
               <label className="block text-xs text-textSecondary mb-1">Ledger account</label>
               {creatingAccount ? (
                 <div className="space-y-2 rounded-md border border-border p-3">
-                  <div className="text-sm font-semibold text-white">New ledger account</div>
+                  <div className="text-sm font-semibold text-textPrimary">New ledger account</div>
                   <input className={inputCls} placeholder="Account name, e.g. Rent, Bank Charges, Suspense" value={newAccName} onChange={(e) => { setNewAccName(e.target.value); setNewAccCode(suggestCode(e.target.value, newAccGroup)); }} />
                   <select className={inputCls} value={newAccGroup} onChange={(e) => { setNewAccGroup(e.target.value); setNewAccCode(suggestCode(newAccName, e.target.value)); }}>
                     {(groups.length ? groups : [{ code: 'ADMIN_EXP', name: 'Admin & Overhead', nature: 'Expenses' }]).map((g) => (
@@ -279,7 +279,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
                   <input className={inputCls} placeholder="Code" value={newAccCode} onChange={(e) => setNewAccCode(e.target.value)} />
                   <p className="text-xs text-textSecondary">Rent, salaries, electricity → Admin &amp; Overhead. Bank charges, interest paid → Finance Charges. Unidentified receipts or payments → a Suspense account under Current Assets, to be moved once known.</p>
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setCreatingAccount(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-white">Back</button>
+                    <button type="button" onClick={() => setCreatingAccount(false)} className="px-3 py-1.5 rounded-md border border-border text-xs text-textSecondary hover:text-textPrimary">Back</button>
                     <button type="button" onClick={saveAccount} disabled={savingAccount} className="px-3 py-1.5 rounded-md bg-primary text-black text-xs font-semibold disabled:opacity-60">{savingAccount ? 'Saving…' : 'Create and select'}</button>
                   </div>
                 </div>
@@ -322,7 +322,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
           {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border border-border text-textSecondary hover:text-white text-sm">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border border-border text-textSecondary hover:text-textPrimary text-sm">Cancel</button>
             <button type="button" onClick={submit} disabled={submitting} className="px-4 py-2 rounded-md bg-primary text-black font-semibold text-sm disabled:opacity-60 flex items-center gap-2">
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
               Post {entryType} and match

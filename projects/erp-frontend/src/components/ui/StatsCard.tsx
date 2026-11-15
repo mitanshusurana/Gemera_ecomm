@@ -18,13 +18,10 @@ export default function StatsCard({ title, value, icon, trend, trendLabel, subti
   
   return (
     <div className={cn("glass-card p-6 relative overflow-hidden group", className)}>
-      {/* Subtle background glow */}
-      <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-500"></div>
-      
       <div className="flex items-start justify-between gap-3 relative z-10">
         <div className="space-y-4 min-w-0">
           <p className="text-sm font-medium text-textSecondary uppercase tracking-wider">{title}</p>
-          <h4 className="text-3xl font-playfair font-semibold text-white">{value}</h4>
+          <h4 className="text-3xl font-playfair font-semibold text-textPrimary">{value}</h4>
 
           {subtitle && (
             <p className="text-xs text-textSecondary">{subtitle}</p>
@@ -44,7 +41,7 @@ export default function StatsCard({ title, value, icon, trend, trendLabel, subti
           )}
         </div>
         
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(212,168,67,0.15)] group-hover:scale-110 transition-transform duration-300">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform duration-300">
           {icon}
         </div>
       </div>

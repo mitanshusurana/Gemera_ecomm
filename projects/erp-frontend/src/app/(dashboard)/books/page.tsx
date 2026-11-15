@@ -93,17 +93,17 @@ export default function BooksPage() {
       <tbody className="divide-y divide-border">
         {loading ? (<tr><td colSpan={7} className="py-12 text-center text-textSecondary">Loading...</td></tr>) : !book ? (<tr><td colSpan={7} className="py-12 text-center text-textSecondary">No entries</td></tr>) : (
           <>
-            <tr className="bg-white/5 font-mono">
+            <tr className="bg-black/5 font-mono">
               <td className="py-3 text-textSecondary text-xs">{book.from_date || '—'}</td>
-              <td colSpan={3} className="py-3 font-medium text-white">Opening balance b/f {book.accounts?.length ? `(${book.accounts.map((a: any) => a.code).join(', ')})` : ''}</td>
-              <td className="py-3 text-right text-white">{money(book.opening_debit)}</td>
+              <td colSpan={3} className="py-3 font-medium text-textPrimary">Opening balance b/f {book.accounts?.length ? `(${book.accounts.map((a: any) => a.code).join(', ')})` : ''}</td>
+              <td className="py-3 text-right text-textPrimary">{money(book.opening_debit)}</td>
               <td className="py-3 text-right text-success">{money(book.opening_credit)}</td>
               <td className="py-3 text-right font-semibold text-primary">{formatBalance(book.opening_balance, book.opening_side)}</td>
             </tr>
             {entries.map((row, i) => (
-              <tr key={row.line_id || i} onClick={() => setVoucherId(row.journal_entry_id)} className="hover:bg-white/5 cursor-pointer" title="Open voucher">
-                <td className="py-3 text-white font-mono text-xs whitespace-nowrap">{row.date || row.entry_date}</td>
-                <td className="py-3 font-medium text-white">
+              <tr key={row.line_id || i} onClick={() => setVoucherId(row.journal_entry_id)} className="hover:bg-black/5 cursor-pointer" title="Open voucher">
+                <td className="py-3 text-textPrimary font-mono text-xs whitespace-nowrap">{row.date || row.entry_date}</td>
+                <td className="py-3 font-medium text-textPrimary">
                   {row.particulars || row.entry_narration || row.narration}
                   {row.reference_no && <span className="block text-xs text-textSecondary font-mono">{row.reference_no}</span>}
                 </td>
@@ -111,13 +111,13 @@ export default function BooksPage() {
                 <td className="py-3 text-primary font-mono text-xs">{row.voucher_no || row.entry_no}</td>
                 <td className="py-3 text-right text-success font-mono">{money(row.debit)}</td>
                 <td className="py-3 text-right text-danger font-mono">{money(row.credit)}</td>
-                <td className={`py-3 text-right font-medium font-mono ${row.running_side === 'Cr' ? 'text-rose-300' : 'text-white'}`}>{formatBalance(row.running_balance ?? row.balance, row.running_side)}</td>
+                <td className={`py-3 text-right font-medium font-mono ${row.running_side === 'Cr' ? 'text-rose-700' : 'text-textPrimary'}`}>{formatBalance(row.running_balance ?? row.balance, row.running_side)}</td>
               </tr>
             ))}
-            <tr className="bg-white/5 font-bold border-t-2 border-border">
-              <td colSpan={4} className="py-3 text-right text-white">Period totals / Closing Balance c/f</td>
-              <td className="py-3 text-right text-white font-mono">{formatCurrency(Number(book.total_debit || 0))}</td>
-              <td className="py-3 text-right text-white font-mono">{formatCurrency(Number(book.total_credit || 0))}</td>
+            <tr className="bg-black/5 font-bold border-t-2 border-border">
+              <td colSpan={4} className="py-3 text-right text-textPrimary">Period totals / Closing Balance c/f</td>
+              <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(Number(book.total_debit || 0))}</td>
+              <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(Number(book.total_credit || 0))}</td>
               <td className="py-3 text-right text-primary font-mono">{formatBalance(book.closing_balance, book.closing_side)}</td>
             </tr>
           </>
@@ -130,10 +130,10 @@ export default function BooksPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Books of Accounts</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Books of Accounts</h1>
           <p className="text-textSecondary mt-1">Day Book, Cash Book and Bank Books. Click any line to open its voucher.</p>
         </div>
-        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-white hover:bg-white/5">
+        <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-textPrimary hover:bg-black/5">
           <Printer className="w-4 h-4" />
           Print
         </button>
@@ -147,7 +147,7 @@ export default function BooksPage() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`pb-4 border-b-2 font-medium text-sm transition-colors -mb-[17px] ${
-                  activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-textSecondary hover:text-white'
+                  activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-textSecondary hover:text-textPrimary'
                 }`}
               >
                 {tab}
@@ -158,7 +158,7 @@ export default function BooksPage() {
           {activeTab === 'Day Book' && (
             <div className="flex items-center gap-4">
               <div className="flex items-center bg-background border border-border rounded-md">
-                <input type="date" value={dayBookDate} onChange={(e) => setDayBookDate(e.target.value)} className="bg-background border-x border-border px-2 py-1 text-sm text-white" />
+                <input type="date" value={dayBookDate} onChange={(e) => setDayBookDate(e.target.value)} className="bg-background border-x border-border px-2 py-1 text-sm text-textPrimary" />
               </div>
             </div>
           )}
@@ -166,16 +166,16 @@ export default function BooksPage() {
           {(activeTab === 'Cash Book' || activeTab === 'Bank Book') && (
             <div className="flex flex-wrap items-center gap-3">
               {activeTab === 'Bank Book' && (
-                <select className="bg-background border border-border rounded-md px-3 py-1.5 text-white text-sm" value={selectedAccount} onChange={(e) => setSelectedAccount(e.target.value)}>
+                <select className="bg-background border border-border rounded-md px-3 py-1.5 text-textPrimary text-sm" value={selectedAccount} onChange={(e) => setSelectedAccount(e.target.value)}>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.code})</option>)}
                 </select>
               )}
               <div className="flex items-center gap-2">
-                <input type="date" className="bg-background border border-border rounded-md px-2 py-1.5 text-white text-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                <input type="date" className="bg-background border border-border rounded-md px-2 py-1.5 text-textPrimary text-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
                 <span className="text-textSecondary">to</span>
-                <input type="date" className="bg-background border border-border rounded-md px-2 py-1.5 text-white text-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                <input type="date" className="bg-background border border-border rounded-md px-2 py-1.5 text-textPrimary text-sm" value={toDate} onChange={(e) => setToDate(e.target.value)} />
               </div>
-              <button onClick={() => activeFiscalYearRange().then((r) => { setFromDate(r.from); setToDate(r.to); })} className="px-3 py-1.5 border border-border rounded-md text-textSecondary hover:text-white hover:border-primary text-xs">
+              <button onClick={() => activeFiscalYearRange().then((r) => { setFromDate(r.from); setToDate(r.to); })} className="px-3 py-1.5 border border-border rounded-md text-textSecondary hover:text-textPrimary hover:border-primary text-xs">
                 Active fiscal year
               </button>
             </div>
@@ -196,14 +196,14 @@ export default function BooksPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {loading ? (<tr><td colSpan={5} className="py-12 text-center text-textSecondary">Loading...</td></tr>) : entries.length === 0 ? (<tr><td colSpan={5} className="py-12 text-center text-textSecondary">No vouchers posted on {dayBookDate}</td></tr>) : entries.map((row, i) => (
-                  <tr key={row.id || i} className="hover:bg-white/5 cursor-pointer align-top" onClick={() => setVoucherId(row.id)} title="Open voucher">
+                  <tr key={row.id || i} className="hover:bg-black/5 cursor-pointer align-top" onClick={() => setVoucherId(row.id)} title="Open voucher">
                     <td className="py-3 text-textSecondary">{row.voucher_type || row.entry_type}</td>
                     <td className="py-3 text-primary font-mono text-xs">
                       {row.voucher_no || row.entry_no}
                       {row.reference_no && <span className="block text-[10px] text-textSecondary">{row.reference_no}</span>}
                     </td>
                     <td className="py-3">
-                      <div className="font-medium text-white">{row.narration}</div>
+                      <div className="font-medium text-textPrimary">{row.narration}</div>
                       <div className="mt-1 space-y-0.5 text-xs text-textSecondary font-mono">
                         {(row.lines || []).map((l: any) => (
                           <div key={l.id} className="flex justify-between gap-4">
@@ -213,12 +213,12 @@ export default function BooksPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="py-3 text-right text-white font-mono">{formatCurrency(Number(row.total_debit || 0))}</td>
-                    <td className="py-3 text-right text-white font-mono">{formatCurrency(Number(row.total_credit || 0))}</td>
+                    <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(Number(row.total_debit || 0))}</td>
+                    <td className="py-3 text-right text-textPrimary font-mono">{formatCurrency(Number(row.total_credit || 0))}</td>
                   </tr>
                 ))}
-                <tr className="bg-white/5 font-bold border-t-2 border-border">
-                  <td colSpan={3} className="py-3 text-right text-white">Total ({entries.length} voucher{entries.length === 1 ? '' : 's'})</td>
+                <tr className="bg-black/5 font-bold border-t-2 border-border">
+                  <td colSpan={3} className="py-3 text-right text-textPrimary">Total ({entries.length} voucher{entries.length === 1 ? '' : 's'})</td>
                   <td className="py-3 text-right text-primary font-mono">{formatCurrency(entries.reduce((acc, r) => acc + (Number(r.total_debit) || 0), 0))}</td>
                   <td className="py-3 text-right text-primary font-mono">{formatCurrency(entries.reduce((acc, r) => acc + (Number(r.total_credit) || 0), 0))}</td>
                 </tr>

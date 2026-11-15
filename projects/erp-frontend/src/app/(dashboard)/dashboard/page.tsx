@@ -55,9 +55,9 @@ export default function DashboardPage() {
   const transactionColumns = [
     { header: 'Voucher No', accessorKey: 'id', cell: (item: any) => <span className="font-mono font-medium text-primary">{item.id}</span> },
     { header: 'Voucher Type', accessorKey: 'type', cell: (item: any) => <span className="text-textSecondary text-xs px-2 py-0.5 rounded bg-surface border border-border">{item.type}</span> },
-    { header: 'Particulars', accessorKey: 'entity', cell: (item: any) => <span className="text-white text-sm line-clamp-1">{item.entity}</span> },
+    { header: 'Particulars', accessorKey: 'entity', cell: (item: any) => <span className="text-textPrimary text-sm line-clamp-1">{item.entity}</span> },
     { header: 'Date', accessorKey: 'date', cell: (item: any) => <span className="text-textSecondary text-xs">{new Date(item.date).toLocaleDateString('en-IN')}</span> },
-    { header: 'Amount', accessorKey: 'amount', cell: (item: any) => <span className="font-medium text-white">{formatCurrency(item.amount)}</span> },
+    { header: 'Amount', accessorKey: 'amount', cell: (item: any) => <span className="font-medium text-textPrimary">{formatCurrency(item.amount)}</span> },
     { header: 'Status', accessorKey: 'status', cell: (item: any) => (
       <Badge variant={item.status === 'Posted' || item.status === 'Completed' ? 'success' : item.status === 'Draft' ? 'warning' : 'info'}>
         {item.status || 'Posted'}
@@ -69,12 +69,12 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Executive Dashboard</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Executive Dashboard</h1>
           <p className="text-textSecondary mt-1">Real-time enterprise metrics, live inventory valuation, and GST compliance overview.</p>
         </div>
         <button
           onClick={() => { setRefreshKey((k) => k + 1); fetchDashboardData(); }}
-          className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg text-textSecondary hover:text-white hover:border-primary transition-colors text-sm"
+          className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg text-textSecondary hover:text-textPrimary hover:border-primary transition-colors text-sm"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh Live Data
@@ -116,14 +116,14 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-playfair font-semibold text-white">Revenue vs Expenses (Live)</h3>
+            <h3 className="text-lg font-playfair font-semibold text-textPrimary">Revenue vs Expenses (Live)</h3>
             <span className="text-xs text-textSecondary">Monthly Trend</span>
           </div>
           <RevenueChart data={revenueChartData} />
         </div>
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-playfair font-semibold text-white">Current Stock Balances (Live)</h3>
+            <h3 className="text-lg font-playfair font-semibold text-textPrimary">Current Stock Balances (Live)</h3>
             <span className="text-xs text-textSecondary">Weight by Category</span>
           </div>
           <StockChart data={stockChartData} />
@@ -134,14 +134,14 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 glass-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-playfair font-semibold text-white">Recent Journal Transactions</h3>
+            <h3 className="text-lg font-playfair font-semibold text-textPrimary">Recent Journal Transactions</h3>
             <span className="text-xs text-textSecondary">Double-Entry Ledger [S44AA]</span>
           </div>
           {loading ? (
              <div className="animate-pulse space-y-4">
-                <div className="h-8 bg-white/10 rounded w-full"></div>
-                <div className="h-8 bg-white/10 rounded w-full"></div>
-                <div className="h-8 bg-white/10 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
              </div>
           ) : transactions.length > 0 ? (
             <DataTable columns={transactionColumns} data={transactions} />
@@ -152,7 +152,7 @@ export default function DashboardPage() {
         
         <div className="glass-card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-playfair font-semibold text-white">Statutory & Inventory Alerts</h3>
+            <h3 className="text-lg font-playfair font-semibold text-textPrimary">Statutory & Inventory Alerts</h3>
             <Badge variant="warning">{alerts.length} Active</Badge>
           </div>
           
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                     <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                   )}
                   <div>
-                    <p className="text-sm font-medium text-white">{al.title}</p>
+                    <p className="text-sm font-medium text-textPrimary">{al.title}</p>
                     <p className="text-xs text-textSecondary mt-1">{al.desc}</p>
                   </div>
                 </div>

@@ -77,7 +77,7 @@ export default function ContraVoucherPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Contra Entry</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Contra Entry</h1>
           <p className="text-textSecondary mt-1">Auto-generated Voucher Number (Contra)</p>
         </div>
       </div>
@@ -86,13 +86,13 @@ export default function ContraVoucherPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm text-textSecondary mb-1">Date</label>
-            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="date" className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div></div>
           <div>
             <label className="block text-sm text-textSecondary mb-1">Transfer From (Cr)</label>
             <select 
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
               value={transferFrom}
               onChange={(e) => setTransferFrom(e.target.value)}
               disabled={isLoadingBanks}
@@ -111,7 +111,7 @@ export default function ContraVoucherPage() {
           <div>
             <label className="block text-sm text-textSecondary mb-1">Transfer To (Dr)</label>
             <select 
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-white h-[38px]"
+              className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary h-[38px]"
               value={transferTo}
               onChange={(e) => setTransferTo(e.target.value)}
               disabled={isLoadingBanks}
@@ -131,25 +131,25 @@ export default function ContraVoucherPage() {
             <label className="block text-sm text-textSecondary mb-1">Amount</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary">₹</span>
-              <input type="number" className="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-md text-white h-[38px]" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <input type="number" className="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-md text-textPrimary h-[38px]" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm text-textSecondary mb-1">Narration</label>
-            <textarea className="w-full bg-background border border-border rounded-md px-3 py-2 text-white" rows={2} placeholder="Cash deposited to bank..." value={narration} onChange={(e) => setNarration(e.target.value)}></textarea>
+            <textarea className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary" rows={2} placeholder="Cash deposited to bank..." value={narration} onChange={(e) => setNarration(e.target.value)}></textarea>
           </div>
         </div>
 
         <div className="mt-8 p-4 bg-background border border-border rounded-lg">
-          <h3 className="text-sm font-medium text-white mb-3">Journal Preview</h3>
+          <h3 className="text-sm font-medium text-textPrimary mb-3">Journal Preview</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-success">Dr: Transfer To Account</span>
-              <span className="text-white font-medium">{amount ? formatCurrency(Number(amount)) : '₹0.00'}</span>
+              <span className="text-textPrimary font-medium">{amount ? formatCurrency(Number(amount)) : '₹0.00'}</span>
             </div>
             <div className="flex justify-between pl-4">
               <span className="text-danger">Cr: Transfer From Account</span>
-              <span className="text-white font-medium">{amount ? formatCurrency(Number(amount)) : '₹0.00'}</span>
+              <span className="text-textPrimary font-medium">{amount ? formatCurrency(Number(amount)) : '₹0.00'}</span>
             </div>
           </div>
         </div>
@@ -158,7 +158,7 @@ export default function ContraVoucherPage() {
           <button 
             type="button"
             onClick={() => { setAmount(''); setNarration(''); setError(''); }}
-            className="px-4 py-2 border border-border rounded-md text-white hover:bg-white/5"
+            className="px-4 py-2 border border-border rounded-md text-textPrimary hover:bg-black/5"
           >
             Reset
           </button>

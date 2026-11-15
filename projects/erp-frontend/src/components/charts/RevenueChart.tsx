@@ -21,36 +21,36 @@ export default function RevenueChart({ data = [] }: RevenueChartProps) {
         >
           <defs>
             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#D4A843" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#D4A843" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#2a78d6" stopOpacity={0.18}/>
+              <stop offset="95%" stopColor="#2a78d6" stopOpacity={0}/>
             </linearGradient>
             <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#eb6834" stopOpacity={0.18}/>
+              <stop offset="95%" stopColor="#eb6834" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2A2A35" vertical={false} />
+          <CartesianGrid strokeDasharray="0" stroke="#E0E0E5" vertical={false} />
           <XAxis 
             dataKey="name" 
-            stroke="#9CA3AF" 
+            stroke="#6E6E73" 
             fontSize={12} 
             tickLine={false}
             axisLine={false}
           />
           <YAxis 
-            stroke="#9CA3AF" 
+            stroke="#6E6E73" 
             fontSize={12}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => value >= 100000 ? `₹${(value / 100000).toFixed(1)}L` : `₹${value}`}
           />
           <Tooltip 
-            contentStyle={{ backgroundColor: '#141418', borderColor: '#2A2A35', borderRadius: '8px' }}
-            itemStyle={{ color: '#F5F5F5' }}
+            contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E0E0E5', borderRadius: '8px' }}
+            itemStyle={{ color: '#1D1D1F' }}
             formatter={(value: number, name: string) => [formatCurrency(value), name === 'revenue' ? 'Revenue' : 'Expenses']}
           />
-          <Area type="monotone" dataKey="revenue" name="revenue" stroke="#D4A843" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-          <Area type="monotone" dataKey="expenses" name="expenses" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenses)" />
+          <Area type="monotone" dataKey="revenue" name="revenue" stroke="#2a78d6" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+          <Area type="monotone" dataKey="expenses" name="expenses" stroke="#eb6834" strokeWidth={2} fillOpacity={1} fill="url(#colorExpenses)" />
         </AreaChart>
       </ResponsiveContainer>
     </div>

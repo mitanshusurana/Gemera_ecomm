@@ -25,26 +25,26 @@ Status: **Done**, **Partial** (usable, gaps listed), **Missing**, **N/A**.
 |---|---|---|
 | Items (goods and services, rates, HSN/SAC, tax) | Stock Items with category, HSN, GST rate, service items with an expense ledger | Done |
 | Inventory tracking | Stock ledger by weight and purity, gemstone lots, locations and transfers | Done (beyond Zoho Books) |
-| Price lists | none | Missing (batch 6) |
+| Price lists | none | N/A: a jewellery price is weight times the day's rate plus making, not a list price |
 
 ## Sales
 
 | Zoho Books | ERP | Status |
 |---|---|---|
 | Customers | Parties (trade name, GSTIN lookup, KYC, credit limit and days) | Done |
-| Quotes | none | Missing (batch 3) |
-| Sales orders | none | Missing (batch 3) |
+| Quotes | Quotes & Orders: numbered QT/, accept or decline, becomes a sales order or an invoice, print, e-mail | Done (batch 3) |
+| Sales orders | Quotes & Orders: numbered SO/, becomes an invoice | Done (batch 3) |
 | Delivery challans | Memos (Jangad): goods out on approval, returned or invoiced | Done (trade equivalent) |
 | Invoices | Tax invoice, export invoice, bill of supply; e-invoice and e-way bill slots; TCS | Done |
 | Payment terms and due date on the invoice | Terms (due on receipt, Net 7 to 60, custom) and stored due date | Done (batch 2) |
-| Email the invoice ("Save and Send") | none | Missing (batch 5) |
-| Payment reminders | none | Missing (batch 5) |
-| Recurring invoices | none | Missing (batch 4) |
+| Email the invoice | Envelope on the sales register: the invoice's figures in the mail body, logged | Done (batch 5); no PDF attachment yet |
+| Payment reminders | Outstanding: overdue customers listed, reminders sent to those ticked, log of what went | Done (batch 5); sent by a person, not on a timer |
+| Recurring invoices | Recurring: a profile raises the invoice from a saved quote or order when due | Done (batch 4); raised by a person because an invoice relieves stock |
 | Payments received | Receipt voucher, applied to an invoice or on account | Done |
 | Credit notes | Credit note voucher, e-invoice for credit notes | Done |
-| Online payment link on the invoice | none (Razorpay is on the storefront only) | Missing (batch 6) |
-| Discounts at line or invoice level | Line discount columns exist in the schema; the form does not offer them | Partial (batch 3) |
-| Salesperson on the invoice | none | Missing (batch 6) |
+| Online payment link on the invoice | none (Razorpay is on the storefront only) | N/A for now: needs the payment gateway's KYC |
+| Discounts at line or invoice level | Discount per line on the invoice, quote and order | Done (batch 3); no single invoice-level discount |
+| Salesperson on the invoice | Field on the invoice, Sales by Salesperson report | Done (batch 6) |
 
 ## Purchases
 
@@ -52,11 +52,11 @@ Status: **Done**, **Partial** (usable, gaps listed), **Missing**, **N/A**.
 |---|---|---|
 | Vendors | Parties (suppliers, karigars), TDS flags | Done |
 | Expenses | `/expenses`: expense ledger, paid through cash or bank, vendor, reference; reversal | Done (batch 2); no GST credit on an expense by design |
-| Recurring expenses | none | Missing (batch 4) |
-| Purchase orders | none | Missing (batch 3) |
+| Recurring expenses | Recurring: posts itself on the due date, catches up missed periods | Done (batch 4) |
+| Purchase orders | Quotes & Orders: numbered PO/, becomes a purchase bill | Done (batch 3) |
 | Bills | Purchase register: weight and purity, RCM on old gold, ITC register, TDS sections, amendment by reverse and repost, bill scan | Done |
 | Bills from GSTR-2B | Create a bill from a 2B row, prefilled | Done (beyond Zoho Books) |
-| Recurring bills | "Repeat" on a bill copies it to a new one | Partial (batch 4 adds schedules) |
+| Recurring bills | Recurring: the bill opens as a Repeat when due; "Repeat" on any bill | Done (batch 4) |
 | Payments made | Payment voucher, applied to a bill or on account | Done |
 | Vendor credits | Debit note voucher | Done |
 
@@ -76,7 +76,7 @@ Status: **Done**, **Partial** (usable, gaps listed), **Missing**, **N/A**.
 | Categorise a statement line into a transaction | Book a receipt or payment from the line | Done |
 | Reconciliation report | Bank reconciliation statement | Done |
 | Automatic bank feeds | none | N/A: needs a paid aggregator; statement import covers it |
-| Bank rules (auto-categorise) | none | Missing (batch 6) |
+| Bank rules | Banking: text in a statement line suggests the ledger or party when booking it | Done (batch 6); suggests, does not post |
 
 ## Filing and compliance
 
@@ -87,7 +87,7 @@ Status: **Done**, **Partial** (usable, gaps listed), **Missing**, **N/A**.
 | Direct filing from the app | none | N/A for now: needs a GSP subscription and a monthly OTP |
 | e-Invoice, e-Way bill | Provider slot built, disabled until a GSP is chosen | Partial (configuration, not code) |
 | TDS and TCS | 194Q automatic, 194I/J/C/H on a bill, 206C(1H) on sales, register | Done |
-| GSTR-9 annual summary | none | Missing (batch 6) |
+| GSTR-9 annual summary | Reports: GST Annual Summary by month from the output, ITC and RCM registers | Done (batch 6); working figures, not the return file |
 
 ## Accountant
 
@@ -95,8 +95,8 @@ Status: **Done**, **Partial** (usable, gaps listed), **Missing**, **N/A**.
 |---|---|---|
 | Manual journals | Journal voucher | Done |
 | Chart of accounts | Groups, ledgers, opening balances, rename, move, deactivate | Done |
-| Transaction locking | Fiscal year lock and year-end closing | Partial: no lock up to an arbitrary date (batch 6) |
-| Budgets | none | Missing (batch 6) |
+| Transaction locking | Fiscal year lock, year-end closing, and a lock date for the books | Done (batch 6) |
+| Budgets | Budgets: per income and expense ledger for the year, against actuals | Done (batch 6) |
 | Bulk update of accounts on transactions | none | N/A: postings are immutable here; a wrong entry is reversed |
 | Currency adjustments | none | N/A: rupee books; export invoices carry their own rate |
 
@@ -112,7 +112,7 @@ Zoho Books lists about 90. Those that matter here:
 | Sales by customer / item, purchases by vendor / item, expenses by category | Reports (analysis) | Done (PR 160) |
 | Tax summary, TDS/TCS summaries | GST tax register, TDS/TCS register | Done |
 | Audit trail, activity log | Audit trail (hash-chained) | Done |
-| Cash flow statement | Dashboard chart only | Partial (batch 6: the statement) |
+| Cash flow statement | Reports: Cash Flow Statement (direct method), reconciles to cash and bank | Done (batch 6) |
 | Payments received / made lists, invoice and bill detail lists | Registers and day book | Partial |
 | Schedule III formats, business ratios, cash flow forecast | none | Missing (batch 6, low priority) |
 | Stock register, production account | Reports | Done (beyond Zoho Books) |
@@ -124,7 +124,7 @@ Zoho Books lists about 90. Those that matter here:
 | Documents inbox | A scan can be attached to a purchase bill | Partial |
 | Users and roles | Seven roles, user management | Done |
 | Invoice templates | One GST tax-invoice print layout | Partial |
-| Automation (workflow rules, schedules) | none | Missing; recurring documents and reminders (batches 4, 5) are the useful part |
+| Automation (workflow rules, schedules) | Recurring documents; reminders on demand | Partial: no general rule engine |
 | Customer portal | none | N/A for now |
 
 ## What the ERP has that Zoho Books does not
@@ -136,12 +136,26 @@ bridge that records web orders under the shop's invoice number.
 ## Batches
 
 1. **Done (PR 160):** money-first dashboard, analysis reports, global search, quick create.
-2. **This batch:** Expenses, payment terms and due date on sales invoices.
-3. Quotes, sales orders and purchase orders, each converting to the next document; discounts on the invoice form.
-4. Recurring invoices, bills and expenses (a profile and a daily job).
-5. Email: send the invoice, send a statement, overdue reminders (uses SMTP, as the store API does).
-6. The rest: cash flow statement, GSTR-9 summary, lock up to a date, budgets, bank rules, price lists, salesperson,
-   payment link on the invoice.
+2. **Done (PR 161):** Expenses, payment terms and due date on sales invoices.
+3. **Done:** quotes, sales orders and purchase orders, each converting to the next document; discount per line.
+4. **Done:** recurring expenses, bills and invoices.
+5. **Done:** e-mail an invoice, a quote or order, a statement; overdue reminders; mail log.
+6. **Done:** cash flow statement, annual GST summary, lock date, budgets, bank rules, salesperson.
 
-Deployment is held until batches 3 to 5 are merged. Batch 6 is a list of smaller items; the owner decides which of
-them gate the deployment.
+The ERP also moved from a dark to a light theme with batch 6.
+
+## Still open
+
+- A PDF attached to the e-mailed invoice (the mail carries the figures in its body).
+- Reminders on a timer. Today a person sends them, after reading the list.
+- A discount on the whole invoice, as distinct from per line.
+- Direct GST filing, e-invoice and live bank feeds: each needs a paid outside provider.
+- A payment link on the invoice: needs the gateway's KYC.
+- Schedule III formats, business ratios, a customer portal, a general workflow engine.
+
+## How the batches were checked
+
+Unit tests in `projects/erp-backend/tests`, and a scripted run through the API against PostgreSQL 16 with every
+migration applied: expenses and their reversal, quotes through to orders, a purchase bill, sales invoices with terms,
+recurring rent caught up over four months, e-mails delivered to a local SMTP sink, a lock date refusing a back-dated
+entry, budgets, bank rules, and the cash flow statement closing on the same cash figure as the dashboard.

@@ -19,7 +19,7 @@ import { formatCurrency } from '@/lib/utils';
 
 const KIND_LABEL: Record<string, string> = { Expense: 'Expense', PurchaseBill: 'Purchase bill', SalesInvoice: 'Sales invoice' };
 const UNIT: Record<string, string> = { Weekly: 'week', Monthly: 'month', Quarterly: 'quarter', Yearly: 'year' };
-const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none';
+const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-textPrimary focus:border-primary outline-none';
 
 export default function RecurringPage() {
   const router = useRouter();
@@ -138,18 +138,18 @@ export default function RecurringPage() {
     }
   };
 
-  const btn = 'px-2 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs flex items-center gap-1 disabled:opacity-50';
+  const btn = 'px-2 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary rounded text-xs flex items-center gap-1 disabled:opacity-50';
   const columns = [
     { header: 'Profile', accessorKey: 'name', cell: (p: RecurringProfile) => (
       <span>
-        <span className="block font-medium text-white">{p.name}</span>
+        <span className="block font-medium text-textPrimary">{p.name}</span>
         <span className="block text-xs text-textSecondary">{KIND_LABEL[p.kind]} · every {p.every_n > 1 ? `${p.every_n} ` : ''}{UNIT[p.frequency] || p.frequency}{p.every_n > 1 ? 's' : ''}{p.auto_post ? ' · posts itself' : ''}</span>
       </span>
     ) },
-    { header: 'Amount (₹)', accessorKey: 'amount', cell: (p: RecurringProfile) => <span className="font-mono text-white">{formatCurrency(p.amount)}</span> },
+    { header: 'Amount (₹)', accessorKey: 'amount', cell: (p: RecurringProfile) => <span className="font-mono text-textPrimary">{formatCurrency(p.amount)}</span> },
     { header: 'Next Due', accessorKey: 'next_run_date', cell: (p: RecurringProfile) => (
       <span>
-        <span className={`block text-sm ${p.is_due ? 'text-warning font-semibold' : 'text-white'}`}>{p.status === 'Ended' ? '—' : new Date(p.next_run_date).toLocaleDateString('en-IN')}</span>
+        <span className={`block text-sm ${p.is_due ? 'text-warning font-semibold' : 'text-textPrimary'}`}>{p.status === 'Ended' ? '—' : new Date(p.next_run_date).toLocaleDateString('en-IN')}</span>
         <span className="block text-xs text-textSecondary">{p.last_document_no ? `last: ${p.last_document_no}` : `${p.periods_done} raised`}</span>
       </span>
     ) },
@@ -160,7 +160,7 @@ export default function RecurringPage() {
       </span>
     ) },
     { header: 'Actions', accessorKey: 'id', cell: (p: RecurringProfile) => (
-      <span className="flex flex-wrap items-center gap-1.5">
+      <span className="flex flex-nowrap items-center gap-1.5 whitespace-nowrap">
         {p.is_due && !p.auto_post && <button className={btn} disabled={busy === p.id} onClick={() => raise(p)}><ArrowRight className="w-3.5 h-3.5" /> {p.kind === 'Expense' ? 'Record' : 'Raise'}</button>}
         {p.status === 'Active' && <button className={btn} disabled={busy === p.id} onClick={() => act(p, 'skip')} title="Skip this occurrence"><SkipForward className="w-3.5 h-3.5" /></button>}
         {p.status === 'Active' && <button className={btn} disabled={busy === p.id} onClick={() => act(p, 'Paused')} title="Pause"><Pause className="w-3.5 h-3.5" /></button>}
@@ -174,14 +174,14 @@ export default function RecurringPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Recurring</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Recurring</h1>
           <p className="text-textSecondary mt-1">Rent, standing bills and retainer invoices on a schedule. Expenses can post themselves; bills and invoices open ready to save.</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={runDue} className="flex items-center gap-2 px-3 py-2.5 bg-surface border border-border text-white text-sm rounded-lg hover:border-primary" title="Post the expenses that are due now instead of waiting for the next automatic run">
+          <button onClick={runDue} className="flex items-center gap-2 px-3 py-2.5 bg-surface border border-border text-textPrimary text-sm rounded-lg hover:border-primary whitespace-nowrap" title="Post the expenses that are due now instead of waiting for the next automatic run">
             <RefreshCw className="w-4 h-4" /> Run due now
           </button>
-          <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90">
+          <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 whitespace-nowrap">
             <Plus className="w-4 h-4" /> New Profile
           </button>
         </div>
@@ -203,7 +203,7 @@ export default function RecurringPage() {
           <div className="grid grid-cols-3 gap-2">
             {(['Expense', 'PurchaseBill', 'SalesInvoice'] as const).map((k) => (
               <button key={k} type="button" onClick={() => setKind(k)}
-                className={`px-3 py-2 rounded-lg border text-sm ${kind === k ? 'border-primary bg-primary/10 text-primary' : 'border-border text-textSecondary hover:text-white'}`}>
+                className={`px-3 py-2 rounded-lg border text-sm ${kind === k ? 'border-primary bg-primary/10 text-primary' : 'border-border text-textSecondary hover:text-textPrimary'}`}>
                 {KIND_LABEL[k]}
               </button>
             ))}
@@ -245,7 +245,7 @@ export default function RecurringPage() {
                 <label className="text-xs text-textSecondary">Notes on each expense</label>
                 <input type="text" maxLength={300} value={notes} onChange={(e) => setNotes(e.target.value)} className={fieldCls} />
               </div>
-              <label className="flex items-center gap-2 text-sm text-white cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-textPrimary cursor-pointer">
                 <input type="checkbox" checked={autoPost} onChange={(e) => setAutoPost(e.target.checked)} className="w-4 h-4" />
                 Post it automatically on the due date
               </label>
@@ -296,7 +296,7 @@ export default function RecurringPage() {
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-3 pt-2 border-t border-border">
-            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 border border-border text-white text-sm rounded-lg hover:bg-surface">Cancel</button>
+            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 border border-border text-textPrimary text-sm rounded-lg hover:bg-surface">Cancel</button>
             <button type="button" disabled={saving} onClick={save} className="px-6 py-2 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">{saving ? 'Saving...' : 'Save Profile'}</button>
           </div>
         </div>

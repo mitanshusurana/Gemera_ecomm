@@ -47,8 +47,8 @@ const amounts = (l: Line) => {
 };
 
 const statusVariant = (s: string) => (s === 'Open' ? 'info' : s === 'Accepted' ? 'success' : s === 'Converted' ? 'success' : s === 'Declined' ? 'danger' : 'default');
-const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
-const cellCls = 'w-full bg-background border border-border rounded px-2 py-1.5 text-xs text-white focus:border-primary outline-none';
+const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
+const cellCls = 'w-full bg-background border border-border rounded px-2 py-1.5 text-xs text-textPrimary focus:border-primary outline-none';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -163,22 +163,22 @@ export default function OrdersPage() {
   };
 
   const canConvert = (d: OrderDocument) => d.status === 'Open' || d.status === 'Accepted';
-  const btn = 'px-2 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs flex items-center gap-1 disabled:opacity-50';
+  const btn = 'px-2 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary rounded text-xs flex items-center gap-1 disabled:opacity-50';
 
   const columns = [
     { header: 'Date / No', accessorKey: 'doc_date', cell: (d: OrderDocument) => (
       <span>
-        <span className="block text-white text-sm">{new Date(d.doc_date).toLocaleDateString('en-IN')}</span>
+        <span className="block text-textPrimary text-sm">{new Date(d.doc_date).toLocaleDateString('en-IN')}</span>
         <button className="font-mono text-primary hover:underline text-[11px]" onClick={() => view(d)}>{d.doc_no}</button>
       </span>
     ) },
     { header: meta.party === 'Customer' ? 'Customer' : 'Vendor', accessorKey: 'party_name', cell: (d: OrderDocument) => (
       <span>
-        <span className="block font-medium text-white">{d.party_name}</span>
+        <span className="block font-medium text-textPrimary">{d.party_name}</span>
         <span className="block text-xs text-textSecondary">{[d.reference_no, d.valid_until ? `${meta.dateLabel.toLowerCase()} ${new Date(d.valid_until).toLocaleDateString('en-IN')}` : null].filter(Boolean).join(' · ') || '—'}</span>
       </span>
     ) },
-    { header: 'Amount (₹)', accessorKey: 'grand_total', cell: (d: OrderDocument) => <span className="font-mono font-semibold text-white">{formatCurrency(d.grand_total)}</span> },
+    { header: 'Amount (₹)', accessorKey: 'grand_total', cell: (d: OrderDocument) => <span className="font-mono font-semibold text-textPrimary">{formatCurrency(d.grand_total)}</span> },
     { header: 'Status', accessorKey: 'status', cell: (d: OrderDocument) => (
       <span>
         <Badge variant={statusVariant(d.status) as any}>{d.status}</Badge>
@@ -186,7 +186,7 @@ export default function OrdersPage() {
       </span>
     ) },
     { header: 'Actions', accessorKey: 'id', cell: (d: OrderDocument) => (
-      <span className="flex flex-wrap items-center gap-1.5">
+      <span className="flex flex-nowrap items-center gap-1.5 whitespace-nowrap">
         <button className={btn} onClick={() => view(d)} title="View / print"><Eye className="w-3.5 h-3.5" /></button>
         {d.status === 'Open' && docType !== 'PurchaseOrder' && (
           <button className={btn} disabled={busy === d.id} onClick={() => act(d, 'Accepted')} title="Customer accepted"><Check className="w-3.5 h-3.5" /> Accept</button>
@@ -213,10 +213,10 @@ export default function OrdersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Quotes &amp; Orders</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Quotes &amp; Orders</h1>
           <p className="text-textSecondary mt-1">A price quoted, an order taken, an order placed. Nothing posts to the books until the invoice or bill is raised.</p>
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90">
+        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 whitespace-nowrap">
           <Plus className="w-4 h-4" /> New {meta.one}
         </button>
       </div>
@@ -225,7 +225,7 @@ export default function OrdersPage() {
         <div className="flex gap-1">
           {TYPES.map((t) => (
             <button key={t.id} onClick={() => setDocType(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${docType === t.id ? 'bg-primary text-black' : 'text-textSecondary hover:text-white'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${docType === t.id ? 'bg-primary text-black' : 'text-textSecondary hover:text-textPrimary'}`}>
               {t.label}
             </button>
           ))}
@@ -263,8 +263,8 @@ export default function OrdersPage() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-white">Lines</span>
-              <button type="button" onClick={() => setLines([...lines, newLine(Date.now(), isSales)])} className="text-xs text-primary flex items-center gap-1 hover:text-white"><Plus className="w-3.5 h-3.5" /> Add line</button>
+              <span className="text-sm font-semibold text-textPrimary">Lines</span>
+              <button type="button" onClick={() => setLines([...lines, newLine(Date.now(), isSales)])} className="text-xs text-primary flex items-center gap-1 hover:text-textPrimary"><Plus className="w-3.5 h-3.5" /> Add line</button>
             </div>
             {lines.map((l, i) => (
               <div key={l.id} className="p-3 bg-surface/50 border border-border rounded-lg space-y-2">
@@ -285,7 +285,7 @@ export default function OrdersPage() {
                     </label>
                   ))}
                 </div>
-                <div className="text-right text-[11px] text-textSecondary">Line total <span className="text-white font-mono">{formatCurrency(amounts(l).total)}</span></div>
+                <div className="text-right text-[11px] text-textSecondary">Line total <span className="text-textPrimary font-mono">{formatCurrency(amounts(l).total)}</span></div>
               </div>
             ))}
           </div>
@@ -309,11 +309,11 @@ export default function OrdersPage() {
             <div className="flex justify-between text-textSecondary"><span>Value</span><span className="font-mono">{formatCurrency(totals.gross)}</span></div>
             {totals.discount > 0 && <div className="flex justify-between text-textSecondary"><span>Discount</span><span className="font-mono">− {formatCurrency(totals.discount)}</span></div>}
             <div className="flex justify-between text-textSecondary"><span>GST</span><span className="font-mono">{formatCurrency(totals.gst)}</span></div>
-            <div className="flex justify-between text-white font-semibold border-t border-border pt-1"><span>Total</span><span className="font-mono text-primary">{formatCurrency(totals.total)}</span></div>
+            <div className="flex justify-between text-textPrimary font-semibold border-t border-border pt-1"><span>Total</span><span className="font-mono text-primary">{formatCurrency(totals.total)}</span></div>
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-3 pt-2 border-t border-border">
-            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 border border-border text-white text-sm rounded-lg hover:bg-surface">Cancel</button>
+            <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 border border-border text-textPrimary text-sm rounded-lg hover:bg-surface">Cancel</button>
             <button type="button" disabled={saving} onClick={save} className="px-6 py-2 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">{saving ? 'Saving...' : `Save ${meta.one}`}</button>
           </div>
         </div>
@@ -329,7 +329,7 @@ export default function OrdersPage() {
       {/* View / print */}
       {viewing && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto p-6 print:static print:bg-white print:p-0" onClick={() => setViewing(null)}>
-          <div className="bg-white text-black rounded-xl w-full max-w-3xl p-8 print:rounded-none print:max-w-none" onClick={(e) => e.stopPropagation()}>
+          <div className="printable-area bg-white text-black rounded-xl w-full max-w-3xl p-8 print:rounded-none print:max-w-none" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between border-b border-gray-300 pb-4">
               <div>
                 <h2 className="text-xl font-bold">{company?.name || 'Caratloop'}</h2>

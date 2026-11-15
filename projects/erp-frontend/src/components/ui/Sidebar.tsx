@@ -118,7 +118,7 @@ export default function Sidebar() {
           <path d="M2 9h20" />
           <path d="M12 21V9" />
         </svg>
-        <span className="text-2xl font-playfair font-bold text-white tracking-wide">Caratloop</span>
+        <span className="text-2xl font-playfair font-bold text-textPrimary tracking-wide">Caratloop</span>
       </div>
 
       {/* Navigation */}
@@ -142,7 +142,7 @@ export default function Sidebar() {
                           "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
                           isActive
                             ? "bg-primary/10 text-primary border-l-2 border-primary"
-                            : "text-textSecondary hover:bg-white/5 hover:text-white"
+                            : "text-textSecondary hover:bg-black/5 hover:text-textPrimary"
                         )}
                       >
                         <item.icon className={cn(
@@ -150,7 +150,7 @@ export default function Sidebar() {
                           isActive ? "text-primary" : "text-textSecondary group-hover:text-primary"
                         )} />
                         <span className={cn(
-                          isActive ? "" : "group-hover:text-white transition-colors"
+                          isActive ? "" : "group-hover:text-textPrimary transition-colors"
                         )}>
                           {item.name}
                         </span>
@@ -167,7 +167,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-border mt-auto">
         <div className="text-xs text-textSecondary text-center">
-          <p className="font-semibold text-white">{company?.legal_name || company?.name || company?.trade_name || '—'}</p>
+          <p className="font-semibold text-textPrimary">{company?.legal_name || company?.name || company?.trade_name || '—'}</p>
           <p>FY {financialYearLabel()}</p>
         </div>
       </div>

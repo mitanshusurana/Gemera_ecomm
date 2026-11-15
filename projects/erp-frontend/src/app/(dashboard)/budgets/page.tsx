@@ -59,7 +59,7 @@ export default function BudgetsPage() {
     return (
       <div className="glass-card p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-playfair font-semibold text-white">{nature}</h3>
+          <h3 className="text-lg font-playfair font-semibold text-textPrimary">{nature}</h3>
           {t && <span className="text-xs text-textSecondary">Budget {formatCurrency(t.budget)} · actual {formatCurrency(t.actual)}{t.used_pct != null ? ` · ${t.used_pct}%` : ''}</span>}
         </div>
         <div className="overflow-x-auto">
@@ -81,20 +81,20 @@ export default function BudgetsPage() {
                 return (
                   <tr key={r.account_id}>
                     <td className="py-2.5 pr-3">
-                      <span className="block text-white">{r.name}</span>
+                      <span className="block text-textPrimary">{r.name}</span>
                       <span className="block text-xs text-textSecondary">{r.code} · {r.group_name}</span>
                     </td>
                     <td className="py-2.5 px-3">
                       <input type="number" min="0" step="1" value={value} placeholder="—"
                         onChange={(e) => setEdits({ ...edits, [r.account_id]: e.target.value })}
-                        className="w-full bg-surface border border-border rounded px-2 py-1.5 text-right font-mono text-white focus:border-primary outline-none" />
+                        className="w-full bg-surface border border-border rounded px-2 py-1.5 text-right font-mono text-textPrimary focus:border-primary outline-none" />
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-white">{formatCurrency(r.actual)}</td>
+                    <td className="py-2.5 px-3 text-right font-mono text-textPrimary">{formatCurrency(r.actual)}</td>
                     <td className="py-2.5 px-3">
                       {r.budget > 0 ? (
                         <span className="flex items-center gap-2">
-                          <span className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                            <span className="block h-1.5 rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: over ? '#d95926' : '#3987e5' }} />
+                          <span className="flex-1 h-1.5 rounded-full bg-black/5 overflow-hidden">
+                            <span className="block h-1.5 rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: over ? '#eb6834' : '#2a78d6' }} />
                           </span>
                           <span className="text-xs text-textSecondary w-12 text-right">{pct}%</span>
                         </span>
@@ -118,13 +118,13 @@ export default function BudgetsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Budgets</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Budgets</h1>
           <p className="text-textSecondary mt-1">
             {meta ? `Financial year ${meta.year_label} · actuals up to ${new Date(meta.upto).toLocaleDateString('en-IN')}` : 'Budget against actuals for the financial year.'}
           </p>
         </div>
         <button onClick={save} disabled={saving || changed.length === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+          className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 whitespace-nowrap disabled:opacity-50">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save {changed.length > 0 ? `${changed.length} change${changed.length === 1 ? '' : 's'}` : 'Budgets'}
         </button>
       </div>

@@ -43,7 +43,7 @@ const num = (v: any): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none disabled:opacity-50';
+const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none disabled:opacity-50';
 const labelCls = 'text-xs text-textSecondary';
 
 // GST state codes, the same table the API derives the state from.
@@ -79,12 +79,12 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Settings</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Settings</h1>
           <p className="text-textSecondary mt-1">The legal person on every document, the accounts it banks with, and how the API is configured.</p>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <Link href="/users" className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-textSecondary hover:text-white hover:border-primary/40"><Users className="w-4 h-4" /> Users</Link>
-          <Link href="/fiscal-years" className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-textSecondary hover:text-white hover:border-primary/40"><Calendar className="w-4 h-4" /> Fiscal years</Link>
+          <Link href="/users" className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary hover:border-primary/40"><Users className="w-4 h-4" /> Users</Link>
+          <Link href="/fiscal-years" className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary hover:border-primary/40"><Calendar className="w-4 h-4" /> Fiscal years</Link>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export default function SettingsPage() {
             type="button"
             data-tab={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.id ? 'border-primary text-primary' : 'border-transparent text-textSecondary hover:text-white'}`}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.id ? 'border-primary text-primary' : 'border-transparent text-textSecondary hover:text-textPrimary'}`}
           >
             <t.icon className="w-4 h-4" /> {t.name}
           </button>
@@ -234,11 +234,11 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
 
   return (
     <form onSubmit={save} className="space-y-6">
-      {error && <div className="glass-card p-3 text-sm text-red-400 whitespace-pre-line">{error}</div>}
+      {error && <div className="glass-card p-3 text-sm text-red-600 whitespace-pre-line">{error}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="glass-card p-5 space-y-4 lg:col-span-2">
-          <h2 className="text-sm font-semibold text-white">Identity</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">Identity</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field k="legal_name" label="Legal name *" maxLength={200} hint="As registered; printed as the seller on every tax invoice." />
             <Field k="name" label="Short name *" maxLength={200} />
@@ -248,8 +248,8 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
         </section>
 
         <section className="glass-card p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2"><ImageIcon className="w-4 h-4 text-primary" /> Logo preview</h2>
-          <div className="h-32 rounded-lg border border-dashed border-border flex items-center justify-center bg-white/5 overflow-hidden">
+          <h2 className="text-sm font-semibold text-textPrimary flex items-center gap-2"><ImageIcon className="w-4 h-4 text-primary" /> Logo preview</h2>
+          <div className="h-32 rounded-lg border border-dashed border-border flex items-center justify-center bg-black/5 overflow-hidden">
             {form.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={form.logo_url} alt="Company logo" className="max-h-28 max-w-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.2'; }} />
@@ -261,7 +261,7 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
       </div>
 
       <section className="glass-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-white">Registrations</h2>
+        <h2 className="text-sm font-semibold text-textPrimary">Registrations</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="space-y-1">
             <label className={labelCls}>GSTIN</label>
@@ -274,7 +274,7 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
             <label className={labelCls}>PAN</label>
             <input value={form.pan} disabled={!canEdit} onChange={(e) => set('pan', e.target.value)} className={`${fieldCls} font-mono`} maxLength={10} />
             {panMismatch ? (
-              <p className="text-[11px] text-red-400 flex items-center gap-2 flex-wrap">
+              <p className="text-[11px] text-red-600 flex items-center gap-2 flex-wrap">
                 Differs from the PAN inside the GSTIN ({gstinPan}).
                 {canEdit && <button type="button" onClick={() => set('pan', gstinPan!)} className="underline text-primary">Use {gstinPan}</button>}
               </p>
@@ -289,7 +289,7 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
       </section>
 
       <section className="glass-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-white">Registered address</h2>
+        <h2 className="text-sm font-semibold text-textPrimary">Registered address</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="sm:col-span-2 lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field k="address_line1" label="Address line 1" maxLength={255} />
@@ -310,7 +310,7 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="glass-card p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-white">Contact</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">Contact</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field k="phone" label="Phone" maxLength={15} />
             <Field k="email" label="Email" type="email" maxLength={255} />
@@ -319,7 +319,7 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
         </section>
 
         <section className="glass-card p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-white">Books</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">Books</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className={labelCls}>Financial year starts in</label>
@@ -335,7 +335,7 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
 
       <section className="glass-card p-5 space-y-4">
         <div>
-          <h2 className="text-sm font-semibold text-white">Remittance details (fallback)</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">Remittance details (fallback)</h2>
           <p className="text-[11px] text-textSecondary mt-1">
             Printed on the tax invoice only while no account under <button type="button" className="underline text-primary" onClick={() => (document.querySelector('[data-tab=bank]') as HTMLButtonElement | null)?.click()}>Bank &amp; Cash accounts</button> is flagged default with its number and IFSC filled in.
             {company?.bank?.source === 'account' && <span className="text-success"> Currently printing from the default bank account {company.bank.account_name ? `“${company.bank.account_name}”` : ''}.</span>}
@@ -354,7 +354,7 @@ function CompanyTab({ canEdit }: { canEdit: boolean }) {
       {canEdit && (
         <div className="flex items-center justify-end gap-3">
           {dirty && <span className="text-xs text-textSecondary">{Object.keys(changes).length} field(s) changed</span>}
-          <button type="button" disabled={!dirty || saving} onClick={() => company && setForm(toForm(company))} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white disabled:opacity-40">Discard</button>
+          <button type="button" disabled={!dirty || saving} onClick={() => company && setForm(toForm(company))} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary disabled:opacity-40">Discard</button>
           <button type="submit" disabled={!dirty || saving || panMismatch} className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg disabled:opacity-50">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save company
           </button>
@@ -406,10 +406,10 @@ function BankAccountsTab({ canEdit }: { canEdit: boolean }) {
   const cash = accounts.filter((a) => a.account_type === 'Cash');
 
   const Row = ({ a }: { a: BankAccount }) => (
-    <tr className={`hover:bg-white/5 ${!a.is_active ? 'opacity-50' : ''}`}>
+    <tr className={`hover:bg-black/5 ${!a.is_active ? 'opacity-50' : ''}`}>
       <td className="py-2.5 font-mono text-primary text-xs">{a.code}</td>
       <td className="py-2.5">
-        <div className="text-white text-sm flex items-center gap-1.5">
+        <div className="text-textPrimary text-sm flex items-center gap-1.5">
           {a.name}
           {a.is_default_bank && <span title="Default: printed on invoices, used for online settlements"><Star className="w-3.5 h-3.5 fill-primary text-primary" /></span>}
         </div>
@@ -419,7 +419,7 @@ function BankAccountsTab({ canEdit }: { canEdit: boolean }) {
         {a.account_type === 'Bank' ? (
           a.has_details ? (
             <>
-              <div className="text-white">{a.bank_name || '—'}{a.bank_branch ? ` · ${a.bank_branch}` : ''}</div>
+              <div className="text-textPrimary">{a.bank_name || '—'}{a.bank_branch ? ` · ${a.bank_branch}` : ''}</div>
               <div className="font-mono">{a.bank_account_no} · {a.bank_ifsc}</div>
               {a.upi_id && <div className="font-mono">{a.upi_id}</div>}
             </>
@@ -428,7 +428,7 @@ function BankAccountsTab({ canEdit }: { canEdit: boolean }) {
           )
         ) : '—'}
       </td>
-      <td className={`py-2.5 text-right font-mono text-sm ${num(a.balance_signed) < 0 ? 'text-red-400' : 'text-white'}`}>
+      <td className={`py-2.5 text-right font-mono text-sm ${num(a.balance_signed) < 0 ? 'text-red-600' : 'text-textPrimary'}`}>
         {formatCurrency(num(a.balance_abs))} <span className="text-[10px] text-textSecondary">{a.balance_side}</span>
         <div className="text-[10px] text-textSecondary">{a.posting_count} posting(s)</div>
       </td>
@@ -436,7 +436,7 @@ function BankAccountsTab({ canEdit }: { canEdit: boolean }) {
       {canEdit && (
         <td className="py-2.5 text-right whitespace-nowrap">
           <div className="inline-flex items-center gap-1">
-            <button type="button" onClick={() => setEditing(a)} className="p-1.5 text-textSecondary hover:text-white" title="Edit"><Edit className="w-4 h-4" /></button>
+            <button type="button" onClick={() => setEditing(a)} className="p-1.5 text-textSecondary hover:text-textPrimary" title="Edit"><Edit className="w-4 h-4" /></button>
             {a.account_type === 'Bank' && a.is_active && !a.is_default_bank && (
               <button type="button" disabled={busyId === a.id} onClick={() => act(a.id, () => bankAccountsApi.makeDefault(a.id), `${a.name} is now the default bank`)} className="p-1.5 text-textSecondary hover:text-primary disabled:opacity-40" title="Make default"><Star className="w-4 h-4" /></button>
             )}
@@ -446,7 +446,7 @@ function BankAccountsTab({ canEdit }: { canEdit: boolean }) {
                 disabled={busyId === a.id || a.is_default_bank || Math.abs(num(a.balance_signed)) > 0.005}
                 title={a.is_default_bank ? 'Make another account the default first' : Math.abs(num(a.balance_signed)) > 0.005 ? 'Transfer the balance out first' : 'Deactivate'}
                 onClick={() => act(a.id, () => bankAccountsApi.update(a.id, { is_active: false, reason: 'Bank account deactivated' }), `${a.name} deactivated`)}
-                className="p-1.5 text-textSecondary hover:text-red-400 disabled:opacity-30"
+                className="p-1.5 text-textSecondary hover:text-red-600 disabled:opacity-30"
               ><XCircle className="w-4 h-4" /></button>
             ) : (
               <button type="button" disabled={busyId === a.id} onClick={() => act(a.id, () => bankAccountsApi.update(a.id, { is_active: true, reason: 'Bank account reactivated' }), `${a.name} reactivated`)} className="p-1.5 text-textSecondary hover:text-success" title="Reactivate"><CheckCircle2 className="w-4 h-4" /></button>
@@ -491,7 +491,7 @@ function BankAccountsTab({ canEdit }: { canEdit: boolean }) {
             <label className="text-[11px] text-textSecondary flex items-center gap-1">
               <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="accent-primary" /> show inactive
             </label>
-            <button type="button" onClick={load} className="p-1.5 text-textSecondary hover:text-white" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
+            <button type="button" onClick={load} className="p-1.5 text-textSecondary hover:text-textPrimary" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
             {canEdit && (
               <button type="button" onClick={() => setEditing('new')} className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90">
                 <Plus className="w-4 h-4" /> Add account
@@ -599,7 +599,7 @@ function BankAccountModal({ account, hasDefault, onClose, onDone }: { account: B
   return (
     <Modal isOpen onClose={onClose} title={account ? `Edit ${account.code}` : 'New bank or cash account'}>
       <form onSubmit={submit} className="space-y-4">
-        {error && <div className="p-3 rounded-lg bg-red-500/10 text-sm text-red-400 whitespace-pre-line">{error}</div>}
+        {error && <div className="p-3 rounded-lg bg-red-500/10 text-sm text-red-600 whitespace-pre-line">{error}</div>}
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-2 space-y-1">
             <label className={labelCls}>Account name *</label>
@@ -662,7 +662,7 @@ function BankAccountModal({ account, hasDefault, onClose, onDone }: { account: B
           </label>
         )}
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg disabled:opacity-50">{saving ? 'Saving…' : account ? 'Save' : 'Create account'}</button>
         </div>
       </form>
@@ -684,7 +684,7 @@ function KV({ rows }: { rows: [string, React.ReactNode][] }) {
       {rows.map(([k, v]) => (
         <div key={k} className="py-2 flex items-start justify-between gap-4">
           <dt className="text-textSecondary text-xs">{k}</dt>
-          <dd className="text-white text-right font-mono text-xs">{v}</dd>
+          <dd className="text-textPrimary text-right font-mono text-xs">{v}</dd>
         </div>
       ))}
     </dl>
@@ -699,7 +699,7 @@ function ConfigurationTab() {
     settingsApi.runtime().then((res) => setView(res.data)).catch((err) => setError(errText(err, 'Could not load the configuration')));
   }, []);
 
-  if (error) return <div className="glass-card p-4 text-sm text-red-400">{error}</div>;
+  if (error) return <div className="glass-card p-4 text-sm text-red-600">{error}</div>;
   if (!view) return <div className="glass-card p-10 text-center text-textSecondary"><Loader2 className="w-5 h-5 animate-spin inline text-primary" /></div>;
 
   const inr = (v: any) => formatCurrency(num(v));
@@ -710,15 +710,15 @@ function ConfigurationTab() {
       <div className="glass-card p-3 text-xs text-textSecondary flex items-start gap-2">
         <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
         <span>
-          These values come from <code className="font-mono text-white">.env.erp</code> on the server and are read once when the API starts.
+          These values come from <code className="font-mono text-textPrimary">.env.erp</code> on the server and are read once when the API starts.
           They cannot be changed here: edit the file and restart the API container. Credentials are shown only as present or absent.
-          Environment: <span className="font-mono text-white">{view.environment}</span>.
+          Environment: <span className="font-mono text-textPrimary">{view.environment}</span>.
         </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className="glass-card p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-white">Seller state (GST)</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">Seller state (GST)</h2>
           <KV rows={[
             ['In use', `${view.seller_state.in_use} - ${view.seller_state.in_use_name || ''}`],
             ['Taken from', view.seller_state.from === 'company' ? 'Company master (Settings > Company)' : 'COMPANY_STATE_CODE setting'],
@@ -730,7 +730,7 @@ function ConfigurationTab() {
         </section>
 
         <section className="glass-card p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-white">e-Invoice (IRN) and e-Way Bill</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">e-Invoice (IRN) and e-Way Bill</h2>
           <KV rows={[
             ['Provider', view.einvoice.provider],
             ['Enabled', <Flag key="e" on={view.einvoice.enabled} />],
@@ -743,7 +743,7 @@ function ConfigurationTab() {
         </section>
 
         <section className="glass-card p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-white">TDS s.194Q and TCS s.206C(1H)</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">TDS s.194Q and TCS s.206C(1H)</h2>
           <KV rows={[
             ['TDS 194Q on purchases', <Flag key="t" on={view.tds_194q.enabled} yes="Enabled" no="Off" />],
             ['TDS threshold / FY', inr(view.tds_194q.threshold_inr)],
@@ -756,7 +756,7 @@ function ConfigurationTab() {
         </section>
 
         <section className="glass-card p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-white">Storefront bridge</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">Storefront bridge</h2>
           <KV rows={[
             ['Enabled (API key present)', <Flag key="b" on={view.ecommerce_bridge.enabled} />],
             ['Settlement account setting', view.ecommerce_bridge.settlement_account_code || '— (uses the default bank)'],
@@ -770,7 +770,7 @@ function ConfigurationTab() {
         </section>
 
         <section className="glass-card p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-white">Documents and sessions</h2>
+          <h2 className="text-sm font-semibold text-textPrimary">Documents and sessions</h2>
           <KV rows={[
             ['Invoice PDF storage (R2)', <Flag key="r" on={view.document_storage.r2_configured} yes="Configured" no="Not configured" />],
             ['Session length', `${view.sessions.jwt_expire_minutes} min`],

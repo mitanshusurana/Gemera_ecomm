@@ -550,12 +550,12 @@ export default function PurchasesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Purchase Register & Inward ITC</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Purchase Register & Inward ITC</h1>
           <p className="text-textSecondary mt-1">[CGST Rule 56(4)] Edit purchase bills, vendor dates, vendor bill scans & ITC tax register.</p>
         </div>
         <button 
           onClick={openNewDrawer}
-          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)]"
+          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity"
         >
           <Plus className="w-4 h-4" /> Record Purchase Invoice
         </button>
@@ -570,7 +570,7 @@ export default function PurchasesPage() {
             placeholder="Search by Bill No, Vendor Inv No, Supplier Name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface border border-border rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-textSecondary focus:outline-none focus:border-primary"
+            className="w-full bg-surface border border-border rounded-lg pl-9 pr-4 py-2 text-sm text-textPrimary placeholder-textSecondary focus:outline-none focus:border-primary"
           />
         </div>
 
@@ -580,14 +580,14 @@ export default function PurchasesPage() {
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+            className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:outline-none focus:border-primary"
           />
           <span className="text-textSecondary text-xs">to</span>
           <input
             type="date"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+            className="bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:outline-none focus:border-primary"
           />
         </div>
 
@@ -608,7 +608,7 @@ export default function PurchasesPage() {
               setFromDate(financialYearStart());
               setToDate(new Date().toISOString().split('T')[0]);
             }}
-            className="px-3 py-2 bg-surface border border-border text-textSecondary hover:text-white rounded-lg text-xs font-semibold"
+            className="px-3 py-2 bg-surface border border-border text-textSecondary hover:text-textPrimary rounded-lg text-xs font-semibold"
           >
             Reset Filters
           </button>
@@ -620,8 +620,8 @@ export default function PurchasesPage() {
           <div className="overflow-x-auto">
             {loading ? (
               <div className="animate-pulse space-y-4 py-4">
-                <div className="h-8 bg-white/10 rounded w-full"></div>
-                <div className="h-8 bg-white/10 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
               </div>
             ) : invoices.length === 0 ? (
               <div className="text-center py-12 text-textSecondary">
@@ -649,8 +649,8 @@ export default function PurchasesPage() {
                     const itcTax = Number(inv.total_gst) || (Number(inv.cgst_amount || 0) + Number(inv.sgst_amount || 0) + Number(inv.igst_amount || 0));
                     const isHistory = inv.status === 'Amended' || inv.status === 'Cancelled';
                     return (
-                      <tr key={inv.id} className={`hover:bg-white/5 transition-colors ${isHistory ? 'opacity-60' : ''}`}>
-                        <td className="py-4 font-mono font-medium text-white">
+                      <tr key={inv.id} className={`hover:bg-black/5 transition-colors ${isHistory ? 'opacity-60' : ''}`}>
+                        <td className="py-4 font-mono font-medium text-textPrimary">
                           {inv.bill_no}
                           {/* Amendment chain: an amended bill stays on file and points
                               at the bill that replaced it; the replacement points back. */}
@@ -670,10 +670,10 @@ export default function PurchasesPage() {
                         </td>
                         <td className="py-4 text-textSecondary">{inv.vendor_invoice_date || inv.bill_date}</td>
                         <td className="py-4 font-mono text-textSecondary">{inv.vendor_inv_no}</td>
-                        <td className="py-4 font-medium text-white">{inv.vendor_name}</td>
+                        <td className="py-4 font-medium text-textPrimary">{inv.vendor_name}</td>
                         <td className="py-4 text-textSecondary text-xs">{inv.place_of_supply || '08 - Rajasthan'}</td>
                         <td className="py-4 text-right text-textSecondary">{formatCurrency(inv.subtotal_value || 0)}</td>
-                        <td className="py-4 text-right text-emerald-400 font-mono font-semibold">{formatCurrency(itcTax)}</td>
+                        <td className="py-4 text-right text-emerald-700 font-mono font-semibold">{formatCurrency(itcTax)}</td>
                         <td className="py-4 text-right font-mono text-xs" title={Number(inv.tds_amount) > 0 ? `${inv.tds_section} @ ${inv.tds_rate}% on ${formatCurrency(inv.tds_base || 0)}` : 'No TDS on this bill'}>
                           {Number(inv.tds_amount) > 0
                             ? <span className="text-warning font-semibold">− {formatCurrency(inv.tds_amount)}</span>
@@ -682,7 +682,7 @@ export default function PurchasesPage() {
                         <td className="py-4 text-right font-medium text-primary">{formatCurrency(inv.grand_total || 0)}</td>
                         <td className="py-4">
                           {inv.attachment_url ? (
-                            <span className="text-emerald-400 flex items-center gap-1 text-xs font-medium">
+                            <span className="text-emerald-700 flex items-center gap-1 text-xs font-medium">
                               <CheckCircle2 className="w-3.5 h-3.5" /> Attached
                             </span>
                           ) : (
@@ -694,7 +694,7 @@ export default function PurchasesPage() {
                             <button
                               onClick={() => openEditDrawer(inv.id)}
                               title="Amend: the bill is reversed and re-posted under a new number; nothing posted is deleted"
-                              className="px-2 py-1 bg-white/10 text-white border border-border rounded hover:bg-white/20 text-xs font-medium flex items-center gap-1"
+                              className="px-2 py-1 bg-black/5 text-textPrimary border border-border rounded hover:bg-black/10 text-xs font-medium flex items-center gap-1"
                             >
                               <Edit3 className="w-3.5 h-3.5 text-primary" /> Amend
                             </button>
@@ -703,7 +703,7 @@ export default function PurchasesPage() {
                             <button
                               onClick={() => openRepeatDrawer(inv.id)}
                               title="Repeat: a new bill with the same supplier and lines, dated today (monthly rent, standing supplier)"
-                              className="px-2 py-1 bg-white/10 text-white border border-border rounded hover:bg-white/20 text-xs font-medium flex items-center gap-1"
+                              className="px-2 py-1 bg-black/5 text-textPrimary border border-border rounded hover:bg-black/10 text-xs font-medium flex items-center gap-1"
                             >
                               <Copy className="w-3.5 h-3.5 text-primary" /> Repeat
                             </button>
@@ -731,7 +731,7 @@ export default function PurchasesPage() {
           <div className="w-[660px] h-full bg-surface border-l border-border p-6 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
-                <h2 className="text-2xl font-playfair font-bold text-white">
+                <h2 className="text-2xl font-playfair font-bold text-textPrimary">
                   {editingInvoiceId ? 'Amend Purchase Voucher' : 'Record Purchase Voucher'}
                 </h2>
                 <p className="text-xs text-textSecondary mt-0.5">
@@ -740,14 +740,14 @@ export default function PurchasesPage() {
                     : 'Inward commodity bill, vendor bill date & Input Tax Credit (ITC)'}
                 </p>
               </div>
-              <button onClick={() => setIsDrawerOpen(false)} className="text-textSecondary hover:text-white">
+              <button onClick={() => setIsDrawerOpen(false)} className="text-textSecondary hover:text-textPrimary">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {from2b && (
-                <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs text-white">
+                <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs text-textPrimary">
                   From GSTR-2B {from2b.return_period}: {from2b.supplier_name || from2b.supplier_gstin}, invoice {from2b.invoice_no} dated {from2b.invoice_date}, taxable {formatCurrency(Number(from2b.taxable || 0))} at {from2b.implied_gst_rate}% GST.
                   {!from2b.party_id && <span className="block mt-1 text-warning">No party has this GSTIN yet: use “Create new party” in the supplier box below (details prefilled).</span>}
                   <span className="block mt-1 text-textSecondary">Pick the item(s) for the line; weights and rate as on the supplier's invoice. After posting, the period is reconciled automatically.</span>
@@ -769,9 +769,9 @@ export default function PurchasesPage() {
                   placeholder="Search supplier name..." 
                 />
                 {selectedSupplierObj && ((selectedSupplierObj.gstin || '').trim().toUpperCase() === 'UNREGISTERED' || !selectedSupplierObj.gstin) && (
-                  <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between text-xs text-amber-400 font-medium">
+                  <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between text-xs text-amber-700 font-medium">
                     <div className="flex items-center gap-1.5">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-700" />
                       <span>Unregistered Supplier (URD): Forward GST Tax = ₹0.00 & ITC Ineligible [CGST Sec 9(4)]</span>
                     </div>
                     <Badge variant="warning">URD Purchase</Badge>
@@ -789,7 +789,7 @@ export default function PurchasesPage() {
                     value={supplierInvoiceNo}
                     onChange={(e) => setSupplierInvoiceNo(e.target.value)}
                     required={!isUnregisteredSupplier}
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none font-mono"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none font-mono"
                     placeholder={isUnregisteredSupplier ? 'Optional for URD' : 'INV/2026/001'}
                   />
                 </div>
@@ -801,7 +801,7 @@ export default function PurchasesPage() {
                     type="date" 
                     value={vendorInvoiceDate}
                     onChange={(e) => setVendorInvoiceDate(e.target.value)}
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -810,7 +810,7 @@ export default function PurchasesPage() {
                     type="date" 
                     value={invoiceDate}
                     onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none"
                   />
                 </div>
               </div>
@@ -822,7 +822,7 @@ export default function PurchasesPage() {
                 <select
                   value={placeOfSupply}
                   onChange={(e) => setPlaceOfSupply(e.target.value)}
-                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none font-medium"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none font-medium"
                 >
                   {INDIAN_STATES.map(s => (
                     <option key={s.code} value={s.code}>{s.name}</option>
@@ -833,11 +833,11 @@ export default function PurchasesPage() {
               {/* Vendor Invoice Scan Upload */}
               <div className="p-3 bg-background border border-border rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-textPrimary flex items-center gap-1.5">
                     <FileImage className="w-4 h-4 text-primary" /> Attach Original Vendor Bill Image / Scan (Optional)
                   </label>
                   {attachmentUrl && (
-                    <span className="text-emerald-400 flex items-center gap-1 text-[11px] font-medium">
+                    <span className="text-emerald-700 flex items-center gap-1 text-[11px] font-medium">
                       <CheckCircle2 className="w-3 h-3" /> Attached
                     </span>
                   )}
@@ -846,14 +846,14 @@ export default function PurchasesPage() {
                   type="file"
                   accept="image/*,.pdf"
                   onChange={handleBillScanUpload}
-                  className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20"
+                  className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:bg-black/5 file:text-textPrimary hover:file:bg-black/10"
                 />
                 {attachmentUrl && (
                   <img src={attachmentUrl} alt="Vendor Bill Scan Preview" className="h-24 w-full object-cover rounded border border-border" />
                 )}
               </div>
 
-              <div className="p-3 bg-white/5 border border-border rounded-lg flex items-center justify-between">
+              <div className="p-3 bg-black/5 border border-border rounded-lg flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input 
                     type="checkbox" 
@@ -861,14 +861,14 @@ export default function PurchasesPage() {
                     onChange={(e) => setIsRcm(e.target.checked)}
                     className="rounded border-border bg-surface text-primary focus:ring-primary/20 w-4 h-4"
                   />
-                  <span className="text-xs text-white font-medium">Old Gold / RCM Purchase (Reverse Charge Mechanism - Notif 13/2017)</span>
+                  <span className="text-xs text-textPrimary font-medium">Old Gold / RCM Purchase (Reverse Charge Mechanism - Notif 13/2017)</span>
                 </label>
               </div>
 
               {/* TDS on services: rent, professional fees, contractors, commission */}
-              <div className="p-3 bg-white/5 border border-border rounded-lg space-y-2">
+              <div className="p-3 bg-black/5 border border-border rounded-lg space-y-2">
                 <div className="flex flex-wrap items-center gap-3">
-                  <label className="text-xs text-white font-medium">TDS to deduct</label>
+                  <label className="text-xs text-textPrimary font-medium">TDS to deduct</label>
                   <select
                     value={tdsSection}
                     onChange={(e) => {
@@ -877,7 +877,7 @@ export default function PurchasesPage() {
                       const def: Record<string, number> = { '194I': 10, '194J': 10, '194C': 1, '194H': 2 };
                       setTdsRate(sec in def ? def[sec] : 0);
                     }}
-                    className="px-2 py-1.5 bg-surface border border-border rounded text-xs text-white"
+                    className="px-2 py-1.5 bg-surface border border-border rounded text-xs text-textPrimary"
                   >
                     <option value="">None / automatic (s.194Q on goods, per supplier flags)</option>
                     <option value="194I">194I — Rent (land, building, furniture)</option>
@@ -890,12 +890,12 @@ export default function PurchasesPage() {
                       Rate %
                       <input type="number" min={0} max={30} step={0.01} value={tdsRate}
                         onChange={(e) => setTdsRate(Number(e.target.value))}
-                        className="w-20 px-2 py-1 bg-surface border border-border rounded text-xs text-white text-right" />
+                        className="w-20 px-2 py-1 bg-surface border border-border rounded text-xs text-textPrimary text-right" />
                     </label>
                   )}
                   {tdsSection && tdsRate > 0 && (
                     <span className="text-xs text-textSecondary">
-                      Deduct <span className="font-mono text-white">{formatCurrency(totalTaxableSubtotal * tdsRate / 100)}</span> on the taxable value; pay the supplier <span className="font-mono text-white">{formatCurrency(grandTotal - totalTaxableSubtotal * tdsRate / 100)}</span>
+                      Deduct <span className="font-mono text-textPrimary">{formatCurrency(totalTaxableSubtotal * tdsRate / 100)}</span> on the taxable value; pay the supplier <span className="font-mono text-textPrimary">{formatCurrency(grandTotal - totalTaxableSubtotal * tdsRate / 100)}</span>
                     </span>
                   )}
                 </div>
@@ -905,8 +905,8 @@ export default function PurchasesPage() {
               {/* Items Section */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-playfair font-semibold text-white">Purchased Line Items</h4>
-                  <button type="button" onClick={addItem} className="text-xs text-primary flex items-center gap-1 hover:text-white font-medium">
+                  <h4 className="text-sm font-playfair font-semibold text-textPrimary">Purchased Line Items</h4>
+                  <button type="button" onClick={addItem} className="text-xs text-primary flex items-center gap-1 hover:text-textPrimary font-medium">
                     <Plus className="w-4 h-4" /> Add Line
                   </button>
                 </div>
@@ -946,7 +946,7 @@ export default function PurchasesPage() {
                               type="number" 
                               value={item.quantity || ''}
                               onChange={(e) => updateItemField(item.id, 'quantity', Number(e.target.value))}
-                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-white focus:border-primary outline-none"
+                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-textPrimary focus:border-primary outline-none"
                               placeholder="1.0"
                             />
                           </div>
@@ -957,7 +957,7 @@ export default function PurchasesPage() {
                               type="number" 
                               value={item.gross_weight || ''}
                               onChange={(e) => updateItemField(item.id, 'gross_weight', Number(e.target.value))}
-                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-white focus:border-primary outline-none"
+                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-textPrimary focus:border-primary outline-none"
                               placeholder="Optional"
                             />
                           </div>
@@ -969,7 +969,7 @@ export default function PurchasesPage() {
                               type="number" 
                               value={item.net_weight || ''}
                               onChange={(e) => updateItemField(item.id, 'net_weight', Number(e.target.value))}
-                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-white focus:border-primary outline-none"
+                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-textPrimary focus:border-primary outline-none"
                               placeholder="Optional"
                             />
                           </div>
@@ -980,7 +980,7 @@ export default function PurchasesPage() {
                               type="number" 
                               value={item.rate || ''}
                               onChange={(e) => updateItemField(item.id, 'rate', Number(e.target.value))}
-                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-white focus:border-primary outline-none font-mono"
+                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-textPrimary focus:border-primary outline-none font-mono"
                               placeholder="0.00"
                             />
                           </div>
@@ -994,7 +994,7 @@ export default function PurchasesPage() {
                               readOnly
                               disabled
                               value={isUnregisteredSupplier && !isRcm ? '0% (URD)' : `${Number(item.gst_rate ?? 0)}%`}
-                              className="w-full bg-white/5 border border-primary/30 rounded px-2 py-1 text-xs text-primary font-mono font-bold cursor-not-allowed"
+                              className="w-full bg-black/5 border border-primary/30 rounded px-2 py-1 text-xs text-primary font-mono font-bold cursor-not-allowed"
                             />
                           </div>
                           <div>
@@ -1003,7 +1003,7 @@ export default function PurchasesPage() {
                               type="number" 
                               value={item.making_charges || ''}
                               onChange={(e) => updateItemField(item.id, 'making_charges', Number(e.target.value))}
-                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-white focus:border-primary outline-none"
+                              className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-textPrimary focus:border-primary outline-none"
                               placeholder="0.00"
                             />
                           </div>
@@ -1014,13 +1014,13 @@ export default function PurchasesPage() {
                               readOnly
                               disabled
                               value={item.hsn_code}
-                              className="w-full bg-white/5 border border-border rounded px-2 py-1 text-xs text-textSecondary font-mono cursor-not-allowed"
+                              className="w-full bg-black/5 border border-border rounded px-2 py-1 text-xs text-textSecondary font-mono cursor-not-allowed"
                             />
                           </div>
                         </div>
 
                         {/* Live Calculation Formula Hint */}
-                        <div className="text-[11px] text-textSecondary bg-white/5 p-2 rounded flex justify-between items-center font-mono">
+                        <div className="text-[11px] text-textSecondary bg-black/5 p-2 rounded flex justify-between items-center font-mono">
                           <span>
                             Formula: {netWt > 0 ? `${netWt} ${item.unit || 'gm'} Net Wt × ${formatCurrency(rate)}` : `${qty} ${item.unit || 'Pcs'} Qty × ${formatCurrency(rate)}`}
                           </span>
@@ -1037,7 +1037,7 @@ export default function PurchasesPage() {
                 <div className="flex items-center justify-between border-b border-border pb-2">
                   <div className="flex items-center gap-2">
                     <Calculator className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold text-white">Multi-Rate Itemized GST Breakdown</span>
+                    <span className="text-sm font-semibold text-textPrimary">Multi-Rate Itemized GST Breakdown</span>
                   </div>
                   <Badge variant={isIntraState ? 'success' : 'warning'}>
                     {isIntraState ? 'Intra-State (CGST + SGST)' : 'Inter-State (IGST)'}
@@ -1045,16 +1045,16 @@ export default function PurchasesPage() {
                 </div>
 
                 <div className="space-y-2 text-xs text-textSecondary">
-                  <div className="flex justify-between text-white font-medium">
+                  <div className="flex justify-between text-textPrimary font-medium">
                     <span>Taxable Material Subtotal:</span>
                     <span className="font-mono">{formatCurrency(totalTaxableSubtotal)}</span>
                   </div>
 
                   {isUnregisteredSupplier && !isRcm ? (
                     <div className="p-3 bg-surface/80 border border-amber-500/30 rounded-lg space-y-1">
-                      <div className="flex justify-between text-white font-medium text-xs">
+                      <div className="flex justify-between text-textPrimary font-medium text-xs">
                         <span>Forward Charge GST Tax (URD):</span>
-                        <span className="font-mono text-emerald-400 font-bold">₹0.00</span>
+                        <span className="font-mono text-emerald-700 font-bold">₹0.00</span>
                       </div>
                       <p className="text-[11px] text-textSecondary">
                         Supplier is Unregistered — No GST is charged on bill and 0 ITC is credited under CGST Section 9(4).
@@ -1068,15 +1068,15 @@ export default function PurchasesPage() {
                         <div key={rateStr} className="p-2 bg-surface/50 border border-border/50 rounded-lg space-y-1">
                           <div className="flex justify-between text-textSecondary font-medium">
                             <span>Items @ {rate}% Tax Rate:</span>
-                            <span className="font-mono text-white">Taxable: {formatCurrency(bucket.taxable)}</span>
+                            <span className="font-mono text-textPrimary">Taxable: {formatCurrency(bucket.taxable)}</span>
                           </div>
                           {isIntraState ? (
-                            <div className="flex justify-between text-emerald-400 text-[11px]">
+                            <div className="flex justify-between text-emerald-700 text-[11px]">
                               <span>CGST ({halfRate}%): {formatCurrency(bucket.taxAmount / 2)}</span>
                               <span>SGST ({halfRate}%): {formatCurrency(bucket.taxAmount / 2)}</span>
                             </div>
                           ) : (
-                            <div className="flex justify-between text-amber-400 text-[11px]">
+                            <div className="flex justify-between text-amber-700 text-[11px]">
                               <span>IGST ({rate}%):</span>
                               <span>{formatCurrency(bucket.taxAmount)}</span>
                             </div>
@@ -1086,7 +1086,7 @@ export default function PurchasesPage() {
                     })
                   )}
 
-                  <div className="flex justify-between text-white border-t border-border pt-2 text-sm font-bold">
+                  <div className="flex justify-between text-textPrimary border-t border-border pt-2 text-sm font-bold">
                     <span>Grand Total Invoice Amount:</span>
                     <span className="text-primary font-mono">{formatCurrency(grandTotal)}</span>
                   </div>
@@ -1094,7 +1094,7 @@ export default function PurchasesPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <button type="button" onClick={() => setIsDrawerOpen(false)} className="px-4 py-2 border border-border text-white text-sm rounded-lg hover:bg-surface">
+                <button type="button" onClick={() => setIsDrawerOpen(false)} className="px-4 py-2 border border-border text-textPrimary text-sm rounded-lg hover:bg-surface">
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting} className="px-6 py-2 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
@@ -1121,11 +1121,11 @@ export default function PurchasesPage() {
                     const { generatePurchaseVoucherPDF } = require('@/lib/vectorPdfEngine');
                     generatePurchaseVoucherPDF(selectedInvoice, 'download', company);
                   }}
-                  className="px-4 py-2 bg-[#D4A843] text-black font-bold text-xs uppercase rounded hover:bg-[#b88f34] transition-colors flex items-center gap-2 shadow-sm"
+                  className="px-4 py-2 bg-primary text-black font-bold text-xs uppercase rounded hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm"
                 >
                   <Printer className="w-4 h-4" /> Download Vector PDF
                 </button>
-                <button onClick={() => setIsViewModalOpen(false)} className="text-gray-400 hover:text-black">
+                <button onClick={() => setIsViewModalOpen(false)} className="text-gray-500 hover:text-black">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -1187,7 +1187,7 @@ export default function PurchasesPage() {
             {selectedInvoice.attachment_url && (
               <div className="border border-gray-300 p-4 rounded-lg bg-gray-50 space-y-2">
                 <p className="font-bold text-gray-800 text-xs flex items-center gap-1.5">
-                  <FileImage className="w-4 h-4 text-[#D4A843]" /> Attached Vendor Bill Scan Image
+                  <FileImage className="w-4 h-4 text-primary" /> Attached Vendor Bill Scan Image
                 </p>
                 <img src={selectedInvoice.attachment_url} alt="Vendor Bill Scan" className="max-h-56 rounded border border-gray-300 object-contain" />
               </div>
@@ -1247,7 +1247,7 @@ export default function PurchasesPage() {
                 )}
                 <div className="border-t border-gray-300 pt-2 flex justify-between font-bold text-sm text-gray-900">
                   <span>{Number(selectedInvoice.tds_amount) > 0 ? 'Bill Total:' : 'Grand Total Payable:'}</span>
-                  <span className="text-[#D4A843]">{formatCurrency(selectedInvoice.grand_total || 0)}</span>
+                  <span className="text-primary">{formatCurrency(selectedInvoice.grand_total || 0)}</span>
                 </div>
                 {Number(selectedInvoice.tds_amount) > 0 && (
                   <>
@@ -1257,7 +1257,7 @@ export default function PurchasesPage() {
                     </div>
                     <div className="border-t border-gray-300 pt-2 flex justify-between font-bold text-sm text-gray-900">
                       <span>Net Payable to Supplier:</span>
-                      <span className="text-[#D4A843]">{formatCurrency(Number(selectedInvoice.grand_total || 0) - Number(selectedInvoice.tds_amount || 0))}</span>
+                      <span className="text-primary">{formatCurrency(Number(selectedInvoice.grand_total || 0) - Number(selectedInvoice.tds_amount || 0))}</span>
                     </div>
                   </>
                 )}

@@ -8,7 +8,7 @@ import Modal from '@/components/ui/Modal';
 import PartySelect from '@/components/ui/PartySelect';
 import { apiClient, BankRule, controlsApi } from '@/lib/api';
 
-const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
+const fieldCls = 'w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
 
 /** Rules that suggest a ledger or party when a statement line containing some text is booked. */
 export default function BankRulesDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -67,17 +67,17 @@ export default function BankRulesDialog({ open, onClose }: { open: boolean; onCl
             : rules.map((r) => (
               <div key={r.id} className="px-3 py-2.5 flex items-center gap-3">
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm text-white truncate">{r.name}</span>
+                  <span className="block text-sm text-textPrimary truncate">{r.name}</span>
                   <span className="block text-xs text-textSecondary truncate">contains “{r.match_text}” · {r.direction === 'Any' ? 'money in or out' : r.direction === 'Debit' ? 'money out' : 'money in'} → {r.account_name || r.party_name}</span>
                 </span>
                 <Badge variant={r.is_active ? 'success' : 'default'}>{r.is_active ? 'On' : 'Off'}</Badge>
-                <button onClick={() => toggle(r)} className="px-2 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-white rounded text-xs">{r.is_active ? 'Switch off' : 'Switch on'}</button>
+                <button onClick={() => toggle(r)} className="px-2 py-1 bg-surface border border-border hover:border-primary text-textSecondary hover:text-textPrimary rounded text-xs">{r.is_active ? 'Switch off' : 'Switch on'}</button>
               </div>
             ))}
         </div>
 
         <div className="p-3 bg-surface/50 border border-border rounded-lg space-y-3">
-          <p className="text-sm font-semibold text-white">New rule</p>
+          <p className="text-sm font-semibold text-textPrimary">New rule</p>
           <div className="grid grid-cols-2 gap-3">
             <input type="text" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name, e.g. Electricity" className={fieldCls} />
             <input type="text" maxLength={120} value={matchText} onChange={(e) => setMatchText(e.target.value)} placeholder="Text in the description, e.g. JVVNL" className={fieldCls} />

@@ -261,20 +261,20 @@ export default function PartiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Party Master & KYC Directory</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Party Master & KYC Directory</h1>
           <p className="text-textSecondary mt-1">Manage B2B partners, unregistered consumers, and verified KYC document vaults.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => handleNewParty(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-border bg-surface text-white font-medium rounded-lg hover:bg-white/5 transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2 border border-border bg-surface text-textPrimary font-medium rounded-lg hover:bg-black/5 transition-colors text-sm"
           >
-            <UserCheck className="w-4 h-4 text-emerald-400" />
+            <UserCheck className="w-4 h-4 text-emerald-700" />
             + Unregistered Consumer
           </button>
           <button 
             onClick={() => handleNewParty(false)}
-            className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(212,168,67,0.3)] text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg hover:opacity-90 transition-opacity text-sm"
           >
             <Plus className="w-4 h-4" />
             New Registered Party
@@ -287,13 +287,13 @@ export default function PartiesPage() {
           <div className="overflow-x-auto">
             {loading ? (
               <div className="animate-pulse space-y-4 py-4">
-                <div className="h-8 bg-white/10 rounded w-full"></div>
-                <div className="h-8 bg-white/10 rounded w-full"></div>
-                <div className="h-8 bg-white/10 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
+                <div className="h-8 bg-black/5 rounded w-full"></div>
               </div>
             ) : parties.length === 0 ? (
               <div className="text-center py-12 text-textSecondary flex flex-col items-center gap-3">
-                <AlertCircle className="w-12 h-12 text-white/20" />
+                <AlertCircle className="w-12 h-12 text-black/20" />
                 <p>No parties found. Create your first party or consumer above.</p>
               </div>
             ) : (
@@ -313,9 +313,9 @@ export default function PartiesPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {parties.map((party) => (
-                    <tr key={party.id} className="hover:bg-white/5 transition-colors">
+                    <tr key={party.id} className="hover:bg-black/5 transition-colors">
                       <td className="py-4 text-textSecondary font-mono">{party.code}</td>
-                      <td className="py-4 font-medium text-white">
+                      <td className="py-4 font-medium text-textPrimary">
                         <div>{party.trade_name || party.name}</div>
                         {party.trade_name && party.trade_name !== party.name && (
                           <div className="text-xs text-textSecondary">Legal: {party.name}</div>
@@ -357,7 +357,7 @@ export default function PartiesPage() {
                           </button>
                           <button 
                             onClick={() => handleEditParty(party)} 
-                            className="p-1 text-textSecondary hover:text-white text-xs font-medium"
+                            className="p-1 text-textSecondary hover:text-textPrimary text-xs font-medium"
                           >
                             Edit
                           </button>
@@ -379,7 +379,7 @@ export default function PartiesPage() {
             <div className="flex items-start justify-between border-b border-border pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-playfair font-bold text-white">{viewKycParty.name}</h3>
+                  <h3 className="text-xl font-playfair font-bold text-textPrimary">{viewKycParty.name}</h3>
                   <Badge variant={viewKycParty.kyc === 'Complete' ? 'success' : viewKycParty.kyc === 'Partial' ? 'warning' : 'danger'}>
                     {viewKycParty.kyc === 'Complete' ? 'KYC Verified' : viewKycParty.kyc === 'Partial' ? 'Partial KYC' : 'Unregistered'}
                   </Badge>
@@ -388,12 +388,12 @@ export default function PartiesPage() {
                   <p className="text-xs text-textSecondary font-medium">Trade Name: {viewKycParty.trade_name}</p>
                 )}
                 <p className="text-xs text-textSecondary mt-1">
-                  Code: <span className="font-mono text-white">{viewKycParty.code}</span> | 
+                  Code: <span className="font-mono text-textPrimary">{viewKycParty.code}</span> | 
                   GSTIN: <span className="font-mono text-primary font-bold">{viewKycParty.gstin || 'Unregistered'}</span> | 
-                  State: <span className="text-white">{viewKycParty.state_name || viewKycParty.state}</span>
+                  State: <span className="text-textPrimary">{viewKycParty.state_name || viewKycParty.state}</span>
                 </p>
               </div>
-              <button onClick={() => setViewKycParty(null)} className="text-textSecondary hover:text-white">
+              <button onClick={() => setViewKycParty(null)} className="text-textSecondary hover:text-textPrimary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -402,7 +402,7 @@ export default function PartiesPage() {
               {/* PAN Card Card */}
               <div className="p-4 bg-background border border-border rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-white text-sm flex items-center gap-1.5">
+                  <span className="font-medium text-textPrimary text-sm flex items-center gap-1.5">
                     <CreditCard className="w-4 h-4 text-primary" /> PAN Card
                   </span>
                   <span className="text-xs font-mono text-textSecondary">{viewKycParty.pan || 'Not provided'}</span>
@@ -421,7 +421,7 @@ export default function PartiesPage() {
                     </a>
                   </div>
                 ) : (
-                  <div className="h-32 bg-white/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
+                  <div className="h-32 bg-black/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
                     <span>No PAN document image uploaded</span>
                   </div>
                 )}
@@ -430,7 +430,7 @@ export default function PartiesPage() {
               {/* GST Certificate Card */}
               <div className="p-4 bg-background border border-border rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-white text-sm flex items-center gap-1.5">
+                  <span className="font-medium text-textPrimary text-sm flex items-center gap-1.5">
                     <Building className="w-4 h-4 text-primary" /> GST Certificate
                   </span>
                   <span className="text-xs font-mono text-primary font-bold">{viewKycParty.gstin || 'Unregistered'}</span>
@@ -449,7 +449,7 @@ export default function PartiesPage() {
                     </a>
                   </div>
                 ) : (
-                  <div className="h-32 bg-white/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
+                  <div className="h-32 bg-black/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
                     <span>No GST certificate document uploaded</span>
                   </div>
                 )}
@@ -458,7 +458,7 @@ export default function PartiesPage() {
               {/* Aadhaar Card Card */}
               <div className="p-4 bg-background border border-border rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-white text-sm flex items-center gap-1.5">
+                  <span className="font-medium text-textPrimary text-sm flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-primary" /> Aadhaar Card
                   </span>
                   <span className="text-xs font-mono text-textSecondary">{viewKycParty.aadhaar_no || 'Not provided'}</span>
@@ -477,7 +477,7 @@ export default function PartiesPage() {
                     </a>
                   </div>
                 ) : (
-                  <div className="h-32 bg-white/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
+                  <div className="h-32 bg-black/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
                     <span>No Aadhaar card document uploaded</span>
                   </div>
                 )}
@@ -486,7 +486,7 @@ export default function PartiesPage() {
               {/* Cancelled Cheque Card */}
               <div className="p-4 bg-background border border-border rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-white text-sm flex items-center gap-1.5">
+                  <span className="font-medium text-textPrimary text-sm flex items-center gap-1.5">
                     <Upload className="w-4 h-4 text-primary" /> Bank Proof / Cheque
                   </span>
                   <span className="text-xs text-textSecondary font-medium">Bank Verification</span>
@@ -505,7 +505,7 @@ export default function PartiesPage() {
                     </a>
                   </div>
                 ) : (
-                  <div className="h-32 bg-white/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
+                  <div className="h-32 bg-black/5 border border-dashed border-border rounded-lg flex flex-col items-center justify-center text-textSecondary text-xs">
                     <span>No bank cheque / proof document uploaded</span>
                   </div>
                 )}
@@ -525,7 +525,7 @@ export default function PartiesPage() {
               </button>
               <button 
                 onClick={() => setViewKycParty(null)}
-                className="px-4 py-2 border border-border rounded-md text-textSecondary hover:text-white text-sm"
+                className="px-4 py-2 border border-border rounded-md text-textSecondary hover:text-textPrimary text-sm"
               >
                 Close Vault
               </button>
@@ -540,12 +540,12 @@ export default function PartiesPage() {
           <div className="w-[560px] h-full bg-surface border-l border-border p-6 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
-                <h2 className="text-xl font-playfair font-bold text-white">
+                <h2 className="text-xl font-playfair font-bold text-textPrimary">
                   {editingPartyId ? 'Edit Party Master & KYC' : 'Create Party Master (KYC Vault)'}
                 </h2>
                 <p className="text-xs text-textSecondary mt-0.5">Two-way business account & statutory KYC documents</p>
               </div>
-              <button onClick={() => setIsDrawerOpen(false)} className="text-textSecondary hover:text-white">
+              <button onClick={() => setIsDrawerOpen(false)} className="text-textSecondary hover:text-textPrimary">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -562,7 +562,7 @@ export default function PartiesPage() {
                 <div>
                   <label className="block text-sm text-textSecondary mb-1">Party Account Type *</label>
                   <select 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-medium"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-medium"
                     value={formData.party_type}
                     onChange={(e) => setFormData({ ...formData, party_type: e.target.value })}
                   >
@@ -580,7 +580,7 @@ export default function PartiesPage() {
                 <div>
                   <label className="block text-sm text-textSecondary mb-1">GST Registration Type *</label>
                   <select 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-medium"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-medium"
                     value={formData.gst_reg_type}
                     onChange={(e) => setFormData({ ...formData, gst_reg_type: e.target.value, gstin: e.target.value === 'Unregistered' ? 'Unregistered' : formData.gstin })}
                   >
@@ -600,7 +600,7 @@ export default function PartiesPage() {
                     <input 
                       type="text" 
                       placeholder="e.g. 08BBUPS8859R1ZW"
-                      className="flex-1 bg-background border border-border rounded-md px-3 py-2 text-white uppercase font-mono"
+                      className="flex-1 bg-background border border-border rounded-md px-3 py-2 text-textPrimary uppercase font-mono"
                       value={formData.gstin}
                       onChange={(e) => setFormData({ ...formData, gstin: e.target.value.toUpperCase() })}
                     />
@@ -633,7 +633,7 @@ export default function PartiesPage() {
                     type="text" 
                     required
                     placeholder="Legal Entity Name / Full Name"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
@@ -643,7 +643,7 @@ export default function PartiesPage() {
                   <input 
                     type="text" 
                     placeholder="Trade / Brand Name"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                     value={formData.trade_name}
                     onChange={(e) => setFormData({ ...formData, trade_name: e.target.value })}
                   />
@@ -656,7 +656,7 @@ export default function PartiesPage() {
                   <input
                     type="text"
                     placeholder="e.g. 22K bangles, kundan setting, polishing"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                     value={formData.karigar_skills}
                     onChange={(e) => setFormData({ ...formData, karigar_skills: e.target.value })}
                   />
@@ -669,7 +669,7 @@ export default function PartiesPage() {
                   <input 
                     type="text" 
                     placeholder="ABCDE1234F"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white uppercase font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary uppercase font-mono"
                     value={formData.pan}
                     onChange={(e) => setFormData({ ...formData, pan: e.target.value.toUpperCase() })}
                   />
@@ -679,7 +679,7 @@ export default function PartiesPage() {
                   <input 
                     type="text" 
                     placeholder="12-digit Aadhaar Number"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.aadhaar_no}
                     onChange={(e) => setFormData({ ...formData, aadhaar_no: e.target.value })}
                   />
@@ -691,7 +691,7 @@ export default function PartiesPage() {
                 <input 
                   type="text" 
                   placeholder="Street / Premises / Building / Market"
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                   value={formData.address_line1}
                   onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
                 />
@@ -702,7 +702,7 @@ export default function PartiesPage() {
                   <label className="block text-sm text-textSecondary mb-1">City</label>
                   <input 
                     type="text" 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   />
@@ -711,7 +711,7 @@ export default function PartiesPage() {
                   <label className="block text-sm text-textSecondary mb-1">State Code</label>
                   <input 
                     type="text" 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.state_code}
                     onChange={(e) => setFormData({ ...formData, state_code: e.target.value })}
                   />
@@ -720,7 +720,7 @@ export default function PartiesPage() {
                   <label className="block text-sm text-textSecondary mb-1">Pincode</label>
                   <input 
                     type="text" 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.pincode}
                     onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                   />
@@ -733,7 +733,7 @@ export default function PartiesPage() {
                   <input 
                     type="text" 
                     placeholder="9876543210"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.mobile}
                     onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                   />
@@ -743,7 +743,7 @@ export default function PartiesPage() {
                   <input 
                     type="email" 
                     placeholder="party@domain.com"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
@@ -753,8 +753,8 @@ export default function PartiesPage() {
               {/* KYC Document Vault Section */}
               <div className="border-t border-border pt-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-sm font-semibold text-textPrimary flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700" />
                     KYC Document Vault Attachments
                   </h3>
                   <span className="text-[11px] text-textSecondary">Upload PAN, Aadhaar, & GST proofs</span>
@@ -764,11 +764,11 @@ export default function PartiesPage() {
                   {/* PAN Card */}
                   <div className="p-3 bg-background border border-border rounded-lg space-y-2">
                     <div className="flex items-center justify-between text-xs text-textSecondary">
-                      <span className="font-medium text-white flex items-center gap-1">
+                      <span className="font-medium text-textPrimary flex items-center gap-1">
                         <CreditCard className="w-3.5 h-3.5 text-primary" /> PAN Card Image
                       </span>
                       {formData.kyc_documents.pan_card && (
-                        <span className="text-emerald-400 flex items-center gap-0.5 text-[10px]">
+                        <span className="text-emerald-700 flex items-center gap-0.5 text-[10px]">
                           <CheckCircle2 className="w-3 h-3" /> Attached
                         </span>
                       )}
@@ -777,7 +777,7 @@ export default function PartiesPage() {
                       type="file" 
                       accept="image/*,.pdf"
                       onChange={(e) => handleFileUpload('pan_card', e)}
-                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20"
+                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-black/5 file:text-textPrimary hover:file:bg-black/10"
                     />
                     {formData.kyc_documents.pan_card && (
                       <img src={formData.kyc_documents.pan_card} alt="PAN Card" className="h-16 w-full object-cover rounded border border-border" />
@@ -787,11 +787,11 @@ export default function PartiesPage() {
                   {/* GST Certificate */}
                   <div className="p-3 bg-background border border-border rounded-lg space-y-2">
                     <div className="flex items-center justify-between text-xs text-textSecondary">
-                      <span className="font-medium text-white flex items-center gap-1">
+                      <span className="font-medium text-textPrimary flex items-center gap-1">
                         <Building className="w-3.5 h-3.5 text-primary" /> GST Certificate
                       </span>
                       {formData.kyc_documents.gst_cert && (
-                        <span className="text-emerald-400 flex items-center gap-0.5 text-[10px]">
+                        <span className="text-emerald-700 flex items-center gap-0.5 text-[10px]">
                           <CheckCircle2 className="w-3 h-3" /> Attached
                         </span>
                       )}
@@ -800,7 +800,7 @@ export default function PartiesPage() {
                       type="file" 
                       accept="image/*,.pdf"
                       onChange={(e) => handleFileUpload('gst_cert', e)}
-                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20"
+                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-black/5 file:text-textPrimary hover:file:bg-black/10"
                     />
                     {formData.kyc_documents.gst_cert && (
                       <img src={formData.kyc_documents.gst_cert} alt="GST Certificate" className="h-16 w-full object-cover rounded border border-border" />
@@ -810,11 +810,11 @@ export default function PartiesPage() {
                   {/* Aadhaar Card */}
                   <div className="p-3 bg-background border border-border rounded-lg space-y-2">
                     <div className="flex items-center justify-between text-xs text-textSecondary">
-                      <span className="font-medium text-white flex items-center gap-1">
+                      <span className="font-medium text-textPrimary flex items-center gap-1">
                         <FileText className="w-3.5 h-3.5 text-primary" /> Aadhaar Card
                       </span>
                       {formData.kyc_documents.aadhaar_card && (
-                        <span className="text-emerald-400 flex items-center gap-0.5 text-[10px]">
+                        <span className="text-emerald-700 flex items-center gap-0.5 text-[10px]">
                           <CheckCircle2 className="w-3 h-3" /> Attached
                         </span>
                       )}
@@ -823,7 +823,7 @@ export default function PartiesPage() {
                       type="file" 
                       accept="image/*,.pdf"
                       onChange={(e) => handleFileUpload('aadhaar_card', e)}
-                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20"
+                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-black/5 file:text-textPrimary hover:file:bg-black/10"
                     />
                     {formData.kyc_documents.aadhaar_card && (
                       <img src={formData.kyc_documents.aadhaar_card} alt="Aadhaar Card" className="h-16 w-full object-cover rounded border border-border" />
@@ -833,11 +833,11 @@ export default function PartiesPage() {
                   {/* Cancelled Cheque / Bank Proof */}
                   <div className="p-3 bg-background border border-border rounded-lg space-y-2">
                     <div className="flex items-center justify-between text-xs text-textSecondary">
-                      <span className="font-medium text-white flex items-center gap-1">
+                      <span className="font-medium text-textPrimary flex items-center gap-1">
                         <Upload className="w-3.5 h-3.5 text-primary" /> Bank Proof / Cheque
                       </span>
                       {formData.kyc_documents.cancelled_cheque && (
-                        <span className="text-emerald-400 flex items-center gap-0.5 text-[10px]">
+                        <span className="text-emerald-700 flex items-center gap-0.5 text-[10px]">
                           <CheckCircle2 className="w-3 h-3" /> Attached
                         </span>
                       )}
@@ -846,7 +846,7 @@ export default function PartiesPage() {
                       type="file" 
                       accept="image/*,.pdf"
                       onChange={(e) => handleFileUpload('cancelled_cheque', e)}
-                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-white/10 file:text-white hover:file:bg-white/20"
+                      className="text-xs text-textSecondary file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-black/5 file:text-textPrimary hover:file:bg-black/10"
                     />
                     {formData.kyc_documents.cancelled_cheque && (
                       <img src={formData.kyc_documents.cancelled_cheque} alt="Bank Proof" className="h-16 w-full object-cover rounded border border-border" />
@@ -860,7 +860,7 @@ export default function PartiesPage() {
                   <label className="block text-sm text-textSecondary mb-1">Credit Limit (₹)</label>
                   <input 
                     type="number" 
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.credit_limit}
                     onChange={(e) => setFormData({ ...formData, credit_limit: Number(e.target.value) })}
                   />
@@ -869,7 +869,7 @@ export default function PartiesPage() {
                   <label className="block text-sm text-textSecondary mb-1">Credit Days</label>
                   <input
                     type="number"
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                     value={formData.credit_days}
                     onChange={(e) => setFormData({ ...formData, credit_days: Number(e.target.value) })}
                   />
@@ -879,7 +879,7 @@ export default function PartiesPage() {
               {/* TDS / TCS on trade [s.194Q, s.206C(1H)] */}
               <div className="border-t border-border pt-4 space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">Tax withheld on trade</p>
+                  <p className="text-sm font-semibold text-textPrimary">Tax withheld on trade</p>
                   <p className="text-xs text-textSecondary">
                     Applies only once our turnover crossed Rs 10 crore and the setting is on; then on the value above Rs 50 lakh per party per year.
                     No PAN on record means the higher rate (s.206AA / s.206CC).
@@ -894,7 +894,7 @@ export default function PartiesPage() {
                       onChange={(e) => setFormData({ ...formData, tds_applicable: e.target.checked })}
                     />
                     <span>
-                      <span className="block text-sm text-white">Deduct TDS u/s 194Q on purchases</span>
+                      <span className="block text-sm text-textPrimary">Deduct TDS u/s 194Q on purchases</span>
                       <span className="block text-xs text-textSecondary">We buy from this party; 0.1% above the threshold is withheld from what we pay them.</span>
                     </span>
                   </label>
@@ -906,7 +906,7 @@ export default function PartiesPage() {
                       onChange={(e) => setFormData({ ...formData, tcs_applicable: e.target.checked })}
                     />
                     <span>
-                      <span className="block text-sm text-white">Collect TCS u/s 206C(1H) on sales</span>
+                      <span className="block text-sm text-textPrimary">Collect TCS u/s 206C(1H) on sales</span>
                       <span className="block text-xs text-textSecondary">We sell to this party; 0.1% above the threshold is added to their invoice.</span>
                     </span>
                   </label>
@@ -920,7 +920,7 @@ export default function PartiesPage() {
                       max={100}
                       step="0.01"
                       placeholder="None held"
-                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-white font-mono"
+                      className="w-full bg-background border border-border rounded-md px-3 py-2 text-textPrimary font-mono"
                       value={formData.lower_deduction_pct}
                       onChange={(e) => setFormData({ ...formData, lower_deduction_pct: e.target.value === '' ? '' : Number(e.target.value) })}
                     />
@@ -934,7 +934,7 @@ export default function PartiesPage() {
                       onChange={(e) => setFormData({ ...formData, tds_pan_verified: e.target.checked })}
                     />
                     <span>
-                      <span className="block text-sm text-white">PAN verified</span>
+                      <span className="block text-sm text-textPrimary">PAN verified</span>
                       <span className="block text-xs text-textSecondary">Checked against the department's PAN database.</span>
                     </span>
                   </label>
@@ -945,7 +945,7 @@ export default function PartiesPage() {
                 <button 
                   type="button" 
                   onClick={() => setIsDrawerOpen(false)}
-                  className="px-4 py-2 border border-border rounded-md text-white hover:bg-white/5"
+                  className="px-4 py-2 border border-border rounded-md text-textPrimary hover:bg-black/5"
                 >
                   Cancel
                 </button>

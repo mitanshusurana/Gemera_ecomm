@@ -69,7 +69,7 @@ export default function QuickCreate() {
                   role="menuitem"
                   type="button"
                   onClick={() => start(item)}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-textSecondary hover:bg-white/5 hover:text-white transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-textSecondary hover:bg-black/5 hover:text-textPrimary transition-colors"
                 >
                   <span className="text-primary">{item.icon}</span>
                   {item.label}

@@ -55,7 +55,7 @@ export default function RemindersDialog({ open, onClose }: { open: boolean; onCl
   };
 
   if (!open) return null;
-  const tabCls = (t: string) => `px-3 py-1.5 rounded-lg text-xs font-medium ${tab === t ? 'bg-primary text-black' : 'text-textSecondary hover:text-white'}`;
+  const tabCls = (t: string) => `px-3 py-1.5 rounded-lg text-xs font-medium ${tab === t ? 'bg-primary text-black' : 'text-textSecondary hover:text-textPrimary'}`;
 
   return (
     <Modal isOpen onClose={onClose} title="Overdue reminders">
@@ -78,18 +78,18 @@ export default function RemindersDialog({ open, onClose }: { open: boolean; onCl
                   <label key={c.party_id} className="flex items-center gap-3 px-3 py-2.5 cursor-pointer">
                     <input type="checkbox" disabled={!c.can_email} checked={!!picked[c.party_id]} onChange={(e) => setPicked({ ...picked, [c.party_id]: e.target.checked })} className="w-4 h-4" />
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm text-white truncate">{c.party_name}</span>
+                      <span className="block text-sm text-textPrimary truncate">{c.party_name}</span>
                       <span className="block text-xs text-textSecondary truncate">
                         {c.invoice_count} invoice{c.invoice_count === 1 ? '' : 's'} · oldest {c.oldest_days} days · {c.can_email ? c.email : 'no e-mail on file'}
                       </span>
                     </span>
-                    <span className="font-mono text-sm text-white">{formatCurrency(c.total)}</span>
+                    <span className="font-mono text-sm text-textPrimary">{formatCurrency(c.total)}</span>
                   </label>
                 ))}
               </div>
             )}
             <textarea rows={2} maxLength={2000} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Optional line added to every reminder"
-              className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none" />
+              className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none" />
             {error && <p className="text-sm text-danger">{error}</p>}
             {result && (
               <div className="text-sm space-y-1">
@@ -99,7 +99,7 @@ export default function RemindersDialog({ open, onClose }: { open: boolean; onCl
               </div>
             )}
             <div className="flex justify-end gap-3 pt-2 border-t border-border">
-              <button type="button" onClick={onClose} className="px-4 py-2 border border-border text-white text-sm rounded-lg hover:bg-surface">Close</button>
+              <button type="button" onClick={onClose} className="px-4 py-2 border border-border text-textPrimary text-sm rounded-lg hover:bg-surface">Close</button>
               <button type="button" disabled={sending || !configured || chosen.length === 0 || !!result} onClick={send}
                 className="px-6 py-2 bg-gold-gradient text-background font-semibold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-2">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send {chosen.length} reminder{chosen.length === 1 ? '' : 's'}
@@ -112,7 +112,7 @@ export default function RemindersDialog({ open, onClose }: { open: boolean; onCl
               <div key={l.id} className="px-3 py-2.5 flex items-start gap-3">
                 <Badge variant={l.status === 'Sent' ? 'success' : 'danger'}>{l.status}</Badge>
                 <span className="min-w-0">
-                  <span className="block text-sm text-white truncate">{l.subject}</span>
+                  <span className="block text-sm text-textPrimary truncate">{l.subject}</span>
                   <span className="block text-xs text-textSecondary truncate">{l.kind} · {l.to_address} · {new Date(l.sent_at).toLocaleString('en-IN')}{l.sent_by_name ? ` · ${l.sent_by_name}` : ''}</span>
                 </span>
               </div>

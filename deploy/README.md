@@ -55,6 +55,13 @@ deploy/deploy.sh core opc@129.159.18.63 ~/.ssh/core.key
 deploy/deploy.sh edge opc@68.233.96.36  ~/.ssh/edge.key
 ```
 
+## ERP e-mail
+
+The ERP sends invoices, quotes, statements and overdue reminders through SMTP. Set `SMTP_HOST`, `SMTP_PORT`,
+`SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` and `SMTP_FROM_NAME` in `deploy/edge/.env.erp` and restart `erp-backend`.
+The values can be the same Gmail account the store API uses; they are already in `~/caratloop/alerts.env` on both
+VMs. With `SMTP_HOST` blank the ERP sends nothing and says so.
+
 ## Health alerts
 
 `bootstrap.sh` installs `deploy/healthwatch.py` as a cron job every five minutes on each VM. It fetches the four

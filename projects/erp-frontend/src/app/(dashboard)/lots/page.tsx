@@ -46,7 +46,7 @@ const errText = (err: any, fallback: string) => {
   return fallback;
 };
 
-const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none';
+const fieldCls = 'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-textPrimary focus:border-primary outline-none';
 
 interface SplitChildForm { key: number; carat_weight: string; piece_count: string; sieve_size: string; }
 
@@ -139,7 +139,7 @@ export default function LotsPage() {
     const isOpen = expanded[lot.id] ?? depth === 0;
     return (
       <>
-        <tr key={lot.id} className="hover:bg-white/5 transition-colors">
+        <tr key={lot.id} className="hover:bg-black/5 transition-colors">
           <td className="py-2.5 pl-2">
             <input
               type="checkbox"
@@ -152,19 +152,19 @@ export default function LotsPage() {
           <td className="py-2.5 font-mono text-primary font-medium" style={{ paddingLeft: `${depth * 18}px` }}>
             <span className="inline-flex items-center gap-1">
               {kids.length > 0 ? (
-                <button type="button" onClick={() => setExpanded({ ...expanded, [lot.id]: !isOpen })} className="text-textSecondary hover:text-white">
+                <button type="button" onClick={() => setExpanded({ ...expanded, [lot.id]: !isOpen })} className="text-textSecondary hover:text-textPrimary">
                   {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                 </button>
               ) : <span className="w-3.5 inline-block" />}
               <button type="button" onClick={() => openDetail(lot.id)} className="hover:underline">{lot.lot_no || '—'}</button>
             </span>
           </td>
-          <td className="py-2.5 text-white">{lot.material_name}<span className="block text-[10px] text-textSecondary font-mono">{lot.material_code}</span></td>
+          <td className="py-2.5 text-textPrimary">{lot.material_name}<span className="block text-[10px] text-textSecondary font-mono">{lot.material_code}</span></td>
           <td className="py-2.5 text-textSecondary text-xs">
             {[lot.sieve_size, lot.shape, lot.colour, lot.clarity].filter(Boolean).join(' · ') || '—'}
             {(lot.origin || lot.treatment) && <span className="block text-[10px]">{[lot.origin, lot.treatment].filter(Boolean).join(' · ')}</span>}
           </td>
-          <td className="py-2.5 text-right font-mono text-white">{ct(lot.balance_carats)}</td>
+          <td className="py-2.5 text-right font-mono text-textPrimary">{ct(lot.balance_carats)}</td>
           <td className="py-2.5 text-right font-mono text-textSecondary">{lot.piece_count ?? '—'}</td>
           <td className="py-2.5 text-right font-mono text-textSecondary">{lot.cost_per_carat != null ? formatCurrency(num(lot.cost_per_carat)) : '—'}</td>
           <td className="py-2.5 text-center"><Badge variant={statusVariant(lot.status)}>{lot.status}</Badge></td>
@@ -176,7 +176,7 @@ export default function LotsPage() {
                   <button type="button" title="Re-weigh / record loss" onClick={() => setAdjustFor(lot)} className="p-1 text-textSecondary hover:text-primary"><Scale className="w-4 h-4" /></button>
                 </>
               )}
-              <button type="button" title="Print lot label" onClick={() => setLabelFor(lot)} className="p-1 text-textSecondary hover:text-white"><Printer className="w-4 h-4" /></button>
+              <button type="button" title="Print lot label" onClick={() => setLabelFor(lot)} className="p-1 text-textSecondary hover:text-textPrimary"><Printer className="w-4 h-4" /></button>
             </div>
           </td>
         </tr>
@@ -189,7 +189,7 @@ export default function LotsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-playfair font-bold text-white">Gemstone Lots</h1>
+          <h1 className="text-3xl font-playfair font-bold text-textPrimary">Gemstone Lots</h1>
           <p className="text-textSecondary mt-1">[CGST Rule 56(2)] Carat lots and parcels: split, merge, re-weigh. Balances come from the stock ledger.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -213,8 +213,8 @@ export default function LotsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card p-4"><p className="text-xs text-textSecondary">Open lots</p><p className="text-2xl font-bold text-white">{totals.open}</p></div>
-        <div className="glass-card p-4"><p className="text-xs text-textSecondary">Carats on hand (open lots)</p><p className="text-2xl font-bold text-white font-mono">{ct(totals.carats)}</p></div>
+        <div className="glass-card p-4"><p className="text-xs text-textSecondary">Open lots</p><p className="text-2xl font-bold text-textPrimary">{totals.open}</p></div>
+        <div className="glass-card p-4"><p className="text-xs text-textSecondary">Carats on hand (open lots)</p><p className="text-2xl font-bold text-textPrimary font-mono">{ct(totals.carats)}</p></div>
         <div className="glass-card p-4"><p className="text-xs text-textSecondary">Value at cost</p><p className="text-2xl font-bold text-primary font-mono">{formatCurrency(totals.value)}</p></div>
       </div>
 
@@ -242,7 +242,7 @@ export default function LotsPage() {
         ) : lots.length === 0 ? (
           <div className="py-16 text-center text-textSecondary space-y-2">
             <Package className="w-8 h-8 mx-auto text-primary/60" />
-            <p className="text-white font-semibold">No lots yet</p>
+            <p className="text-textPrimary font-semibold">No lots yet</p>
             <p className="text-xs">Open one from opening stock or tag carats already received on a purchase.</p>
           </div>
         ) : (
@@ -348,10 +348,10 @@ export default function LotsPage() {
           <div className="w-full max-w-2xl bg-surface border-l border-border h-full p-6 overflow-y-auto space-y-5">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
-                <h2 className="text-xl font-playfair font-bold text-white font-mono">{detail.lot_no || 'Lot'}</h2>
+                <h2 className="text-xl font-playfair font-bold text-textPrimary font-mono">{detail.lot_no || 'Lot'}</h2>
                 {detail.material_name && <p className="text-xs text-textSecondary">{detail.material_name} · {detail.material_code}</p>}
               </div>
-              <button onClick={() => setDetail(null)} className="text-textSecondary hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={() => setDetail(null)} className="text-textSecondary hover:text-textPrimary"><X className="w-5 h-5" /></button>
             </div>
             {detailLoading ? (
               <div className="py-12 text-center text-textSecondary">Loading…</div>
@@ -376,18 +376,18 @@ export default function LotsPage() {
                   ].map(([k, v]) => (
                     <div key={String(k)} className="p-2 bg-background border border-border rounded-lg">
                       <p className="text-textSecondary">{k}</p>
-                      <p className="text-white font-medium">{String(v)}</p>
+                      <p className="text-textPrimary font-medium">{String(v)}</p>
                     </div>
                   ))}
                 </div>
                 {detail.children?.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-white mb-2">Parcels split from this lot</h3>
+                    <h3 className="text-sm font-semibold text-textPrimary mb-2">Parcels split from this lot</h3>
                     <ul className="space-y-1 text-xs">
                       {detail.children.map((c: any) => (
                         <li key={c.id} className="flex justify-between p-2 bg-background border border-border rounded-lg">
                           <button type="button" onClick={() => openDetail(c.id)} className="font-mono text-primary hover:underline">{c.lot_no}</button>
-                          <span className="text-white font-mono">{ct(c.balance_carats)}</span>
+                          <span className="text-textPrimary font-mono">{ct(c.balance_carats)}</span>
                           <Badge variant={statusVariant(c.status)}>{c.status}</Badge>
                         </li>
                       ))}
@@ -395,7 +395,7 @@ export default function LotsPage() {
                   </div>
                 )}
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-2">Carat movements</h3>
+                  <h3 className="text-sm font-semibold text-textPrimary mb-2">Carat movements</h3>
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-textSecondary uppercase border-b border-border">
@@ -406,12 +406,12 @@ export default function LotsPage() {
                     <tbody className="divide-y divide-border font-mono">
                       {(detail.movements || []).map((m: any) => (
                         <tr key={m.id}>
-                          <td className="py-1.5 text-white">{m.entry_date}</td>
+                          <td className="py-1.5 text-textPrimary">{m.entry_date}</td>
                           <td className="py-1.5 text-textSecondary">{m.transaction_type}</td>
                           <td className="py-1.5 text-textSecondary">{m.source_document_no || '—'}{m.remarks ? <span className="block text-[10px]">{m.remarks}</span> : null}</td>
-                          <td className="py-1.5 text-right text-emerald-400">{m.direction === 'I' ? num(m.quantity).toFixed(3) : ''}</td>
-                          <td className="py-1.5 text-right text-red-400">{m.direction === 'O' ? num(m.quantity).toFixed(3) : ''}</td>
-                          <td className="py-1.5 text-right text-white">{num(m.running_balance).toFixed(3)}</td>
+                          <td className="py-1.5 text-right text-emerald-700">{m.direction === 'I' ? num(m.quantity).toFixed(3) : ''}</td>
+                          <td className="py-1.5 text-right text-red-600">{m.direction === 'O' ? num(m.quantity).toFixed(3) : ''}</td>
+                          <td className="py-1.5 text-right text-textPrimary">{num(m.running_balance).toFixed(3)}</td>
                         </tr>
                       ))}
                       {(detail.movements || []).length === 0 && <tr><td colSpan={6} className="py-4 text-center text-textSecondary">No movements.</td></tr>}
@@ -476,7 +476,7 @@ function CreateLotModal({ locations, onClose, onDone }: { locations: StockLocati
         <div className="space-y-1">
           <label className="text-xs text-textSecondary">Material (carat item) *</label>
           <ItemSelect onChange={(_, item) => setMaterial(item || null)} placeholder="Emerald, ruby, sapphire, diamond…" />
-          {material && material.unit !== 'ct' && <p className="text-[11px] text-amber-400">This item is kept in {material.unit}; lots are counted in carats.</p>}
+          {material && material.unit !== 'ct' && <p className="text-[11px] text-amber-700">This item is kept in {material.unit}; lots are counted in carats.</p>}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
@@ -539,7 +539,7 @@ function CreateLotModal({ locations, onClose, onDone }: { locations: StockLocati
               ['purchase', 'Already received', 'Tags carats a purchase already put in stock; the material total does not change.'],
             ].map(([v, label, hint]) => (
               <button key={v} type="button" onClick={() => set('source', v)} className={`text-left p-2 rounded-lg border ${form.source === v ? 'border-primary bg-primary/10' : 'border-border'}`}>
-                <div className={`text-xs font-semibold ${form.source === v ? 'text-primary' : 'text-white'}`}>{label}</div>
+                <div className={`text-xs font-semibold ${form.source === v ? 'text-primary' : 'text-textPrimary'}`}>{label}</div>
                 <div className="text-[10px] text-textSecondary">{hint}</div>
               </button>
             ))}
@@ -550,7 +550,7 @@ function CreateLotModal({ locations, onClose, onDone }: { locations: StockLocati
           <input value={form.remarks} onChange={(e) => set('remarks', e.target.value)} className={fieldCls} />
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary">Cancel</button>
           <button type="submit" disabled={saving} className="px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg disabled:opacity-50">{saving ? 'Saving…' : 'Open lot'}</button>
         </div>
       </form>
@@ -580,7 +580,7 @@ function SplitLotModal({ lot, busy, onClose, onSubmit }: { lot: LotRow; busy: bo
       <div className="space-y-4">
         <div className="p-3 bg-background border border-border rounded-lg text-xs flex justify-between">
           <span className="text-textSecondary">{lot.material_name} · {[lot.sieve_size, lot.shape, lot.colour].filter(Boolean).join(' · ')}</span>
-          <span className="text-white font-mono">Parent holds {ct(balance)}{lot.piece_count ? ` · ${lot.piece_count} pcs` : ''}</span>
+          <span className="text-textPrimary font-mono">Parent holds {ct(balance)}{lot.piece_count ? ` · ${lot.piece_count} pcs` : ''}</span>
         </div>
         <table className="w-full text-xs">
           <thead>
@@ -601,7 +601,7 @@ function SplitLotModal({ lot, busy, onClose, onSubmit }: { lot: LotRow; busy: bo
           </tbody>
         </table>
         <button type="button" onClick={() => setChildren([...children, { key: Date.now(), carat_weight: '', piece_count: '', sieve_size: lot.sieve_size || '' }])} className="text-xs text-primary flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add parcel</button>
-        <div className={`p-3 rounded-lg border text-xs flex justify-between ${ok ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/40 bg-amber-500/10 text-amber-300'}`}>
+        <div className={`p-3 rounded-lg border text-xs flex justify-between ${ok ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700' : 'border-amber-500/40 bg-amber-500/10 text-amber-700'}`}>
           <span>Parcels total {ct(total)}</span>
           <span>
             {diff < -1e-9 ? `exceeds the parent by ${ct(-diff)}` : diff > tolerance + 1e-9 ? `${ct(diff)} short — beyond the ${ct(tolerance)} tolerance; re-weigh first` : diff > 1e-9 ? `${ct(diff)} booked as cutting loss` : 'balances exactly'}
@@ -612,7 +612,7 @@ function SplitLotModal({ lot, busy, onClose, onSubmit }: { lot: LotRow; busy: bo
           <input value={reason} onChange={(e) => setReason(e.target.value)} className={fieldCls} />
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary">Cancel</button>
           <button
             type="button"
             disabled={!ok || busy}
@@ -643,12 +643,12 @@ function MergeLotsModal({ lots, busy, onClose, onSubmit }: { lots: LotRow[]; bus
             <li key={l.id} className="flex justify-between p-2 bg-background border border-border rounded-lg">
               <span className="font-mono text-primary">{l.lot_no}</span>
               <span className="text-textSecondary">{[l.sieve_size, l.colour].filter(Boolean).join(' · ')}</span>
-              <span className="font-mono text-white">{ct(l.balance_carats)}</span>
+              <span className="font-mono text-textPrimary">{ct(l.balance_carats)}</span>
             </li>
           ))}
         </ul>
         <div className="p-3 bg-background border border-primary/30 rounded-lg text-xs flex justify-between">
-          <span className="text-white font-mono">New lot: {ct(carats)}</span>
+          <span className="text-textPrimary font-mono">New lot: {ct(carats)}</span>
           <span className="text-textSecondary">{anyCost ? `avg ${formatCurrency(carats > 0 ? value / carats : 0)} / ct` : 'no cost on record'}</span>
         </div>
         <div className="space-y-1">
@@ -660,7 +660,7 @@ function MergeLotsModal({ lots, busy, onClose, onSubmit }: { lots: LotRow[]; bus
           <input value={reason} onChange={(e) => setReason(e.target.value)} className={fieldCls} />
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary">Cancel</button>
           <button type="button" disabled={busy} onClick={() => onSubmit(lotNo, reason)} className="px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg disabled:opacity-50">{busy ? 'Merging…' : 'Merge'}</button>
         </div>
       </div>
@@ -683,7 +683,7 @@ function AdjustLotModal({ lot, busy, onClose, onSubmit }: { lot: LotRow; busy: b
           <label className="text-xs text-textSecondary">New weight (ct) *</label>
           <input type="number" step="0.001" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} className={`${fieldCls} font-mono`} />
         </div>
-        <div className={`p-3 rounded-lg border text-xs ${delta < 0 ? 'border-red-500/40 bg-red-500/10 text-red-300' : delta > 0 ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-border text-textSecondary'}`}>
+        <div className={`p-3 rounded-lg border text-xs ${delta < 0 ? 'border-red-500/40 bg-red-500/10 text-red-600' : delta > 0 ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700' : 'border-border text-textSecondary'}`}>
           {delta < 0 ? `Loss of ${ct(-delta)}` : delta > 0 ? `Gain of ${ct(delta)}` : 'No change'}{num(weight) <= 0 ? ' — the lot will be closed' : ''}
         </div>
         <div className="space-y-1">
@@ -691,7 +691,7 @@ function AdjustLotModal({ lot, busy, onClose, onSubmit }: { lot: LotRow; busy: b
           <input value={reason} onChange={(e) => setReason(e.target.value)} className={fieldCls} placeholder="Cutting loss, polishing dust, re-weighed…" />
         </div>
         <div className="flex justify-end gap-3 pt-2 border-t border-border">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-white">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-textSecondary hover:text-textPrimary">Cancel</button>
           <button type="button" disabled={busy || reason.trim().length < 3} onClick={() => onSubmit(weight, reason.trim())} className="px-4 py-2 bg-gold-gradient text-background font-semibold rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Record'}</button>
         </div>
       </div>
