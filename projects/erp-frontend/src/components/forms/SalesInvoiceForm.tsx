@@ -8,6 +8,7 @@ import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
 import { apiClient, lotsApi, LotRow } from '@/lib/api';
 import { useCompany } from '@/lib/company';
+import { isoDate, today } from '@/lib/fiscal';
 
 interface LineItem {
   id: number;
@@ -73,6 +74,16 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
   // Home state from /auth/me, not a hard-coded '08'; until the company has
   // loaded, and until a customer is chosen, the field is blank.
   const [placeOfSupply, setPlaceOfSupply] = useState('');
+  // Payment terms decide the due date (Immediate = today, Net N = N days on);
+  // Custom lets the date be typed. The due date drives the overdue split.
+  const [paymentTerms, setPaymentTerms] = useState('Immediate');
+  const [customDueDate, setCustomDueDate] = useState('');
+  // Local date, not UTC: before 05:30 IST the UTC date is still yesterday.
+  const invoiceDay = today();
+  const netDays = /^Net (\d+)$/.exec(paymentTerms)?.[1];
+  const dueDate = paymentTerms === 'Custom'
+    ? customDueDate
+    : (() => { const d = new Date(); d.setDate(d.getDate() + Number(netDays || 0)); return isoDate(d); })();
   const [posTouched, setPosTouched] = useState(false);
   useEffect(() => {
     if (!posTouched && homeState && !placeOfSupply) setPlaceOfSupply(homeState);
@@ -141,8 +152,10 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
     try {
       const body: any = {
         customer_id: customerId,
-        invoice_date: new Date().toISOString().split('T')[0],
+        invoice_date: invoiceDay,
         place_of_supply: isExport ? undefined : placeOfSupply,
+        payment_terms: paymentTerms,
+        due_date: paymentTerms === 'Custom' && customDueDate ? customDueDate : undefined,
         invoice_type: invoiceType,
         currency,
         exchange_rate: isForeign ? Number(exchangeRate) : 1,
@@ -332,6 +345,33 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
             </select>
           </div>
         )}
+      </div>
+
+      {/* Payment terms and due date */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm text-textSecondary font-medium">Payment Terms</label>
+          <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none font-medium">
+            <option value="Immediate">Due on receipt</option>
+            <option value="Net 7">Net 7 days</option>
+            <option value="Net 15">Net 15 days</option>
+            <option value="Net 30">Net 30 days</option>
+            <option value="Net 45">Net 45 days</option>
+            <option value="Net 60">Net 60 days</option>
+            <option value="Custom">Custom due date</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm text-textSecondary font-medium">Due Date</label>
+          <input
+            type="date"
+            value={dueDate}
+            min={invoiceDay}
+            disabled={paymentTerms !== 'Custom'}
+            onChange={(e) => setCustomDueDate(e.target.value)}
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none disabled:opacity-70"
+          />
+        </div>
       </div>
 
       {/* Export block */}

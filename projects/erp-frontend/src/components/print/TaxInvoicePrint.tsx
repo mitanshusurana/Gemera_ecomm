@@ -186,7 +186,8 @@ export default function TaxInvoicePrint({ invoice, onClose }: TaxInvoicePrintPro
               <p className="text-sm font-bold font-mono">Invoice No: {invoice.invoice_no}</p>
               <p className="text-xs">Date: {new Date(invoice.invoice_date || Date.now()).toLocaleDateString('en-IN')}</p>
               <p className="text-xs">Place of Supply: {isExport ? '96 - Other Country' : (invoice.place_of_supply || (isInterState ? 'Out of State' : '08 - Rajasthan'))}</p>
-              <p className="text-xs">Payment Terms: {invoice.payment_terms || 'Immediate'}</p>
+              <p className="text-xs">Payment Terms: {invoice.payment_terms === 'Immediate' || !invoice.payment_terms ? 'Due on receipt' : invoice.payment_terms}</p>
+              {invoice.due_date && <p className="text-xs">Due Date: {new Date(invoice.due_date).toLocaleDateString('en-IN')}</p>}
             </div>
           </div>
 

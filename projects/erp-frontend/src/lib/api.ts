@@ -94,6 +94,25 @@ export const insightsApi = {
   search: (q: string) => apiClient.get<{ q: string; results: SearchHit[] }>('/search', { params: { q } }),
 };
 
+// Expenses: a running cost paid from cash or bank (app/api/v1/expenses.py)
+export interface Expense {
+  id: string; expense_no: string; expense_date: string; amount: number; status: 'Posted' | 'Reversed';
+  reference_no?: string | null; notes?: string | null;
+  expense_account_id: string; expense_account_code: string; expense_account_name: string;
+  paid_through_account_id: string; paid_through_name: string;
+  vendor_id?: string | null; vendor_name?: string | null;
+  journal_entry_id: number; voucher_no: string;
+}
+export const expensesApi = {
+  list: (params: { from_date?: string; to_date?: string; expense_account_id?: string }) =>
+    apiClient.get<{ expenses: Expense[]; total: number }>('/expenses', { params }),
+  create: (data: {
+    expense_date: string; expense_account_id: string; paid_through_account_id: string; amount: number;
+    vendor_id?: string; reference_no?: string; notes?: string;
+  }) => apiClient.post('/expenses', data),
+  reverse: (id: string, reason: string) => apiClient.post(`/expenses/${id}/reverse`, { reason }),
+};
+
 // Banking APIs
 export const bankingApi = {
   getAccounts: () => apiClient.get('/banking/accounts'),

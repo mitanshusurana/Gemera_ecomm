@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowDownLeft, ArrowUpRight, BookOpen, FileText, Package, Plus, ShoppingBag, Users } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, BookOpen, FileText, Package, Plus, Receipt, ShoppingBag, Users } from 'lucide-react';
 
 import { QUICK_CREATE_EVENT } from '@/lib/quickCreate';
 
@@ -12,6 +12,7 @@ const ITEMS: { group: string; label: string; href: string; form?: boolean; icon:
   { group: 'Sales', label: 'Sales invoice', href: '/sales', form: true, icon: <FileText className="w-4 h-4" /> },
   { group: 'Sales', label: 'Receipt', href: '/vouchers/receipt', icon: <ArrowDownLeft className="w-4 h-4" /> },
   { group: 'Purchases', label: 'Purchase bill', href: '/purchases', form: true, icon: <ShoppingBag className="w-4 h-4" /> },
+  { group: 'Purchases', label: 'Expense', href: '/expenses', form: true, icon: <Receipt className="w-4 h-4" /> },
   { group: 'Purchases', label: 'Payment', href: '/vouchers/payment', icon: <ArrowUpRight className="w-4 h-4" /> },
   { group: 'Accounts', label: 'Journal', href: '/vouchers/journal', icon: <BookOpen className="w-4 h-4" /> },
   { group: 'Masters', label: 'Party', href: '/parties', form: true, icon: <Users className="w-4 h-4" /> },
