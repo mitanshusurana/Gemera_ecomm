@@ -22,7 +22,13 @@ async def lifespan(app: FastAPI):
     settings.validate_runtime()
     logger.info(f"🪙 Caratloop ERP starting — State: {settings.COMPANY_STATE_NAME}")
     logger.info(f"📊 Database: {settings.DATABASE_URL.split('@')[-1]}")
+    # Recurring expenses that post themselves (rent on the 1st): checked a
+    # minute after start-up and every six hours after.
+    import asyncio
+    from app.api.v1.recurring import recurring_loop
+    recurring_task = asyncio.create_task(recurring_loop())
     yield
+    recurring_task.cancel()
     logger.info("Caratloop ERP shutting down.")
 
 

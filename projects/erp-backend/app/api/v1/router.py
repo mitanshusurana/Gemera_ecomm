@@ -47,3 +47,7 @@ from app.api.v1 import expenses  # noqa: E402  (running costs paid from cash or 
 api_router.include_router(expenses.router,    prefix="/expenses",  tags=["Expenses"])
 from app.api.v1 import orders  # noqa: E402  (quotes, sales orders, purchase orders)
 api_router.include_router(orders.router,      prefix="/orders",    tags=["Quotes & Orders"])
+from app.api.v1 import recurring  # noqa: E402  (recurring expenses, bills and invoices)
+api_router.include_router(recurring.router,   prefix="/recurring", tags=["Recurring Documents"])
+from app.api.v1 import mail  # noqa: E402  (e-mailing invoices, quotes, statements, reminders)
+api_router.include_router(mail.router,        prefix="/mail",      tags=["E-mail"])
