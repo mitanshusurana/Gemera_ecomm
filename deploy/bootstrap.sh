@@ -50,8 +50,17 @@ docker compose version >/dev/null 2>&1 || sudo docker compose version
 echo "   $(sudo docker --version)"
 
 say "Swap"
-if ! swapon --show --noheadings | grep -q .; then
-    sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+# "Some swap exists" is not enough: the edge VM shipped with a 500 MB swap
+# file, so the 4 GB one was never created or switched on, and that VM ran on
+# 500 MB of swap until November 2026 (it is the one that froze under memory
+# pressure in October). Under 2 GB in total, make sure /swapfile exists, is
+# on, and comes back after a reboot.
+swap_mb=$(free -m | awk '/^Swap:/ {print $2}')
+if (( ${swap_mb:-0} < 2000 )); then
+    if [[ ! -f /swapfile ]]; then
+        sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile
+    fi
+    sudo swapon /swapfile 2>/dev/null || true
     grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
 fi
 # Low swappiness keeps the JVM and Node heaps resident and evicts page cache
