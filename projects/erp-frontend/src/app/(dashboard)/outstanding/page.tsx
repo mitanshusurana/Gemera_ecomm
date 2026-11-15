@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import RemindersDialog from '@/components/mail/RemindersDialog';
 import Link from 'next/link';
 import StatsCard from '@/components/ui/StatsCard';
 import { IndianRupee, AlertCircle } from 'lucide-react';
@@ -28,6 +29,7 @@ export default function OutstandingPage() {
   const [totals, setTotals] = useState<any>(null);
   const [recon, setRecon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [remindersOpen, setRemindersOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,8 +89,15 @@ export default function OutstandingPage() {
           >
             Bill-wise age view
           </button>
+          <button
+            onClick={() => setRemindersOpen(true)}
+            className="px-4 py-2 border border-primary text-primary rounded-md font-medium text-sm hover:bg-primary/10 transition-colors"
+          >
+            Overdue reminders
+          </button>
         </div>
       </div>
+      <RemindersDialog open={remindersOpen} onClose={() => setRemindersOpen(false)} />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatsCard title={activeTab === 'Receivables' ? 'Total Receivable' : 'Total Payable'} value={formatCurrency(totalOutstanding)} icon={<IndianRupee className="w-6 h-6" />}

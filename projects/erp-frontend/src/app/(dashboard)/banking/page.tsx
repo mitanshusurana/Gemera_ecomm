@@ -8,6 +8,7 @@ import { FileUp, Landmark, CheckCircle, Clock, Check, X, Printer, ArrowRightLeft
 import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 import BookFromStatementModal, { StatementLineForBooking } from '@/components/banking/BookFromStatementModal';
+import BankRulesDialog from '@/components/banking/BankRulesDialog';
 import { financialYearStart, isoDate, today } from '@/lib/fiscal';
 
 /** Period presets for the reconciliation screen; "custom" keeps whatever the two date boxes hold. */
@@ -66,6 +67,7 @@ export default function BankingPage() {
   const [matching, setMatching] = useState(false);
   // Booking a voucher straight from a statement line, and amount-based suggestions.
   const [bookingLine, setBookingLine] = useState<StatementLineForBooking | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [applyingSuggestion, setApplyingSuggestion] = useState<string | null>(null);
 
@@ -264,6 +266,10 @@ export default function BankingPage() {
           <p className="text-textSecondary mt-1">[Section 44AA] Match book entries with official bank statement lines.</p>
         </div>
         <div className="flex gap-3 items-center">
+          <button onClick={() => setRulesOpen(true)} className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-textSecondary hover:text-white hover:border-primary" title="Text in a statement line that suggests the ledger or party to book it to">
+            Bank rules
+          </button>
+          <BankRulesDialog open={rulesOpen} onClose={() => setRulesOpen(false)} />
           <select 
             className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-primary"
             value={selectedAccount} 

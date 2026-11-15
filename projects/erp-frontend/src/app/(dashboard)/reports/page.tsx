@@ -13,6 +13,7 @@ import { financialYearStart } from '@/lib/fiscal';
 const ANALYSIS: Record<string, AnalysisReport> = {
   'Sales by Customer': 'sales_by_customer',
   'Sales by Item': 'sales_by_item',
+  'Sales by Salesperson': 'sales_by_salesperson',
   'Purchases by Vendor': 'purchases_by_vendor',
   'Purchases by Item': 'purchases_by_item',
   'Expenses by Category': 'expenses_by_account',
@@ -43,6 +44,9 @@ export default function ReportsPage() {
     { id: 'Audit Trail Log', name: 'Audit Trail Log [MCA-11g]', desc: 'Immutable database change history with sequence numbers & row hashes' },
     { id: 'Sales by Customer', name: 'Sales by Customer', desc: 'Who buys: invoices, taxable value, GST, total and what is still unpaid, per customer' },
     { id: 'Sales by Item', name: 'Sales by Item', desc: 'What sells: quantity, net weight and value per item or product' },
+    { id: 'Sales by Salesperson', name: 'Sales by Salesperson', desc: 'Invoices, value and what is unpaid for each salesperson named on an invoice' },
+    { id: 'Cash Flow Statement', name: 'Cash Flow Statement', desc: 'Where cash came from and went to in the period; opening plus movement equals closing' },
+    { id: 'GST Annual Summary', name: 'GST Annual Summary', desc: 'The year by month: outward supplies, output tax, ITC, reverse charge. Working figures for GSTR-9' },
     { id: 'Purchases by Vendor', name: 'Purchases by Vendor', desc: 'Whom you buy from: bills, taxable value, GST, total and what is still payable' },
     { id: 'Purchases by Item', name: 'Purchases by Item', desc: 'What you buy: quantity, weight and value per item, services included' },
     { id: 'Expenses by Category', name: 'Expenses by Category', desc: 'Where the money goes: each expense ledger for the period, largest first' },
@@ -78,6 +82,12 @@ export default function ReportsPage() {
       } else if (selectedReport === 'Audit Trail Log') {
         const res = await apiClient.get(`/reports/audit-trail?from_date=${fromDate}&to_date=${toDate}`);
         setReportData(res.data);
+      } else if (selectedReport === 'Cash Flow Statement') {
+        const res = await insightsApi.cashFlowStatement(fromDate, toDate);
+        setReportData(res.data);
+      } else if (selectedReport === 'GST Annual Summary') {
+        const res = await insightsApi.gstAnnualSummary(Number(fromDate.slice(0, 4)) - (Number(fromDate.slice(5, 7)) < 4 ? 1 : 0));
+        setReportData(res.data);
       } else if (ANALYSIS[selectedReport]) {
         const res = await insightsApi.analysis(ANALYSIS[selectedReport], fromDate, toDate);
         setReportData(res.data);
@@ -102,10 +112,10 @@ export default function ReportsPage() {
 
   const num = (v: any, digits = 2) => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: digits });
   const partyAnalysisColumns = [
-    { header: selectedReport === 'Purchases by Vendor' ? 'Vendor' : 'Customer', accessorKey: 'name', cell: (item: any) => (
+    { header: selectedReport === 'Purchases by Vendor' ? 'Vendor' : selectedReport === 'Sales by Salesperson' ? 'Salesperson' : 'Customer', accessorKey: 'name', cell: (item: any) => (
       <span>
         <span className="block font-medium text-white">{item.name}</span>
-        <span className="block font-mono text-[11px] text-textSecondary">{item.gstin || 'Unregistered'}</span>
+        {selectedReport !== 'Sales by Salesperson' && <span className="block font-mono text-[11px] text-textSecondary">{item.gstin || 'Unregistered'}</span>}
       </span>
     ) },
     { header: selectedReport === 'Purchases by Vendor' ? 'Bills' : 'Invoices', accessorKey: 'documents', cell: (item: any) => num(item.documents, 0) },
@@ -250,7 +260,7 @@ export default function ReportsPage() {
           <div>
             <h2 className="text-xl font-playfair font-bold text-white">{selectedReport} Report</h2>
             <p className="text-xs text-textSecondary">
-              {ANALYSIS[selectedReport] ? 'Management report' : 'Statutory Mercantile Format'} • Generated on {new Date().toLocaleDateString('en-IN')}
+              {ANALYSIS[selectedReport] || selectedReport === 'Cash Flow Statement' || selectedReport === 'GST Annual Summary' ? 'Management report' : 'Statutory Mercantile Format'} • Generated on {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
 
@@ -280,7 +290,7 @@ export default function ReportsPage() {
               </div>
             )}
 
-            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'TDS/TCS Register' || selectedReport === 'Audit Trail Log' || !!ANALYSIS[selectedReport]) && (
+            {(selectedReport === 'Profit & Loss' || selectedReport === 'GST Tax Register' || selectedReport === 'TDS/TCS Register' || selectedReport === 'Audit Trail Log' || selectedReport === 'Cash Flow Statement' || selectedReport === 'GST Annual Summary' || !!ANALYSIS[selectedReport]) && (
               <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-white">
                 <Calendar className="w-3.5 h-3.5 text-textSecondary" />
                 <span className="text-textSecondary">From:</span>
@@ -760,6 +770,67 @@ export default function ReportsPage() {
               <span className="font-semibold text-white">Total Outstanding Receivables:</span>
               <span className="text-primary font-mono font-bold text-lg">{formatCurrency(reportData?.totals?.total_outstanding || 0)}</span>
             </div>
+          </div>
+        ) : selectedReport === 'Cash Flow Statement' ? (
+          /* 10. Cash flow statement (direct method) */
+          <div className="space-y-4 max-w-3xl">
+            <div className="bg-surface border border-border rounded-xl p-4 flex justify-between text-sm">
+              <span className="text-textSecondary">Cash and bank at the start</span>
+              <span className="font-mono text-white">{formatCurrency(reportData?.opening || 0)}</span>
+            </div>
+            {([['Money in', reportData?.inflows, reportData?.total_inflow, '+'], ['Money out', reportData?.outflows, reportData?.total_outflow, '−']] as [string, any[], number, string][]).map(([title, list, total, sign]) => (
+              <div key={title} className="bg-surface border border-border rounded-xl overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-border flex justify-between text-sm font-semibold text-white">
+                  <span>{title}</span><span className="font-mono">{sign} {formatCurrency(total || 0)}</span>
+                </div>
+                {(list || []).length === 0 ? <p className="px-4 py-3 text-xs text-textSecondary">Nothing in this period.</p> : (list || []).map((r: any) => (
+                  <div key={r.group_name} className="px-4 py-2 flex justify-between text-sm border-b border-border/50 last:border-b-0">
+                    <span className="text-textSecondary">{r.group_name} <span className="text-[11px]">({r.nature})</span></span>
+                    <span className="font-mono text-white">{formatCurrency(r.net)}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="bg-surface border border-border rounded-xl p-4 flex justify-between text-sm">
+              <span className="font-semibold text-white">Cash and bank at the end</span>
+              <span className="font-mono font-bold text-primary text-lg">{formatCurrency(reportData?.closing || 0)}</span>
+            </div>
+            <p className="text-xs text-textSecondary">
+              Each line is the ledger group on the other side of a cash or bank entry. Transfers between cash and bank are left out.
+              {Math.abs(Number(reportData?.unexplained || 0)) >= 0.01 && ` Not attributed to a group: ${formatCurrency(reportData.unexplained)}.`}
+            </p>
+          </div>
+        ) : selectedReport === 'GST Annual Summary' ? (
+          /* 11. Annual GST summary by month */
+          <div className="space-y-4">
+            <div className="overflow-x-auto bg-surface border border-border rounded-xl">
+              <table className="w-full text-sm">
+                <thead className="text-textSecondary text-xs uppercase tracking-wider border-b border-border">
+                  <tr>
+                    {['Month', 'Taxable', 'IGST', 'CGST', 'SGST', 'Output Tax', 'ITC', 'Reverse Charge', 'Net Payable'].map((h, i) => (
+                      <th key={h} className={`px-3 py-2.5 ${i === 0 ? 'text-left' : 'text-right'}`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(reportData?.months || []).map((m: any) => (
+                    <tr key={m.month}>
+                      <td className="px-3 py-2 text-white">{m.name}</td>
+                      {['taxable', 'output_igst', 'output_cgst', 'output_sgst', 'output_tax', 'itc', 'rcm', 'net_payable'].map((k) => (
+                        <td key={k} className={`px-3 py-2 text-right font-mono ${k === 'net_payable' ? 'text-white font-semibold' : 'text-textSecondary'}`}>{Number(m[k]) === 0 ? '—' : formatCurrency(m[k])}</td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-border">
+                    <td className="px-3 py-2.5 font-semibold text-white">FY {reportData?.fiscal_year}</td>
+                    {['taxable', 'output_igst', 'output_cgst', 'output_sgst', 'output_tax', 'itc', 'rcm', 'net_payable'].map((k) => (
+                      <td key={k} className="px-3 py-2.5 text-right font-mono font-semibold text-primary">{formatCurrency(reportData?.totals?.[k] || 0)}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-textSecondary">{reportData?.note} The year shown is the financial year the From date falls in.</p>
           </div>
         ) : ANALYSIS[selectedReport] ? (
           /* 9. Analysis: sales by customer / item, purchases by vendor / item, expenses by category */

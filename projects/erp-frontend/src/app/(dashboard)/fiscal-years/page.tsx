@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { CalendarRange, Lock, Unlock, CheckCircle2, Plus, Loader2, AlertTriangle, BookLock } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
-import { fiscalYearsApi, type ClosingPreview, type FiscalYear } from '@/lib/api';
+import { controlsApi, fiscalYearsApi, type ClosingPreview, type FiscalYear } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { normaliseRole, useMe } from '@/lib/session';
 
@@ -22,6 +22,27 @@ export default function FiscalYearsPage() {
   const canAmend = CAN_AMEND.includes(normaliseRole(me?.role));
 
   const [years, setYears] = useState<FiscalYear[]>([]);
+  // Lock date: nothing dated on or before it can be posted, whatever its year.
+  const [lockDate, setLockDate] = useState<string | null>(null);
+  const [lockInput, setLockInput] = useState('');
+  const [savingLock, setSavingLock] = useState(false);
+  useEffect(() => {
+    controlsApi.getLockDate().then((r) => { setLockDate(r.data?.locked_until || null); setLockInput(r.data?.locked_until || ''); }).catch(() => {});
+  }, []);
+  const saveLock = async (value: string | null) => {
+    if (value === null && !confirm('Remove the lock date? Entries dated before it can be posted again.')) return;
+    setSavingLock(true);
+    try {
+      const r = await controlsApi.setLockDate(value);
+      setLockDate(r.data?.locked_until || null);
+      setLockInput(r.data?.locked_until || '');
+      setMessage({ kind: 'ok', text: r.data?.locked_until ? `Books locked up to ${r.data.locked_until}.` : 'Lock date removed.' });
+    } catch (err: any) {
+      setMessage({ kind: 'err', text: err.response?.data?.detail || 'Could not change the lock date.' });
+    } finally {
+      setSavingLock(false);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -172,6 +193,24 @@ export default function FiscalYearsPage() {
           {message.text}
         </div>
       )}
+
+      <div className="glass-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-semibold text-white flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> Lock date</h3>
+          <p className="text-xs text-textSecondary mt-1 max-w-xl">
+            {lockDate
+              ? `Nothing dated on or before ${new Date(lockDate).toLocaleDateString('en-IN')} can be posted, amended or reversed.`
+              : 'Not set. Set it to the last day of a month once its GST return is filed, so that month cannot change.'}
+          </p>
+        </div>
+        {canAmend && (
+          <div className="flex items-center gap-2">
+            <input type="date" value={lockInput} onChange={(e) => setLockInput(e.target.value)} className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-white" />
+            <button disabled={savingLock || !lockInput || lockInput === lockDate} onClick={() => saveLock(lockInput)} className="px-3 py-2 bg-primary text-black font-semibold rounded-lg text-sm disabled:opacity-50">Lock</button>
+            {lockDate && <button disabled={savingLock} onClick={() => saveLock(null)} className="px-3 py-2 border border-border text-white rounded-lg text-sm hover:border-primary">Remove</button>}
+          </div>
+        )}
+      </div>
 
       <div className="glass-card overflow-x-auto">
         <table className="w-full text-left text-sm">

@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Check, Eye, Loader2, Plus, Printer, Trash2, X } from 'lucide-react';
+import { ArrowRight, Check, Eye, Loader2, Mail, Plus, Printer, Trash2, X } from 'lucide-react';
 
 import Badge from '@/components/ui/Badge';
 import DataTable from '@/components/ui/DataTable';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
 import Modal from '@/components/ui/Modal';
 import PartySelect from '@/components/ui/PartySelect';
-import { ordersApi, OrderDocType, OrderDocument } from '@/lib/api';
+import { mailApi, ordersApi, OrderDocType, OrderDocument } from '@/lib/api';
+import EmailDialog from '@/components/mail/EmailDialog';
 import { useCompany } from '@/lib/company';
 import { isoDate, today } from '@/lib/fiscal';
 import { useQuickCreate } from '@/lib/quickCreate';
@@ -61,6 +62,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [viewing, setViewing] = useState<OrderDocument | null>(null);
+  const [mailing, setMailing] = useState<OrderDocument | null>(null);
 
   // Form
   const [open, setOpen] = useState(false);
@@ -317,6 +319,13 @@ export default function OrdersPage() {
         </div>
       </Modal>
 
+      <EmailDialog
+        subject={mailing ? `${TYPES.find((t) => t.id === mailing.doc_type)?.one} ${mailing.doc_no}` : null}
+        defaultTo={mailing?.party_email}
+        onClose={() => setMailing(null)}
+        onSend={(body) => mailApi.order(mailing!.id, body)}
+      />
+
       {/* View / print */}
       {viewing && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-start justify-center overflow-y-auto p-6 print:static print:bg-white print:p-0" onClick={() => setViewing(null)}>
@@ -380,6 +389,9 @@ export default function OrdersPage() {
             {viewing.doc_type === 'Quote' && <p className="pt-4 text-[11px] text-gray-500">This is a quotation, not a tax invoice.</p>}
             <div className="flex justify-end gap-3 pt-6 print:hidden">
               <button onClick={() => setViewing(null)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm">Close</button>
+              {viewing.status !== 'Cancelled' && (
+                <button onClick={() => { setMailing(viewing); setViewing(null); }} className="px-4 py-2 border border-gray-300 rounded-lg text-sm flex items-center gap-2"><Mail className="w-4 h-4" /> E-mail</button>
+              )}
               <button onClick={() => window.print()} className="px-4 py-2 bg-black text-white rounded-lg text-sm flex items-center gap-2"><Printer className="w-4 h-4" /> Print</button>
             </div>
           </div>

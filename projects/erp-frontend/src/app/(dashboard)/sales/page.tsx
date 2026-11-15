@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, Download, Printer, Trash2, Calendar, Search, Filter, QrCode } from 'lucide-react';
+import { Plus, Download, Printer, Trash2, Calendar, Search, Filter, QrCode, Mail } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
@@ -11,7 +11,8 @@ import EInvoicePanel, { eInvoiceBadge } from '@/components/einvoice/EInvoicePane
 import PartySelect from '@/components/ui/PartySelect';
 import { formatCurrency } from '@/lib/utils';
 import { useQuickCreate } from '@/lib/quickCreate';
-import { ordersApi, OrderDocument } from '@/lib/api';
+import { mailApi, ordersApi, OrderDocument } from '@/lib/api';
+import EmailDialog from '@/components/mail/EmailDialog';
 import { apiClient } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
 
@@ -58,12 +59,15 @@ export default function SalesPage() {
   }, [fromDate, toDate, selectedCustomerId, searchQuery]);
 
   // Header "+" → Sales invoice, and /sales?q=<invoice no> from the search box.
-  useQuickCreate(() => { setFromOrder(null); setIsModalOpen(true); });
+  useQuickCreate(() => { setFromOrder(null); setRecurringProfileId(null); setIsModalOpen(true); });
   // /sales?from_order=<id>: invoice a quote or a sales order.
   const [fromOrder, setFromOrder] = useState<OrderDocument | null>(null);
+  const [recurringProfileId, setRecurringProfileId] = useState<string | null>(null);
+  const [mailing, setMailing] = useState<any | null>(null);
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('from_order');
     if (!id) return;
+    setRecurringProfileId(new URLSearchParams(window.location.search).get('recurring'));
     ordersApi.get(id)
       .then((res) => { setFromOrder(res.data); setIsModalOpen(true); window.history.replaceState(null, '', '/sales'); })
       .catch(() => alert('Could not load the quote or order to invoice.'));
@@ -129,6 +133,15 @@ export default function SalesPage() {
         >
           <QrCode className="w-4 h-4" />
         </button>
+        {item.status !== 'Cancelled' && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setMailing(item); }}
+            className="p-1 text-textSecondary hover:text-primary transition-colors"
+            title="E-mail this invoice to the customer"
+          >
+            <Mail className="w-4 h-4" />
+          </button>
+        )}
         <button
           onClick={(e) => { e.stopPropagation(); openPrint(item); }}
           className="p-1 text-textSecondary hover:text-white transition-colors"
@@ -241,12 +254,19 @@ export default function SalesPage() {
         )}
       </div>
 
+      <EmailDialog
+        subject={mailing ? `Invoice ${mailing.invoice_no}` : null}
+        defaultTo={mailing?.customer_email}
+        onClose={() => setMailing(null)}
+        onSend={(body) => mailApi.invoice(mailing.id, body)}
+      />
+
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
         title="Create Tax Invoice"
       >
-        <SalesInvoiceForm fromOrder={fromOrder} onSuccess={() => { setIsModalOpen(false); setFromOrder(null); fetchSalesData(); }} />
+        <SalesInvoiceForm fromOrder={fromOrder} recurringProfileId={recurringProfileId} onSuccess={() => { setIsModalOpen(false); setFromOrder(null); setRecurringProfileId(null); fetchSalesData(); }} />
       </Modal>
 
       {selectedPrintInvoice && (

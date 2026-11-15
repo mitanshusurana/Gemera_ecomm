@@ -54,6 +54,7 @@ const navigation: NavItem[] = [
   { name: 'Sales', href: '/sales', icon: ShoppingCart, group: 'Operations' },
   { name: 'Purchases', href: '/purchases', icon: ShoppingBag, group: 'Operations' },
   { name: 'Expenses', href: '/expenses', icon: Receipt, group: 'Operations' },
+  { name: 'Recurring', href: '/recurring', icon: Calendar, group: 'Operations' },
   { name: 'Memos (Jangad)', href: '/memos', icon: ClipboardList, group: 'Operations' },
   { name: 'Job Work', href: '/job-work', icon: Hammer, group: 'Operations' },
   { name: 'Receipt', href: '/vouchers/receipt', icon: ArrowDownLeft, group: 'Vouchers' },
@@ -69,6 +70,7 @@ const navigation: NavItem[] = [
   // Period lock and year-end closing; the API refuses lock/close to anyone
   // but owner/admin, the page hides the buttons for everyone else.
   { name: 'Fiscal Years', href: '/fiscal-years', icon: Calendar, group: 'Finance' },
+  { name: 'Budgets', href: '/budgets', icon: BarChart3, group: 'Finance' },
   { name: 'GST', href: '/gst', icon: Receipt, group: 'Finance' },
   { name: 'GST & Compliance', href: '/gst/exports', icon: FileText, group: 'Finance' },
   { name: 'Reconciliation', href: '/banking', icon: Landmark, group: 'Banking' },

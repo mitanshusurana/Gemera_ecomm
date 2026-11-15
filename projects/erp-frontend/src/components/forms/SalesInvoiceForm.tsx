@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
-import { apiClient, lotsApi, LotRow, ordersApi, OrderDocument } from '@/lib/api';
+import { apiClient, lotsApi, LotRow, ordersApi, OrderDocument, recurringApi } from '@/lib/api';
 import { useCompany } from '@/lib/company';
 import { isoDate, today } from '@/lib/fiscal';
 
@@ -67,9 +67,11 @@ interface SalesInvoiceFormProps {
   onSuccess?: () => void;
   /** A quote or sales order being invoiced: prefills the form and is marked converted on save. */
   fromOrder?: OrderDocument | null;
+  /** Set when the invoice is this period's document of a recurring profile: the profile moves on, the order stays open. */
+  recurringProfileId?: string | null;
 }
 
-export default function SalesInvoiceForm({ onSuccess, fromOrder }: SalesInvoiceFormProps) {
+export default function SalesInvoiceForm({ onSuccess, fromOrder, recurringProfileId }: SalesInvoiceFormProps) {
   const { company } = useCompany();
   const homeState = normaliseStateCode(company?.state_code);
   const [customerId, setCustomerId] = useState('');
@@ -81,6 +83,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder }: SalesInvoiceF
   // Payment terms decide the due date (Immediate = today, Net N = N days on);
   // Custom lets the date be typed. The due date drives the overdue split.
   const [paymentTerms, setPaymentTerms] = useState('Immediate');
+  const [salesperson, setSalesperson] = useState('');
   const [customDueDate, setCustomDueDate] = useState('');
   // Local date, not UTC: before 05:30 IST the UTC date is still yesterday.
   const invoiceDay = today();
@@ -182,6 +185,7 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder }: SalesInvoiceF
         invoice_date: invoiceDay,
         place_of_supply: isExport ? undefined : placeOfSupply,
         payment_terms: paymentTerms,
+        salesperson: salesperson.trim() || undefined,
         due_date: paymentTerms === 'Custom' && customDueDate ? customDueDate : undefined,
         invoice_type: invoiceType,
         currency,
@@ -208,7 +212,10 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder }: SalesInvoiceF
       }
       if (pan.trim()) body.pan = pan.trim().toUpperCase();
       const created = await apiClient.post('/sales/invoices', body);
-      if (fromOrder && created.data?.invoice_no) {
+      if (recurringProfileId && created.data?.invoice_no) {
+        // This period's invoice of a recurring profile: the profile moves to its next date; its template order stays open.
+        try { await recurringApi.advance(recurringProfileId, created.data.invoice_no); } catch { /* shown as still due under Recurring */ }
+      } else if (fromOrder && created.data?.invoice_no) {
         // The invoice is posted; a failure to close the order must not hide that.
         try { await ordersApi.markConverted(fromOrder.id, created.data.invoice_no); } catch { /* the order stays open; it can be closed from Quotes & Orders */ }
       }
@@ -381,8 +388,8 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder }: SalesInvoiceF
         )}
       </div>
 
-      {/* Payment terms and due date */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Payment terms, due date, salesperson */}
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <label className="text-sm text-textSecondary font-medium">Payment Terms</label>
           <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none font-medium">
@@ -404,6 +411,17 @@ export default function SalesInvoiceForm({ onSuccess, fromOrder }: SalesInvoiceF
             disabled={paymentTerms !== 'Custom'}
             onChange={(e) => setCustomDueDate(e.target.value)}
             className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none disabled:opacity-70"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm text-textSecondary font-medium">Salesperson</label>
+          <input
+            type="text"
+            maxLength={80}
+            value={salesperson}
+            onChange={(e) => setSalesperson(e.target.value)}
+            placeholder="Optional"
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-white focus:border-primary outline-none"
           />
         </div>
       </div>

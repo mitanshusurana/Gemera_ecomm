@@ -85,13 +85,15 @@ export interface BusinessOverview {
   income_expense: { income: number; expenses: number; net: number };
   top_expenses: { total: number; rows: { account_id: string; code: string; name: string; group_name: string; amount: number }[] };
 }
-export type AnalysisReport = 'sales_by_customer' | 'sales_by_item' | 'purchases_by_vendor' | 'purchases_by_item' | 'expenses_by_account';
+export type AnalysisReport = 'sales_by_customer' | 'sales_by_item' | 'sales_by_salesperson' | 'purchases_by_vendor' | 'purchases_by_item' | 'expenses_by_account';
 export interface SearchHit { kind: string; id: string; title: string; subtitle: string; href: string; voucher_id?: number }
 export const insightsApi = {
   overview: () => apiClient.get<BusinessOverview>('/reports/business-overview'),
   analysis: (report: AnalysisReport, from_date: string, to_date: string) =>
     apiClient.get('/reports/analysis', { params: { report, from_date, to_date } }),
   search: (q: string) => apiClient.get<{ q: string; results: SearchHit[] }>('/search', { params: { q } }),
+  cashFlowStatement: (from_date: string, to_date: string) => apiClient.get('/reports/cash-flow-statement', { params: { from_date, to_date } }),
+  gstAnnualSummary: (fy_start_year: number) => apiClient.get('/reports/gst-annual-summary', { params: { fy_start_year } }),
 };
 
 // Expenses: a running cost paid from cash or bank (app/api/v1/expenses.py)
@@ -138,6 +140,58 @@ export const ordersApi = {
   setStatus: (id: string, status: string) => apiClient.post(`/orders/${id}/status`, { status }),
   toSalesOrder: (id: string) => apiClient.post(`/orders/${id}/to-sales-order`),
   markConverted: (id: string, converted_to: string) => apiClient.post(`/orders/${id}/mark-converted`, { converted_to }),
+};
+
+// Recurring documents (app/api/v1/recurring.py)
+export interface RecurringProfile {
+  id: string; kind: 'Expense' | 'PurchaseBill' | 'SalesInvoice'; name: string; frequency: string; every_n: number;
+  start_date: string; end_date?: string | null; next_run_date: string; periods_done: number; auto_post: boolean; amount: number;
+  template: Record<string, any>; status: 'Active' | 'Paused' | 'Ended'; last_document_no?: string | null; last_error?: string | null; is_due: boolean;
+}
+export const recurringApi = {
+  list: () => apiClient.get<{ profiles: RecurringProfile[]; due: number }>('/recurring'),
+  create: (data: any) => apiClient.post('/recurring', data),
+  setStatus: (id: string, status: string) => apiClient.post(`/recurring/${id}/status`, { status }),
+  advance: (id: string, document_no?: string) => apiClient.post(`/recurring/${id}/advance`, { document_no }),
+  runDue: () => apiClient.post('/recurring/run-due'),
+};
+
+// E-mailing documents (app/api/v1/mail.py)
+export interface OverdueCustomer {
+  party_id: string; party_name: string; email?: string | null; can_email: boolean; total: number; invoice_count: number; oldest_days: number;
+  invoices: { invoice_no: string; due_date: string; days_overdue: number; balance: number }[];
+}
+type MailBody = { to?: string; cc?: string; message?: string };
+export const mailApi = {
+  status: () => apiClient.get<{ configured: boolean; from: string | null }>('/mail/status'),
+  invoice: (invoiceId: string, body: MailBody) => apiClient.post(`/mail/invoice/${invoiceId}`, body),
+  order: (docId: string, body: MailBody) => apiClient.post(`/mail/order/${docId}`, body),
+  statement: (partyId: string, body: MailBody) => apiClient.post(`/mail/statement/${partyId}`, body),
+  overdue: () => apiClient.get<{ configured: boolean; customers: OverdueCustomer[]; total: number }>('/mail/overdue'),
+  reminders: (body: { party_ids?: string[]; message?: string }) =>
+    apiClient.post<{ sent: string[]; failed: string[]; no_email: string[] }>('/mail/reminders', body),
+  log: () => apiClient.get<{ log: any[] }>('/mail/log'),
+};
+
+// Lock date, budgets, bank rules (app/api/v1/controls.py)
+export interface BudgetRow {
+  account_id: string; code: string; name: string; group_name: string; nature: 'Income' | 'Expenses';
+  budget: number; actual: number; variance: number; favourable: boolean; used_pct: number | null;
+}
+export interface BankRule {
+  id: string; name: string; match_text: string; direction: 'Any' | 'Debit' | 'Credit';
+  account_id?: string | null; account_name?: string | null; party_id?: string | null; party_name?: string | null; priority: number; is_active: boolean;
+}
+export const controlsApi = {
+  getLockDate: () => apiClient.get<{ locked_until: string | null }>('/controls/lock-date'),
+  setLockDate: (locked_until: string | null, reason?: string) => apiClient.put('/controls/lock-date', { locked_until, reason: reason || 'Books lock date changed' }),
+  getBudgets: (fiscal_year_id?: string) => apiClient.get<any>('/controls/budgets', { params: fiscal_year_id ? { fiscal_year_id } : {} }),
+  saveBudgets: (items: { account_id: string; amount: number }[]) => apiClient.put('/controls/budgets', { items }),
+  getBankRules: () => apiClient.get<{ rules: BankRule[] }>('/controls/bank-rules'),
+  matchBankRule: (description: string, direction: 'Debit' | 'Credit') =>
+    apiClient.get<{ rule: BankRule | null }>('/controls/bank-rules/match', { params: { description, direction } }),
+  createBankRule: (data: any) => apiClient.post('/controls/bank-rules', data),
+  setBankRuleActive: (id: string, active: boolean) => apiClient.post(`/controls/bank-rules/${id}/active`, null, { params: { active } }),
 };
 
 // Banking APIs

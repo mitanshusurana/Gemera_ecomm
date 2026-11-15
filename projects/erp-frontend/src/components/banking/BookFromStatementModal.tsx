@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import PartySelect from '@/components/ui/PartySelect';
-import { apiClient, bankingApi } from '@/lib/api';
+import { apiClient, bankingApi, controlsApi } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
@@ -56,6 +56,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
   const [paymentMode, setPaymentMode] = useState('NEFT');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ruleName, setRuleName] = useState<string | null>(null);
 
   // Inline ledger-account creation: the chart ships with no admin/overhead
   // accounts (rent, bank charges, salaries, suspense...), and leaving the
@@ -131,6 +132,21 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
     setNarration(`${entryType} per bank statement: ${line.description || ''}`.trim());
     setReferenceNo(line.ref_no || '');
     setError(null);
+    setRuleName(null);
+    // A bank rule whose text is in this line's description starts the form
+    // with its ledger or party chosen. It only suggests; nothing is posted.
+    let live = true;
+    controlsApi.matchBankRule(line.description || '', isCredit ? 'Credit' : 'Debit')
+      .then((res) => {
+        const rule = res.data?.rule;
+        if (!live || !rule) return;
+        if (rule.party_id) { setMode('party'); setPartyId(rule.party_id); }
+        else if (rule.account_id) { setMode('ledger'); setAccountId(rule.account_id); setAccountQuery(rule.account_name || ''); }
+        setRuleName(rule.name);
+      })
+      .catch(() => {});
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [line, entryType]);
 
   // Ledger accounts other than the bank account itself.
@@ -302,6 +318,7 @@ export default function BookFromStatementModal({ line, bankAccountId, onClose, o
             <textarea className={inputCls} rows={2} value={narration} onChange={(e) => setNarration(e.target.value)} />
           </div>
 
+          {ruleName && <p className="text-xs text-textSecondary">Suggested by the bank rule “{ruleName}”. Change it if this line is something else.</p>}
           {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="flex justify-end gap-3 pt-2">

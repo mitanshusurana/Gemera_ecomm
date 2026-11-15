@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuickCreate } from '@/lib/quickCreate';
-import { ordersApi } from '@/lib/api';
+import { ordersApi, recurringApi } from '@/lib/api';
 import { Plus, Download, FileText, Trash2, X, Printer, Eye, Edit3, MapPin, Calculator, Upload, CheckCircle2, FileImage, AlertCircle, Search, Calendar, Copy } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
@@ -345,6 +345,20 @@ export default function PurchasesPage() {
     setAttachmentUrl('');
   };
 
+  // /purchases?repeat=<bill id>&recurring=<profile id>: this period's bill of a
+  // recurring profile. The form opens as a Repeat; saving advances the profile.
+  const [recurringProfileId, setRecurringProfileId] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search);
+    const repeat = q.get('repeat');
+    if (!repeat) return;
+    setRecurringProfileId(q.get('recurring'));
+    openRepeatDrawer(repeat);
+    window.history.replaceState(null, '', '/purchases');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openDetailedView = async (id: string) => {
     try {
       const res = await apiClient.get(`/purchases/invoices/${id}`);
@@ -502,6 +516,10 @@ export default function PurchasesPage() {
         if (fromPo) {
           try { await ordersApi.markConverted(fromPo.id, posted.data?.bill_no || 'Billed'); } catch { /* the order stays open */ }
           setFromPo(null);
+        }
+        if (recurringProfileId) {
+          try { await recurringApi.advance(recurringProfileId, posted.data?.bill_no); } catch { /* shown as still due under Recurring */ }
+          setRecurringProfileId(null);
         }
         if (from2b) {
           try {
