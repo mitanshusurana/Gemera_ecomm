@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
 import ItemSelect, { StockItem } from '@/components/ui/ItemSelect';
-import { apiClient, lotsApi, LotRow } from '@/lib/api';
+import { apiClient, lotsApi, LotRow, ordersApi, OrderDocument } from '@/lib/api';
 import { useCompany } from '@/lib/company';
 import { isoDate, today } from '@/lib/fiscal';
 
@@ -20,6 +20,8 @@ interface LineItem {
   materialValue: number;
   makingCharges: number;
   quantity: number;
+  /** Percent off material and making alike, as the API applies it. */
+  discountPct: number;
   lot_id: string;
   lot_no: string;
 }
@@ -57,15 +59,17 @@ const normaliseStateCode = (code?: string | null) => {
 
 const newLine = (id: number): LineItem => ({
   id, material_id: '', name: '', code: '', hsn_code: '71131910', material_gst_rate: 3.0,
-  materialValue: 0, makingCharges: 0, quantity: 1, lot_id: '', lot_no: '',
+  materialValue: 0, makingCharges: 0, quantity: 1, discountPct: 0, lot_id: '', lot_no: '',
 });
 
 interface SalesInvoiceFormProps {
   /** Called after a successful create so the caller can close and refresh. */
   onSuccess?: () => void;
+  /** A quote or sales order being invoiced: prefills the form and is marked converted on save. */
+  fromOrder?: OrderDocument | null;
 }
 
-export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
+export default function SalesInvoiceForm({ onSuccess, fromOrder }: SalesInvoiceFormProps) {
   const { company } = useCompany();
   const homeState = normaliseStateCode(company?.state_code);
   const [customerId, setCustomerId] = useState('');
@@ -110,6 +114,29 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
   const isInterState = isExport || (!!placeOfSupply && !!homeState && placeOfSupply !== homeState);
 
   const [items, setItems] = useState<LineItem[]>([newLine(1)]);
+
+  // Invoicing a quote or a sales order: its customer and lines. A line that
+  // named no stock item arrives without one and must be picked, because the
+  // invoice relieves stock.
+  useEffect(() => {
+    if (!fromOrder) return;
+    setCustomerId(fromOrder.party_id);
+    if (fromOrder.party_state_code) { setPlaceOfSupply(normaliseStateCode(fromOrder.party_state_code)); setPosTouched(true); }
+    setCustomerHasIdentity(Boolean(fromOrder.party_gstin));
+    setItems((fromOrder.lines || []).map((l, i) => ({
+      ...newLine(i + 1),
+      material_id: l.material_id || '',
+      name: l.material_name || l.description || '',
+      code: l.material_code || '',
+      hsn_code: l.hsn_sac_code || '71131910',
+      material_gst_rate: Number(l.material_gst_rate ?? 3),
+      materialValue: Number(l.material_value) || 0,
+      makingCharges: Number(l.making_charges) || 0,
+      quantity: Number(l.quantity) || 1,
+      discountPct: Number(l.discount_pct) || 0,
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromOrder?.id]);
   // Open lots of the material on each line, for the lot picker.
   const [lotOptions, setLotOptions] = useState<Record<string, LotRow[]>>({});
 
@@ -166,6 +193,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
           hsn_sac_code: i.hsn_code,
           material_value: Number(i.materialValue) || 0,
           making_charges: Number(i.makingCharges) || 0,
+          discount_pct: Number(i.discountPct) || 0,
           quantity: Number(i.quantity) > 0 ? Number(i.quantity) : 1,
         })),
         reason: isExport ? 'Export invoice creation' : isBillOfSupply ? 'Bill of supply creation' : 'Sales invoice creation',
@@ -179,7 +207,11 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
         body.lut_no = exportType === 'LUT_without_tax' ? (lutNo || undefined) : undefined;
       }
       if (pan.trim()) body.pan = pan.trim().toUpperCase();
-      await apiClient.post('/sales/invoices', body);
+      const created = await apiClient.post('/sales/invoices', body);
+      if (fromOrder && created.data?.invoice_no) {
+        // The invoice is posted; a failure to close the order must not hide that.
+        try { await ordersApi.markConverted(fromOrder.id, created.data.invoice_no); } catch { /* the order stays open; it can be closed from Quotes & Orders */ }
+      }
       if (onSuccess) {
         onSuccess();
       } else {
@@ -224,7 +256,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
     }));
   };
 
-  const updateItemField = (id: number, field: 'materialValue' | 'makingCharges' | 'quantity', value: number) => {
+  const updateItemField = (id: number, field: 'materialValue' | 'makingCharges' | 'quantity' | 'discountPct', value: number) => {
     setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
@@ -246,8 +278,9 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
   const taxFree = isBillOfSupply || (isExport && exportType === 'LUT_without_tax');
 
   items.forEach(item => {
-    const matVal = Number(item.materialValue) || 0;
-    const makVal = Number(item.makingCharges) || 0;
+    const keep = (100 - Math.min(100, Math.max(0, Number(item.discountPct) || 0))) / 100;
+    const matVal = (Number(item.materialValue) || 0) * keep;
+    const makVal = (Number(item.makingCharges) || 0) * keep;
     const lineTaxable = matVal + makVal;
     const matGstRate = taxFree ? 0 : Number(item.material_gst_rate) ?? 3.0;
     const makGstRate = taxFree ? 0 : 5.0;
@@ -301,6 +334,7 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
           <label className="text-sm text-textSecondary font-medium">Customer *</label>
           <PartySelect
             partyType="Customer"
+            value={customerId}
             onChange={(id, partyObj) => {
               setCustomerId(id);
               const p: any = partyObj || {};
@@ -497,6 +531,18 @@ export default function SalesInvoiceForm({ onSuccess }: SalesInvoiceFormProps) {
                     onChange={(e) => updateItemField(item.id, 'makingCharges', Number(e.target.value))}
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
                     placeholder="0.00"
+                  />
+                </div>
+                <div className="w-20 space-y-2">
+                  <label className="text-xs text-textSecondary" title="Percent off material and making">Disc %</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={item.discountPct || ''}
+                    onChange={(e) => updateItemField(item.id, 'discountPct', Math.min(100, Math.max(0, Number(e.target.value))))}
+                    className="w-full bg-background border border-border rounded-lg px-2 py-2 text-sm text-white focus:border-primary outline-none h-[38px]"
+                    placeholder="0"
                   />
                 </div>
                 <div className="pt-8">

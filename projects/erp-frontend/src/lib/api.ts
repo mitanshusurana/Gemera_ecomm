@@ -113,6 +113,33 @@ export const expensesApi = {
   reverse: (id: string, reason: string) => apiClient.post(`/expenses/${id}/reverse`, { reason }),
 };
 
+// Quotes, sales orders and purchase orders (app/api/v1/orders.py)
+export type OrderDocType = 'Quote' | 'SalesOrder' | 'PurchaseOrder';
+export interface OrderDocumentLine {
+  sequence_no: number; material_id?: string | null; material_code?: string | null; material_name?: string | null; category?: string | null;
+  description?: string | null; hsn_sac_code?: string | null; quantity: number; net_weight?: number | null;
+  material_value: number; making_charges: number; discount_pct: number; material_gst_rate: number; making_gst_rate: number;
+  taxable: number; gst_amount: number; line_total: number;
+}
+export interface OrderDocument {
+  id: string; doc_type: OrderDocType; doc_no: string; doc_date: string; valid_until?: string | null;
+  party_id: string; party_name: string; party_gstin?: string | null; party_state_code?: string | null;
+  party_phone?: string | null; party_email?: string | null;
+  reference_no?: string | null; notes?: string | null; terms?: string | null;
+  subtotal: number; discount_total: number; gst_total: number; grand_total: number;
+  status: 'Open' | 'Accepted' | 'Declined' | 'Converted' | 'Cancelled'; converted_to?: string | null; source_doc_id?: string | null;
+  lines?: OrderDocumentLine[];
+}
+export const ordersApi = {
+  list: (params: { doc_type: OrderDocType; from_date?: string; to_date?: string; status?: string }) =>
+    apiClient.get<{ documents: OrderDocument[]; open_value: number }>('/orders', { params }),
+  get: (id: string) => apiClient.get<OrderDocument>(`/orders/${id}`),
+  create: (data: any) => apiClient.post('/orders', data),
+  setStatus: (id: string, status: string) => apiClient.post(`/orders/${id}/status`, { status }),
+  toSalesOrder: (id: string) => apiClient.post(`/orders/${id}/to-sales-order`),
+  markConverted: (id: string, converted_to: string) => apiClient.post(`/orders/${id}/mark-converted`, { converted_to }),
+};
+
 // Banking APIs
 export const bankingApi = {
   getAccounts: () => apiClient.get('/banking/accounts'),

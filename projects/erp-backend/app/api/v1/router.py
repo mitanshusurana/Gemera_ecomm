@@ -45,3 +45,5 @@ api_router.include_router(insights.router,        prefix="/reports", tags=["Busi
 api_router.include_router(insights.search_router, prefix="",         tags=["Search"])
 from app.api.v1 import expenses  # noqa: E402  (running costs paid from cash or bank)
 api_router.include_router(expenses.router,    prefix="/expenses",  tags=["Expenses"])
+from app.api.v1 import orders  # noqa: E402  (quotes, sales orders, purchase orders)
+api_router.include_router(orders.router,      prefix="/orders",    tags=["Quotes & Orders"])

@@ -51,6 +51,8 @@ def test_overview_follows_the_rules_the_other_reports_use():
     assert "COALESCE(si.due_date, si.invoice_date + COALESCE(p.credit_days, 0))" in SRC
     # a transfer between cash and bank is not cash flow
     assert "je.entry_type NOT IN ('Opening', 'Contra')" in SRC
+    # reversing a payment is less money out, not money in
+    assert "WHEN je.entry_type = 'Reversal' THEN -jel.dr_amount ELSE jel.cr_amount END), 0) AS outgoing" in SRC
     # opening balances come from the account, not from 'Opening' journals
     assert "je.entry_type <> 'Opening'" in SRC
 

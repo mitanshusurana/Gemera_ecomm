@@ -167,12 +167,14 @@ async def business_overview(
     # Money in and out of the cash and bank ledgers, month by month. Contra
     # entries move money between those ledgers and are left out, or a cash
     # deposit would count once as money out and once as money in.
+    # A reversal undoes an earlier movement, so it reduces the side it
+    # undoes: reversing a payment is less money out, not money in.
     flow_res = await db.execute(
         text("""
             SELECT EXTRACT(YEAR FROM je.entry_date) AS yr,
                    EXTRACT(MONTH FROM je.entry_date) AS mo,
-                   COALESCE(SUM(jel.dr_amount), 0) AS incoming,
-                   COALESCE(SUM(jel.cr_amount), 0) AS outgoing
+                   COALESCE(SUM(CASE WHEN je.entry_type = 'Reversal' THEN -jel.cr_amount ELSE jel.dr_amount END), 0) AS incoming,
+                   COALESCE(SUM(CASE WHEN je.entry_type = 'Reversal' THEN -jel.dr_amount ELSE jel.cr_amount END), 0) AS outgoing
             FROM caratloop.journal_entry_lines jel
             JOIN caratloop.journal_entries je ON je.id = jel.journal_entry_id
             JOIN caratloop.accounts a ON a.id = jel.account_id

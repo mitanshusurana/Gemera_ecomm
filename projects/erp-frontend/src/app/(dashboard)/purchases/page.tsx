@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuickCreate } from '@/lib/quickCreate';
+import { ordersApi } from '@/lib/api';
 import { Plus, Download, FileText, Trash2, X, Printer, Eye, Edit3, MapPin, Calculator, Upload, CheckCircle2, FileImage, AlertCircle, Search, Calendar, Copy } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import PartySelect from '@/components/ui/PartySelect';
@@ -231,8 +232,38 @@ export default function PurchasesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // /purchases?from_po=<id>: bill a purchase order. Its vendor and lines are
+  // filled in; the order is marked converted once the bill is recorded.
+  const [fromPo, setFromPo] = useState<{ id: string; doc_no: string } | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const id = new URLSearchParams(window.location.search).get('from_po');
+    if (!id) return;
+    ordersApi.get(id).then((res) => {
+      const po = res.data;
+      resetForm();
+      setFromPo({ id: po.id, doc_no: po.doc_no });
+      setSupplierId(po.party_id);
+      if (po.party_state_code) setPlaceOfSupply(String(po.party_state_code).padStart(2, '0'));
+      setItems((po.lines || []).map((l, i) => {
+        const qty = Number(l.quantity) || 1;
+        const nw = Number(l.net_weight) || 0;
+        return {
+          id: i + 1, material_id: l.material_id || '', description: l.description || l.material_name || '',
+          hsn_code: l.hsn_sac_code || '', unit: nw > 0 ? 'gm' : 'pcs', gst_rate: Number(l.material_gst_rate) || 0,
+          quantity: qty, gross_weight: nw, net_weight: nw, purity: 1.0,
+          rate: Number(l.material_value) / (nw > 0 ? nw : qty), making_charges: Number(l.making_charges) || 0,
+        };
+      }));
+      setIsDrawerOpen(true);
+      window.history.replaceState(null, '', '/purchases');
+    }).catch(() => alert('Could not load the purchase order.'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openNewDrawer = () => {
     resetForm();
+    setFromPo(null);
     setIsDrawerOpen(true);
   };
   useQuickCreate(openNewDrawer);   // header "+" → Purchase bill
@@ -467,7 +498,11 @@ export default function PurchasesPage() {
         const res = await apiClient.put(`/purchases/invoices/${editingInvoiceId}`, payload);
         alert(res.data?.message || `Bill reversed and re-posted as ${res.data?.bill_no || 'a new number'}.`);
       } else {
-        await apiClient.post('/purchases/invoices', payload);
+        const posted = await apiClient.post('/purchases/invoices', payload);
+        if (fromPo) {
+          try { await ordersApi.markConverted(fromPo.id, posted.data?.bill_no || 'Billed'); } catch { /* the order stays open */ }
+          setFromPo(null);
+        }
         if (from2b) {
           try {
             const rec = await gstr2bApi.reconcile(String(from2b.return_period || '').replace(/^(\d{4})(\d{2})$/, '$1-$2'));

@@ -11,6 +11,7 @@ import EInvoicePanel, { eInvoiceBadge } from '@/components/einvoice/EInvoicePane
 import PartySelect from '@/components/ui/PartySelect';
 import { formatCurrency } from '@/lib/utils';
 import { useQuickCreate } from '@/lib/quickCreate';
+import { ordersApi, OrderDocument } from '@/lib/api';
 import { apiClient } from '@/lib/api';
 import { financialYearStart } from '@/lib/fiscal';
 
@@ -57,7 +58,16 @@ export default function SalesPage() {
   }, [fromDate, toDate, selectedCustomerId, searchQuery]);
 
   // Header "+" → Sales invoice, and /sales?q=<invoice no> from the search box.
-  useQuickCreate(() => setIsModalOpen(true));
+  useQuickCreate(() => { setFromOrder(null); setIsModalOpen(true); });
+  // /sales?from_order=<id>: invoice a quote or a sales order.
+  const [fromOrder, setFromOrder] = useState<OrderDocument | null>(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('from_order');
+    if (!id) return;
+    ordersApi.get(id)
+      .then((res) => { setFromOrder(res.data); setIsModalOpen(true); window.history.replaceState(null, '', '/sales'); })
+      .catch(() => alert('Could not load the quote or order to invoice.'));
+  }, []);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('q');
     if (q) setSearchQuery(q);
@@ -236,7 +246,7 @@ export default function SalesPage() {
         onClose={() => setIsModalOpen(false)}
         title="Create Tax Invoice"
       >
-        <SalesInvoiceForm onSuccess={() => { setIsModalOpen(false); fetchSalesData(); }} />
+        <SalesInvoiceForm fromOrder={fromOrder} onSuccess={() => { setIsModalOpen(false); setFromOrder(null); fetchSalesData(); }} />
       </Modal>
 
       {selectedPrintInvoice && (

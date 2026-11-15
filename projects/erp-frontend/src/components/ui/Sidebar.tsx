@@ -50,6 +50,7 @@ const navigation: NavItem[] = [
   { name: 'Gemstone Lots', href: '/lots', icon: Package, group: 'Masters' },
   { name: 'Locations & Transfers', href: '/locations', icon: ArrowLeftRight, group: 'Masters' },
   { name: 'Manufacturing', href: '/manufacturing', icon: Factory, group: 'Operations' },
+  { name: 'Quotes & Orders', href: '/orders', icon: ClipboardList, group: 'Operations' },
   { name: 'Sales', href: '/sales', icon: ShoppingCart, group: 'Operations' },
   { name: 'Purchases', href: '/purchases', icon: ShoppingBag, group: 'Operations' },
   { name: 'Expenses', href: '/expenses', icon: Receipt, group: 'Operations' },
