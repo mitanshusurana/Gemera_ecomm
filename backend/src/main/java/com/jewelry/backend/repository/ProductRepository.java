@@ -36,7 +36,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     // Low-stock digest and admin card: stock at or below the product's own
     // reorder point, or below the global threshold when it has none.
-    @Query("SELECT p FROM Product p WHERE p.stock IS NOT NULL AND ("
+    // A draft is not on sale yet, so it is never "running low".
+    @Query("SELECT p FROM Product p WHERE p.stock IS NOT NULL AND (p.published IS NULL OR p.published = true) AND ("
             + "(p.reorderPointAlert IS NOT NULL AND p.stock <= p.reorderPointAlert) OR "
             + "(p.reorderPointAlert IS NULL AND p.stock <= :threshold)) "
             + "ORDER BY p.stock ASC, p.name ASC")
@@ -102,7 +103,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Query("SELECT MAX(p.price) FROM Product p")
     BigDecimal findMaxPrice();
 
-    @Query("SELECT p FROM Product p WHERE p.category = :category AND p.id != :excludeId AND p.price BETWEEN :minPrice AND :maxPrice")
+    @Query("SELECT p FROM Product p WHERE p.category = :category AND p.id != :excludeId AND p.price BETWEEN :minPrice AND :maxPrice "
+            + "AND (p.published IS NULL OR p.published = true)")
     Page<Product> findSimilarProducts(
         @Param("category") String category,
         @Param("excludeId") UUID excludeId,

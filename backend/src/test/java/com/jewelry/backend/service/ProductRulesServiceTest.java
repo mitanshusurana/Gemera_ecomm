@@ -418,4 +418,58 @@ class ProductRulesServiceTest {
         assertThat(service.missingFields(p)).isEmpty();
         assertThat(service.missingFields(null)).isEmpty();
     }
+
+    // ---- drafts ----------------------------------------------------------
+
+    @Test
+    void aDraftNeedsOnlyACategory() {
+        categoryOfType("Loose", ProductRulesService.LOOSE_GEMSTONE);
+        Product p = product("Loose", "Yellow stone, photo 16");
+
+        // No price, no weight, no species, no shape: the strict pass refuses it...
+        assertThatThrownBy(() -> service.applyRules(product("Loose", "Yellow stone, photo 16")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Missing required fields for LOOSE_GEMSTONE");
+        // ...the draft pass takes it and still reports the item type for the SKU prefix.
+        assertThat(service.applyDraftRules(p)).isEqualTo(ProductRulesService.LOOSE_GEMSTONE);
+        assertThat(p.getSaleMode()).isEqualTo(ProductRulesService.PER_PIECE);
+        assertThat(p.getPrice()).isNull();
+
+        Product noCategory = product(" ", "Nameless");
+        assertThatThrownBy(() -> service.applyDraftRules(noCategory))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("category");
+    }
+
+    @Test
+    void aDraftFallsBackToTheTypesSaleModeAndDerivesAPriceWhenItCan() {
+        categoryOfType("Lots", ProductRulesService.GEMSTONE_LOT);
+        Product lot = new Product(); // entity default PER_PIECE, which a lot does not allow
+        lot.setName("Parcel");
+        lot.setCategory("Lots");
+        service.applyDraftRules(lot);
+        assertThat(lot.getSaleMode()).isEqualTo(ProductRulesService.PER_LOT);
+
+        categoryOfType("Loose", ProductRulesService.LOOSE_GEMSTONE);
+        Product priced = product("Loose", "Ruby");
+        priced.setSaleMode("per_carat");
+        priced.setUnitPrice(new BigDecimal("2500"));
+        priced.setCaratWeight(new BigDecimal("6.60"));
+        service.applyDraftRules(priced);
+        assertThat(priced.getSaleMode()).isEqualTo(ProductRulesService.PER_CARAT);
+        assertThat(priced.getPrice()).isEqualByComparingTo("16500.00");
+
+        // A rate without a weight is kept, not refused: the weight comes later.
+        Product rateOnly = product("Loose", "Ruby");
+        rateOnly.setSaleMode("PER_CARAT");
+        rateOnly.setUnitPrice(new BigDecimal("2500"));
+        service.applyDraftRules(rateOnly);
+        assertThat(rateOnly.getPrice()).isNull();
+
+        // plainOrStudded on a stone is dropped in a draft instead of failing the save.
+        Product odd = product("Loose", "Ruby");
+        odd.setPlainOrStudded("STUDDED");
+        service.applyDraftRules(odd);
+        assertThat(odd.getPlainOrStudded()).isNull();
+    }
 }

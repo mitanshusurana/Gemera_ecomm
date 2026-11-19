@@ -8,6 +8,7 @@ import com.jewelry.backend.entity.Product;
 import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.service.ProductService;
 import com.jewelry.backend.service.StorageService;
+import com.jewelry.backend.specification.ProductSpecifications.Visibility;
 import com.jewelry.backend.util.CustomMultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -63,6 +64,7 @@ public class ProductController {
         }
         if (access.isStaff()) {
             dto.setExcludeFromFeeds(Boolean.TRUE.equals(product.getExcludeFromFeeds()));
+            dto.setInternalNotes(product.getInternalNotes());
             dto.setInventoryOwnership(product.getInventoryOwnership());
             dto.setSupplierName(product.getSupplierName());
             dto.setReturnDueDate(product.getReturnDueDate());
@@ -91,6 +93,30 @@ public class ProductController {
         return withStaffFields(entityMapper.toProductDTO(product), product);
     }
 
+    /**
+     * Drafts are staff-only. A shopper or an anonymous caller always gets
+     * published products, whatever {@code published} says; staff get
+     * everything by default, drafts with {@code published=false} and the
+     * storefront's view with {@code published=true}.
+     */
+    private Visibility visibilityFor(Boolean published) {
+        if (!access.isStaff()) {
+            return Visibility.PUBLISHED;
+        }
+        if (published == null) {
+            return Visibility.ALL;
+        }
+        return published ? Visibility.PUBLISHED : Visibility.DRAFTS;
+    }
+
+    /** A draft does not exist as far as the storefront is concerned: 404, not 403. */
+    private Product visible(Product product) {
+        if (ProductService.isDraft(product) && !access.isStaff()) {
+            throw new jakarta.persistence.EntityNotFoundException("Product not found");
+        }
+        return product;
+    }
+
 
     @GetMapping
     @Transactional(readOnly = true)
@@ -112,11 +138,13 @@ public class ProductController {
             @RequestParam(required = false) Boolean certified,
             @RequestParam(required = false) Boolean featured,
             @RequestParam(required = false) Boolean lowStock,
+            @RequestParam(required = false) Boolean published,
             @Parameter(hidden = true) Pageable pageable) {
         Page<Product> products = productService.getAllProducts(
                 category, subCategory, metals, stones, designStyles, occasions, styles,
                 gemGrade, craft, saleMode,
-                priceMin, priceMax, search, certified, featured, lowStock, pageable);
+                priceMin, priceMax, search, certified, featured, lowStock,
+                visibilityFor(published), pageable);
         return ResponseEntity.ok(products.map(this::toStaffDTO));
     }
 
@@ -125,7 +153,7 @@ public class ProductController {
     @Transactional(readOnly = true)
     @Operation(summary = "Get product by SKU (label QR codes and the admin scanner); case-insensitive, 404 when unknown")
     public ResponseEntity<ProductDTO> getProductBySku(@PathVariable String sku) {
-        return ResponseEntity.ok(toStaffDTO(productService.getProductBySku(sku)));
+        return ResponseEntity.ok(toStaffDTO(visible(productService.getProductBySku(sku))));
     }
 
     // Declared before the "/{id}" mappings so "facets" is never parsed as a UUID.
@@ -146,7 +174,7 @@ public class ProductController {
     @Transactional(readOnly = true)
     @Operation(summary = "Get product details")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable UUID id) {
-        ProductDTO productDTO = toStaffDTO(productService.getProductById(id));
+        ProductDTO productDTO = toStaffDTO(visible(productService.getProductById(id)));
         return ResponseEntity.ok()
                 .header("Link", "<https://www.caratloop.com/products/" + id + ">; rel=\"canonical\"")
                 .header("X-Robots-Tag", "index, follow")
@@ -168,6 +196,7 @@ public class ProductController {
             @PathVariable UUID id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "4") int size) {
+        visible(productService.getProductById(id));
         Page<Product> products = productService.getSimilarProducts(id, PageRequest.of(page, size));
         return ResponseEntity.ok(products.map(this::toStaffDTO));
     }
@@ -184,7 +213,9 @@ public class ProductController {
     public ResponseEntity<Map<String, List<ProductDTO>>> searchProducts(
             @RequestParam String query,
             @RequestParam(defaultValue = "10") int limit) {
-        Page<Product> page = productService.getAllProducts(null, null, null, query, null, null, PageRequest.of(0, limit));
+        Page<Product> page = productService.getAllProducts(null, null, null, null, null, null, null,
+                null, null, null, null, null, query, null, null, null,
+                visibilityFor(null), PageRequest.of(0, limit));
         List<ProductDTO> dtos = page.getContent().stream().map(this::toStaffDTO).collect(Collectors.toList());
         return ResponseEntity.ok(Map.of("results", dtos));
     }
@@ -198,6 +229,31 @@ public class ProductController {
         Product product = entityMapper.toProductEntity(productDTO);
         Product created = productService.createProduct(product);
         return ResponseEntity.status(201).body(toStaffDTO(created));
+    }
+
+    @PostMapping("/quick")
+    @Transactional
+    @PreAuthorize("@access.has('products.write')")
+    @Operation(summary = "Quick capture: create a draft from a category, photos and whatever else is known")
+    public ResponseEntity<ProductDTO> quickCreate(
+            @RequestBody @jakarta.validation.Valid com.jewelry.backend.dto.QuickCaptureRequest request) {
+        return ResponseEntity.status(201).body(toStaffDTO(productService.quickCreate(request)));
+    }
+
+    @PostMapping("/{id}/publish")
+    @Transactional
+    @PreAuthorize("@access.has('products.write')")
+    @Operation(summary = "Publish a draft; 400 lists the fields its item type still needs")
+    public ResponseEntity<ProductDTO> publish(@PathVariable UUID id) {
+        return ResponseEntity.ok(toStaffDTO(productService.publish(id)));
+    }
+
+    @PostMapping("/{id}/unpublish")
+    @Transactional
+    @PreAuthorize("@access.has('products.write')")
+    @Operation(summary = "Take a product off the storefront without deleting it")
+    public ResponseEntity<ProductDTO> unpublish(@PathVariable UUID id) {
+        return ResponseEntity.ok(toStaffDTO(productService.unpublish(id)));
     }
 
     @PutMapping("/{id}")

@@ -68,6 +68,14 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
    * { id, sku, name, category, itemType, missingFields } and carry no price or stock.
    */
   incompleteOnly = false;
+
+  /**
+   * `?drafts=true` lists drafts only (GET /products?published=false). A draft
+   * is hidden from the storefront until Publish passes its item-type checks.
+   */
+  draftsOnly = false;
+  /** Id of the row whose publish / unpublish call is in flight. */
+  publishingId: string | null = null;
   incompletePage = 0;
   readonly incompletePageSize = 50;
   incompleteTotalPages = 0;
@@ -88,6 +96,7 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.route.queryParamMap.subscribe(params => {
       this.lowStockOnly = params.get('lowStock') === 'true';
       this.incompleteOnly = params.get('incomplete') === 'true';
+      this.draftsOnly = params.get('drafts') === 'true';
       this.incompletePage = 0;
       this.loadProducts(this.searchQuery);
     });
@@ -108,12 +117,15 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** What the table shows: the API rows, narrowed to low-stock ones when asked. */
   get visibleProducts(): any[] {
-    return this.lowStockOnly && !this.incompleteOnly ? this.products.filter(isLowStock) : this.products;
+    // A draft is not on sale, so it is never "low stock" however little of it there is.
+    return this.lowStockOnly && !this.incompleteOnly
+      ? this.products.filter(p => isLowStock(p) && !this.isDraft(p))
+      : this.products;
   }
 
   /** Incomplete rows carry no stock, so the low-stock highlight only applies to catalogue rows. */
   isLowStock(product: any): boolean {
-    return !this.incompleteOnly && isLowStock(product);
+    return !this.incompleteOnly && !this.isDraft(product) && isLowStock(product);
   }
 
   /** The `missingFields` labels of an incomplete row, tolerant of a missing or malformed array. */
@@ -267,7 +279,10 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.loading = true;
     // The low-stock filter is applied client-side, so pull a large page for it.
-    const opts = this.lowStockOnly ? { page: 0, size: 500 } : {};
+    // Drafts are worked through in one sitting, so they come in one page too.
+    const opts: { page?: number; size?: number; published?: boolean } =
+      this.lowStockOnly || this.draftsOnly ? { page: 0, size: 500 } : {};
+    if (this.draftsOnly) opts.published = false;
     this.productService.getProducts(search, opts).subscribe({
       next: (data) => {
         this.products = Array.isArray(data) ? data : (data?.content ?? []);
@@ -301,6 +316,51 @@ export class ProductListComponent implements OnInit, AfterViewInit, OnDestroy {
           ? 'The catalogue-health check is not available on this server yet.'
           : 'Could not load the catalogue-health check. Try again in a moment.';
         this.loading = false;
+      }
+    });
+  }
+
+  isDraft(product: any): boolean {
+    return product?.published === false;
+  }
+
+  showDrafts() {
+    this.router.navigate(['/products'], { queryParams: { drafts: 'true' } });
+  }
+
+  clearDraftsFilter() {
+    this.router.navigate(['/products'], { queryParams: {} });
+  }
+
+  /** Publish runs the item-type checks on the server; a 400 says what the draft still needs. */
+  publish(product: any) {
+    if (this.publishingId) return;
+    this.publishingId = product.id;
+    this.productService.publish(product.id).subscribe({
+      next: () => {
+        this.publishingId = null;
+        this.toastr.success(`${product.name} is now on the storefront.`);
+        this.loadProducts(this.searchQuery);
+      },
+      error: (err) => {
+        this.publishingId = null;
+        this.toastr.error(err?.error?.message || err?.error?.detail || 'Could not publish. Open the product and complete it.', 'Not published');
+      }
+    });
+  }
+
+  unpublish(product: any) {
+    if (this.publishingId) return;
+    this.publishingId = product.id;
+    this.productService.unpublish(product.id).subscribe({
+      next: () => {
+        this.publishingId = null;
+        this.toastr.success(`${product.name} is hidden from the storefront.`);
+        this.loadProducts(this.searchQuery);
+      },
+      error: () => {
+        this.publishingId = null;
+        this.toastr.error('Could not hide the product. Try again.');
       }
     });
   }

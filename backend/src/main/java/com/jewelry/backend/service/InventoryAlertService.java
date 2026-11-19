@@ -122,6 +122,11 @@ public class InventoryAlertService {
         Map<String, String> itemTypeByCategory = new HashMap<>();
         List<IncompleteProductDTO> incomplete = new ArrayList<>();
         for (Product product : productRepository.findAll()) {
+            if (ProductService.isDraft(product)) {
+                // A draft is unfinished by definition and no customer sees it;
+                // this list is for products that are on sale. Drafts have their own view.
+                continue;
+            }
             String itemType = resolveItemTypeCached(product, itemTypeByCategory);
             List<String> missing = productRulesService.missingFields(product, itemType);
             if (missing.isEmpty()) {

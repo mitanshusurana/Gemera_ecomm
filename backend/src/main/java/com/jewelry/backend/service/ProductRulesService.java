@@ -261,6 +261,48 @@ public class ProductRulesService {
     }
 
     /**
+     * The lenient pass for a draft (a product saved with published = false):
+     * the counter records a photo and a category now and the weight, price and
+     * description later. Sale mode and plainOrStudded are normalised, the
+     * price is derived when the figures for it are there, and nothing is
+     * required beyond a category. A sale mode the item type does not allow
+     * falls back to the type's default instead of failing, because quick
+     * capture remembers the last mode used across categories. The strict
+     * checks run when the draft is published ({@link #applyRules}).
+     *
+     * @return the resolved item type, or null when the category is unknown
+     */
+    public String applyDraftRules(Product product) {
+        if (isBlank(product.getCategory())) {
+            throw new IllegalArgumentException("Missing required fields: category");
+        }
+        String itemType = resolveItemType(product);
+        String effectiveType = itemType != null ? itemType : JEWELLERY;
+
+        String saleMode = normalizeUpper(product.getSaleMode());
+        if (saleMode == null || !ALL_SALE_MODES.contains(saleMode)
+                || (itemType != null && !allowedSaleModes(itemType).contains(saleMode))) {
+            saleMode = defaultSaleMode(effectiveType);
+        }
+        product.setSaleMode(saleMode);
+
+        String plainOrStudded = normalizeUpper(product.getPlainOrStudded());
+        boolean plainOrStuddedValid = plainOrStudded != null
+                && (PLAIN.equals(plainOrStudded) || STUDDED.equals(plainOrStudded))
+                && (itemType == null || JEWELLERY.equals(itemType));
+        product.setPlainOrStudded(plainOrStuddedValid ? plainOrStudded : null);
+
+        if (product.getLotTotalCaratWeight() != null && product.getPieceCount() != null && product.getPieceCount() > 0) {
+            product.setAveragePieceWeight(product.getLotTotalCaratWeight()
+                    .divide(BigDecimal.valueOf(product.getPieceCount()), 3, RoundingMode.HALF_UP));
+        }
+        if (canDerivePrice(product, saleMode)) {
+            derivePrice(product, saleMode, effectiveType);
+        }
+        return itemType;
+    }
+
+    /**
      * Dry run of the checks in {@link #applyRules}: nothing is changed, nothing
      * is thrown, and the result lists the rules the product fails as human
      * labels ("Gross weight (g)", "Metal purity", ...). Empty when the product

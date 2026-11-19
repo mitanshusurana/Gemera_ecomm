@@ -30,6 +30,7 @@ export const routes: Routes = [
       { path: 'categories', canActivate: [permissionGuard('categories.write')], loadComponent: () => import('./pages/categories/categories.component').then(m => m.CategoriesComponent) },
       { path: 'products', canActivate: [permissionGuard('products.read')], loadComponent: () => import('./pages/product-list/product-list.component').then(m => m.ProductListComponent) },
       { path: 'products/labels', canActivate: [permissionGuard('labels.print')], loadComponent: () => import('./pages/product-labels/product-labels.component').then(m => m.ProductLabelsComponent) },
+      { path: 'products/quick', canActivate: [permissionGuard('products.write')], loadComponent: () => import('./pages/product-quick/product-quick.component').then(m => m.ProductQuickComponent) },
       { path: 'products/new', canActivate: [permissionGuard('products.write')], loadComponent: () => import('./pages/product-add/product-add.component').then(m => m.ProductAddComponent) },
       { path: 'products/edit/:id', canActivate: [permissionGuard('products.write')], loadComponent: () => import('./pages/product-add/product-add.component').then(m => m.ProductAddComponent) },
       { path: 'rates', canActivate: [permissionGuard('rates.write')], loadComponent: () => import('./pages/rates/metal-rates.component').then(m => m.MetalRatesComponent) },
