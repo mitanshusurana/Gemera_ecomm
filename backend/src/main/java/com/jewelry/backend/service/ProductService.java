@@ -11,6 +11,7 @@ import com.jewelry.backend.mapper.EntityMapper;
 import com.jewelry.backend.repository.CategoryRepository;
 import com.jewelry.backend.repository.ProductRepository;
 import com.jewelry.backend.specification.ProductSpecifications;
+import com.jewelry.backend.specification.ProductSpecifications.Visibility;
 import com.jewelry.backend.specification.ProductSpecifications.ProductFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -129,6 +130,37 @@ public class ProductService {
             Boolean featured,
             Boolean lowStock,
             Pageable pageable) {
+        return getAllProducts(category, subCategories, metals, stones, designStyles, occasions, styles,
+                gemGrades, crafts, saleModes, priceMin, priceMax, search, certified, featured, lowStock,
+                Visibility.PUBLISHED, pageable);
+    }
+
+    /**
+     * The full listing. {@code visibility} decides whether drafts are in it:
+     * the storefront, the sitemap and search pass PUBLISHED (also what a null
+     * means); only a staff caller may ask for DRAFTS or ALL, and the
+     * controller is where that is decided.
+     */
+    @Transactional(readOnly = true)
+    public Page<Product> getAllProducts(
+            String category,
+            List<String> subCategories,
+            List<String> metals,
+            List<String> stones,
+            List<String> designStyles,
+            List<String> occasions,
+            List<String> styles,
+            List<String> gemGrades,
+            List<String> crafts,
+            List<String> saleModes,
+            BigDecimal priceMin,
+            BigDecimal priceMax,
+            String search,
+            Boolean certified,
+            Boolean featured,
+            Boolean lowStock,
+            Visibility visibility,
+            Pageable pageable) {
 
         Integer lowStockThreshold = Boolean.TRUE.equals(lowStock)
                 ? inventoryAlertService.lowStockThreshold()
@@ -137,7 +169,7 @@ public class ProductService {
                 category, subCategories, metals, stones, designStyles, occasions, styles,
                 gemGrades, crafts, saleModes,
                 priceMin, priceMax, search, certified, featured,
-                lowStock, lowStockThreshold);
+                lowStock, lowStockThreshold, visibility);
         return productRepository.findAll(ProductSpecifications.withFilter(filter), pageable);
     }
 
@@ -231,9 +263,33 @@ public class ProductService {
         return dto;
     }
 
-    // Admin only - strictly for seeding/testing
-    @Transactional(rollbackFor = Exception.class)
-    public Product createProduct(Product product) {
+    /** A draft is hidden from the storefront: only an explicit false, never null. */
+    public static boolean isDraft(Product product) {
+        return product != null && Boolean.FALSE.equals(product.getPublished());
+    }
+
+    /**
+     * Prices and validates a product about to be saved. A published product
+     * gets the strict item-type rules (400 naming what is missing). A draft
+     * gets the lenient pass: it may have no price and no weight yet, and a
+     * METAL_RATE draft whose inputs do not price is left unpriced, not refused.
+     *
+     * @return the resolved item type, or null when the category is unknown
+     */
+    private String priceAndCheck(Product product) {
+        if (isDraft(product)) {
+            com.jewelry.backend.pricing.PriceBreakdown priced = null;
+            try {
+                priced = priceFromBoard(product);
+            } catch (IllegalArgumentException incomplete) {
+                // weight or purity still to come; publishing prices it
+            }
+            String itemType = productRulesService.applyDraftRules(product);
+            if (priced != null) {
+                product.setPrice(priced.price());
+            }
+            return itemType;
+        }
         // METAL_RATE products are priced from today's board before the rules
         // run (so "price" is present) and again after them (derivePrice must
         // not win over the rate); FIXED products keep the sent price.
@@ -243,6 +299,36 @@ public class ProductService {
         if (priced != null) {
             product.setPrice(priced.price());
         }
+        return itemType;
+    }
+
+    /**
+     * A draft's SKU is generated before anyone has said what the stone is, so
+     * its material segment is the placeholder XXX (ST-PR-XXX-45ED). When the
+     * draft is published the stone is known; the placeholder is filled in and
+     * the rest of the SKU, including its unique tail, stays as it was.
+     */
+    static String skuWithStone(String sku, Product product) {
+        if (sku == null || !sku.contains("-XXX-") || product == null) {
+            return sku;
+        }
+        String stone = firstText(product.getVariety(), product.getSpecies(), product.getGemstoneMaterial());
+        return stone == null ? sku : sku.replace("-XXX-", "-" + abbreviate(stone, 3, "XXX") + "-");
+    }
+
+    private static String firstText(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    // Admin only - strictly for seeding/testing
+    @Transactional(rollbackFor = Exception.class)
+    public Product createProduct(Product product) {
+        String itemType = priceAndCheck(product);
         if (product.getSku() == null || product.getSku().trim().isEmpty()) {
             product.setSku(generateSku(product, itemType));
         }
@@ -327,6 +413,7 @@ public class ProductService {
         return productRepository.findById(id).map(existing -> {
             String originalSku = existing.getSku();
             Integer stockBefore = existing.getStock();
+            boolean wasDraft = isDraft(existing);
 
             // Fix: Clear existing collections to let Hibernate manage orphanRemoval properly, rather than replacing the collection instance entirely.
             if (existing.getStoneDetails() != null) {
@@ -364,14 +451,12 @@ public class ProductService {
                 existing.setCostUpdatedAt(java.time.LocalDateTime.now());
             }
 
-            // Metal-rate pricing on the merged record (see createProduct).
-            com.jewelry.backend.pricing.PriceBreakdown priced = priceFromBoard(existing);
-
-            // Item-type rules run on the merged record so partial updates are
-            // validated against the full product, not just the fields sent.
-            productRulesService.applyRules(existing);
-            if (priced != null) {
-                existing.setPrice(priced.price());
+            // Pricing and the item-type rules run on the merged record so a
+            // partial update is validated against the full product, not just
+            // the fields sent. A draft stays lenient until it is published.
+            priceAndCheck(existing);
+            if (wasDraft && !isDraft(existing)) {
+                existing.setSku(skuWithStone(existing.getSku(), existing)); // "Save and publish" in the admin form
             }
 
             Product saved = productRepository.save(existing);
@@ -384,6 +469,101 @@ public class ProductService {
             }
             return saved;
         }).orElseThrow(() -> new RuntimeException("Product not found"));
+    }
+
+    /**
+     * Quick capture from the counter: a photo, a category and whatever else is
+     * known. Always a draft. The weight goes to the item type's own weight
+     * field (carats for a stone, a lot or rough; grams for everything else).
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Product quickCreate(com.jewelry.backend.dto.QuickCaptureRequest request) {
+        if (request == null || request.getCategory() == null || request.getCategory().trim().isEmpty()) {
+            throw new IllegalArgumentException("Missing required fields: category");
+        }
+        Product product = new Product();
+        product.setPublished(Boolean.FALSE);
+        product.setCategory(request.getCategory().trim());
+        product.setSubCategory(blankToNull(request.getSubCategory()));
+        product.setSaleMode(blankToNull(request.getSaleMode()));
+        product.setPrice(request.getPrice());
+        product.setUnitPrice(request.getUnitPrice());
+        product.setStock(request.getStock() == null ? 1 : request.getStock());
+        product.setInternalNotes(blankToNull(request.getNotes()));
+        if (request.getImages() != null) {
+            List<String> images = new java.util.ArrayList<>();
+            for (String url : request.getImages()) {
+                if (url != null && !url.trim().isEmpty()) {
+                    images.add(url.trim());
+                }
+            }
+            product.setImages(images);
+        }
+        String name = blankToNull(request.getName());
+        product.setName(name != null ? name
+                : "Draft " + categoryLabel(product.getCategory()) + " "
+                        + java.time.LocalDateTime.now(INDIA).format(java.time.format.DateTimeFormatter.ofPattern("d MMM HH:mm")));
+
+        BigDecimal weight = request.getPrimaryWeight();
+        if (weight != null) {
+            String itemType = productRulesService.resolveItemType(product);
+            if (ProductRulesService.LOOSE_GEMSTONE.equals(itemType)) {
+                product.setCaratWeight(weight);
+            } else if (ProductRulesService.GEMSTONE_LOT.equals(itemType)) {
+                product.setLotTotalCaratWeight(weight);
+            } else if (ProductRulesService.ROUGH.equals(itemType)) {
+                product.setRoughWeight(weight);
+            } else if (ProductRulesService.COMPONENT.equals(itemType)) {
+                product.setTotalWeight(weight);
+            } else if (itemType != null) {
+                product.setGrossWeight(weight);
+            }
+        }
+        return createProduct(product);
+    }
+
+    /** "Yellow Sapphire (Pukhraj)" for precious-yellow-sapphire-(pukhraj); the name as sent when it is not a category. */
+    private String categoryLabel(String category) {
+        for (Category match : categoryRepository.findByNameIgnoreCase(category)) {
+            if (match.getDisplayName() != null && !match.getDisplayName().trim().isEmpty()) {
+                return match.getDisplayName().trim();
+            }
+        }
+        return category;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.trim().isEmpty() ? null : value.trim();
+    }
+
+    /**
+     * Puts a draft on the storefront. The strict item-type rules run first, so
+     * a draft without a price, a weight or a species is refused with a 400
+     * that names what is missing. Publishing a published product is a no-op
+     * that still re-runs the checks.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "products", key = "#id")
+    public Product publish(UUID id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Product not found"));
+        if (product.getImages() == null || product.getImages().isEmpty()) {
+            throw new IllegalArgumentException("Missing required fields: at least one photo");
+        }
+        product.setPublished(Boolean.TRUE);
+        priceAndCheck(product);
+        product.setSku(skuWithStone(product.getSku(), product));
+        return productRepository.save(product);
+    }
+
+    /** Takes a product off the storefront without deleting it. */
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "products", key = "#id")
+    public Product unpublish(UUID id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Product not found"));
+        product.setPublished(Boolean.FALSE);
+        return productRepository.save(product);
     }
 
     /**

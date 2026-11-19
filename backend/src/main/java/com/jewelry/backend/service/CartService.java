@@ -86,6 +86,10 @@ public class CartService {
         Cart cart = getCart(userEmail);
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+        if (ProductService.isDraft(product)) {
+            // A draft has no checked price or weight; it is not for sale yet.
+            throw new jakarta.persistence.EntityNotFoundException("Product not found");
+        }
 
         CartItem existingItem = cart.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(product.getId()) &&
@@ -125,6 +129,9 @@ public class CartService {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+        if (ProductService.isDraft(product)) {
+            throw new jakarta.persistence.EntityNotFoundException("Product not found");
+        }
 
         Wishlist wishlist = wishlistRepository.findByUser(user)
                 .orElseGet(() -> {

@@ -46,8 +46,25 @@
         <span class="material-symbols-outlined text-base">payments</span>
         Import cost prices
       </button>
+      <button *ngIf="!draftsOnly" type="button" (click)="showDrafts()" class="inline-flex items-center gap-1.5 rounded-md border border-ink bg-surface px-3 py-2 text-sm font-medium text-ink shadow-sm hover:bg-surface focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2" title="Products saved but not yet on the storefront">
+        <span class="material-symbols-outlined text-[18px]">edit_note</span>
+        Drafts
+      </button>
+      <a *ngIf="canWrite" routerLink="/products/quick" class="inline-flex items-center gap-1.5 rounded-md border border-ink bg-surface px-3 py-2 text-sm font-medium text-ink shadow-sm hover:bg-surface focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2" title="Photo, category and price from a phone; saved as a draft">
+        <span class="material-symbols-outlined text-[18px]">add_a_photo</span>
+        Quick add
+      </a>
       <a routerLink="/products/new" class="inline-flex items-center justify-center rounded-md border border-transparent bg-emerald-600 px-4 py-2 text-sm font-medium text-surface shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 sm:w-auto ml-2">Add product</a>
     </div>
+  </div>
+
+  <!-- Drafts banner -->
+  <div *ngIf="draftsOnly" class="mt-4 flex items-center justify-between rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+    <span>
+      <span class="font-semibold">Drafts only:</span>
+      {{ visibleProducts.length }} product{{ visibleProducts.length === 1 ? '' : 's' }} not on the storefront yet. Open one to fill in weight, price and treatment, then publish it.
+    </span>
+    <button (click)="clearDraftsFilter()" class="font-medium underline hover:no-underline">Show all</button>
   </div>
 
   <!-- Low-stock filter banner (§5) -->
@@ -258,7 +275,7 @@
                   <div class="flex items-center gap-2">
                     <img *ngIf="product.images?.[0] || product.imageUrl" [src]="product.images?.[0] || product.imageUrl" class="w-9 h-9 object-cover rounded-lg border border-gray-200">
                     <div>
-                      <span class="block font-semibold text-gray-900">{{ product.name }}</span>
+                      <span class="block font-semibold text-gray-900">{{ product.name }}<span *ngIf="isDraft(product)" class="ml-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-amber-800" title="Hidden from the storefront until published">Draft</span></span>
                       <div class="flex items-center gap-1 mt-0.5">
                         <span *ngIf="product.videoUrl" class="px-1.5 py-0.5 rounded text-[9px] bg-purple-100 text-purple-800 font-semibold">🎬 Video</span>
                         <span *ngIf="product.featured" class="px-1.5 py-0.5 rounded text-[9px] bg-amber-100 text-amber-800 font-semibold">★ Featured</span>
@@ -315,7 +332,9 @@
                   </div>
                 </td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex justify-end space-x-3 items-center">
-                  <a [href]="storefrontUrl + '/products/' + product.id" target="_blank" class="text-amber-600 hover:text-amber-800 text-xs font-semibold px-2 py-1 bg-amber-50 rounded border border-amber-200" title="Preview on consumer storefront">View Live ↗</a>
+                  <a *ngIf="!isDraft(product)" [href]="storefrontUrl + '/products/' + product.id" target="_blank" class="text-amber-600 hover:text-amber-800 text-xs font-semibold px-2 py-1 bg-amber-50 rounded border border-amber-200" title="Preview on consumer storefront">View Live ↗</a>
+                  <button *ngIf="canWrite && !incompleteOnly && isDraft(product)" type="button" (click)="publish(product)" [disabled]="publishingId === product.id" class="text-emerald-700 hover:text-emerald-900 text-xs font-semibold px-2 py-1 bg-emerald-50 rounded border border-emerald-200 disabled:opacity-50" title="Run the checks and put this product on the storefront">{{ publishingId === product.id ? 'Publishing…' : 'Publish' }}</button>
+                  <button *ngIf="canWrite && !incompleteOnly && !isDraft(product) && product.published === true" type="button" (click)="unpublish(product)" [disabled]="publishingId === product.id" class="text-ink/70 hover:text-ink text-xs font-medium" title="Hide from the storefront without deleting">Unpublish</button>
                   <a [routerLink]="['/products/edit', product.id]" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium" title="Edit">Edit</a>
                   <a [routerLink]="['/products/new']" [queryParams]="{duplicateId: product.id}" class="text-emerald-600 hover:text-emerald-900 text-xs font-medium" title="Duplicate">Duplicate</a>
                   <button (click)="deleteProduct(product.id)" class="text-red-600 hover:text-red-900 text-xs font-medium" title="Delete">Delete</button>

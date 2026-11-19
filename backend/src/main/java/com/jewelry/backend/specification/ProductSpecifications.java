@@ -32,6 +32,14 @@ public final class ProductSpecifications {
     private ProductSpecifications() {
     }
 
+    /**
+     * Which products a listing may return. A draft is a product whose
+     * {@code published} column is explicitly false; null (rows older than the
+     * column) and true are both published. A null visibility on the filter is
+     * read as PUBLISHED, so a caller that forgets to choose never leaks drafts.
+     */
+    public enum Visibility { PUBLISHED, DRAFTS, ALL }
+
     /** All optional filters accepted by the product listing. */
     public record ProductFilter(
             String category,
@@ -50,9 +58,10 @@ public final class ProductSpecifications {
             Boolean certified,
             Boolean featured,
             Boolean lowStock,
-            Integer lowStockThreshold) {
+            Integer lowStockThreshold,
+            Visibility visibility) {
 
-        /** Original filter set; low-stock filtering off. */
+        /** Original filter set; low-stock filtering off, published products only. */
         public ProductFilter(
                 String category,
                 List<String> subCategories,
@@ -71,7 +80,7 @@ public final class ProductSpecifications {
                 Boolean featured) {
             this(category, subCategories, metals, stones, designStyles, occasions, styles,
                     gemGrades, crafts, saleModes, priceMin, priceMax, search, certified, featured,
-                    null, null);
+                    null, null, Visibility.PUBLISHED);
         }
     }
 
@@ -84,6 +93,13 @@ public final class ProductSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             boolean joinedCollection = false;
+
+            Visibility visibility = f.visibility() == null ? Visibility.PUBLISHED : f.visibility();
+            if (visibility == Visibility.PUBLISHED) {
+                predicates.add(cb.or(cb.isNull(root.get("published")), cb.isTrue(root.get("published"))));
+            } else if (visibility == Visibility.DRAFTS) {
+                predicates.add(cb.isFalse(root.get("published")));
+            }
 
             if (hasText(f.category())) {
                 predicates.add(cb.equal(cb.lower(root.get("category")), f.category().trim().toLowerCase(Locale.ROOT)));

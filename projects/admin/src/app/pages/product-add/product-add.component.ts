@@ -58,6 +58,8 @@ import {
 export class ProductAddComponent implements OnInit {
   productId: string | null = null;
   isEditMode = false;
+  /** The product being edited is a draft: hidden from the storefront until it is saved and published. */
+  isDraft = false;
 
   constructor(
     private fb: FormBuilder,
@@ -511,6 +513,8 @@ export class ProductAddComponent implements OnInit {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
       description: ['', Validators.required],
+      // Staff-only notes (quick capture and photo imports write here); never shown on the storefront.
+      internalNotes: [''],
       price: [null, [Validators.required, Validators.min(0)]],
       originalPrice: [null],
       // Landed cost per unit including making; margin is shown live beside the price.
@@ -979,10 +983,14 @@ export class ProductAddComponent implements OnInit {
     this.existingImages = product.images || [];
     this.existingVideoUrl = product.videoUrl || null;
 
+    // A duplicate starts as a new product, so only a product opened for editing can be a draft.
+    this.isDraft = this.isEditMode && product.published === false;
+
     // Basic fields
     this.productForm.patchValue({
       name: product.name || '',
       description: product.description || '',
+      internalNotes: product.internalNotes || '',
       price: product.price ?? null,
       originalPrice: product.originalPrice ?? null,
       costPrice: product.costPrice ?? null,
@@ -1386,6 +1394,27 @@ export class ProductAddComponent implements OnInit {
     this.createProductRecord();
   }
 
+  /**
+   * Saves what is there without publishing. The server keeps a draft off the
+   * storefront and does not ask for weight, price or species until it is
+   * published, so the form's own required fields are not enforced here.
+   */
+  saveDraft() {
+    if (this.loading || this.uploadingMedia) return;
+    const value = this.productForm.getRawValue();
+    if (!value.category) {
+      this.errorMessage = 'Pick a category before saving a draft.';
+      return;
+    }
+    if (!String(value.name || '').trim()) {
+      this.errorMessage = 'Give the draft a name so it can be found again.';
+      return;
+    }
+    this.loading = true;
+    this.errorMessage = '';
+    this.createProductRecord(true);
+  }
+
   /** Stock by location block (edit mode only). Never blocks the form. */
   loadStockByLocation() {
     if (!this.productId) return;
@@ -1399,7 +1428,7 @@ export class ProductAddComponent implements OnInit {
     });
   }
 
-  private createProductRecord() {
+  private createProductRecord(asDraft = false) {
     const formValue = this.productForm.getRawValue();
 
     // Parse comma separated strings to arrays
@@ -1426,7 +1455,11 @@ export class ProductAddComponent implements OnInit {
       craft: (this.itemType === 'JEWELLERY' || this.itemType === 'SET') ? (formValue.craft || null) : null,
       gemGrade: formValue.gemGrade || null,
       // The server recomputes these; sending our derivation keeps list views consistent meanwhile.
-      averagePieceWeight: formValue.averagePieceWeight ?? null
+      averagePieceWeight: formValue.averagePieceWeight ?? null,
+      // Draft: stays hidden. Saving a draft with the main button publishes it,
+      // which makes the server run the full item-type checks. Otherwise the
+      // key is left out and the server keeps what the product already has.
+      ...(asDraft ? { published: false } : (this.isDraft ? { published: true } : {}))
     };
 
     if (this.isEditMode && this.productId) {
